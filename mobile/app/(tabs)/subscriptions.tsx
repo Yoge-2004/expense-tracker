@@ -425,8 +425,8 @@ export default function SubscriptionsScreen() {
             }}
             style={[styles.retryBtn, { backgroundColor: c.primary }]}
           >
-            <Ionicons name="refresh" size={18} color="#10120E" />
-            <Text style={styles.retryBtnText}>Retry</Text>
+            <Ionicons name="refresh" size={18} color={c.onPrimary} />
+            <Text style={[styles.retryBtnText, { color: c.onPrimary }]}>Retry</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -910,8 +910,8 @@ export default function SubscriptionsScreen() {
                         }}
                         style={[styles.depositBtn, { backgroundColor: c.warning }]}
                       >
-                        <Ionicons name="add-circle-outline" size={13} color="#FFF" />
-                        <Text style={styles.depositBtnText}>Deposit</Text>
+                        <Ionicons name="add-circle-outline" size={13} color={c.onWarning} />
+                        <Text style={[styles.depositBtnText, { color: c.onWarning }]}>Deposit</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -1098,9 +1098,9 @@ export default function SubscriptionsScreen() {
                 disabled={isDepositing}
               >
                 {isDepositing ? (
-                  <ActivityIndicator size="small" color="#FFF" />
+                  <ActivityIndicator size="small" color={c.onWarning} />
                 ) : (
-                  <Text style={styles.modalSaveText}>Deposit Installment</Text>
+                  <Text style={[styles.modalSaveText, { color: c.onWarning }]}>Deposit Installment</Text>
                 )}
               </TouchableOpacity>
             </View>

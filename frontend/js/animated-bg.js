@@ -127,6 +127,57 @@
             ]
         };
 
+        let activePalette = null;
+        function refreshPalette() {
+            isLight = document.documentElement.getAttribute("data-theme") === "light" || document.body.getAttribute("data-theme") === "light";
+            const style = getComputedStyle(document.documentElement);
+            const parseRgb = (str, def) => {
+                if (!str) return def;
+                const parts = str.split(",").map(n => parseInt(n.trim(), 10));
+                return parts.length >= 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])
+                    ? { r: parts[0], g: parts[1], b: parts[2] }
+                    : def;
+            };
+            const p = parseRgb(style.getPropertyValue("--primary-rgb"), isLight ? { r: 212, g: 175, b: 55 } : { r: 199, g: 154, b: 62 });
+            const a = parseRgb(style.getPropertyValue("--accent-rgb"), isLight ? { r: 231, g: 76, b: 60 } : { r: 162, g: 62, b: 50 });
+            const h = parseRgb(style.getPropertyValue("--highlight-rgb"), isLight ? { r: 14, g: 165, b: 233 } : { r: 76, g: 122, b: 120 });
+            const alpha = isLight ? 0.32 : 0.36;
+
+            const dynamicSlots = [];
+            for (let idx = 1; idx <= 8; idx++) {
+                const rgbStr = style.getPropertyValue(`--palette-${idx}-rgb`).trim();
+                if (rgbStr) {
+                    const parsed = parseRgb(rgbStr, null);
+                    if (parsed) dynamicSlots.push(parsed);
+                }
+            }
+
+            if (dynamicSlots.length >= 3) {
+                activePalette = dynamicSlots.map((col, idx) => ({ ...col, a: alpha * (idx === 0 ? 1 : 0.85) }));
+            } else {
+                activePalette = [
+                    { ...p, a: alpha },
+                    { ...a, a: alpha * 0.9 },
+                    { ...h, a: alpha * 0.85 },
+                    { r: Math.round(p.r * 0.7 + a.r * 0.3), g: Math.round(p.g * 0.7 + a.g * 0.3), b: Math.round(p.b * 0.7 + a.b * 0.3), a: alpha * 0.8 },
+                    { r: Math.round(a.r * 0.6 + h.r * 0.4), g: Math.round(a.g * 0.6 + h.g * 0.4), b: Math.round(a.b * 0.6 + h.b * 0.4), a: alpha * 0.75 },
+                    { ...p, a: alpha * 0.7 },
+                    { ...h, a: alpha * 0.8 },
+                    { ...a, a: alpha * 0.8 }
+                ];
+            }
+
+            // Adjust mesh canvas opacity when custom wallpaper is active so wallpaper is clearly visible
+            if (canvas) {
+                const hasCustomWp = document.body.classList.contains("has-custom-wallpaper") ||
+                                    (localStorage.getItem("app_bg_asset") || "").includes(`"type":"custom"`);
+                canvas.style.opacity = hasCustomWp ? "0.20" : "0.95";
+            }
+        }
+        refreshPalette();
+        document.addEventListener('palettechange', refreshPalette);
+        new MutationObserver(refreshPalette).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
         function isLightTheme() {
             return isLight;
         }
@@ -225,9 +276,10 @@
                 if (this.x > width + 10) this.x = -10;
 
                 const currentAlpha = Math.max(0.12, Math.min(0.9, this.opacity + Math.sin(this.twinkleAngle) * 0.3));
-                ctx.fillStyle = lightTheme
-                    ? `rgba(160, 115, 30, ${currentAlpha * 0.8})`
-                    : `rgba(240, 215, 140, ${currentAlpha})`;
+                const pStyle = getComputedStyle(document.documentElement);
+                const rgbParts = (pStyle.getPropertyValue("--primary-rgb") || (lightTheme ? "212, 175, 55" : "199, 154, 62")).split(",").map(n => parseInt(n.trim(), 10));
+                const pr = rgbParts[0] || 212, pg = rgbParts[1] || 175, pb = rgbParts[2] || 55;
+                ctx.fillStyle = `rgba(${pr}, ${pg}, ${pb}, ${lightTheme ? currentAlpha * 0.8 : currentAlpha})`;
 
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -311,7 +363,7 @@
             const lightTheme = isLightTheme();
             ctx.clearRect(0, 0, width, height);
             ctx.globalCompositeOperation = lightTheme ? 'source-over' : 'screen';
-            const palette = lightTheme ? PALETTES.light : PALETTES.dark;
+            const palette = activePalette || (lightTheme ? PALETTES.light : PALETTES.dark);
 
             for (let i = 0; i < orbs.length; i++) {
                 orbs[i].update(time, palette, lightTheme);
@@ -319,13 +371,15 @@
 
             if (isHovering) {
                 const mouseGrad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 240);
+                const pColor = activePalette ? `${activePalette[0].r}, ${activePalette[0].g}, ${activePalette[0].b}` : (lightTheme ? '199, 154, 62' : '212, 175, 55');
+                const aColor = activePalette ? `${activePalette[1].r}, ${activePalette[1].g}, ${activePalette[1].b}` : (lightTheme ? '41, 128, 185' : '76, 175, 160');
                 if (lightTheme) {
-                    mouseGrad.addColorStop(0, 'rgba(199, 154, 62, 0.22)');
-                    mouseGrad.addColorStop(0.5, 'rgba(41, 128, 185, 0.10)');
+                    mouseGrad.addColorStop(0, `rgba(${pColor}, 0.22)`);
+                    mouseGrad.addColorStop(0.5, `rgba(${aColor}, 0.10)`);
                     mouseGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
                 } else {
-                    mouseGrad.addColorStop(0, 'rgba(212, 175, 55, 0.22)');
-                    mouseGrad.addColorStop(0.5, 'rgba(76, 175, 160, 0.10)');
+                    mouseGrad.addColorStop(0, `rgba(${pColor}, 0.22)`);
+                    mouseGrad.addColorStop(0.5, `rgba(${aColor}, 0.10)`);
                     mouseGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
                 }
                 ctx.fillStyle = mouseGrad;

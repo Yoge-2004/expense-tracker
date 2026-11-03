@@ -27,8 +27,8 @@ function main() {
   const ipaShaPath = path.join(baseDir, 'expense-tracker.ipa.sha256');
   const outputPath = path.join(baseDir, 'release-notes.md');
 
-  let version = '1.0.10';
-  let versionCode = 12;
+  let version = '1.0.11';
+  let versionCode = 13;
   let packageId = 'com.yoge.expensetracker';
   let bundleId = 'com.yoge.expensetracker';
   if (fs.existsSync(appJsonPath)) {
@@ -65,25 +65,21 @@ function main() {
   const lines = [
     '# Expense Tracker Mobile v' + version,
     '',
-    'A data-safety release: **your ledger is now kept in a protected copy on the phone, and you can restore anything the server is missing, explicitly and without creating duplicates**.',
+    'A theming and polish release: **colours now follow your palette everywhere, and the build runs on updated libraries**.',
     '',
     '---',
     '',
     "## What's New in v" + version,
     '',
-    '### Safety copy of your ledger',
-    '- The ledger cached on the phone is copied aside before the first network sync and kept if the server ever returns far less data. It survives sign-out and expired sessions.',
+    '### Colours that follow your palette',
+    '- Spend-by-category and other chart colours come from your chosen theme colours instead of the wallpaper image.',
+    '- Primary Brand and Primary Gradient are now two separate choices in the theme studio; picking one no longer overwrites the other.',
+    '- Buttons, chips, badges, the avatar, the calculator and spinners use text colours chosen for readability on your palette.',
+    '- Progress bars and the offline banner follow the theme instead of fixed colours.',
     '',
-    '### Restore to server (Export / Import screen)',
-    '- Compare with server shows exactly which expenses, incomes, goals, loans, budgets, recurring items and categories the server is missing, with example lines.',
-    '- Restore to server uploads only what is missing, re-reads the server afterwards and reports a verified result. Running it again sends nothing.',
-    '- Records the server already holds in an edited form are left alone by default; an explicit choice uploads them too.',
-    '- Export device copy writes a file that works offline, and Import device copy file loads one back.',
-    '- A dashboard banner appears when this phone holds more records than the server returned.',
-    '- The sign-in screen can save a copy of the data stored on the phone even when sign-in is unavailable.',
-    '',
-    '### Fixes',
-    '- Narrow phones no longer clip the Record Expense buttons.',
+    '### Under the hood',
+    '- Updated TypeScript, Expo packages and test tooling to their latest compatible versions.',
+    '- The data-safety tools from 1.0.10 (safety copy, compare and restore) are unchanged.',
     '',
     '---',
     '',

@@ -326,7 +326,7 @@ export default function AddExpenseScreen() {
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: 5,
-                  backgroundColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
+                  backgroundColor: c.fillSubtle,
                   paddingHorizontal: 12,
                   paddingVertical: 8,
                   borderRadius: 10,
@@ -383,12 +383,12 @@ export default function AddExpenseScreen() {
               <Ionicons
                 name="cash-outline"
                 size={15}
-                color={activeTab === 'income' ? '#FFF' : c.textMuted}
+                color={activeTab === 'income' ? c.onSuccess : c.textMuted}
               />
               <Text
                 style={[
                   styles.tabBtnText,
-                  { color: activeTab === 'income' ? '#FFF' : c.textMuted },
+                  { color: activeTab === 'income' ? c.onSuccess : c.textMuted },
                 ]}
               >
                 Income
@@ -408,12 +408,12 @@ export default function AddExpenseScreen() {
               <Ionicons
                 name="flag-outline"
                 size={15}
-                color={activeTab === 'savings' ? '#FFF' : c.textMuted}
+                color={activeTab === 'savings' ? c.onWarning : c.textMuted}
               />
               <Text
                 style={[
                   styles.tabBtnText,
-                  { color: activeTab === 'savings' ? '#FFF' : c.textMuted },
+                  { color: activeTab === 'savings' ? c.onWarning : c.textMuted },
                 ]}
               >
                 Goal
@@ -433,12 +433,12 @@ export default function AddExpenseScreen() {
               <Ionicons
                 name="pie-chart-outline"
                 size={15}
-                color={activeTab === 'budget' ? '#FFF' : c.textMuted}
+                color={activeTab === 'budget' ? c.onHighlight : c.textMuted}
               />
               <Text
                 style={[
                   styles.tabBtnText,
-                  { color: activeTab === 'budget' ? '#FFF' : c.textMuted },
+                  { color: activeTab === 'budget' ? c.onHighlight : c.textMuted },
                 ]}
               >
                 Budget

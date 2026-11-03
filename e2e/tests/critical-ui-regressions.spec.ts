@@ -144,4 +144,124 @@ test.describe('Critical UI regressions', () => {
     expect(colors.dark).not.toBe('#8B5CF6');
     expect(colors.light).not.toBe('#7C3AED');
   });
+
+  test('default look leaves every colour to the stylesheet, so each theme uses its own tokens', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const root = document.documentElement;
+      const vars = ['--card-bg', '--bg-dark', '--text-main', '--text-muted', '--primary', '--metric-subs', '--metric-outflow', '--danger', '--success'];
+      const snap = () => ({
+        inline: vars.filter((v) => root.style.getPropertyValue(v) !== ''),
+        card: getComputedStyle(root).getPropertyValue('--card-bg').trim(),
+        text: getComputedStyle(root).getPropertyValue('--text-main').trim(),
+      });
+      const dark = snap();
+      root.setAttribute('data-theme', 'light');
+      const light = snap();
+      root.setAttribute('data-theme', 'dark');
+      return { dark, light };
+    });
+
+    // Nothing is written inline, so the stylesheet's [data-theme] blocks decide, instantly, in both directions.
+    expect(result.dark.inline).toEqual([]);
+    expect(result.light.inline).toEqual([]);
+    expect(result.light.card).not.toBe(result.dark.card);
+    expect(result.light.text).not.toBe(result.dark.text);
+  });
+
+  test('a customised palette is recomputed for the active theme and never drifts', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem('app_custom_palette', JSON.stringify({
+        primary: '#8B5CF6', primaryGradientEnd: '#7C3AED', accent: '#EC4899', highlight: '#A855F7',
+      }));
+    });
+    await page.reload();
+    await page.waitForSelector('.top-bar', { state: 'visible', timeout: 5000 });
+
+    const run = await page.evaluate(async () => {
+      const root = document.documentElement;
+      const read = () => ({
+        card: root.style.getPropertyValue('--card-bg').toLowerCase(),
+        text: root.style.getPropertyValue('--text-main').toLowerCase(),
+        primary: root.style.getPropertyValue('--primary').toLowerCase(),
+      });
+      const settle = () => new Promise((resolve) => setTimeout(resolve, 80));
+      const dark = read();
+      root.setAttribute('data-theme', 'light');
+      await settle();
+      const light = read();
+      root.setAttribute('data-theme', 'dark');
+      await settle();
+      const darkAgain = read();
+      return { dark, light, darkAgain, stored: localStorage.getItem('app_custom_palette') };
+    });
+
+    expect(run.dark.card).not.toBe('');
+    // The light theme gets a light surface with dark text, not the dark palette left behind by the toggle.
+    expect(run.light.card).toBe('#ffffff');
+    expect(run.light.text).toBe('#0f172a');
+    // Going back restores exactly what the dark theme had: the chosen colours are not rewritten by the toggle.
+    expect(run.darkAgain).toEqual(run.dark);
+    expect(JSON.parse(run.stored as string).primary).toBe('#8B5CF6');
+  });
+
+  test('calculator, charts and category colours follow a customised palette', async ({ page }) => {
+    // On the light theme a very dark primary stays dark, so its readable label is white and a hard-coded dark
+    // label would fail. (On the dark theme the studio lightens such a primary, so the label correctly stays dark.)
+    await page.evaluate(() => {
+      localStorage.setItem('app_custom_palette', JSON.stringify({
+        primary: '#1E1B4B', primaryGradientEnd: '#312E81', accent: '#BE185D', highlight: '#0F766E',
+      }));
+    });
+    await page.reload();
+    await page.waitForSelector('.top-bar', { state: 'visible', timeout: 5000 });
+
+    const result = await page.evaluate(async () => {
+      const root = document.documentElement;
+      root.setAttribute('data-theme', 'light');
+      await new Promise((done) => setTimeout(done, 120));
+      const resolve = (property: string, value: string) => {
+        const el = document.createElement('i');
+        document.body.appendChild(el);
+        (el.style as any)[property] = value;
+        const out = getComputedStyle(el)[property as any];
+        el.remove();
+        return out;
+      };
+      const probe = (cls: string) => {
+        const el = document.createElement('button');
+        el.className = cls;
+        document.body.appendChild(el);
+        const cs = getComputedStyle(el);
+        const out = { color: cs.color, background: cs.backgroundColor };
+        el.remove();
+        return out;
+      };
+      const w = window as any;
+      return {
+        inlinePrimary: root.style.getPropertyValue('--primary').toLowerCase(),
+        eqKey: probe('floating-calc-key is-eq'),
+        useBtn: probe('floating-calc-use-btn'),
+        plainKey: probe('floating-calc-key'),
+        onPrimary: resolve('color', 'var(--on-primary)'),
+        fillSubtle: resolve('backgroundColor', 'var(--fill-subtle)'),
+        categoryFirst: w.DashboardUtils.getCategoryColor('anything', 0).color.toLowerCase(),
+        chartPrimary: w.DashboardCharts.chartColors().primary.toLowerCase(),
+        chartAccent: w.DashboardCharts.chartColors().accent.toLowerCase(),
+        accentVar: root.style.getPropertyValue('--accent').toLowerCase(),
+      };
+    });
+
+    expect(result.inlinePrimary).not.toBe('');
+    // The calculator labels use the readable on-primary colour, not a fixed dark one.
+    expect(result.eqKey.color).toBe(result.onPrimary);
+    expect(result.useBtn.color).toBe(result.onPrimary);
+    expect(result.onPrimary).not.toBe('rgb(16, 18, 14)');
+    expect(result.eqKey.color).not.toBe('rgb(16, 18, 14)');
+    // Neutral keys use the palette-derived fill instead of a fixed white overlay.
+    expect(result.plainKey.background).toBe(result.fillSubtle);
+    // Category and chart colours come from the live theme, never from the wallpaper.
+    expect(result.categoryFirst).toBe(result.inlinePrimary);
+    expect(result.chartPrimary).toBe(result.inlinePrimary);
+    expect(result.chartAccent).toBe(result.accentVar);
+  });
 });

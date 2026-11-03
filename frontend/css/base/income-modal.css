@@ -283,7 +283,7 @@ html {
 
 html[data-theme="light"] {
     color-scheme: light;
-    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
+    scrollbar-color: rgba(var(--primary-rgb), 0.5) rgba(0, 0, 0, 0.06);
 }
 
 /* Universal scrollbar styling across every scrollable container, viewport, and nested element */
@@ -359,7 +359,7 @@ html::-webkit-scrollbar-thumb:hover {
 [data-theme="light"] *,
 [data-theme="light"] *::before,
 [data-theme="light"] *::after {
-    scrollbar-color: rgba(199, 154, 62, 0.45) rgba(0, 0, 0, 0.04);
+    scrollbar-color: rgba(var(--primary-rgb), 0.45) rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="light"] *::-webkit-scrollbar-track,
@@ -369,14 +369,14 @@ html::-webkit-scrollbar-thumb:hover {
 
 [data-theme="light"] *::-webkit-scrollbar-thumb,
 [data-theme="light"] ::-webkit-scrollbar-thumb {
-    background: rgba(199, 154, 62, 0.45);
+    background: rgba(var(--primary-rgb), 0.45);
     border: 1.5px solid transparent;
     background-clip: padding-box;
 }
 
 [data-theme="light"] *::-webkit-scrollbar-thumb:hover,
 [data-theme="light"] ::-webkit-scrollbar-thumb:hover {
-    background: rgba(199, 154, 62, 0.75);
+    background: rgba(var(--primary-rgb), 0.75);
     border: 1.5px solid transparent;
     background-clip: padding-box;
 }
@@ -386,11 +386,11 @@ html::-webkit-scrollbar-thumb:hover {
 }
 
 [data-theme="light"] html::-webkit-scrollbar-thumb {
-    background: rgba(199, 154, 62, 0.45);
+    background: rgba(var(--primary-rgb), 0.45);
 }
 
 [data-theme="light"] html::-webkit-scrollbar-thumb:hover {
-    background: rgba(199, 154, 62, 0.75);
+    background: rgba(var(--primary-rgb), 0.75);
 }
 
 body {

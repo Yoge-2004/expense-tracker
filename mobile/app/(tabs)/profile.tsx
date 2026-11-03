@@ -699,7 +699,7 @@ export default function ProfileScreen() {
                   {profilePicture ? (
                     <Image source={{ uri: resolveAvatarUrl(profilePicture) || undefined }} style={styles.bigAvatarImg} />
                   ) : (
-                    <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
+                    <Text style={[styles.avatarLetter, { color: c.onPrimary }]}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
                   )}
                 </View>
                 <View style={[styles.avatarEditBadge, { backgroundColor: c.card, borderColor: c.border }]}>
@@ -1063,7 +1063,7 @@ export default function ProfileScreen() {
                 <ActivityIndicator size="small" color={c.primary} />
               ) : updateInfo?.hasUpdate ? (
                 <View style={[styles.updateBadge, { backgroundColor: c.accent }]}>
-                  <Text style={styles.updateBadgeText}>UPDATE</Text>
+                  <Text style={[styles.updateBadgeText, { color: c.onAccent }]}>UPDATE</Text>
                 </View>
               ) : (
                 <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
@@ -1287,7 +1287,7 @@ export default function ProfileScreen() {
                       style={[styles.bigAvatarImg, { borderRadius: 40 }]}
                     />
                   ) : (
-                    <Text style={[styles.avatarLetter, { fontSize: 32 }]}>
+                    <Text style={[styles.avatarLetter, { fontSize: 32, color: c.onPrimary }]}>
                       {(userName || 'U').charAt(0).toUpperCase()}
                     </Text>
                   )}
@@ -1578,7 +1578,7 @@ export default function ProfileScreen() {
                 ]}
               >
                 {isSavingPin ? (
-                  <ActivityIndicator size="small" color="#10120E" />
+                  <ActivityIndicator size="small" color={c.onPrimary} />
                 ) : (
                   <Text style={[styles.savePinBtnText, { color: c.onPrimary }]}>
                     Save Security PIN
@@ -1671,9 +1671,9 @@ export default function ProfileScreen() {
                 ]}
               >
                 {isDeletingAccount ? (
-                  <ActivityIndicator size="small" color="#FFF" />
+                  <ActivityIndicator size="small" color={c.onDanger} />
                 ) : (
-                  <Text style={styles.confirmDeleteBtnText}>Delete Account</Text>
+                  <Text style={[styles.confirmDeleteBtnText, { color: c.onDanger }]}>Delete Account</Text>
                 )}
               </TouchableOpacity>
             </View>

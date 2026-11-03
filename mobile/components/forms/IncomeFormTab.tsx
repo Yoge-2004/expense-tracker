@@ -251,7 +251,7 @@ export const IncomeFormTab = memo(function IncomeFormTab(props: IncomeFormTabPro
                       style={[
                         styles.freqChipText,
                         {
-                          color: isSelected ? '#FFFFFF' : c.textMuted,
+                          color: isSelected ? c.onSuccess : c.textMuted,
                           fontWeight: isSelected ? '800' : '600',
                         },
                       ]}
@@ -294,13 +294,13 @@ export const IncomeFormTab = memo(function IncomeFormTab(props: IncomeFormTabPro
           style={[styles.submitBtn, { backgroundColor: c.success, opacity: isSubmitting ? 0.7 : 1 }]}
         >
           {isSubmitting ? (
-            <ActivityIndicator size="small" color="#FFF" />
+            <ActivityIndicator size="small" color={c.onSuccess} />
           ) : (
             <View style={styles.submitBtnInner}>
-              <Text style={[styles.submitBtnText, { color: '#FFF' }]}>
+              <Text style={[styles.submitBtnText, { color: c.onSuccess }]}>
                 {isEditMode && editType === 'income' ? 'Update Inflow' : 'Record Inflow'}
               </Text>
-              <Ionicons name="arrow-down-circle" size={20} color="#FFF" />
+              <Ionicons name="arrow-down-circle" size={20} color={c.onSuccess} />
             </View>
           )}
         </TouchableOpacity>

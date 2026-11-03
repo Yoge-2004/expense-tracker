@@ -120,7 +120,7 @@
 }
 
 [data-theme="light"] .scroll-area {
-    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
+    scrollbar-color: rgba(var(--primary-rgb), 0.5) rgba(0, 0, 0, 0.06);
 }
 
 [data-theme="light"] .scroll-area::-webkit-scrollbar-track {
@@ -128,11 +128,11 @@
 }
 
 [data-theme="light"] .scroll-area::-webkit-scrollbar-thumb {
-    background: rgba(199, 154, 62, 0.45);
+    background: rgba(var(--primary-rgb), 0.45);
 }
 
 [data-theme="light"] .scroll-area::-webkit-scrollbar-thumb:hover {
-    background: rgba(199, 154, 62, 0.7);
+    background: rgba(var(--primary-rgb), 0.7);
 }
 
 #expenseList,

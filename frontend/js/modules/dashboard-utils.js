@@ -81,19 +81,50 @@
         { bg: "rgba(100,116,139,0.12)", color: "#64748B" } // 24. Mineral Steel
     ];
 
-    function getCategoryColor(name, index) {
-        if (index !== undefined && index >= 0 && index < CATEGORY_PALETTE.length) {
-            return CATEGORY_PALETTE[index];
+    // The first three entries of the shipped palette are the theme's primary, accent and highlight. Those slots
+    // follow the live theme variables so category colours respond when the user changes the palette; the rest are
+    // fixed hues, and nothing here depends on the wallpaper image.
+    let livePaletteCache = null;
+    function liveCategoryPalette() {
+        if (livePaletteCache) return livePaletteCache;
+        const style = getComputedStyle(document.documentElement);
+        // Harvest all extracted spectrum tokens (--palette-1 to --palette-8) or core seeds
+        const dynamicSlots = [];
+        for (let idx = 1; idx <= 8; idx++) {
+            const p = style.getPropertyValue(`--palette-${idx}`).trim();
+            if (p) dynamicSlots.push(p);
         }
-        if (!name) return CATEGORY_PALETTE[0];
+        if (dynamicSlots.length === 0) {
+            ['--primary', '--accent', '--highlight'].forEach(name => {
+                const val = style.getPropertyValue(name).trim();
+                if (val) dynamicSlots.push(val);
+            });
+        }
+        livePaletteCache = CATEGORY_PALETTE.map((entry, i) => {
+            const hex = i < dynamicSlots.length ? dynamicSlots[i] : null;
+            const m = hex ? /^#([0-9a-f]{6})$/i.exec(hex) : null;
+            if (!m) return entry;
+            const n = parseInt(m[1], 16);
+            return { bg: `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},0.15)`, color: '#' + m[1] };
+        });
+        return livePaletteCache;
+    }
+    document.addEventListener('palettechange', () => { livePaletteCache = null; });
+
+    function getCategoryColor(name, index) {
+        const palette = liveCategoryPalette();
+        if (index !== undefined && index >= 0 && index < palette.length) {
+            return palette[index];
+        }
+        if (!name) return palette[0];
         const clean = String(name).trim().toLowerCase();
         let hash = 0;
         for (let i = 0; i < clean.length; i++) {
             hash = (hash * 31 + clean.charCodeAt(i)) & 0xffffffff;
         }
         const absHash = Math.abs(hash);
-        const paletteIndex = absHash % CATEGORY_PALETTE.length;
-        return CATEGORY_PALETTE[paletteIndex];
+        const paletteIndex = absHash % palette.length;
+        return palette[paletteIndex];
     }
 
     function getCategorySvg(name, size = 16) {

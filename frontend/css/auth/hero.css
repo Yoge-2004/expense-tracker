@@ -265,7 +265,7 @@
     background: rgba(255, 255, 255, 0.94);
     border: 1px solid rgba(180, 135, 45, 0.36);
     color: #1E293B;
-    box-shadow: 0 3px 10px -2px rgba(180, 140, 60, 0.18), 0 1px 3px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 3px 10px -2px rgba(var(--primary-rgb), 0.18), 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 [data-theme="light"] .hero-feature-pill svg {
@@ -276,26 +276,93 @@
     background: #FFFFFF;
     border-color: rgba(180, 135, 45, 0.65);
     color: #0F172A;
-    box-shadow: 0 5px 16px -2px rgba(180, 140, 60, 0.26);
+    box-shadow: 0 5px 16px -2px rgba(var(--primary-rgb), 0.26);
     transform: translateY(-1px);
 }
 
-/* Back link */
+/* Back link - Guaranteed high contrast on any background */
 .hero-back-link {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
+    gap: 8px;
+    height: 38px;
+    padding: 0 16px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #FFFFFF !important;
+    background: rgba(15, 23, 42, 0.78) !important;
+    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     text-decoration: none;
-    transition: color 0.2s;
+    transition: color 0.2s var(--ease), border-color 0.2s var(--ease), background 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
     width: fit-content;
     white-space: nowrap;
     flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
-.hero-back-link:hover { color: var(--text-main); }
+.hero-back-link svg {
+    flex-shrink: 0;
+    color: #FFFFFF !important;
+    stroke: #FFFFFF !important;
+    transition: transform 0.2s var(--ease);
+}
+
+.hero-back-link span {
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+}
+
+.hero-back-link:hover {
+    color: #FFFFFF !important;
+    border-color: var(--primary) !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+    transform: translateX(-3px);
+    box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.45);
+}
+
+.hero-back-link:hover svg {
+    transform: translateX(-3px);
+    stroke: var(--primary) !important;
+}
+
+.hero-back-link:hover span {
+    color: var(--primary) !important;
+}
+
+[data-theme="light"] .hero-back-link {
+    color: #0F172A !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid rgba(15, 23, 42, 0.16) !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .hero-back-link svg {
+    color: #0F172A !important;
+    stroke: #0F172A !important;
+}
+
+[data-theme="light"] .hero-back-link span {
+    color: #0F172A !important;
+}
+
+[data-theme="light"] .hero-back-link:hover {
+    color: #0F172A !important;
+    border-color: var(--primary) !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.25);
+}
+
+[data-theme="light"] .hero-back-link:hover svg {
+    color: #0F172A !important;
+    stroke: #0F172A !important;
+}
+
+[data-theme="light"] .hero-back-link:hover span {
+    color: #0F172A !important;
+}
 
 /* Perk grid */
 .perks-grid {

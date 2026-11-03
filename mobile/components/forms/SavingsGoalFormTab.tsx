@@ -231,7 +231,7 @@ export const SavingsGoalFormTab = memo(function SavingsGoalFormTab(props: Saving
                         style={[
                           styles.freqChipText,
                           {
-                            color: isSel ? '#FFF' : c.textMuted,
+                            color: isSel ? c.onWarning : c.textMuted,
                             fontWeight: isSel ? '800' : '600',
                             fontSize: 11,
                           },
@@ -276,17 +276,17 @@ export const SavingsGoalFormTab = memo(function SavingsGoalFormTab(props: Saving
           style={[styles.submitBtn, { backgroundColor: c.warning, opacity: isSubmitting ? 0.7 : 1 }]}
         >
           {isSubmitting ? (
-            <ActivityIndicator size="small" color="#FFF" />
+            <ActivityIndicator size="small" color={c.onWarning} />
           ) : (
             <View style={styles.submitBtnInner}>
-              <Text style={[styles.submitBtnText, { color: '#FFF' }]}>
+              <Text style={[styles.submitBtnText, { color: c.onWarning }]}>
                 {isEditMode && editType === 'savings'
                   ? 'Update Milestone'
                   : goalIsRecurring
                   ? 'Activate Recurring Plan'
                   : 'Configure Milestone'}
               </Text>
-              <Ionicons name="flag" size={20} color="#FFF" />
+              <Ionicons name="flag" size={20} color={c.onWarning} />
             </View>
           )}
         </TouchableOpacity>

@@ -989,6 +989,7 @@
         heading.appendChild(control);
 
         control.querySelectorAll(".bi-segmented-btn").forEach(btn => {
+            btn.style.setProperty("cursor", "var(--cursor-pointer, pointer)", "important");
             btn.addEventListener("click", () => {
                 control.querySelectorAll(".bi-segmented-btn").forEach(b => b.classList.remove("active"));
                 btn.classList.add("active");

@@ -167,17 +167,18 @@ jobs:
               detail = f'{type(exc).__name__}: {exc}'[:900].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
               print(f'::warning title=Space history compaction skipped::{detail}')
 
-          delete_patterns = ['expense_tracker.db', 'expenses_sync.json', '*.sqlite', '*.sqlite3', '*.db']
-
           for attempt in range(1, 4):
               try:
                   print(f'Uploading payload to {repo} (attempt {attempt}/3)...')
+                  # Do not delete database files here. The runtime backup service
+                  # owns database/expense_tracker.sqlite.enc and uploads it
+                  # independently; deleting it during an application deploy
+                  # destroys the only encrypted recovery copy.
                   commit_info = api.upload_folder(
                       folder_path='hf-space-payload',
                       repo_id=repo,
                       repo_type='space',
                       commit_message=f'Deploy combined backend + ML {sha}',
-                      delete_patterns=delete_patterns,
                   )
                   print(f'Deployment succeeded: {commit_info.commit_url}')
                   break

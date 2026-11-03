@@ -18,7 +18,12 @@
 
 .insights-intelligence-panel:hover {
     border-color: rgba(var(--primary-rgb), 0.35);
-    box-shadow: 0 16px 40px var(--shadow-premium), 0 0 24px var(--primary-glow);
+    box-shadow: 0 14px 36px -10px rgba(0, 0, 0, 0.45), 0 0 16px rgba(var(--primary-rgb), 0.12);
+}
+
+[data-theme="light"] .insights-intelligence-panel:hover {
+    border-color: rgba(var(--primary-rgb), 0.40);
+    box-shadow: 0 12px 28px -8px rgba(15, 23, 42, 0.08), 0 0 14px rgba(var(--primary-rgb), 0.10);
 }
 
 .insights-panel-header {
@@ -125,8 +130,15 @@
 
 .insight-card-item:hover {
     transform: translateY(-2px);
-    border-color: rgba(var(--primary-rgb), 0.4);
-    background: var(--card-bg-hover);
+    border-color: rgba(var(--primary-rgb), 0.38);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.30), 0 0 14px rgba(var(--primary-rgb), 0.12);
+    background: var(--card-bg-hover, rgba(23, 26, 20, 0.92));
+}
+
+[data-theme="light"] .insight-card-item:hover {
+    border-color: rgba(var(--primary-rgb), 0.40);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08), 0 0 12px rgba(var(--primary-rgb), 0.10);
+    background: var(--card-bg-hover, #F8FAFC);
 }
 
 .insight-card-item-header {

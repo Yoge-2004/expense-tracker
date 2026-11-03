@@ -277,7 +277,7 @@ export default function RegisterScreen() {
           <StaggeredView delay={100} direction="down">
             <View style={styles.header}>
               <View style={[styles.iconWrap, { backgroundColor: c.primary }]}>
-                <Ionicons name="person-add" size={24} color="#10120E" />
+                <Ionicons name="person-add" size={24} color={c.onPrimary} />
               </View>
               <Text style={[styles.title, { color: c.text }]}>Create Account</Text>
               <Text style={[styles.subtitle, { color: c.textMuted }]}>

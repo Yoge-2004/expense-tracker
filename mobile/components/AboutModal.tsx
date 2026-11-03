@@ -233,9 +233,9 @@ export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
                       <Ionicons
                         name={Platform.OS === 'android' ? 'arrow-down-circle' : 'cloud-download'}
                         size={18}
-                        color="#10120E"
+                        color={c.onPrimary}
                       />
-                      <Text style={styles.updateActionBtnText}>
+                      <Text style={[styles.updateActionBtnText, { color: c.onPrimary }]}>
                         {Platform.OS === 'android'
                           ? `Download & Install Update${apkSizeText ? ` (${apkSizeText})` : ''}`
                           : 'Download Update'}

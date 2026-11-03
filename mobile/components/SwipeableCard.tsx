@@ -41,11 +41,11 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const isSwiping = useRef(false);
 
-  const resolvedEditBg = editColor || (isLight ? '#D4AF37' : '#C79A3E');
-  const resolvedEditColor = isLight ? '#0F172A' : '#10120E';
+  const resolvedEditBg = editColor || c.primary;
+  const resolvedEditColor = c.onPrimary;
   const resolvedDeleteBg = deleteColor || (isLight ? '#BE123C' : '#991B1B');
   const resolvedDeleteColor = '#FFFFFF';
-  const troughBg = isLight ? '#EAEFF5' : 'rgba(18, 20, 16, 0.95)';
+  const troughBg = c.surfaceHover;
 
   const panResponder = useRef(
     PanResponder.create({

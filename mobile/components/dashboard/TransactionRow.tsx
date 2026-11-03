@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     color: '#10B981',
   },
   expenseText: {
-    color: '#C79A3E',
+    color: '#EF4444',
   },
   txActionsRow: {
     flexDirection: 'row',

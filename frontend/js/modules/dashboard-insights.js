@@ -267,8 +267,8 @@
                         <div style="font-size:18px; font-weight:800; color:var(--text-main); margin-top:4px;">-${formatCurrency(activeOutflow)}</div>
                         <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${outflowCount} expense transaction${outflowCount === 1 ? "" : "s"}</div>
                     </div>
-                    <div style="background:rgba(199,154,62,0.08); border:1px solid rgba(199,154,62,0.25); border-radius:10px; padding:12px;">
-                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#C79A3E; font-weight:700;">Net Cash Flow</div>
+                    <div style="background:rgba(var(--primary-rgb),0.08); border:1px solid rgba(var(--primary-rgb),0.25); border-radius:10px; padding:12px;">
+                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--primary); font-weight:700;">Net Cash Flow</div>
                         <div style="font-size:18px; font-weight:800; color:${netCashflow >= 0 ? "#10B981" : "#EF4444"}; margin-top:4px;">${netCashflow >= 0 ? "+" : "-"}${formatCurrency(Math.abs(netCashflow))}</div>
                         <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${activeInflow > 0 ? `${savingsRate}% retention` : "No inflow logged"}</div>
                     </div>

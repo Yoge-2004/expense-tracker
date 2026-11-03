@@ -78,13 +78,43 @@
         return typeof formatGlobalCompactCurrency === "function" ? formatGlobalCompactCurrency(value) : `${typeof getCurrencySymbol === "function" ? getCurrencySymbol() : "$"}${Number(value || 0).toFixed(0)}`;
     }
 
+    /**
+     * Chart colours come from the live CSS variables, so they follow the theme and any palette the user picked.
+     * The fallbacks are the shipped dark-theme values for pages where a variable is missing.
+     */
+    function chartColors() {
+        const style = getComputedStyle(document.documentElement);
+        const read = (name, fallback) => (style.getPropertyValue(name).trim() || fallback);
+        const isLight = document.body.getAttribute("data-theme") === "light";
+        return {
+            isLight,
+            primary: read('--primary', '#C79A3E'),
+            primaryEdge: read('--warning', '#A97F2E'),
+            accent: read('--accent', '#A23E32'),
+            highlight: read('--highlight', '#4C7A78'),
+            danger: read('--danger', '#C0392B'),
+            card: read('--card-bg', isLight ? '#FCFBF6' : '#10120E'),
+            text: read('--text-muted', isLight ? '#6B6558' : '#A8A395'),
+            grid: read('--line-soft', isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)'),
+            barTrack: read('--fill-strong', isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)'),
+        };
+    }
+
+    function withAlpha(color, alpha) {
+        const hex = /^#([0-9a-f]{6})$/i.exec(String(color).trim());
+        if (!hex) return color;
+        const n = parseInt(hex[1], 16);
+        return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+    }
+
     function getTrendGradient(chart) {
         const { ctx, chartArea } = chart;
-        if (!chartArea) return 'rgba(199, 154, 62, 0.22)';
+        const { primary } = chartColors();
+        if (!chartArea) return withAlpha(primary, 0.22);
         const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-        gradient.addColorStop(0, 'rgba(199, 154, 62, 0.35)');
-        gradient.addColorStop(0.72, 'rgba(199, 154, 62, 0.08)');
-        gradient.addColorStop(1, 'rgba(199, 154, 62, 0.01)');
+        gradient.addColorStop(0, withAlpha(primary, 0.35));
+        gradient.addColorStop(0.72, withAlpha(primary, 0.08));
+        gradient.addColorStop(1, withAlpha(primary, 0.01));
         return gradient;
     }
 
@@ -111,6 +141,22 @@
         }
     }
 
+        function enforceChartCursor() {
+        ["expenseChart", "trendChart", "recurringSplitChart", "dayOfWeekChart", "budgetVsActualChart"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && !el._hasCursorEnforced) {
+                el._hasCursorEnforced = true;
+                el.style.setProperty("cursor", "var(--cursor-pointer, pointer)", "important");
+                el.addEventListener("mousemove", () => {
+                    el.style.setProperty("cursor", "var(--cursor-pointer, pointer)", "important");
+                }, { passive: true });
+                el.addEventListener("mouseenter", () => {
+                    el.style.setProperty("cursor", "var(--cursor-pointer, pointer)", "important");
+                }, { passive: true });
+            }
+        });
+    }
+
     function renderChartEmptyStates(isOffline = false) {
         const msg = isOffline ? "Chart data unavailable offline" : "No activity recorded for this period";
         ["expenseChart", "trendChart", "recurringSplitChart", "dayOfWeekChart", "budgetVsActualChart"].forEach(id => {
@@ -119,6 +165,7 @@
     }
 
     function renderPieChart(expenses) {
+        enforceChartCursor();
         if (!ensureChartLoaded(() => renderPieChart(expenses))) return;
         const canvas = document.getElementById('expenseChart');
         if (!canvas) return;
@@ -148,12 +195,13 @@
                     data: dataValues,
                     backgroundColor: bgColors,
                     borderWidth: 2,
-                    borderColor: document.body.getAttribute("data-theme") === "light" ? '#FCFBF6' : '#10120E'
+                    borderColor: chartColors().card
                 }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 cutout: '72%',
+                onHover: (event) => { if (event && event.native && event.native.target) event.native.target.style.cursor = "var(--cursor-pointer, pointer)"; },
                 plugins: {
                     legend: {
                         position: 'right',
@@ -169,6 +217,7 @@
     }
 
     function renderTrendChart(expenses) {
+        enforceChartCursor();
         if (!ensureChartLoaded(() => renderTrendChart(expenses))) return;
         const canvas = document.getElementById('trendChart');
         if (!canvas) return;
@@ -177,8 +226,7 @@
 
         const ctx = canvas.getContext('2d');
         const isLight = document.body.getAttribute("data-theme") === "light";
-        const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
-        const textColor = isLight ? '#6B6558' : '#A8A395';
+        const { grid: gridColor, text: textColor } = chartColors();
 
         const dailyTotals = {};
         if (hasData) {
@@ -199,7 +247,7 @@
                 datasets: [{
                     label: 'Daily Spending',
                     data: values,
-                    borderColor: '#C79A3E',
+                    borderColor: chartColors().primary,
                     backgroundColor: (context) => getTrendGradient(context.chart),
                     fill: 'origin',
                     tension: 0.35,
@@ -207,8 +255,8 @@
                     borderWidth: 3,
                     pointRadius: dates.length > 31 ? 0 : 3,
                     pointHoverRadius: 6,
-                    pointBackgroundColor: isLight ? '#FCFBF6' : '#C79A3E',
-                    pointBorderColor: '#A97F2E',
+                    pointBackgroundColor: isLight ? chartColors().card : chartColors().primary,
+                    pointBorderColor: chartColors().primaryEdge,
                     pointBorderWidth: 2
                 }]
             },
@@ -236,8 +284,7 @@
 
         const ctx = canvas.getContext('2d');
         const isLight = document.body.getAttribute("data-theme") === "light";
-        const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
-        const textColor = isLight ? '#6B6558' : '#A8A395';
+        const { grid: gridColor, text: textColor } = chartColors();
 
         if (chartState.recurringSplitChart) chartState.recurringSplitChart.destroy();
         if (!hasData) return;
@@ -256,7 +303,7 @@
                 labels: ['Recurring', 'One-Time'],
                 datasets: [{
                     data: [recurringTotal, oneTimeTotal],
-                    backgroundColor: ['#A23E32', '#C79A3E'],
+                    backgroundColor: [chartColors().accent, chartColors().primary],
                     borderRadius: 6,
                 }],
             },
@@ -284,8 +331,7 @@
 
         const ctx = canvas.getContext('2d');
         const isLight = document.body.getAttribute("data-theme") === "light";
-        const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
-        const textColor = isLight ? '#6B6558' : '#A8A395';
+        const { grid: gridColor, text: textColor } = chartColors();
         const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
         if (chartState.dayOfWeekChart) chartState.dayOfWeekChart.destroy();
@@ -304,7 +350,7 @@
                 labels: dayLabels,
                 datasets: [{
                     data: totalsByDay,
-                    backgroundColor: '#4C7A78',
+                    backgroundColor: chartColors().highlight,
                     borderRadius: 6,
                 }],
             },
@@ -331,8 +377,7 @@
 
         const ctx = canvas.getContext('2d');
         const isLight = document.body.getAttribute("data-theme") === "light";
-        const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
-        const textColor = isLight ? '#6B6558' : '#A8A395';
+        const { grid: gridColor, text: textColor } = chartColors();
 
         if (chartState.budgetVsActualChart) chartState.budgetVsActualChart.destroy();
         if (!hasData) return;
@@ -340,7 +385,7 @@
         const labels = budgets.map(b => b.categoryName || 'Uncategorized');
         const limits = budgets.map(b => Number(b.limit || 0));
         const spent = budgets.map(b => Number(b.spent || 0));
-        const overBudgetColors = budgets.map(b => (b.percentage > 100 ? '#C0392B' : '#C79A3E'));
+        const overBudgetColors = budgets.map(b => (b.percentage > 100 ? chartColors().danger : chartColors().primary));
 
         chartState.budgetVsActualChart = new Chart(ctx, {
             type: 'bar',
@@ -350,7 +395,7 @@
                     {
                         label: 'Budget',
                         data: limits,
-                        backgroundColor: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)',
+                        backgroundColor: chartColors().barTrack,
                         borderRadius: 4,
                     },
                     {
@@ -373,18 +418,19 @@
                 },
             },
         });
+        chartState.budgetVsActualChart.$overBudget = budgets.map(b => b.percentage > 100);
     }
 
     function updateChartsTheme() {
         if (typeof Chart === "undefined") return;
-        const isLight = document.body.getAttribute("data-theme") === "light";
-        const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
-        const textColor = isLight ? '#6B6558' : '#A8A395';
-        const borderColor = isLight ? '#FCFBF6' : '#10120E';
+        const colors = chartColors();
+        const { grid: gridColor, text: textColor, card: borderColor, isLight } = colors;
 
         if (chartState.pieChart) {
             if (chartState.pieChart.data?.datasets?.[0]) {
                 chartState.pieChart.data.datasets[0].borderColor = borderColor;
+                const labels = chartState.pieChart.data.labels || [];
+                chartState.pieChart.data.datasets[0].backgroundColor = labels.map((cat, i) => (utils && utils.getCategoryColor ? utils.getCategoryColor(cat, i).color : colors.primary));
             }
             if (chartState.pieChart.options?.plugins?.legend?.labels) {
                 chartState.pieChart.options.plugins.legend.labels.color = textColor;
@@ -397,12 +443,18 @@
             if (chartState.trendChart.options?.scales?.y?.ticks) chartState.trendChart.options.scales.y.ticks.color = textColor;
             if (chartState.trendChart.options?.scales?.y?.grid) chartState.trendChart.options.scales.y.grid.color = gridColor;
             if (chartState.trendChart.data?.datasets?.[0]) {
-                chartState.trendChart.data.datasets[0].pointBackgroundColor = isLight ? '#FCFBF6' : '#C79A3E';
+                const trend = chartState.trendChart.data.datasets[0];
+                trend.borderColor = colors.primary;
+                trend.pointBackgroundColor = isLight ? colors.card : colors.primary;
+                trend.pointBorderColor = colors.primaryEdge;
             }
             chartState.trendChart.update('none');
         }
 
         if (chartState.recurringSplitChart) {
+            if (chartState.recurringSplitChart.data?.datasets?.[0]) {
+                chartState.recurringSplitChart.data.datasets[0].backgroundColor = [colors.accent, colors.primary];
+            }
             if (chartState.recurringSplitChart.options?.scales?.x?.ticks) chartState.recurringSplitChart.options.scales.x.ticks.color = textColor;
             if (chartState.recurringSplitChart.options?.scales?.x?.grid) chartState.recurringSplitChart.options.scales.x.grid.color = gridColor;
             if (chartState.recurringSplitChart.options?.scales?.y?.ticks) chartState.recurringSplitChart.options.scales.y.ticks.color = textColor;
@@ -410,6 +462,9 @@
         }
 
         if (chartState.dayOfWeekChart) {
+            if (chartState.dayOfWeekChart.data?.datasets?.[0]) {
+                chartState.dayOfWeekChart.data.datasets[0].backgroundColor = colors.highlight;
+            }
             if (chartState.dayOfWeekChart.options?.scales?.x?.ticks) chartState.dayOfWeekChart.options.scales.x.ticks.color = textColor;
             if (chartState.dayOfWeekChart.options?.scales?.y?.ticks) chartState.dayOfWeekChart.options.scales.y.ticks.color = textColor;
             if (chartState.dayOfWeekChart.options?.scales?.y?.grid) chartState.dayOfWeekChart.options.scales.y.grid.color = gridColor;
@@ -418,7 +473,11 @@
 
         if (chartState.budgetVsActualChart) {
             if (chartState.budgetVsActualChart.data?.datasets?.[0]) {
-                chartState.budgetVsActualChart.data.datasets[0].backgroundColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)';
+                chartState.budgetVsActualChart.data.datasets[0].backgroundColor = colors.barTrack;
+            }
+            if (chartState.budgetVsActualChart.data?.datasets?.[1] && Array.isArray(chartState.budgetVsActualChart.$overBudget)) {
+                chartState.budgetVsActualChart.data.datasets[1].backgroundColor =
+                    chartState.budgetVsActualChart.$overBudget.map(over => (over ? colors.danger : colors.primary));
             }
             if (chartState.budgetVsActualChart.options?.scales?.x?.ticks) chartState.budgetVsActualChart.options.scales.x.ticks.color = textColor;
             if (chartState.budgetVsActualChart.options?.scales?.y?.ticks) chartState.budgetVsActualChart.options.scales.y.ticks.color = textColor;
@@ -427,6 +486,9 @@
             chartState.budgetVsActualChart.update('none');
         }
     }
+
+    // A new palette or theme re-colours the charts that are already on screen.
+    document.addEventListener('palettechange', () => updateChartsTheme());
 
     // Preserve the established dashboard globals for legacy call sites.
     window.renderPieChart = renderPieChart;
@@ -446,6 +508,7 @@
         renderRecurringSplitChart,
         renderDayOfWeekChart,
         renderBudgetVsActualChart,
-        updateChartsTheme
+        updateChartsTheme,
+        chartColors
     };
 })();

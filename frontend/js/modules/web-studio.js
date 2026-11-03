@@ -25,6 +25,27 @@
             cardSurface: 'rgba(23, 26, 20, 0.88)',
             surface: '#171A14',
             borderAccent: 'rgba(199, 154, 62, 0.35)',
+            paletteColors: ['#C79A3E', '#A23E32', '#4C7A78', '#5B8C5A', '#8B5E34', '#B06B5C', '#3B82F6', '#8B5CF6'],
+            dark: {
+                primary: '#C79A3E',
+                primaryGradientEnd: '#A97F2E',
+                accent: '#A23E32',
+                highlight: '#4C7A78',
+                cardSurface: 'rgba(23, 26, 20, 0.88)',
+                surface: '#171A14',
+                borderAccent: 'rgba(199, 154, 62, 0.35)',
+                paletteColors: ['#C79A3E', '#A23E32', '#4C7A78', '#5B8C5A', '#8B5E34', '#B06B5C', '#3B82F6', '#8B5CF6'],
+            },
+            light: {
+                primary: '#D4AF37',
+                primaryGradientEnd: '#B38F22',
+                accent: '#E74C3C',
+                highlight: '#0EA5E9',
+                cardSurface: '#FFFFFF',
+                surface: '#F8F9FA',
+                borderAccent: 'rgba(212, 175, 55, 0.45)',
+                paletteColors: ['#D4AF37', '#E74C3C', '#0EA5E9', '#10B981', '#8B5CF6', '#DB2777', '#059669', '#D97706'],
+            },
         },
         {
             id: 'emerald-aurora',
@@ -37,6 +58,27 @@
             cardSurface: 'rgba(13, 26, 20, 0.90)',
             surface: '#0F2119',
             borderAccent: 'rgba(16, 185, 129, 0.35)',
+            paletteColors: ['#10B981', '#34D399', '#06B6D4', '#059669', '#14B8A6', '#22C55E', '#38BDF8', '#84CC16'],
+            dark: {
+                primary: '#10B981',
+                primaryGradientEnd: '#059669',
+                accent: '#34D399',
+                highlight: '#06B6D4',
+                cardSurface: 'rgba(13, 26, 20, 0.90)',
+                surface: '#0F2119',
+                borderAccent: 'rgba(16, 185, 129, 0.35)',
+                paletteColors: ['#10B981', '#34D399', '#06B6D4', '#059669', '#14B8A6', '#22C55E', '#38BDF8', '#84CC16'],
+            },
+            light: {
+                primary: '#059669',
+                primaryGradientEnd: '#047857',
+                accent: '#10B981',
+                highlight: '#0D9488',
+                cardSurface: '#FFFFFF',
+                surface: '#F0FDF4',
+                borderAccent: 'rgba(5, 150, 105, 0.40)',
+                paletteColors: ['#059669', '#10B981', '#0D9488', '#047857', '#06B6D4', '#15803D', '#65A30D', '#0284C7'],
+            },
         },
         {
             id: 'royal-amethyst',
@@ -49,6 +91,27 @@
             cardSurface: 'rgba(22, 17, 36, 0.90)',
             surface: '#1A142C',
             borderAccent: 'rgba(139, 92, 246, 0.35)',
+            paletteColors: ['#8B5CF6', '#EC4899', '#A855F7', '#7C3AED', '#6366F1', '#D946EF', '#F43F5E', '#3B82F6'],
+            dark: {
+                primary: '#8B5CF6',
+                primaryGradientEnd: '#7C3AED',
+                accent: '#EC4899',
+                highlight: '#A855F7',
+                cardSurface: 'rgba(22, 17, 36, 0.90)',
+                surface: '#1A142C',
+                borderAccent: 'rgba(139, 92, 246, 0.35)',
+                paletteColors: ['#8B5CF6', '#EC4899', '#A855F7', '#7C3AED', '#6366F1', '#D946EF', '#F43F5E', '#3B82F6'],
+            },
+            light: {
+                primary: '#7C3AED',
+                primaryGradientEnd: '#6D28D9',
+                accent: '#DB2777',
+                highlight: '#9333EA',
+                cardSurface: '#FFFFFF',
+                surface: '#FAF5FF',
+                borderAccent: 'rgba(124, 58, 237, 0.40)',
+                paletteColors: ['#7C3AED', '#DB2777', '#9333EA', '#6D28D9', '#4F46E5', '#C026D3', '#E11D48', '#2563EB'],
+            },
         },
         {
             id: 'cyber-cobalt',
@@ -61,6 +124,27 @@
             cardSurface: 'rgba(14, 23, 40, 0.90)',
             surface: '#111B30',
             borderAccent: 'rgba(56, 189, 248, 0.35)',
+            paletteColors: ['#38BDF8', '#6366F1', '#06B6D4', '#0284C7', '#818CF8', '#0EA5E9', '#A855F7', '#2DD4BF'],
+            dark: {
+                primary: '#38BDF8',
+                primaryGradientEnd: '#0284C7',
+                accent: '#6366F1',
+                highlight: '#06B6D4',
+                cardSurface: 'rgba(14, 23, 40, 0.90)',
+                surface: '#111B30',
+                borderAccent: 'rgba(56, 189, 248, 0.35)',
+                paletteColors: ['#38BDF8', '#6366F1', '#06B6D4', '#0284C7', '#818CF8', '#0EA5E9', '#A855F7', '#2DD4BF'],
+            },
+            light: {
+                primary: '#0284C7',
+                primaryGradientEnd: '#0369A1',
+                accent: '#4F46E5',
+                highlight: '#0891B2',
+                cardSurface: '#FFFFFF',
+                surface: '#F0F9FF',
+                borderAccent: 'rgba(2, 132, 199, 0.40)',
+                paletteColors: ['#0284C7', '#4F46E5', '#0891B2', '#0369A1', '#6366F1', '#0284C7', '#7C3AED', '#0D9488'],
+            },
         },
         {
             id: 'sunset-amber',
@@ -73,6 +157,27 @@
             cardSurface: 'rgba(28, 18, 12, 0.90)',
             surface: '#241710',
             borderAccent: 'rgba(245, 158, 11, 0.35)',
+            paletteColors: ['#F59E0B', '#EF4444', '#FB923C', '#D97706', '#F43F5E', '#EA580C', '#EAB308', '#B45309'],
+            dark: {
+                primary: '#F59E0B',
+                primaryGradientEnd: '#D97706',
+                accent: '#EF4444',
+                highlight: '#FB923C',
+                cardSurface: 'rgba(28, 18, 12, 0.90)',
+                surface: '#241710',
+                borderAccent: 'rgba(245, 158, 11, 0.35)',
+                paletteColors: ['#F59E0B', '#EF4444', '#FB923C', '#D97706', '#F43F5E', '#EA580C', '#EAB308', '#B45309'],
+            },
+            light: {
+                primary: '#D97706',
+                primaryGradientEnd: '#B45309',
+                accent: '#DC2626',
+                highlight: '#EA580C',
+                cardSurface: '#FFFFFF',
+                surface: '#FFF7ED',
+                borderAccent: 'rgba(217, 119, 6, 0.40)',
+                paletteColors: ['#D97706', '#DC2626', '#EA580C', '#B45309', '#E11D48', '#C2410C', '#CA8A04', '#9A3412'],
+            },
         },
         {
             id: 'golden-champagne',
@@ -85,6 +190,27 @@
             cardSurface: 'rgba(27, 23, 14, 0.90)',
             surface: '#221D12',
             borderAccent: 'rgba(251, 191, 36, 0.35)',
+            paletteColors: ['#FBBF24', '#F43F5E', '#F59E0B', '#EAB308', '#FB7185', '#F97316', '#FCD34D', '#D97706'],
+            dark: {
+                primary: '#FBBF24',
+                primaryGradientEnd: '#EAB308',
+                accent: '#F43F5E',
+                highlight: '#F59E0B',
+                cardSurface: 'rgba(27, 23, 14, 0.90)',
+                surface: '#221D12',
+                borderAccent: 'rgba(251, 191, 36, 0.35)',
+                paletteColors: ['#FBBF24', '#F43F5E', '#F59E0B', '#EAB308', '#FB7185', '#F97316', '#FCD34D', '#D97706'],
+            },
+            light: {
+                primary: '#CA8A04',
+                primaryGradientEnd: '#A16207',
+                accent: '#E11D48',
+                highlight: '#D97706',
+                cardSurface: '#FFFFFF',
+                surface: '#FEFCE8',
+                borderAccent: 'rgba(202, 138, 4, 0.40)',
+                paletteColors: ['#CA8A04', '#E11D48', '#D97706', '#A16207', '#F43F5E', '#EA580C', '#EAB308', '#B45309'],
+            },
         },
     ];
 
@@ -107,8 +233,16 @@
     // ─── 2. UTILITY FUNCTIONS ────────────────────────────────────────────────
 
     function hexToRgb(hex) {
-        if (!hex) return { r: 199, g: 154, b: 62 };
-        const clean = hex.replace('#', '').trim();
+        if (!hex) return { r: 16, g: 24, b: 20 };
+        const rgbaMatch = String(hex).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+        if (rgbaMatch) {
+            return {
+                r: parseInt(rgbaMatch[1], 10),
+                g: parseInt(rgbaMatch[2], 10),
+                b: parseInt(rgbaMatch[3], 10)
+            };
+        }
+        const clean = String(hex).replace('#', '').trim();
         if (clean.length === 3) {
             return {
                 r: parseInt(clean[0] + clean[0], 16) || 0,
@@ -123,9 +257,13 @@
         };
     }
 
-    function adjustBrightness(hex, factor) {
-        const { r, g, b } = hexToRgb(hex);
+    function adjustBrightness(color, factor) {
+        const { r, g, b } = hexToRgb(color);
         const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
+        const alphaMatch = String(color || '').match(/rgba\(\d+,\s*\d+,\s*\d+,\s*([\d.]+)\)/i);
+        if (alphaMatch) {
+            return `rgba(${clamp(r * factor)}, ${clamp(g * factor)}, ${clamp(b * factor)}, ${alphaMatch[1]})`;
+        }
         return '#' + [clamp(r * factor), clamp(g * factor), clamp(b * factor)]
             .map(x => x.toString(16).padStart(2, '0')).join('');
     }
@@ -248,52 +386,153 @@
         const sampleCtx = sample.getContext('2d', { willReadFrequently: true });
         if (!sampleCtx) throw new Error('Could not sample image colors.');
         sampleCtx.drawImage(canvas, 0, 0, sample.width, sample.height);
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         const pixels = sampleCtx.getImageData(0, 0, sample.width, sample.height);
-        const counts = new Map();
-        for (let i = 0; i < pixels.data.length; i += 16) {
-            const r = pixels.data[i], g = pixels.data[i + 1], b = pixels.data[i + 2];
-            if (pixels.data[i + 3] < 128) continue;
-            const key = [Math.round(r / 32) * 32, Math.round(g / 32) * 32, Math.round(b / 32) * 32];
-            const id = key.join(','); counts.set(id, (counts.get(id) || 0) + 1);
+        const buckets = new Map();
+        const totalPixels = Math.floor(pixels.data.length / 4);
+        const step = Math.max(1, Math.floor(totalPixels / 2500)) * 4;
+
+        for (let i = 0; i < pixels.data.length; i += step) {
+            const r = pixels.data[i], g = pixels.data[i + 1], b = pixels.data[i + 2], a = pixels.data[i + 3];
+            if (a < 128) continue;
+
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            const sat = max - min;
+            const satRatio = max > 0 ? sat / max : 0;
+            const lum = (r * 299 + g * 587 + b * 114) / 255000;
+            const isExtreme = lum < 0.08 || (lum > 0.96 && satRatio < 0.12) || satRatio < 0.06;
+
+            const qR = Math.floor(r / 16);
+            const qG = Math.floor(g / 16);
+            const qB = Math.floor(b / 16);
+            const key = (qR << 8) | (qG << 4) | qB;
+
+            const existing = buckets.get(key) || { r: 0, g: 0, b: 0, count: 0, score: 0 };
+            existing.r += r;
+            existing.g += g;
+            existing.b += b;
+            existing.count++;
+            existing.score += isExtreme ? 0.2 : (1 + Math.pow(satRatio, 1.4) * 3.5);
+            buckets.set(key, existing);
         }
-        const ranked = [...counts.entries()].map(([id, count]) => {
-            const channels = id.split(',').map(Number);
-            const saturation = Math.max(...channels) - Math.min(...channels);
-            const luminance = channels[0] * 0.299 + channels[1] * 0.587 + channels[2] * 0.114;
-            return { channels, count, saturation, luminance, score: count * (0.35 + saturation / 255) };
-        }).filter(color => color.luminance >= 12 && color.luminance <= 245)
-            .sort((a, b) => b.score - a.score);
-        const selected = [];
-        for (const candidate of ranked) {
-            const separated = selected.every(color => Math.sqrt(candidate.channels.reduce((sum, value, index) => sum + Math.pow(value - color.channels[index], 2), 0)) >= 62);
-            if (separated) selected.push(candidate);
-            if (selected.length === 8) break;
+
+        const sorted = Array.from(buckets.values()).sort((a, b) => b.score - a.score);
+        if (sorted.length === 0) {
+            throw new Error('This image contains no readable pixels. Try another image.');
         }
-        const colors = selected.map(color => '#' + color.channels.map(v => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join(''));
-        // Muted and near-monochrome images still get a useful, derived palette.
-        if (!colors.length && counts.size) {
-            const [id] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
-            colors.push('#' + id.split(',').map(value => Math.max(0, Math.min(255, Number(value))).toString(16).padStart(2, '0')).join(''));
+
+        let primaryBucket = sorted[0];
+        for (const bucket of sorted) {
+            const r = Math.round(bucket.r / bucket.count);
+            const g = Math.round(bucket.g / bucket.count);
+            const b = Math.round(bucket.b / bucket.count);
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            const satRatio = max > 0 ? (max - min) / max : 0;
+            const lum = (r * 299 + g * 587 + b * 114) / 255000;
+            if (satRatio >= 0.15 && lum >= 0.12 && lum <= 0.88) {
+                primaryBucket = bucket;
+                break;
+            }
         }
-        if (!colors.length) throw new Error('This image contains no readable pixels. Try another image.');
-        if (colors.length === 1) {
-            colors.push(colorVariant(colors[0], 34), colorVariant(colors[0], 190));
-        } else if (colors.length === 2) {
-            colors.push(colorVariant(colors[0], 190));
+
+        const primaryRgb = {
+            r: Math.round(primaryBucket.r / primaryBucket.count),
+            g: Math.round(primaryBucket.g / primaryBucket.count),
+            b: Math.round(primaryBucket.b / primaryBucket.count),
+        };
+
+        const colorDist = (a, b) => Math.sqrt(
+            Math.pow(a.r - b.r, 2) + Math.pow(a.g - b.g, 2) + Math.pow(a.b - b.b, 2)
+        );
+
+        let accentRgb = primaryRgb;
+        for (let i = 0; i < sorted.length; i++) {
+            const cand = {
+                r: Math.round(sorted[i].r / sorted[i].count),
+                g: Math.round(sorted[i].g / sorted[i].count),
+                b: Math.round(sorted[i].b / sorted[i].count),
+            };
+            if (colorDist(cand, primaryRgb) > 70) {
+                accentRgb = cand;
+                break;
+            }
         }
-        const harmonyOffsets = [96, 154, 218, 278, 318];
-        for (const offset of harmonyOffsets) {
+        if (colorDist(primaryRgb, accentRgb) <= 70) {
+            const hexPrimary = '#' + [primaryRgb.r, primaryRgb.g, primaryRgb.b].map(x => x.toString(16).padStart(2, '0')).join('');
+            accentRgb = hexToRgb(colorVariant(hexPrimary, 150));
+        }
+
+        let highlightRgb = accentRgb;
+        for (let i = 0; i < sorted.length; i++) {
+            const cand = {
+                r: Math.round(sorted[i].r / sorted[i].count),
+                g: Math.round(sorted[i].g / sorted[i].count),
+                b: Math.round(sorted[i].b / sorted[i].count),
+            };
+            if (colorDist(cand, primaryRgb) > 55 && colorDist(cand, accentRgb) > 55) {
+                highlightRgb = cand;
+                break;
+            }
+        }
+        if (colorDist(primaryRgb, highlightRgb) <= 55 || colorDist(accentRgb, highlightRgb) <= 55) {
+            const hexPrimary = '#' + [primaryRgb.r, primaryRgb.g, primaryRgb.b].map(x => x.toString(16).padStart(2, '0')).join('');
+            highlightRgb = hexToRgb(colorVariant(hexPrimary, 60));
+        }
+
+        const toHex = (c) => '#' + [c.r, c.g, c.b].map(x => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, '0')).join('');
+        const primaryHex = toHex(primaryRgb);
+        const accentHex = toHex(accentRgb);
+        const highlightHex = toHex(highlightRgb);
+
+        const colors = [primaryHex, accentHex, highlightHex];
+        for (const bucket of sorted) {
+            const cand = {
+                r: Math.round(bucket.r / bucket.count),
+                g: Math.round(bucket.g / bucket.count),
+                b: Math.round(bucket.b / bucket.count),
+            };
+            if (colors.every(hex => colorDist(hexToRgb(hex), cand) >= 34)) {
+                colors.push(toHex(cand));
+            }
             if (colors.length >= 8) break;
-            const variant = colorVariant(colors[0], offset);
+        }
+        for (const hueOffset of [45, 90, 135, 180, 225, 270, 315]) {
+            if (colors.length >= 8) break;
+            const variant = colorVariant(primaryHex, hueOffset);
             if (!colors.includes(variant)) colors.push(variant);
         }
-        while (colors.length < 8) colors.push(adjustBrightness(colors[colors.length % Math.max(1, selected.length)], colors.length % 2 ? 0.72 : 1.2));
+
         currentExtractedPalette = colors;
-        const [primary, accent, highlight] = colors;
-        currentPrimary = primary; currentPrimaryEnd = adjustBrightness(primary, 0.82);
-        currentAccent = accent || adjustBrightness(primary, 1.25); currentHighlight = highlight || adjustBrightness(primary, 1.5);
-        currentWallpaperType = 'custom'; currentWallpaperUri = canvas.toDataURL('image/jpeg', 0.88);
-        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+        currentPrimary = primaryHex;
+        currentPrimaryEnd = adjustBrightness(primaryHex, isLight ? 0.85 : 0.80);
+        currentAccent = accentHex;
+        currentHighlight = highlightHex;
+        currentCardSurface = isLight
+            ? `rgba(${Math.min(255, 248 + Math.floor(primaryRgb.r * 0.02))}, ${Math.min(255, 248 + Math.floor(primaryRgb.g * 0.02))}, ${Math.min(255, 252 + Math.floor(primaryRgb.b * 0.02))}, 0.94)`
+            : `rgba(${Math.max(16, 20 + Math.floor(primaryRgb.r * 0.05))}, ${Math.max(18, 22 + Math.floor(primaryRgb.g * 0.05))}, ${Math.max(22, 24 + Math.floor(primaryRgb.b * 0.05))}, 0.90)`;
+        currentAppSurface = isLight ? '#FFFFFF' : adjustBrightness(primaryHex, 0.12);
+        currentWallpaperType = 'custom';
+        currentWallpaperUri = canvas.toDataURL('image/jpeg', 0.88);
+
+        // Immediate persistence so the extracted palette propagates across all pages & reloads
+        localStorage.setItem('app_custom_palette', JSON.stringify({
+            primary: currentPrimary,
+            primaryGradientEnd: currentPrimaryEnd,
+            accent: currentAccent,
+            highlight: currentHighlight,
+            cardSurface: currentCardSurface,
+            surface: currentAppSurface,
+            paletteColors: currentExtractedPalette,
+        }));
+        localStorage.setItem('app_bg_asset', JSON.stringify({
+            type: currentWallpaperType,
+            presetId: currentPresetId,
+            uri: currentWallpaperUri,
+            overlayOpacity: currentOverlayOpacity,
+            blurIntensity: currentBlurIntensity,
+        }));
+
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
         applyAtmosphere('custom', currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
         syncUiControls();
     }
@@ -322,7 +561,7 @@
         localStorage.setItem('app_custom_palette', JSON.stringify({ primary: currentPrimary, primaryGradientEnd: currentPrimaryEnd, accent: currentAccent, highlight: currentHighlight, cardSurface: currentCardSurface, surface: currentAppSurface }));
         localStorage.setItem('app_bg_asset', JSON.stringify({ type: currentWallpaperType, presetId: currentPresetId, uri: currentWallpaperUri, overlayOpacity: currentOverlayOpacity, blurIntensity: currentBlurIntensity }));
         applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
-        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
         applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
         syncUiControls(); void saveAppearanceToCloud();
     }
@@ -338,6 +577,9 @@
             if (parsed.highlight) currentHighlight = parsed.highlight;
             if (parsed.cardSurface) currentCardSurface = parsed.cardSurface;
             if (parsed.surface) currentAppSurface = parsed.surface;
+            if (Array.isArray(parsed.paletteColors) && parsed.paletteColors.length > 0) {
+                currentExtractedPalette = parsed.paletteColors;
+            }
         }
     } catch (e) {}
 
@@ -399,118 +641,315 @@
         }
     }
 
-    function applyPalette(primaryHex, primaryEndHex, accentHex, highlightHex) {
+    // ─── Palette ownership ────────────────────────────────────────────────────
+    // The palette is written as INLINE styles on <html>, which always beat the stylesheet's
+    // [data-theme="light"] / [data-theme="dark"] token blocks. So the studio must only own those
+    // variables while the user has actually customised the palette, and must recompute them whenever
+    // the theme changes (they depend on the theme at the moment they are computed).
+    const DEFAULT_PALETTE = { primary: '#C79A3E', end: '#A97F2E', accent: '#A23E32', highlight: '#4C7A78' };
+    const DEFAULT_CARD_SURFACES = ['#171a14', 'rgba(23, 26, 20, 0.88)'];
+    const DEFAULT_APP_SURFACES = ['#10120e', '#171a14'];
+    const paletteVarNames = new Set();
+
+    function setPaletteVar(name, value) {
+        paletteVarNames.add(name);
+        document.documentElement.style.setProperty(name, value);
+    }
+
+    function clearPaletteVars() {
+        const root = document.documentElement;
+        paletteVarNames.forEach(name => root.style.removeProperty(name));
+        paletteVarNames.clear();
+        for (let i = 1; i <= 8; i++) {
+            root.style.removeProperty('--palette-' + i);
+            root.style.removeProperty('--palette-' + i + '-rgb');
+        }
+    }
+
+    function sameColor(a, b) {
+        return String(a || '').replace(/\s+/g, '').toLowerCase() === String(b || '').replace(/\s+/g, '').toLowerCase();
+    }
+
+    /** True while nothing has been changed from the shipped look, so the stylesheet should rule. */
+    function isDefaultPalette() {
+        return (currentPresetId === 'default' || !currentPresetId)
+            && currentWallpaperType === 'preset'
+            && sameColor(currentPrimary, DEFAULT_PALETTE.primary)
+            && sameColor(currentPrimaryEnd, DEFAULT_PALETTE.end)
+            && sameColor(currentAccent, DEFAULT_PALETTE.accent)
+            && sameColor(currentHighlight, DEFAULT_PALETTE.highlight)
+            && DEFAULT_CARD_SURFACES.some(v => sameColor(currentCardSurface, v))
+            && DEFAULT_APP_SURFACES.some(v => sameColor(currentAppSurface, v));
+    }
+
+    function applyPalette(primaryHex, primaryEndHex, accentHex, highlightHex, paletteColors) {
         const root = document.documentElement;
         const isLight = root.getAttribute('data-theme') === 'light';
         const cardBase = isLight ? '#FFFFFF' : '#171A14';
-        const surfaceBase = isLight ? '#EEF1F6' : '#10120E';
-        // Hex values are explicitly chosen by the user; let them materially affect
-        // the surface. Preset RGBA values remain subtle tints for each color mode.
-        const safeCard = mixSurface(cardBase, currentCardSurface, isValidHex(currentCardSurface) ? 0.7 : 0.18);
-        const safeSurface = mixSurface(surfaceBase, currentAppSurface, isValidHex(currentAppSurface) ? 0.7 : 0.18);
-        currentPrimary = ensureContrast(primaryHex, safeCard);
-        const onPrimary = contrastRatio('#FFFFFF', currentPrimary) >= contrastRatio('#10120E', currentPrimary) ? '#FFFFFF' : '#10120E';
-        currentPrimaryEnd = ensureContrast(primaryEndHex || adjustBrightness(currentPrimary, 0.85), onPrimary);
-        currentAccent = ensureContrast(accentHex || currentAccent, safeCard);
-        currentHighlight = ensureContrast(highlightHex || currentHighlight, safeCard);
+        const surfaceBase = isLight ? '#F8F9FA' : '#10120E';
+
+        const surfaceAmount = (requested) => {
+            const isDefault = DEFAULT_CARD_SURFACES.concat(DEFAULT_APP_SURFACES).some(v => sameColor(requested, v));
+            if (isDefault) return 0;
+            // In light mode, if the requested surface is dark, do not contaminate light mode
+            if (isLight && colorLuminance(requested) < 0.4) return 0;
+            // In dark mode, if the requested surface is bright, do not contaminate dark mode
+            if (!isLight && colorLuminance(requested) > 0.6) return 0;
+            return isValidHex(requested) ? 0.7 : 0.18;
+        };
+
+        const safeCard = mixSurface(cardBase, currentCardSurface, surfaceAmount(currentCardSurface));
+        const safeSurface = mixSurface(surfaceBase, currentAppSurface, surfaceAmount(currentAppSurface));
+
+        const effPrimary = ensureContrast(primaryHex, safeCard);
+        const onPrimary = contrastRatio('#FFFFFF', effPrimary) >= contrastRatio('#10120E', effPrimary) ? '#FFFFFF' : '#10120E';
+        const effPrimaryEnd = ensureContrast(primaryEndHex || adjustBrightness(effPrimary, 0.85), safeCard);
+        const effAccent = ensureContrast(accentHex || currentAccent, safeCard);
+        const effHighlight = ensureContrast(highlightHex || currentHighlight, safeCard);
         const readableText = readableTextAcross(safeSurface, safeCard);
         const requestedMuted = ensureContrast(isLight ? '#475569' : '#A8A395', safeSurface);
         const readableMuted = Math.min(contrastRatio(requestedMuted, safeSurface), contrastRatio(requestedMuted, safeCard)) >= 4.5
             ? requestedMuted
             : readableText;
-        const safeRgb = hexToRgb(currentPrimary);
-        const end = currentPrimaryEnd;
+        const safeRgb = hexToRgb(effPrimary);
+        const end = effPrimaryEnd;
 
-        root.style.setProperty('--primary', currentPrimary);
-        root.style.setProperty('--primary-rgb', `${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}`);
-        root.style.setProperty('--primary-gradient', `linear-gradient(135deg, ${currentPrimary} 0%, ${end} 100%)`);
-        root.style.setProperty('--primary-glow', `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.22)`);
-        root.style.setProperty('--border-accent', `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.55)`);
-        root.style.setProperty('--shadow-glow', `0 12px 35px -8px rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.3)`);
-        root.style.setProperty('--shadow-premium', isLight
+        setPaletteVar('--primary', effPrimary);
+        setPaletteVar('--primary-rgb', `${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}`);
+        setPaletteVar('--primary-gradient', `linear-gradient(135deg, ${effPrimary} 0%, ${end} 100%)`);
+        setPaletteVar('--primary-glow', `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.22)`);
+        setPaletteVar('--border-accent', `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.55)`);
+        setPaletteVar('--shadow-glow', `0 12px 35px -8px rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.3)`);
+        setPaletteVar('--shadow-premium', isLight
             ? `0 20px 45px -12px rgba(15, 23, 42, 0.1), 0 0 20px rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.11)`
             : `0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 18px rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.12)`);
         if (!window.matchMedia?.('(pointer: coarse)').matches) {
-            const pointer = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L20 12L12 15L9 23L4 3Z" fill="${currentPrimary}" stroke="${onPrimary}" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
-            const clicked = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L20 12L12 15L9 23L4 3Z" fill="${currentAccent}" stroke="${onPrimary}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="15" r="2" fill="${onPrimary}"/></svg>`;
-            root.style.setProperty('--cursor-pointer', `url("data:image/svg+xml,${encodeURIComponent(pointer)}") 4 3, pointer`);
-            root.style.setProperty('--cursor-clicked', `url("data:image/svg+xml,${encodeURIComponent(clicked)}") 4 3, pointer`);
+            const defSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M4 3L20 11L12 14L9 22L4 3Z" fill="${effPrimary}" stroke="${onPrimary}" stroke-width="1.5" stroke-linejoin="round"/><circle cx="4" cy="3" r="1.5" fill="${onPrimary}"/></svg>`;
+            const pointer = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L18 10L11 13L8 20L4 3Z" fill="${effPrimary}" stroke="${onPrimary}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="11" cy="13" r="2" fill="${onPrimary}"/></svg>`;
+            const textSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><g stroke="${effPrimary}" stroke-width="2.2" stroke-linecap="round"><line x1="14" y1="4" x2="14" y2="24"/><line x1="9" y1="4" x2="19" y2="4"/><line x1="9" y1="24" x2="19" y2="24"/></g></svg>`;
+            const clicked = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L18 10L11 13L8 20L4 3Z" fill="${effAccent}" stroke="${onPrimary}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="11" cy="13" r="2" fill="${onPrimary}"/></svg>`;
+            setPaletteVar('--cursor-default', `url("data:image/svg+xml,${encodeURIComponent(defSvg)}") 4 3, auto`);
+            setPaletteVar('--cursor-pointer', `url("data:image/svg+xml,${encodeURIComponent(pointer)}") 4 3, pointer`);
+            setPaletteVar('--cursor-text', `url("data:image/svg+xml,${encodeURIComponent(textSvg)}") 14 14, text`);
+            setPaletteVar('--cursor-clicked', `url("data:image/svg+xml,${encodeURIComponent(clicked)}") 4 3, pointer`);
         }
-        root.style.setProperty('--card-bg', safeCard);
-        root.style.setProperty('--card-bg-hover', adjustBrightness(safeCard, isLight ? 0.97 : 1.12));
-        root.style.setProperty('--bg-dark', safeSurface);
-        root.style.setProperty('--input-bg', mixSurface(safeCard, safeSurface, 0.35));
-        root.style.setProperty('--text-main', readableText);
-        root.style.setProperty('--text-muted', readableMuted);
-        root.style.setProperty('--on-primary', onPrimary);
+        setPaletteVar('--card-bg', safeCard);
+        setPaletteVar('--card-bg-hover', isLight ? '#F8FAFC' : adjustBrightness(safeCard, 1.15));
+        setPaletteVar('--bg-dark', safeSurface);
+        setPaletteVar('--input-bg', mixSurface(safeCard, safeSurface, 0.35));
+        setPaletteVar('--text-main', readableText);
+        setPaletteVar('--text-muted', readableMuted);
+        setPaletteVar('--on-primary', onPrimary);
 
-        // Keep financial status colors distinct while deriving the surrounding
-        // metric palette from the wallpaper colors. A green custom accent must
-        // not make outflows look positive, so red remains the semantic danger.
+        // Disentangled financial semantics: Inflow = Green, Outflow = Red, Savings = Amber
+        const metricInflow = ensureContrast(isLight ? '#059669' : '#10B981', safeCard);
+        const metricOutflow = ensureContrast(isLight ? '#DC2626' : '#EF4444', safeCard);
+        const metricSavings = ensureContrast(isLight ? '#D97706' : '#F59E0B', safeCard);
+        const metricNetflow = ensureContrast(effPrimary, safeCard);
+        const metricSubs = ensureContrast(effAccent, safeCard);
+
         const metricColors = {
-            inflow: ensureContrast(currentHighlight, safeCard),
-            outflow: ensureContrast(isLight ? '#B91C1C' : '#F87171', safeCard),
-            netflow: ensureContrast(currentPrimary, safeCard),
-            savings: ensureContrast(currentPrimaryEnd, safeCard),
-            subs: ensureContrast(currentAccent, safeCard),
+            inflow: metricInflow,
+            outflow: metricOutflow,
+            netflow: metricNetflow,
+            savings: metricSavings,
+            subs: metricSubs,
         };
         Object.entries(metricColors).forEach(([name, color]) => {
             const rgb = hexToRgb(color);
-            root.style.setProperty(`--metric-${name}`, color);
-            root.style.setProperty(`--metric-${name}-rgb`, `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-            root.style.setProperty(`--metric-${name}-glow`, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`);
+            setPaletteVar(`--metric-${name}`, color);
+            setPaletteVar(`--metric-${name}-rgb`, `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+            setPaletteVar(`--metric-${name}-glow`, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`);
         });
-        root.style.setProperty('--metric-subs-text', metricColors.subs);
-        root.style.setProperty('--success', metricColors.inflow);
-        root.style.setProperty('--success-rgb', hexToRgb(metricColors.inflow).r + ', ' + hexToRgb(metricColors.inflow).g + ', ' + hexToRgb(metricColors.inflow).b);
-        root.style.setProperty('--warning', metricColors.savings);
-        root.style.setProperty('--danger', metricColors.outflow);
+        setPaletteVar('--metric-subs-text', metricColors.subs);
+        setPaletteVar('--success', metricInflow);
+        setPaletteVar('--success-rgb', `${hexToRgb(metricInflow).r}, ${hexToRgb(metricInflow).g}, ${hexToRgb(metricInflow).b}`);
+        setPaletteVar('--warning', metricSavings);
+        setPaletteVar('--warning-rgb', `${hexToRgb(metricSavings).r}, ${hexToRgb(metricSavings).g}, ${hexToRgb(metricSavings).b}`);
+        setPaletteVar('--danger', metricOutflow);
+        setPaletteVar('--danger-rgb', `${hexToRgb(metricOutflow).r}, ${hexToRgb(metricOutflow).g}, ${hexToRgb(metricOutflow).b}`);
+
+        setPaletteVar('--fill-subtle', mixSurface(safeCard, readableText, 0.05));
+        setPaletteVar('--fill-medium', mixSurface(safeCard, readableText, 0.09));
+        setPaletteVar('--fill-strong', mixSurface(safeCard, readableText, 0.14));
+        setPaletteVar('--fill-active', mixSurface(safeCard, readableText, 0.2));
+        setPaletteVar('--inset-bg', isLight ? mixSurface(safeCard, readableText, 0.06) : mixSurface(safeCard, '#000000', 0.32));
+        setPaletteVar('--line-soft', mixSurface(safeCard, readableText, 0.12));
+        setPaletteVar('--on-success', readableTextAcross(metricColors.inflow, metricColors.inflow));
+        setPaletteVar('--on-warning', readableTextAcross(metricColors.savings, metricColors.savings));
+        setPaletteVar('--on-danger', readableTextAcross(metricColors.outflow, metricColors.outflow));
 
         if (accentHex) {
-            const accRgb = hexToRgb(currentAccent);
-            root.style.setProperty('--accent', currentAccent);
-            root.style.setProperty('--accent-rgb', `${accRgb.r}, ${accRgb.g}, ${accRgb.b}`);
-            root.style.setProperty('--accent-glow', `rgba(${accRgb.r}, ${accRgb.g}, ${accRgb.b}, 0.25)`);
-            root.style.setProperty('--accent-text', currentAccent);
+            const accRgb = hexToRgb(effAccent);
+            setPaletteVar('--accent', effAccent);
+            setPaletteVar('--accent-rgb', `${accRgb.r}, ${accRgb.g}, ${accRgb.b}`);
+            setPaletteVar('--accent-glow', `rgba(${accRgb.r}, ${accRgb.g}, ${accRgb.b}, 0.25)`);
+            setPaletteVar('--accent-text', effAccent);
+            setPaletteVar('--accent-gradient', `linear-gradient(135deg, ${effAccent} 0%, ${adjustBrightness(effAccent, 0.82)} 100%)`);
         }
 
         if (highlightHex) {
-            const hlRgb = hexToRgb(currentHighlight);
-            root.style.setProperty('--highlight', currentHighlight);
-            root.style.setProperty('--highlight-rgb', `${hlRgb.r}, ${hlRgb.g}, ${hlRgb.b}`);
+            const hlRgb = hexToRgb(effHighlight);
+            setPaletteVar('--highlight', effHighlight);
+            setPaletteVar('--highlight-rgb', `${hlRgb.r}, ${hlRgb.g}, ${hlRgb.b}`);
+            setPaletteVar('--highlight-glow', `rgba(${hlRgb.r}, ${hlRgb.g}, ${hlRgb.b}, 0.22)`);
+            setPaletteVar('--highlight-gradient', `linear-gradient(135deg, ${effHighlight} 0%, ${adjustBrightness(effHighlight, 0.82)} 100%)`);
         }
+
+        // Propagate all extracted spectrum tokens (--palette-1 to --palette-8)
+        const fullPalette = Array.isArray(paletteColors) && paletteColors.length > 0
+            ? paletteColors
+            : (Array.isArray(currentExtractedPalette) && currentExtractedPalette.length > 0 ? currentExtractedPalette : [effPrimary, effAccent, effHighlight]);
+        fullPalette.slice(0, 8).forEach((col, idx) => {
+            if (isValidHex(col)) {
+                const rgb = hexToRgb(col);
+                setPaletteVar(`--palette-${idx + 1}`, col);
+                setPaletteVar(`--palette-${idx + 1}-rgb`, `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+            }
+        });
+
+        // Propagate dynamic border tokens derived from theme primary
+        setPaletteVar('--border', isLight
+            ? `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.24)`
+            : `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.16)`);
+        setPaletteVar('--border-subtle', isLight
+            ? `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.12)`
+            : `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.08)`);
+
+        if (isDefaultPalette()) {
+            clearPaletteVars();
+        }
+        document.dispatchEvent(new CustomEvent('palettechange'));
     }
 
     function applyAtmosphere(type, uri, opacity, blur) {
         const bgs = document.querySelectorAll('.hero-bg, .auth-hero-bg');
         if (!bgs.length) return;
 
+        const isLight = document.documentElement.getAttribute("data-theme") === "light";
+        if (type === "custom" && uri) {
+            document.body?.classList.add("has-custom-wallpaper");
+            document.documentElement.style.setProperty('--card-bg', isLight ? 'rgba(255, 255, 255, 0.76)' : 'rgba(23, 26, 20, 0.74)');
+            document.documentElement.style.setProperty('--card-bg-hover', isLight ? 'rgba(255, 255, 255, 0.86)' : 'rgba(32, 36, 28, 0.84)');
+        } else {
+            document.body?.classList.remove("has-custom-wallpaper");
+            document.documentElement.style.removeProperty("--custom-wallpaper-bg");
+            if (isLight) {
+                document.documentElement.style.setProperty('--card-bg', '#FFFFFF');
+                document.documentElement.style.setProperty('--card-bg-hover', '#F8FAFC');
+            } else {
+                const cSurf = (currentCardSurface && !String(currentCardSurface).toLowerCase().startsWith('#c7'))
+                    ? currentCardSurface : 'rgba(23, 26, 20, 0.90)';
+                document.documentElement.style.setProperty('--card-bg', cSurf);
+                document.documentElement.style.setProperty('--card-bg-hover', adjustBrightness(cSurf, 1.15));
+            }
+        }
+
         bgs.forEach(heroBg => {
             if (type === 'none') {
                 heroBg.style.backgroundImage = 'none';
                 heroBg.style.filter = 'none';
-            } else if (type === 'custom' && uri) {
-                const tint = document.documentElement.getAttribute('data-theme') === 'light' ? '255, 255, 255' : '0, 0, 0';
-                heroBg.style.backgroundImage = `linear-gradient(rgba(${tint}, ${opacity}), rgba(${tint}, ${opacity})), url("${uri}")`;
-                heroBg.style.backgroundSize = 'cover';
-                heroBg.style.backgroundPosition = 'center';
-                // Keep the image fully opaque so the old ambient background does
-                // not show through; opacity controls only the tint layer above it.
-                heroBg.style.opacity = '1';
-                heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
+            } else if (type === "custom" && uri) {
+                const tint = isLight ? "255, 255, 255" : "0, 0, 0";
+                const bgRule = `linear-gradient(rgba(${tint}, ${opacity}), rgba(${tint}, ${opacity})), url("${uri}")`;
+                heroBg.style.setProperty("background-image", bgRule, "important");
+                heroBg.style.setProperty("background-size", "cover", "important");
+                heroBg.style.setProperty("background-position", "center", "important");
+                heroBg.style.setProperty("background-repeat", "no-repeat", "important");
+                heroBg.style.setProperty("opacity", "1", "important");
+                heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : "none";
+                document.documentElement.style.setProperty("--custom-wallpaper-bg", bgRule);
             } else {
-                // Preset / default ambient gradients
-                heroBg.style.backgroundImage = '';
+                // Preset / default ambient gradients constructed from current theme colors
+                const pRgb = hexToRgb(currentPrimary);
+                const aRgb = hexToRgb(currentAccent);
+                const hRgb = hexToRgb(currentHighlight);
+                if (isLight) {
+                    heroBg.style.backgroundImage = `radial-gradient(circle at 12% 14%, rgba(${pRgb.r}, ${pRgb.g}, ${pRgb.b}, 0.18) 0%, transparent 48%),
+                        radial-gradient(circle at 88% 18%, rgba(${aRgb.r}, ${aRgb.g}, ${aRgb.b}, 0.12) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 82%, rgba(${hRgb.r}, ${hRgb.g}, ${hRgb.b}, 0.12) 0%, transparent 54%),
+                        radial-gradient(circle at 78% 76%, rgba(${pRgb.r}, ${pRgb.g}, ${pRgb.b}, 0.12) 0%, transparent 44%)`;
+                } else {
+                    heroBg.style.backgroundImage = `radial-gradient(circle at 14% 16%, rgba(${pRgb.r}, ${pRgb.g}, ${pRgb.b}, 0.18) 0%, transparent 48%),
+                        radial-gradient(circle at 86% 20%, rgba(${aRgb.r}, ${aRgb.g}, ${aRgb.b}, 0.14) 0%, transparent 50%),
+                        radial-gradient(circle at 46% 86%, rgba(${hRgb.r}, ${hRgb.g}, ${hRgb.b}, 0.12) 0%, transparent 54%),
+                        radial-gradient(circle at 80% 78%, rgba(${pRgb.r}, ${pRgb.g}, ${pRgb.b}, 0.10) 0%, transparent 42%)`;
+                }
+                heroBg.style.backgroundSize = '';
+                heroBg.style.backgroundPosition = '';
                 heroBg.style.opacity = '1';
                 heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
             }
         });
     }
 
+
+    
+
+    function selectPreset(presetId) {
+        const preset = STUDIO_PRESETS.find(x => x.id === presetId);
+        if (!preset) return;
+
+        currentPresetId = preset.id;
+        currentWallpaperType = 'preset';
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        const sub = (isLight && preset.light) ? preset.light : (preset.dark || preset);
+        currentPrimary = sub.primary;
+        currentPrimaryEnd = sub.primaryGradientEnd;
+        currentAccent = sub.accent;
+        currentHighlight = sub.highlight;
+        currentCardSurface = sub.cardSurface;
+        currentAppSurface = sub.surface;
+        currentExtractedPalette = sub.paletteColors || [currentPrimary, currentAccent, currentHighlight];
+
+        localStorage.setItem('app_custom_palette', JSON.stringify({
+            primary: currentPrimary,
+            primaryGradientEnd: currentPrimaryEnd,
+            accent: currentAccent,
+            highlight: currentHighlight,
+            cardSurface: currentCardSurface,
+            surface: currentAppSurface,
+            paletteColors: currentExtractedPalette,
+        }));
+        localStorage.setItem('app_bg_asset', JSON.stringify({
+            type: 'preset',
+            presetId: currentPresetId,
+            overlayOpacity: currentOverlayOpacity,
+            blurIntensity: currentBlurIntensity,
+        }));
+
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
+        applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+        syncUiControls();
+    }
+
     // Immediate zero-flicker application on script load
     applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
-    applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+    applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
     applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+
+    // The palette is computed for the theme that is active when it runs, so it must be recomputed whenever
+    // data-theme changes (toggle button, another tab, or the saved theme being applied after this script).
+    // A MutationObserver callback runs before the next paint, so no frame shows the old theme's colours.
+    new MutationObserver(() => {
+        if (currentWallpaperType === 'preset' && currentPresetId) {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            const preset = STUDIO_PRESETS.find(x => x.id === currentPresetId);
+            if (preset) {
+                const sub = (isLight && preset.light) ? preset.light : (preset.dark || preset);
+                currentPrimary = sub.primary;
+                currentPrimaryEnd = sub.primaryGradientEnd;
+                currentAccent = sub.accent;
+                currentHighlight = sub.highlight;
+                currentCardSurface = sub.cardSurface;
+                currentAppSurface = sub.surface;
+                currentExtractedPalette = sub.paletteColors || [currentPrimary, currentAccent, currentHighlight];
+            }
+        }
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
+        applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+        syncUiControls();
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     // ─── 5. CLOUD SYNCHRONIZATION ─────────────────────────────────────────────
 
@@ -572,7 +1011,7 @@
 
             if (dirty) {
                 applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
-                applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+                applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
                 applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
                 syncUiControls();
             }
@@ -905,20 +1344,7 @@
 
             presetsGrid.querySelectorAll('.studio-preset-card').forEach(card => {
                 card.addEventListener('click', () => {
-                    const presetId = card.getAttribute('data-preset-id');
-                    const preset = STUDIO_PRESETS.find(x => x.id === presetId);
-                    if (!preset) return;
-
-                    currentPresetId = preset.id;
-                    currentPrimary = preset.primary;
-                    currentPrimaryEnd = preset.primaryGradientEnd;
-                    currentAccent = preset.accent;
-                    currentHighlight = preset.highlight;
-                    currentCardSurface = preset.cardSurface;
-                    currentAppSurface = preset.surface;
-
-                    applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
-                    syncUiControls();
+                    selectPreset(card.getAttribute('data-preset-id'));
                 });
             });
         }
@@ -977,7 +1403,7 @@
                 currentAppSurface = newHex;
             }
 
-            applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+            applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
             updateColorPickerInputs();
 
             // Highlight active swatch if matches
@@ -1189,6 +1615,7 @@
         cropFrame?.addEventListener('pointercancel', finishCropPointer);
 
         async function processWallpaper(uri) {
+            if (window.WebStudio) window.WebStudio.processWallpaper = processWallpaper;
             if (!/^https?:\/\//i.test(uri) && !uri.startsWith('data:')) {
                 if (wallpaperStatus) wallpaperStatus.textContent = 'Enter a valid http or https image URL.';
                 return;
@@ -1341,7 +1768,7 @@
             localStorage.removeItem('app_bg_asset');
 
             applyTypography('grotesk', null, null);
-            applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+            applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
             applyAtmosphere('preset', '', 0.35, 0);
             syncUiControls();
             void saveAppearanceToCloud();
@@ -1368,7 +1795,8 @@
                 accent: currentAccent,
                 highlight: currentHighlight,
                 cardSurface: currentCardSurface,
-                surface: currentAppSurface
+                surface: currentAppSurface,
+                paletteColors: currentExtractedPalette,
             }));
             localStorage.setItem('app_bg_asset', JSON.stringify({
                 type: currentWallpaperType,
@@ -1494,6 +1922,10 @@
     }
 
     // Attach to DOMContentLoaded or execute immediately if already loaded
+    document.addEventListener('themechange', () => {
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
+    });
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initStudioController);
     } else {
@@ -1502,11 +1934,27 @@
 
     // Expose API to window
     window.WebStudio = {
+        selectPreset,
         fetchAppearanceFromCloud,
         saveAppearanceToCloud,
         applyTypography,
         applyPalette,
         applyAtmosphere,
+        cropAndExtractWallpaper,
+        open: () => {
+            const m = document.getElementById("themeStudioModal");
+            if (m) {
+                if (typeof window.openModal === "function") window.openModal(m);
+                else m.classList.add("active");
+            }
+        },
+        close: () => {
+            const m = document.getElementById("themeStudioModal");
+            if (m) {
+                if (typeof window.closeModal === "function") window.closeModal(m);
+                else m.classList.remove("active");
+            }
+        }
     };
 
 })();

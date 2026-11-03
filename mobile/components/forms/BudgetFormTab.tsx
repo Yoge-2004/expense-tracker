@@ -213,7 +213,7 @@ export const BudgetFormTab = memo(function BudgetFormTab(props: BudgetFormTabPro
           ]}
         >
           {isSubmitting ? (
-            <ActivityIndicator size="small" color="#10120E" />
+            <ActivityIndicator size="small" color={c.onPrimary} />
           ) : (
             <View style={styles.submitBtnInner}>
               <Text style={[styles.submitBtnText, { color: c.onPrimary }]}>

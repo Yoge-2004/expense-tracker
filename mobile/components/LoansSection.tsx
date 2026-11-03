@@ -363,7 +363,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
           <Text style={[styles.metricValue, { color: c.success }]} numberOfLines={1}>
             {loanMetrics == null && loans.length === 0 ? '--' : formatAmount(lentPending, '+')}
           </Text>
-          <Text style={[styles.metricSub, { color: isLight ? '#4B5563' : c.textMuted }]}>
+          <Text style={[styles.metricSub, { color: c.textMuted }]}>
             {loanMetrics == null && loans.length === 0 ? '-- total lent' : `${formatAmount(loanMetrics?.totalLent ?? 0)} total lent`}
           </Text>
         </AnimatedCard>
@@ -388,7 +388,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
           <Text style={[styles.metricValue, { color: c.danger }]} numberOfLines={1}>
             {loanMetrics == null && loans.length === 0 ? '--' : formatAmount(borrowedPending, '-')}
           </Text>
-          <Text style={[styles.metricSub, { color: isLight ? '#4B5563' : c.textMuted }]}>
+          <Text style={[styles.metricSub, { color: c.textMuted }]}>
             {loanMetrics == null && loans.length === 0 ? '-- borrowed' : `${formatAmount(loanMetrics?.totalBorrowed ?? 0)} borrowed`}
           </Text>
         </AnimatedCard>
@@ -398,7 +398,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
           style={[
             styles.metricCard,
             {
-              backgroundColor: isLight ? '#F8FAFC' : c.inputBg,
+              backgroundColor: c.inputBg,
               borderColor: c.border,
             },
           ]}
@@ -730,13 +730,13 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                   <Ionicons
                     name="arrow-down-circle"
                     size={16}
-                    color={formType === 'LENT' ? '#FFFFFF' : c.textMuted}
+                    color={formType === 'LENT' ? c.onSuccess : c.textMuted}
                   />
                   <Text
                     style={[
                       styles.typeToggleText,
                       {
-                        color: formType === 'LENT' ? '#FFFFFF' : c.text,
+                        color: formType === 'LENT' ? c.onSuccess : c.text,
                         fontWeight: formType === 'LENT' ? '800' : '600',
                       },
                     ]}
@@ -760,13 +760,13 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                   <Ionicons
                     name="arrow-up-circle"
                     size={16}
-                    color={formType === 'BORROWED' ? '#FFFFFF' : c.textMuted}
+                    color={formType === 'BORROWED' ? c.onDanger : c.textMuted}
                   />
                   <Text
                     style={[
                       styles.typeToggleText,
                       {
-                        color: formType === 'BORROWED' ? '#FFFFFF' : c.text,
+                        color: formType === 'BORROWED' ? c.onDanger : c.text,
                         fontWeight: formType === 'BORROWED' ? '800' : '600',
                       },
                     ]}
@@ -1201,7 +1201,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                           {
                             backgroundColor: isLoanCat
                               ? c.primary + '29'
-                              : (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)'),
+                              : c.fillSubtle,
                           },
                         ]}
                       >

@@ -204,18 +204,21 @@ export default function LoginScreen() {
 
           {/* Feature pills */}
           <View style={styles.featureRow}>
-            {FEATURES.map((f, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.featurePill,
-                  { backgroundColor: `${f.color}14`, borderColor: `${f.color}35` },
-                ]}
-              >
-                <Ionicons name={f.icon as any} size={11} color={f.color} />
-                <Text style={[styles.featurePillText, { color: f.color }]}>{f.label}</Text>
-              </View>
-            ))}
+            {FEATURES.map((f, i) => {
+              const featColor = i === 0 ? c.primary : f.color;
+              return (
+                <View
+                  key={i}
+                  style={[
+                    styles.featurePill,
+                    { backgroundColor: `${featColor}14`, borderColor: `${featColor}35` },
+                  ]}
+                >
+                  <Ionicons name={f.icon as any} size={11} color={featColor} />
+                  <Text style={[styles.featurePillText, { color: featColor }]}>{f.label}</Text>
+                </View>
+              );
+            })}
           </View>
         </Animated.View>
 

@@ -45,7 +45,7 @@ export const DashboardHeader = memo(function DashboardHeader({
           {profilePicture ? (
             <Image source={{ uri: resolveAvatarUrl(profilePicture) || undefined }} style={styles.avatarImg} />
           ) : (
-            <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
+            <Text style={[styles.avatarLetter, { color: c.onPrimary }]}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
           )}
         </View>
         <View style={styles.userGreetingCol}>
@@ -72,7 +72,7 @@ export const DashboardHeader = memo(function DashboardHeader({
             style={[
               styles.topActionBtn,
               {
-                backgroundColor: isLight ? '#FFFFFF' : c.card,
+                backgroundColor: c.card,
                 borderColor: c.borderAccent,
                 shadowColor: isLight ? 'transparent' : '#000',
                 shadowOffset: { width: 0, height: 2 },
@@ -94,7 +94,7 @@ export const DashboardHeader = memo(function DashboardHeader({
           style={[
             styles.topActionBtn,
             {
-              backgroundColor: isLight ? '#FFFFFF' : c.card,
+              backgroundColor: c.card,
               borderColor: c.borderAccent,
               shadowColor: isLight ? 'transparent' : '#000',
               shadowOffset: { width: 0, height: 2 },
@@ -116,7 +116,7 @@ export const DashboardHeader = memo(function DashboardHeader({
             style={[
               styles.topActionBtn,
               {
-                backgroundColor: isLight ? '#FFFFFF' : c.card,
+                backgroundColor: c.card,
                 borderColor: c.borderAccent,
                 shadowColor: isLight ? 'transparent' : '#000',
                 shadowOffset: { width: 0, height: 2 },
@@ -135,7 +135,7 @@ export const DashboardHeader = memo(function DashboardHeader({
               style={[
                 styles.bellBadge,
                 {
-                  borderColor: isLight ? '#FFFFFF' : (c.card || '#171A14'),
+                  borderColor: c.card,
                 },
               ]}
             >

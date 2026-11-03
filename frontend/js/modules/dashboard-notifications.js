@@ -353,67 +353,81 @@
     // 6. PROACTIVE NOTIFICATION PERMISSION BANNER FOR ALL DEVICES
     const NOTIF_BANNER_SNOOZE_KEY = "expense_notif_banner_snoozed_until";
 
-    function setupNotificationBanner() {
+        function setupNotificationBanner() {
         const banner = document.getElementById("notificationPermissionBanner");
         if (!banner) return;
 
-        // If Notification API is not supported in this browser
-        if (!("Notification" in window)) {
-            banner.setAttribute("hidden", "true");
-            banner.style.display = "none";
-            return;
-        }
-
-        // If user already granted or denied permission, do not display banner
-        if (Notification.permission !== "default") {
-            banner.setAttribute("hidden", "true");
-            banner.style.display = "none";
-            return;
-        }
-
-        // Check if snoozed
-        try {
-            const snoozedUntil = parseInt(localStorage.getItem(NOTIF_BANNER_SNOOZE_KEY) || "0", 10);
-            if (Date.now() < snoozedUntil) {
-                banner.setAttribute("hidden", "true");
-                banner.style.display = "none";
-                return;
-            }
-        } catch (err) { console.debug("[Notifications] Fallback:", err.message); }
-
+        // Ensure banner is displayed and accessible
         banner.removeAttribute("hidden");
         banner.style.display = "flex";
 
+        const isSupported = "Notification" in window;
+        const currentPerm = isSupported ? Notification.permission : "default";
+
+        const titleElem = banner.querySelector(".notif-banner-text strong");
+        const subElem = banner.querySelector(".notif-banner-text span");
         const allowBtn = document.getElementById("notifBannerAllowBtn");
         const dismissBtn = document.getElementById("notifBannerDismissBtn");
 
-        if (allowBtn) {
-            allowBtn.onclick = async () => {
-                const granted = await requestNotificationPermission();
-                banner.setAttribute("hidden", "true");
-                banner.style.display = "none";
-                if (granted) {
+        if (currentPerm === "granted") {
+            if (titleElem) titleElem.textContent = "Real-Time Notifications Active";
+            if (subElem) subElem.textContent = "Live financial alerts, salary credits, and budget notifications are actively streaming.";
+            if (allowBtn) {
+                allowBtn.textContent = "Send Test Alert";
+                allowBtn.onclick = () => {
                     playCustomNotificationSound();
+                    showNativeNotification("Executive Ledger Alert", {
+                        body: "Notification telemetry is operational and synchronized with your active theme.",
+                        icon: "favicon.ico"
+                    });
                     if (typeof window.showToast === "function") {
-                        window.showToast("Notifications enabled! You'll receive real-time debit and balance alerts.", "success");
+                        window.showToast("Notification telemetry verified successfully!", "success");
                     }
-                } else {
-                    if (typeof window.showToast === "function") {
-                        window.showToast("Notification permission was not granted.", "warning");
+                };
+            }
+            if (dismissBtn) {
+                dismissBtn.textContent = "Close Banner";
+                dismissBtn.onclick = () => {
+                    banner.setAttribute("hidden", "true");
+                    banner.style.display = "none";
+                };
+            }
+        } else {
+            if (allowBtn) {
+                allowBtn.onclick = async () => {
+                    const granted = await requestNotificationPermission();
+                    if (granted) {
+                        playCustomNotificationSound();
+                        if (titleElem) titleElem.textContent = "Real-Time Notifications Active";
+                        if (subElem) subElem.textContent = "Live financial alerts, salary credits, and budget notifications are actively streaming.";
+                        allowBtn.textContent = "Send Test Alert";
+                        allowBtn.onclick = () => {
+                            playCustomNotificationSound();
+                            showNativeNotification("Executive Ledger Alert", {
+                                body: "Notification telemetry is operational and synchronized with your active theme.",
+                                icon: "favicon.ico"
+                            });
+                        };
+                        if (typeof window.showToast === "function") {
+                            window.showToast("Notifications enabled! You will receive real-time debit and balance alerts.", "success");
+                        }
+                    } else {
+                        if (typeof window.showToast === "function") {
+                            window.showToast("Notification permission was not granted.", "warning");
+                        }
                     }
-                }
-            };
-        }
+                };
+            }
 
-        if (dismissBtn) {
-            dismissBtn.onclick = () => {
-                banner.setAttribute("hidden", "true");
-                banner.style.display = "none";
-                try {
-                    // Snooze for 7 days
-                    localStorage.setItem(NOTIF_BANNER_SNOOZE_KEY, String(Date.now() + 7 * 86400000));
-                } catch (err) { console.debug("[Banner] Snooze storage fallback:", err.message); }
-            };
+            if (dismissBtn) {
+                dismissBtn.onclick = () => {
+                    banner.setAttribute("hidden", "true");
+                    banner.style.display = "none";
+                    try {
+                        localStorage.setItem(NOTIF_BANNER_SNOOZE_KEY, String(Date.now() + 7 * 86400000));
+                    } catch (err) { console.debug("[Banner] Snooze storage fallback:", err.message); }
+                };
+            }
         }
     }
 

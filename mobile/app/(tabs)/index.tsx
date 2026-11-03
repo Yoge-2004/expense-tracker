@@ -688,6 +688,7 @@ export default function DashboardScreen() {
     monthEndForecast,
     currentMonthSpent,
     currentMonthInflow,
+    currentMonthNet,
     currentDay,
     daysInMonth,
     highestCatName,
@@ -714,6 +715,7 @@ export default function DashboardScreen() {
       currentMonthExpenses,
       thisMonthIncomes
     );
+    const cMonthNet = thisMonthInflow - cMonthSpent;
     const burn = cMonthSpent / cDay;
     const forecast = burn * dInMonth;
 
@@ -788,6 +790,7 @@ export default function DashboardScreen() {
       monthEndForecast: forecast,
       currentMonthSpent: cMonthSpent,
       currentMonthInflow: thisMonthInflow,
+      currentMonthNet: cMonthNet,
       currentDay: cDay,
       daysInMonth: dInMonth,
       highestCatName: topCatName,
@@ -881,8 +884,8 @@ export default function DashboardScreen() {
             activeOpacity={0.85}
             onPress={() => fetchData(false)}
             style={[styles.retryBtn, { backgroundColor: c.primary }]}>
-            <Ionicons name="refresh" size={18} color="#10120E" />
-            <Text style={styles.retryBtnText}>Retry Connection</Text>
+            <Ionicons name="refresh" size={18} color={c.onPrimary} />
+            <Text style={[styles.retryBtnText, { color: c.onPrimary }]}>Retry Connection</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -980,14 +983,14 @@ export default function DashboardScreen() {
           isStealthMode={isStealthMode}
           isLargeScreen={isLargeScreen}
           matrixCardWidth={matrixCardWidth}
-          netCashFlow={netCashFlow}
-          totalIncomeMonth={currentMonthInflow > 0 ? currentMonthInflow : totalIncome}
-          totalExpenseMonth={currentMonthSpent > 0 ? currentMonthSpent : totalSpent}
+          monthlyNet={currentMonthNet}
+          monthlyInflow={currentMonthInflow}
+          monthlyOutflow={currentMonthSpent}
+          allTimeNet={netCashFlow}
+          totalIncome={totalIncome}
+          totalSpent={totalSpent}
           safeDailySpend={safeDailySpend}
           noSpendStreak={noSpendStreak}
-          totalSpent={totalSpent}
-          currentMonthSpent={currentMonthSpent}
-          currentMonthInflow={currentMonthInflow}
           currentDay={currentDay}
           daysInMonth={daysInMonth}
           dailyBurn={dailyBurn}

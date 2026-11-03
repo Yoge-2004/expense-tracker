@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { useAuth } from '../context/AuthContext';
+import { Colors } from '../constants/theme';
 
 interface AnimatedProgressBarProps {
   progress: number;
@@ -17,6 +19,8 @@ export const AnimatedProgressBar: React.FC<AnimatedProgressBarProps> = ({
   fillColor,
   style,
 }) => {
+  const { theme, themeColors } = useAuth();
+  const c = themeColors || Colors[theme];
   const animatedWidth = useRef(new Animated.Value(0)).current;
   const reducedMotion = useReducedMotion();
   const numericProgress = Number(progress);
@@ -42,9 +46,9 @@ export const AnimatedProgressBar: React.FC<AnimatedProgressBarProps> = ({
 
   const getDynamicColor = () => {
     if (fillColor) return fillColor;
-    if (clampedProgress >= 100) return '#EF4444'; // radiant crimson
-    if (clampedProgress >= 80) return '#F59E0B';  // luminous amber
-    return '#10B981';                         // emerald glow
+    if (clampedProgress >= 100) return c.danger;
+    if (clampedProgress >= 80) return c.warning;
+    return c.success;
   };
 
   const widthInterpolated = animatedWidth.interpolate({

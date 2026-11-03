@@ -240,9 +240,9 @@
     gap: 16px;
     padding: 30px 42px;
     background: var(--card-bg, rgba(23, 26, 20, 0.94));
-    border: 1px solid var(--border-accent, rgba(199, 154, 62, 0.35));
+    border: 1px solid var(--border-accent, rgba(var(--primary-rgb), 0.35));
     border-radius: 24px;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), 0 0 32px rgba(199, 154, 62, 0.12);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), 0 0 32px rgba(var(--primary-rgb), 0.12);
     min-width: 260px;
     max-width: 90vw;
     animation: immersive-card-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -262,7 +262,7 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(199, 154, 62, 0.34) 0%, rgba(199, 154, 62, 0) 70%);
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.35) 0%, rgba(var(--primary-rgb), 0) 70%);
     animation: immersive-glow-breathe 2.4s ease-in-out infinite;
 }
 
@@ -273,8 +273,8 @@
     border-radius: 50%;
     border: 2.5px solid transparent;
     border-top-color: var(--primary, #c79a3e);
-    border-right-color: rgba(199, 154, 62, 0.45);
-    border-left-color: rgba(199, 154, 62, 0.2);
+    border-right-color: rgba(var(--primary-rgb), 0.45);
+    border-left-color: rgba(var(--primary-rgb), 0.2);
     animation: immersive-spin-cw 2.8s linear infinite;
 }
 
@@ -284,9 +284,9 @@
     height: 54px;
     border-radius: 50%;
     border: 2px solid transparent;
-    border-bottom-color: var(--teal, #4c7a78);
-    border-left-color: rgba(76, 122, 120, 0.75);
-    border-right-color: rgba(76, 122, 120, 0.25);
+    border-bottom-color: var(--accent);
+    border-left-color: rgba(var(--accent-rgb), 0.85);
+    border-right-color: rgba(var(--accent-rgb), 0.25);
     animation: immersive-spin-ccw 2.1s linear infinite;
 }
 
@@ -296,7 +296,7 @@
     height: 38px;
     border-radius: 50%;
     background: var(--surface, #171a14);
-    border: 1px solid var(--border-accent, rgba(199, 154, 62, 0.45));
+    border: 1px solid var(--border-accent, rgba(var(--primary-rgb), 0.45));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -330,8 +330,8 @@
 }
 
 @keyframes immersive-core-pulse {
-    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(199,154,62,0.4)); }
-    50% { transform: scale(1.14); filter: drop-shadow(0 0 16px rgba(199,154,62,0.85)); }
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(var(--primary-rgb), 0.45)); }
+    50% { transform: scale(1.14); filter: drop-shadow(0 0 16px rgba(var(--accent-rgb), 0.8)); }
 }
 
 @keyframes immersive-glow-breathe {
@@ -570,7 +570,7 @@
 [data-theme="light"] .custom-calendar-popover {
     background: #FCFBF6;
     border-color: rgba(26, 29, 23, 0.12);
-    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(199, 154, 62, 0.2);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(var(--primary-rgb), 0.2);
 }
 
 [data-theme="light"] .cal-nav-btn {
@@ -877,4 +877,28 @@
 [data-theme="light"] #cancelDeleteAccountBtn:hover {
     background: #e5e7eb;
     border-color: #9ca3af;
+}
+
+[data-theme="light"] .app-loading {
+    background: rgba(248, 250, 252, 0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: var(--text-main);
+}
+[data-theme="light"] .immersive-loader-card {
+    background: var(--card-bg, #FFFFFF);
+    border-color: var(--border-accent, rgba(var(--primary-rgb), 0.35));
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12), 0 0 28px rgba(var(--primary-rgb), 0.12);
+}
+[data-theme="light"] .immersive-core {
+    background: var(--surface, #FFFFFF);
+    border-color: var(--border-accent);
+    color: var(--primary);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+[data-theme="light"] .immersive-loading-text {
+    color: var(--text-main, #0F172A);
+}
+[data-theme="light"] .immersive-loading-sub {
+    color: var(--text-muted, #475569);
 }

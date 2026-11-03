@@ -12,14 +12,26 @@
     flex-direction: column !important;
     padding: 0 !important;
     overflow: hidden !important;
-    border: 1px solid var(--border-accent, rgba(199, 154, 62, 0.35)) !important;
-    background: #121510 !important;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 40px rgba(199, 154, 62, 0.12) !important;
+    border: 1px solid var(--border-accent, rgba(var(--primary-rgb), 0.35)) !important;
+    background: var(--card-bg, #121510) !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 40px rgba(var(--primary-rgb), 0.12) !important;
 }
 
 [data-theme="light"] .studio-modal {
-    background: #FFFFFF !important;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18), 0 0 30px rgba(212, 175, 55, 0.15) !important;
+    background: var(--card-bg, #FFFFFF) !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18), 0 0 30px rgba(var(--primary-rgb), 0.15) !important;
+}
+
+body.has-custom-wallpaper .studio-modal {
+    background: rgba(23, 26, 20, 0.88) !important;
+    backdrop-filter: blur(28px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
+}
+
+[data-theme="light"] body.has-custom-wallpaper .studio-modal {
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(28px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
 }
 
 .studio-modal-header {
@@ -416,7 +428,7 @@
 }
 
 [data-theme="light"] .studio-live-preview {
-    background: #F8F9FA;
+    background: var(--bg-secondary, #F8F9FA);
 }
 
 .studio-preview-heading {
@@ -454,9 +466,15 @@
     margin-bottom: 6px;
 }
 
-.studio-slider-label span {
+.studio-slider-label span:first-child {
+    font-family: inherit;
+    color: var(--text-main);
+}
+
+.studio-slider-label span:last-child {
     font-family: var(--font-mono);
     color: var(--primary);
+    font-weight: 700;
 }
 
 .studio-range-slider {
@@ -609,7 +627,7 @@
     overflow: hidden;
     border: 1px solid var(--border-accent);
     border-radius: 12px;
-    background: #10120E;
+    background: var(--bg-main, #10120E);
     touch-action: none;
     margin: 8px auto;
     max-width: 100%;

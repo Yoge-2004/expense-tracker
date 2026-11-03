@@ -443,7 +443,7 @@ export const FloatingCalculator: React.FC = () => {
                 style={[
                   styles.closeBtn,
                   {
-                    backgroundColor: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)',
+                    backgroundColor: c.fillSubtle,
                     borderColor: c.border,
                   },
                 ]}
@@ -453,8 +453,9 @@ export const FloatingCalculator: React.FC = () => {
               </TouchableOpacity>
             </View>
 
+            <ScrollView bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.calcBodyScroll}>
             {/* Display Screen */}
-            <View style={[styles.calcScreen, { backgroundColor: isLight ? '#F1F5F9' : 'rgba(0,0,0,0.38)', borderColor: c.border }]}>
+            <View style={[styles.calcScreen, { backgroundColor: c.inputBg, borderColor: c.border }]}>
               <Text style={[styles.exprText, { color: c.textMuted }]} numberOfLines={1}>
                 {displayExpr}
               </Text>
@@ -476,7 +477,7 @@ export const FloatingCalculator: React.FC = () => {
                       style={[
                         styles.splitChip,
                         {
-                          backgroundColor: active ? c.primary : isLight ? '#F8FAFC' : 'rgba(255,255,255,0.05)',
+                          backgroundColor: active ? c.primary : c.fillSubtle,
                           borderColor: active ? c.primary : c.border,
                         },
                       ]}
@@ -484,7 +485,7 @@ export const FloatingCalculator: React.FC = () => {
                       <Text
                         style={[
                           styles.splitChipText,
-                          { color: active ? '#10120E' : c.textMuted, fontWeight: active ? '700' : '600' },
+                          { color: active ? c.onPrimary : c.textMuted, fontWeight: active ? '700' : '600' },
                         ]}
                       >
                         {num === 1 ? '1x' : `÷${num}`}
@@ -499,8 +500,8 @@ export const FloatingCalculator: React.FC = () => {
                 style={[styles.insertBtn, { backgroundColor: c.primary }]}
                 activeOpacity={0.8}
               >
-                <Text style={styles.insertBtnText}>Insert Amount</Text>
-                <Ionicons name="arrow-forward" size={13} color="#10120E" />
+                <Text style={[styles.insertBtnText, { color: c.onPrimary }]}>Insert Amount</Text>
+                <Ionicons name="arrow-forward" size={13} color={c.onPrimary} />
               </TouchableOpacity>
             </View>
 
@@ -510,7 +511,7 @@ export const FloatingCalculator: React.FC = () => {
                 <Text style={[styles.fxLabel, { color: c.textMuted }]}>Fx:</Text>
                 <TouchableOpacity
                   onPress={handleCycleFrom}
-                  style={[styles.fxSelectBtn, { backgroundColor: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)', borderColor: c.border }]}
+                  style={[styles.fxSelectBtn, { backgroundColor: c.fillSubtle, borderColor: c.border }]}
                   accessibilityLabel="Change source currency"
                 >
                   <Text style={[styles.fxSelectBtnText, { color: c.text }]}>{fxFrom} ▾</Text>
@@ -518,7 +519,7 @@ export const FloatingCalculator: React.FC = () => {
 
                 <TouchableOpacity
                   onPress={handleSwapFx}
-                  style={[styles.fxSwapBtn, { borderColor: c.border, backgroundColor: isLight ? '#F8F9FA' : 'rgba(255,255,255,0.08)' }]}
+                  style={[styles.fxSwapBtn, { borderColor: c.border, backgroundColor: c.fillSubtle }]}
                   accessibilityLabel="Swap currencies"
                 >
                   <Ionicons name="swap-horizontal" size={13} color={c.primary} />
@@ -526,7 +527,7 @@ export const FloatingCalculator: React.FC = () => {
 
                 <TouchableOpacity
                   onPress={handleCycleTo}
-                  style={[styles.fxSelectBtn, { backgroundColor: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)', borderColor: c.border }]}
+                  style={[styles.fxSelectBtn, { backgroundColor: c.fillSubtle, borderColor: c.border }]}
                   accessibilityLabel="Change target currency"
                 >
                   <Text style={[styles.fxSelectBtnText, { color: c.text }]}>{fxTo} ▾</Text>
@@ -538,7 +539,7 @@ export const FloatingCalculator: React.FC = () => {
                   style={[styles.fxConvertBtn, { backgroundColor: c.primary, opacity: isConverting ? 0.6 : 1 }]}
                   accessibilityLabel="Convert current value"
                 >
-                  <Text style={styles.fxConvertBtnText}>Convert</Text>
+                  <Text style={[styles.fxConvertBtnText, { color: c.onPrimary }]}>Convert</Text>
                 </TouchableOpacity>
               </View>
 
@@ -564,7 +565,7 @@ export const FloatingCalculator: React.FC = () => {
                     style={[
                       styles.fxChip,
                       {
-                        backgroundColor: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.05)',
+                        backgroundColor: c.fillSubtle,
                         borderColor: c.border,
                         opacity: isConverting ? 0.6 : 1,
                       },
@@ -579,27 +580,27 @@ export const FloatingCalculator: React.FC = () => {
             {/* Keypad Grid */}
             <View style={styles.keypadGrid}>
               {/* Row 1 */}
-              <TouchableOpacity onPress={handleClear} style={[styles.key, styles.funcKey, { backgroundColor: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)', borderColor: c.border }]}>
-                <Text style={[styles.keyText, { color: isLight ? '#0F172A' : '#ECE7D8' }]}>AC</Text>
+              <TouchableOpacity onPress={handleClear} style={[styles.key, styles.funcKey, { backgroundColor: c.fillStrong, borderColor: c.border }]}>
+                <Text style={[styles.keyText, { color: c.text }]}>AC</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleNegate} style={[styles.key, styles.funcKey, { backgroundColor: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)', borderColor: c.border }]}>
-                <Text style={[styles.keyText, { color: isLight ? '#0F172A' : '#ECE7D8' }]}>±</Text>
+              <TouchableOpacity onPress={handleNegate} style={[styles.key, styles.funcKey, { backgroundColor: c.fillStrong, borderColor: c.border }]}>
+                <Text style={[styles.keyText, { color: c.text }]}>±</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handlePercent} style={[styles.key, styles.funcKey, { backgroundColor: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)', borderColor: c.border }]}>
-                <Text style={[styles.keyText, { color: isLight ? '#0F172A' : '#ECE7D8' }]}>%</Text>
+              <TouchableOpacity onPress={handlePercent} style={[styles.key, styles.funcKey, { backgroundColor: c.fillStrong, borderColor: c.border }]}>
+                <Text style={[styles.keyText, { color: c.text }]}>%</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleOperator('÷')} style={[styles.key, styles.opKey, { backgroundColor: c.primary + '29', borderColor: c.primary + '52' }]}>
                 <Text style={[styles.opKeyText, { color: c.primary }]}>÷</Text>
               </TouchableOpacity>
 
               {/* Row 2 */}
-              <TouchableOpacity onPress={() => handleDigit('7')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
+              <TouchableOpacity onPress={() => handleDigit('7')} style={[styles.key, { backgroundColor: c.keyBg, borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>7</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDigit('8')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
+              <TouchableOpacity onPress={() => handleDigit('8')} style={[styles.key, { backgroundColor: c.keyBg, borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>8</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDigit('9')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
+              <TouchableOpacity onPress={() => handleDigit('9')} style={[styles.key, { backgroundColor: c.keyBg, borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>9</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleOperator('×')} style={[styles.key, styles.opKey, { backgroundColor: c.primary + '29', borderColor: c.primary + '52' }]}>
@@ -607,13 +608,13 @@ export const FloatingCalculator: React.FC = () => {
               </TouchableOpacity>
 
               {/* Row 3 */}
-              <TouchableOpacity onPress={() => handleDigit('4')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
+              <TouchableOpacity onPress={() => handleDigit('4')} style={[styles.key, { backgroundColor: c.keyBg, borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>4</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDigit('5')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
+              <TouchableOpacity onPress={() => handleDigit('5')} style={[styles.key, { backgroundColor: c.keyBg, borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>5</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDigit('6')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
+              <TouchableOpacity onPress={() => handleDigit('6')} style={[styles.key, { backgroundColor: c.keyBg, borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>6</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleOperator('−')} style={[styles.key, styles.opKey, { backgroundColor: c.primary + '29', borderColor: c.primary + '52' }]}>
@@ -621,13 +622,13 @@ export const FloatingCalculator: React.FC = () => {
               </TouchableOpacity>
 
               {/* Row 4 */}
-              <TouchableOpacity onPress={() => handleDigit('1')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
+              <TouchableOpacity onPress={() => handleDigit('1')} style={[styles.key, { backgroundColor: c.keyBg, borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>1</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDigit('2')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
+              <TouchableOpacity onPress={() => handleDigit('2')} style={[styles.key, { backgroundColor: c.keyBg, borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>2</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDigit('3')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
+              <TouchableOpacity onPress={() => handleDigit('3')} style={[styles.key, { backgroundColor: c.keyBg, borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>3</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleOperator('+')} style={[styles.key, styles.opKey, { backgroundColor: c.primary + '29', borderColor: c.primary + '52' }]}>
@@ -635,19 +636,20 @@ export const FloatingCalculator: React.FC = () => {
               </TouchableOpacity>
 
               {/* Row 5 */}
-              <TouchableOpacity onPress={() => handleDigit('0')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
+              <TouchableOpacity onPress={() => handleDigit('0')} style={[styles.key, { backgroundColor: c.keyBg, borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>0</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleDecimal} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
+              <TouchableOpacity onPress={handleDecimal} style={[styles.key, { backgroundColor: c.keyBg, borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleBackspace} style={[styles.key, styles.funcKey, { backgroundColor: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)', borderColor: c.border }]}>
+              <TouchableOpacity onPress={handleBackspace} style={[styles.key, styles.funcKey, { backgroundColor: c.fillStrong, borderColor: c.border }]}>
                 <Ionicons name="backspace-outline" size={18} color={c.textMuted} />
               </TouchableOpacity>
               <TouchableOpacity onPress={handleEquals} style={[styles.key, { backgroundColor: c.primary, borderColor: c.primary }]}>
-                <Text style={[styles.opKeyText, { color: '#10120E', fontWeight: '800' }]}>=</Text>
+                <Text style={[styles.opKeyText, { color: c.onPrimary, fontWeight: '800' }]}>=</Text>
               </TouchableOpacity>
             </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -690,11 +692,16 @@ const styles = StyleSheet.create({
   calcCard: {
     width: '100%',
     maxWidth: 420,
+    maxHeight: '88%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderWidth: 1,
     paddingHorizontal: 16,
     paddingTop: 12,
+    overflow: 'hidden',
+  },
+  calcBodyScroll: {
+    paddingBottom: 4,
   },
   calcHeader: {
     flexDirection: 'row',
@@ -798,11 +805,11 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
   fxSelectBtn: {
-    paddingHorizontal: 7,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
     borderWidth: 1,
-    flex: 1,
+    minWidth: 56,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -850,12 +857,12 @@ const styles = StyleSheet.create({
   keypadGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 4,
     justifyContent: 'space-between',
   },
   key: {
-    width: '23.4%',
-    height: 44,
+    width: '23.8%',
+    height: 40,
     borderRadius: 10,
     borderWidth: 1,
     justifyContent: 'center',

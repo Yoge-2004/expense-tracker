@@ -10,12 +10,15 @@ import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUpdate } from '../context/UpdateContext';
-
-const BANNER_BG = '#C79A3E';
-const BANNER_INK = '#14110A';
+import { usePreferences } from '../context/PreferencesContext';
+import { Colors, readableTextColor } from '../constants/theme';
 
 export default function UpdateBanner() {
   const { info, hasUpdate, openPrompt } = useUpdate();
+  const { theme, themeColors } = usePreferences();
+  const c = themeColors || Colors[theme || 'dark'];
+  const bannerBg = c.primary;
+  const bannerInk = c.onPrimary || readableTextColor(bannerBg);
   const insets = useSafeAreaInsets();
 
   if (!hasUpdate || !info) {
@@ -27,15 +30,15 @@ export default function UpdateBanner() {
       onPress={openPrompt}
       accessibilityRole="button"
       accessibilityLabel={`Update available, version ${info.latestVersion}. Tap to update.`}
-      style={[styles.banner, { paddingTop: insets.top + 8 }]}
+      style={[styles.banner, { backgroundColor: bannerBg, paddingTop: insets.top + 8 }]}
     >
       <View style={styles.row}>
-        <Ionicons name="cloud-download-outline" size={18} color={BANNER_INK} />
-        <Text style={styles.text} numberOfLines={1}>
+        <Ionicons name="cloud-download-outline" size={18} color={bannerInk} />
+        <Text style={[styles.text, { color: bannerInk }]} numberOfLines={1}>
           Update available · {info.latestVersion}
         </Text>
-        <View style={styles.cta}>
-          <Text style={styles.ctaText}>Update</Text>
+        <View style={[styles.cta, { backgroundColor: bannerInk }]}>
+          <Text style={[styles.ctaText, { color: bannerBg }]}>Update</Text>
         </View>
       </View>
     </Pressable>
@@ -44,7 +47,6 @@ export default function UpdateBanner() {
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: BANNER_BG,
     paddingBottom: 8,
     paddingHorizontal: 16,
   },
@@ -55,18 +57,15 @@ const styles = StyleSheet.create({
   },
   text: {
     flex: 1,
-    color: BANNER_INK,
     fontSize: 13,
     fontWeight: '700',
   },
   cta: {
-    backgroundColor: BANNER_INK,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 4,
   },
   ctaText: {
-    color: BANNER_BG,
     fontSize: 12,
     fontWeight: '800',
   },

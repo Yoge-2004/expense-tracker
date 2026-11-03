@@ -19,18 +19,18 @@
     overflow: hidden;
     animation: ambientGlowDrift 20s ease-in-out infinite alternate;
     background:
-        radial-gradient(circle at 14% 16%, rgba(var(--primary-rgb, 212, 175, 55), 0.16) 0%, transparent 46%),
-        radial-gradient(circle at 86% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 46% 86%, rgba(16, 185, 129, 0.10) 0%, transparent 54%),
-        radial-gradient(circle at 80% 78%, rgba(212, 175, 55, 0.09) 0%, transparent 42%);
+        radial-gradient(circle at 14% 16%, rgba(var(--primary-rgb, 199, 154, 62), 0.18) 0%, transparent 48%),
+        radial-gradient(circle at 86% 20%, rgba(var(--accent-rgb, 162, 62, 50), 0.14) 0%, transparent 50%),
+        radial-gradient(circle at 46% 86%, rgba(var(--highlight-rgb, 76, 122, 120), 0.12) 0%, transparent 54%),
+        radial-gradient(circle at 80% 78%, rgba(var(--primary-rgb, 199, 154, 62), 0.10) 0%, transparent 42%);
 }
 
 [data-theme="light"] .hero-bg {
     background:
-        radial-gradient(circle at 12% 14%, rgba(212, 175, 55, 0.20) 0%, transparent 48%),
-        radial-gradient(circle at 88% 18%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 50% 82%, rgba(16, 185, 129, 0.12) 0%, transparent 54%),
-        radial-gradient(circle at 78% 76%, rgba(212, 175, 55, 0.14) 0%, transparent 44%);
+        radial-gradient(circle at 12% 14%, rgba(var(--primary-rgb, 212, 175, 55), 0.18) 0%, transparent 48%),
+        radial-gradient(circle at 88% 18%, rgba(var(--accent-rgb, 231, 76, 60), 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 50% 82%, rgba(var(--highlight-rgb, 14, 165, 233), 0.12) 0%, transparent 54%),
+        radial-gradient(circle at 78% 76%, rgba(var(--primary-rgb, 212, 175, 55), 0.12) 0%, transparent 44%);
 }
 
 /* CARD ELEVATION & FROSTED GLASS EFFECT */
@@ -40,7 +40,7 @@
 .insight-card-item,
 .savings-goal-card,
 .budget-item {
-    background: rgba(23, 26, 20, 0.78);
+    background: var(--card-bg, rgba(23, 26, 20, 0.78));
     backdrop-filter: blur(20px) saturate(140%);
     -webkit-backdrop-filter: blur(20px) saturate(140%);
     border: 1px solid rgba(236, 231, 216, 0.10);
@@ -58,9 +58,9 @@
     background: rgba(255, 255, 255, 0.82);
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
-    border: 1px solid rgba(212, 175, 55, 0.22);
+    border: 1px solid rgba(var(--primary-rgb), 0.20);
     box-shadow:
-        0 14px 34px -10px rgba(180, 140, 60, 0.14),
+        0 14px 34px -10px rgba(15, 23, 42, 0.08), 0 0 16px rgba(var(--primary-rgb), 0.08),
         0 0 0 1px rgba(255, 255, 255, 0.6) inset;
 }
 
@@ -68,9 +68,9 @@
     background: rgba(255, 255, 255, 0.82);
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
-    border: 1px solid rgba(212, 175, 55, 0.22);
+    border: 1px solid rgba(var(--primary-rgb), 0.20);
     box-shadow:
-        0 14px 34px -10px rgba(180, 140, 60, 0.14),
+        0 14px 34px -10px rgba(15, 23, 42, 0.08), 0 0 16px rgba(var(--primary-rgb), 0.08),
         0 0 0 1px rgba(255, 255, 255, 0.6) inset;
 }
 
@@ -129,7 +129,7 @@
 [data-theme="light"] .metric-card::before,
 [data-theme="light"] .savings-goal-card::before,
 [data-theme="light"] .budget-item::before {
-    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.35), transparent);
+    background: linear-gradient(90deg, transparent, rgba(var(--primary-rgb), 0.35), transparent);
 }
 
 /* METRIC VALUES TYPOGRAPHY & TABULAR NUMERALS */
@@ -297,7 +297,7 @@
 
 [data-theme="light"] .empty-state-compact {
     background: rgba(255, 255, 255, 0.6);
-    border-color: rgba(212, 175, 55, 0.3);
+    border-color: rgba(var(--primary-rgb), 0.25);
 }
 
 /* TOP COMMAND BAR BLUR & RADIANT BORDER */
@@ -366,4 +366,104 @@ body.stealth-mode .money-flow-row:hover dd,
 body.stealth-mode .insight-card:hover strong,
 body.stealth-mode .insight-card:hover div[style*="font-size:18px"] {
     filter: none;
+}
+
+
+/* CUSTOM WALLPAPER & FROSTED GLASS SUPPORT */
+body.has-custom-wallpaper .hero-bg,
+body.has-custom-wallpaper .auth-hero-bg,
+[data-theme="light"] body.has-custom-wallpaper .hero-bg,
+[data-theme="light"] body.has-custom-wallpaper .auth-hero-bg {
+    background-image: var(--custom-wallpaper-bg) !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    opacity: 1 !important;
+    z-index: 0 !important;
+}
+
+body.has-custom-wallpaper .hero-orb {
+    opacity: 0.15 !important;
+}
+
+body.has-custom-wallpaper .animated-mesh-canvas {
+    opacity: 0.18 !important;
+}
+
+body.has-custom-wallpaper :is(
+    .card,
+    .metric-card,
+    .unified-ledger-card,
+    .insight-card,
+    .trend-card,
+    .insight-card-item,
+    .savings-goal-card,
+    .budget-item,
+    .budget-section,
+    .savings-section,
+    .loans-section,
+    .recent-transactions,
+    .insights-intelligence-panel,
+    .powerbi-slicers-container,
+    .bi-slicers-panel,
+    .bi-slicer-card,
+    .ai-assistant-container,
+    .ai-intelligence-panel,
+    .money-flow,
+    .floating-calc-panel,
+    .modal-content,
+    .modal,
+    .studio-modal,
+    .auth-card
+) {
+    background: rgba(23, 26, 20, 0.74) !important;
+    backdrop-filter: blur(24px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+    border-color: rgba(255, 255, 255, 0.10) !important;
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
+}
+
+[data-theme="light"] body.has-custom-wallpaper :is(
+    .card,
+    .metric-card,
+    .unified-ledger-card,
+    .insight-card,
+    .trend-card,
+    .insight-card-item,
+    .savings-goal-card,
+    .budget-item,
+    .budget-section,
+    .savings-section,
+    .loans-section,
+    .recent-transactions,
+    .insights-intelligence-panel,
+    .powerbi-slicers-container,
+    .bi-slicers-panel,
+    .bi-slicer-card,
+    .ai-assistant-container,
+    .ai-intelligence-panel,
+    .money-flow,
+    .floating-calc-panel,
+    .modal-content,
+    .modal,
+    .studio-modal,
+    .auth-card
+) {
+    background: rgba(255, 255, 255, 0.76) !important;
+    backdrop-filter: blur(24px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+    border-color: rgba(15, 23, 42, 0.10) !important;
+    box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.6) inset !important;
+}
+
+body.has-custom-wallpaper .top-bar {
+    background: rgba(23, 26, 20, 0.76) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+}
+
+[data-theme="light"] body.has-custom-wallpaper .top-bar {
+    background: rgba(255, 255, 255, 0.78) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
 }

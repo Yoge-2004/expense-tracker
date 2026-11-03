@@ -48,6 +48,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(23, 26, 20, 0.88)',
       surface: '#171A14',
       borderAccent: 'rgba(199, 154, 62, 0.35)',
+      paletteColors: ['#C79A3E', '#A23E32', '#4C7A78', '#5B8C5A', '#8B5E34', '#B06B5C', '#3B82F6', '#8B5CF6'],
     },
     lightPalette: {
       primary: '#D4AF37',
@@ -57,6 +58,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(255, 255, 255, 0.94)',
       surface: '#FFFFFF',
       borderAccent: 'rgba(212, 175, 55, 0.45)',
+      paletteColors: ['#D4AF37', '#E74C3C', '#0EA5E9', '#10B981', '#8B5CF6', '#DB2777', '#059669', '#D97706'],
     },
   },
   {
@@ -74,6 +76,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(13, 26, 20, 0.90)',
       surface: '#0F2119',
       borderAccent: 'rgba(16, 185, 129, 0.35)',
+      paletteColors: ['#10B981', '#34D399', '#06B6D4', '#059669', '#14B8A6', '#22C55E', '#38BDF8', '#84CC16'],
     },
     lightPalette: {
       primary: '#059669',
@@ -83,6 +86,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(240, 253, 244, 0.94)',
       surface: '#FFFFFF',
       borderAccent: 'rgba(5, 150, 105, 0.40)',
+      paletteColors: ['#059669', '#10B981', '#0D9488', '#047857', '#06B6D4', '#15803D', '#65A30D', '#0284C7'],
     },
   },
   {
@@ -100,6 +104,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(22, 17, 36, 0.90)',
       surface: '#1A142C',
       borderAccent: 'rgba(139, 92, 246, 0.35)',
+      paletteColors: ['#8B5CF6', '#EC4899', '#A855F7', '#7C3AED', '#6366F1', '#D946EF', '#F43F5E', '#3B82F6'],
     },
     lightPalette: {
       primary: '#7C3AED',
@@ -109,6 +114,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(250, 245, 255, 0.94)',
       surface: '#FFFFFF',
       borderAccent: 'rgba(124, 58, 237, 0.40)',
+      paletteColors: ['#7C3AED', '#DB2777', '#9333EA', '#6D28D9', '#4F46E5', '#C026D3', '#E11D48', '#2563EB'],
     },
   },
   {
@@ -126,6 +132,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(14, 23, 40, 0.90)',
       surface: '#111B30',
       borderAccent: 'rgba(56, 189, 248, 0.35)',
+      paletteColors: ['#38BDF8', '#6366F1', '#06B6D4', '#0284C7', '#818CF8', '#0EA5E9', '#A855F7', '#2DD4BF'],
     },
     lightPalette: {
       primary: '#0284C7',
@@ -135,6 +142,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(240, 249, 255, 0.94)',
       surface: '#FFFFFF',
       borderAccent: 'rgba(2, 132, 199, 0.40)',
+      paletteColors: ['#0284C7', '#4F46E5', '#0891B2', '#0369A1', '#6366F1', '#0284C7', '#7C3AED', '#0D9488'],
     },
   },
   {
@@ -152,6 +160,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(28, 18, 12, 0.90)',
       surface: '#241710',
       borderAccent: 'rgba(245, 158, 11, 0.35)',
+      paletteColors: ['#F59E0B', '#EF4444', '#FB923C', '#D97706', '#F43F5E', '#EA580C', '#EAB308', '#B45309'],
     },
     lightPalette: {
       primary: '#D97706',
@@ -161,6 +170,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(255, 247, 237, 0.94)',
       surface: '#FFFFFF',
       borderAccent: 'rgba(217, 119, 6, 0.40)',
+      paletteColors: ['#D97706', '#DC2626', '#EA580C', '#B45309', '#E11D48', '#C2410C', '#CA8A04', '#9A3412'],
     },
   },
   {
@@ -178,6 +188,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(27, 23, 14, 0.90)',
       surface: '#221D12',
       borderAccent: 'rgba(251, 191, 36, 0.35)',
+      paletteColors: ['#FBBF24', '#F43F5E', '#F59E0B', '#EAB308', '#FB7185', '#F97316', '#FCD34D', '#D97706'],
     },
     lightPalette: {
       primary: '#CA8A04',
@@ -187,6 +198,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(254, 252, 232, 0.94)',
       surface: '#FFFFFF',
       borderAccent: 'rgba(202, 138, 4, 0.40)',
+      paletteColors: ['#CA8A04', '#E11D48', '#D97706', '#A16207', '#F43F5E', '#EA580C', '#EAB308', '#B45309'],
     },
   },
 ];
@@ -220,6 +232,17 @@ export function hexToRgb(hex: string): RGB {
 
 export function getPerceivedLuminance(r: number, g: number, b: number): number {
   return (r * 299 + g * 587 + b * 114) / 1000;
+}
+
+/** The gradient end that follows the primary automatically until the user picks their own. */
+export function derivedGradientEnd(primary: string): string {
+  return adjustBrightness(primary, 0.85);
+}
+
+/** True when the palette's gradient was chosen by the user rather than derived from the primary. */
+export function hasCustomGradient(palette: { primary: string; primaryGradientEnd?: string } | null | undefined): boolean {
+  return !!palette && !!palette.primaryGradientEnd
+    && palette.primaryGradientEnd.toLowerCase() !== derivedGradientEnd(palette.primary).toLowerCase();
 }
 
 export function adjustBrightness(hex: string, factor: number): string {
@@ -311,6 +334,9 @@ export function quantizePixels(
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     const sat = max - min;
+    const satRatio = max > 0 ? sat / max : 0;
+    const lum = (r * 299 + g * 587 + b * 114) / 255000;
+    const isExtreme = lum < 0.08 || (lum > 0.96 && satRatio < 0.12) || satRatio < 0.06;
 
     const qR = Math.floor(r / 16);
     const qG = Math.floor(g / 16);
@@ -322,9 +348,9 @@ export function quantizePixels(
     existing.g += g;
     existing.b += b;
     existing.count++;
-    // Let saturation break ties without allowing tiny vivid details to dominate
-    // the overall image color.
-    existing.score += 1 + (sat / 255) * 1.5;
+    // Strongly reward saturated, chromatic pixels so vibrant elements are picked
+    // over massive dark or dull background regions
+    existing.score += isExtreme ? 0.2 : (1 + Math.pow(satRatio, 1.4) * 3.5);
     buckets.set(key, existing);
   }
 
@@ -334,55 +360,71 @@ export function quantizePixels(
     return isLight ? PRESET_BACKGROUNDS[0].lightPalette : PRESET_BACKGROUNDS[0].darkPalette;
   }
 
+  // Prefer first bucket with distinct chroma and good midtone luminance
+  let primaryBucket = sorted[0];
+  for (const bucket of sorted) {
+    const r = Math.round(bucket.r / bucket.count);
+    const g = Math.round(bucket.g / bucket.count);
+    const b = Math.round(bucket.b / bucket.count);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const satRatio = max > 0 ? (max - min) / max : 0;
+    const lum = (r * 299 + g * 587 + b * 114) / 255000;
+    if (satRatio >= 0.15 && lum >= 0.12 && lum <= 0.88) {
+      primaryBucket = bucket;
+      break;
+    }
+  }
+
   const primaryRgb = {
-    r: Math.round(sorted[0].r / sorted[0].count),
-    g: Math.round(sorted[0].g / sorted[0].count),
-    b: Math.round(sorted[0].b / sorted[0].count),
+    r: Math.round(primaryBucket.r / primaryBucket.count),
+    g: Math.round(primaryBucket.g / primaryBucket.count),
+    b: Math.round(primaryBucket.b / primaryBucket.count),
   };
 
-  // Find accent that has color distance from primary
+  const colorDistance = (a: RGB, b: RGB) => Math.sqrt(
+    Math.pow(a.r - b.r, 2) + Math.pow(a.g - b.g, 2) + Math.pow(a.b - b.b, 2)
+  );
+
+  // Find accent that has high color contrast/distance from primary
   let accentRgb = primaryRgb;
-  for (let i = 1; i < sorted.length; i++) {
+  for (let i = 0; i < sorted.length; i++) {
     const candidate = {
       r: Math.round(sorted[i].r / sorted[i].count),
       g: Math.round(sorted[i].g / sorted[i].count),
       b: Math.round(sorted[i].b / sorted[i].count),
     };
-    const distance = Math.sqrt(
-      Math.pow(candidate.r - primaryRgb.r, 2) +
-      Math.pow(candidate.g - primaryRgb.g, 2) +
-      Math.pow(candidate.b - primaryRgb.b, 2)
-    );
-    if (distance > 70) {
+    if (colorDistance(candidate, primaryRgb) > 70) {
       accentRgb = candidate;
       break;
     }
   }
-  const colorDistance = (a: RGB, b: RGB) => Math.sqrt(
-    Math.pow(a.r - b.r, 2) + Math.pow(a.g - b.g, 2) + Math.pow(a.b - b.b, 2)
-  );
-  if (colorDistance(primaryRgb, accentRgb) <= 70) accentRgb = colorVariant(primaryRgb, 34);
+  if (colorDistance(primaryRgb, accentRgb) <= 70) accentRgb = colorVariant(primaryRgb, 150);
 
-  // Find highlight
+  // Find highlight that differs from both primary and accent
   let highlightRgb = accentRgb;
-  for (let i = 1; i < sorted.length; i++) {
+  for (let i = 0; i < sorted.length; i++) {
     const candidate = {
       r: Math.round(sorted[i].r / sorted[i].count),
       g: Math.round(sorted[i].g / sorted[i].count),
       b: Math.round(sorted[i].b / sorted[i].count),
     };
-    const dist1 = Math.sqrt(Math.pow(candidate.r - primaryRgb.r, 2) + Math.pow(candidate.g - primaryRgb.g, 2) + Math.pow(candidate.b - primaryRgb.b, 2));
-    const dist2 = Math.sqrt(Math.pow(candidate.r - accentRgb.r, 2) + Math.pow(candidate.g - accentRgb.g, 2) + Math.pow(candidate.b - accentRgb.b, 2));
-    if (dist1 > 50 && dist2 > 50) {
+    const dist1 = colorDistance(candidate, primaryRgb);
+    const dist2 = colorDistance(candidate, accentRgb);
+    if (dist1 > 55 && dist2 > 55) {
       highlightRgb = candidate;
       break;
     }
   }
-  if (colorDistance(primaryRgb, highlightRgb) <= 50 || colorDistance(accentRgb, highlightRgb) <= 50) {
-    highlightRgb = colorVariant(primaryRgb, 190);
+  if (colorDistance(primaryRgb, highlightRgb) <= 55 || colorDistance(accentRgb, highlightRgb) <= 55) {
+    highlightRgb = colorVariant(primaryRgb, 60);
   }
 
-  const paletteColors: string[] = [];
+  const primaryHex = rgbToHex(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+  const accentHex = rgbToHex(accentRgb.r, accentRgb.g, accentRgb.b);
+  const highlightHex = rgbToHex(highlightRgb.r, highlightRgb.g, highlightRgb.b);
+  const gradientEndHex = adjustBrightness(primaryHex, isLight ? 0.85 : 0.80);
+
+  const paletteColors: string[] = [primaryHex, accentHex, highlightHex];
   for (const bucket of sorted) {
     const candidate = {
       r: Math.round(bucket.r / bucket.count),
@@ -394,24 +436,19 @@ export function quantizePixels(
     }
     if (paletteColors.length === 8) break;
   }
-  for (const hueOffset of [34, 96, 154, 218, 278]) {
+  for (const hueOffset of [45, 90, 135, 180, 225, 270, 315]) {
     if (paletteColors.length >= 8) break;
     const variant = colorVariant(primaryRgb, hueOffset);
     const hex = rgbToHex(variant.r, variant.g, variant.b);
     if (!paletteColors.includes(hex)) paletteColors.push(hex);
   }
 
-  const primaryHex = rgbToHex(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-  const accentHex = rgbToHex(accentRgb.r, accentRgb.g, accentRgb.b);
-  const highlightHex = rgbToHex(highlightRgb.r, highlightRgb.g, highlightRgb.b);
-  const gradientEndHex = adjustBrightness(primaryHex, isLight ? 0.85 : 0.80);
-
   // Compute card surface with subtle ambient tint matching primary
   const cardSurface = isLight
-    ? `rgba(${Math.min(255, 245 + Math.floor(primaryRgb.r * 0.04))}, ${Math.min(255, 248 + Math.floor(primaryRgb.g * 0.03))}, ${Math.min(255, 252 + Math.floor(primaryRgb.b * 0.03))}, 0.94)`
-    : `rgba(${Math.max(16, 18 + Math.floor(primaryRgb.r * 0.05))}, ${Math.max(18, 20 + Math.floor(primaryRgb.g * 0.05))}, ${Math.max(22, 24 + Math.floor(primaryRgb.b * 0.05))}, 0.90)`;
+    ? `rgba(${Math.min(255, 248 + Math.floor(primaryRgb.r * 0.02))}, ${Math.min(255, 248 + Math.floor(primaryRgb.g * 0.02))}, ${Math.min(255, 252 + Math.floor(primaryRgb.b * 0.02))}, 0.94)`
+    : `rgba(${Math.max(16, 20 + Math.floor(primaryRgb.r * 0.05))}, ${Math.max(18, 22 + Math.floor(primaryRgb.g * 0.05))}, ${Math.max(22, 24 + Math.floor(primaryRgb.b * 0.05))}, 0.90)`;
 
-  const opaqueSurface = isLight ? '#FFFFFF' : adjustBrightness(rgbToHex(primaryRgb.r, primaryRgb.g, primaryRgb.b), 0.12);
+  const opaqueSurface = isLight ? '#FFFFFF' : adjustBrightness(primaryHex, 0.12);
 
   return {
     primary: primaryHex,

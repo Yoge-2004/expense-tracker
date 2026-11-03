@@ -36,7 +36,7 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
       style={({ pressed }) => [
         styles.toggleBtn,
         {
-          backgroundColor: isLight ? '#FFFFFF' : c.card,
+          backgroundColor: c.card,
           borderColor: c.borderAccent,
           opacity: pressed ? 0.75 : 1,
         },

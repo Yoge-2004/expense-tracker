@@ -302,9 +302,9 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
               style={[styles.saveBtn, { backgroundColor: c.primary }]}
             >
               {saving ? (
-                <ActivityIndicator size="small" color="#10120E" />
+                <ActivityIndicator size="small" color={c.onPrimary} />
               ) : (
-                <Text style={styles.saveBtnText}>Update Subscription</Text>
+                <Text style={[styles.saveBtnText, { color: c.onPrimary }]}>Update Subscription</Text>
               )}
             </TouchableOpacity>
           </ThemedScrollView>

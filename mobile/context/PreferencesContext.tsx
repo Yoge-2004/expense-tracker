@@ -15,7 +15,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useColorScheme } from 'react-native';
 import * as Font from 'expo-font';
 import { safeStorageGet, safeStorageSet, readSavedTheme, persistSavedTheme, apiRequest, getSession } from '../services/api';
-import { Colors, ThemeColors, FontChoice, FontTokens, FontPresets, ensureColorContrast } from '../constants/theme';
+import { Colors, ThemeColors, FontChoice, FontTokens, FontPresets, ensureColorContrast, buildCategoryPalette } from '../constants/theme';
 import { ExtractedPalette, PRESET_BACKGROUNDS, PresetBackground } from '../services/paletteExtractor';
 
 export interface BackgroundAssetConfig {
@@ -106,9 +106,29 @@ export function createThemeColors(
   const activePalette = customPalette ?? (theme === 'light' ? preset.lightPalette : preset.darkPalette);
   if (!activePalette) return baseColors;
 
-  const surfaceTint = customPalette ? 0.62 : 0.18;
-  const appSurface = blendThemeSurface(baseColors.bg, activePalette.surface || baseColors.bg, surfaceTint);
-  const cardSurface = blendThemeSurface(baseColors.card, activePalette.card || baseColors.card, surfaceTint);
+  const isLight = theme === 'light';
+
+  // Derive surfaces:
+  // In light theme, the canvas and cards must ALWAYS remain light, clean, and radiant.
+  // In dark theme, the canvas and cards remain deep obsidian and elevated frosted glass.
+  let appSurface: string;
+  let cardSurface: string;
+
+  if (customPalette) {
+    if (isLight) {
+      appSurface = blendThemeSurface('#F8F9FA', activePalette.surface || activePalette.primary || baseColors.primary, 0.05);
+      cardSurface = blendThemeSurface('#FFFFFF', activePalette.card || activePalette.primary || baseColors.primary, 0.04);
+    } else {
+      appSurface = blendThemeSurface('#10120E', activePalette.surface || activePalette.primary || baseColors.primary, 0.12);
+      cardSurface = blendThemeSurface(baseColors.card, activePalette.card || activePalette.primary || baseColors.card, 0.16);
+    }
+  } else {
+    // Preset: Use preset-calibrated surface and card
+    const surfaceTint = isLight ? 0.10 : 0.18;
+    appSurface = blendThemeSurface(baseColors.bg, activePalette.surface || baseColors.bg, surfaceTint);
+    cardSurface = blendThemeSurface(baseColors.card, activePalette.card || baseColors.card, surfaceTint);
+  }
+
   const primary = ensureColorContrast(
     ensureColorContrast(activePalette.primary || baseColors.primary, appSurface),
     cardSurface
@@ -121,16 +141,21 @@ export function createThemeColors(
     ensureColorContrast(activePalette.highlight || baseColors.highlight, appSurface),
     cardSurface
   );
-  const success = ensureColorContrast(highlight, cardSurface);
-  const warning = ensureColorContrast(activePalette.primaryGradientEnd || baseColors.warning, cardSurface);
-  const danger = ensureColorContrast(baseColors.danger, cardSurface);
+  // Semantic financial colors remain true to their financial meaning:
+  // Inflows/Success = Green, Savings/Warning = Amber, Outflows/Danger = Red
+  const success = ensureColorContrast(baseColors.success, cardSurface, 3.5);
+  const warning = ensureColorContrast(baseColors.warning, cardSurface, 3.5);
+  const danger = ensureColorContrast(baseColors.danger, cardSurface, 3.5);
   const onPrimary = readableTextForSurfaces(primary);
   const textColor = readableTextForSurfaces(appSurface, cardSurface);
   const mutedText = ensureColorContrast(baseColors.textMuted, appSurface, 4.5);
   const primaryGradientEnd = ensureColorContrast(activePalette.primaryGradientEnd || baseColors.primaryGradientEnd, onPrimary);
-  const sourcePalette = activePalette.paletteColors?.filter((color) => /^#[0-9a-f]{6}$/i.test(color)) || [];
-  const paletteColors = (sourcePalette.length >= 3 ? sourcePalette : [primary, accent, highlight, primaryGradientEnd])
-    .map((color) => ensureColorContrast(color, cardSurface));
+  // Category/chart colours follow the user's theme colours plus fixed hues
+  // Category/chart colours follow the user's extracted palette spectrum plus theme seeds
+  const paletteSeeds = Array.isArray(activePalette.paletteColors) && activePalette.paletteColors.length > 0
+    ? activePalette.paletteColors
+    : [primary, accent, highlight, primaryGradientEnd];
+  const paletteColors = buildCategoryPalette(paletteSeeds, cardSurface);
 
   return {
     ...baseColors,
@@ -156,8 +181,19 @@ export function createThemeColors(
     surface: appSurface,
     surfaceHover: blendThemeSurface(baseColors.surfaceHover, primary, 0.08),
     bg: appSurface,
-    inputBg: blendThemeSurface(baseColors.inputBg, cardSurface, 0.10),
+    inputBg: isLight ? '#F1F5F9' : blendThemeSurface(baseColors.inputBg, cardSurface, 0.10),
+    fillSubtle: blendThemeSurface(cardSurface, textColor, 0.06),
+    fillStrong: blendThemeSurface(cardSurface, textColor, 0.12),
+    keyBg: isLight ? cardSurface : blendThemeSurface(cardSurface, textColor, 0.05),
+    onSuccess: readableTextForSurfaces(success),
+    onWarning: readableTextForSurfaces(warning),
+    onDanger: readableTextForSurfaces(danger),
+    onAccent: readableTextForSurfaces(accent),
+    onHighlight: readableTextForSurfaces(highlight),
+    border: isLight ? primary + '26' : primary + '2E',
     borderAccent: primary + '80',
+    inputBorder: primary + '33',
+    trackBg: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
     scrollThumb: primary + '80',
     cardTotalBg: primary + '1F',
     cardTotalBorder: primary + '52',

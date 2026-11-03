@@ -61,7 +61,10 @@ public class AdminBootstrapRunner implements CommandLineRunner {
             existing.setRole(Role.ROLE_SUPER_ADMIN);
             existing.setAccountLocked(false);
             existing.setEnabled(true);
-            if (existing.getPassword() == null && bootstrapPassword != null && !bootstrapPassword.isBlank()) {
+            // The bootstrap secret is the recovery credential for this explicitly
+            // configured account. Reset it even when an old hash already exists;
+            // otherwise a recovered database can retain an unusable password.
+            if (bootstrapPassword != null && !bootstrapPassword.isBlank()) {
                 existing.setPassword(passwordEncoder.encode(bootstrapPassword));
             }
             if (!existing.hasSecurityPin() && bootstrapPin != null && !bootstrapPin.isBlank()) {

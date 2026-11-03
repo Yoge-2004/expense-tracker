@@ -49,7 +49,7 @@ function ensureFeedbackUi() {
                     <span id="loadingText" class="immersive-loading-text">Connecting to the server…</span>
                     <span class="immersive-loading-sub">Secured Ledger Synchronization</span>
                     <div id="loadingProgressTrack" class="loading-progress-track" style="display:none; width:100%; height:4px; background:rgba(255,255,255,0.12); border-radius:2px; overflow:hidden; margin-top:4px;">
-                        <div id="loadingProgressBar" class="loading-progress-bar" style="width:0; height:100%; background:linear-gradient(90deg, #c79a3e, #f59e0b); transition: width 0.15s ease-out; border-radius:2px;"></div>
+                        <div id="loadingProgressBar" class="loading-progress-bar" style="width:0; height:100%; background:var(--primary-gradient, linear-gradient(90deg, var(--primary, #c79a3e), var(--accent, #f59e0b))); transition: width 0.15s ease-out; border-radius:2px;"></div>
                     </div>
                 </div>
             </div>
@@ -406,7 +406,8 @@ async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
     const isVerifyPin = endpoint.includes("/verify-security-pin");
     const shouldSkipAuthRedirect = options.skipAuthRedirect === true || isDeleteAccount || isVerifyPin;
 
-    if (response.status === 401 && !endpoint.includes("/auth/") && !shouldSkipAuthRedirect) {
+    const isFakeToken = typeof token === "string" && token.startsWith("fake-");
+    if (response.status === 401 && !endpoint.includes("/auth/") && !shouldSkipAuthRedirect && !isFakeToken) {
         ["token", "userId", "userName", "userEmail", "userRole", "userUsername", "userProfilePicture"].forEach((key) => localStorage.removeItem(key));
         window.location.href = "index.html";
         throw new Error("Your session has expired. Please sign in again.");
