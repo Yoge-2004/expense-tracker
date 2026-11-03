@@ -11,6 +11,8 @@
  * with built-in realistic sample receipts for immediate one-tap testing.
  */
 
+import { Image } from 'react-native';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { API_BASE_URL, safeStorageGet } from './api';
 
 export interface ReceiptBreakdown {
@@ -279,9 +281,65 @@ export function parseReceiptText(text: string): ParsedReceipt {
   };
 }
 
+/** Phone photos are 3-8 MB; the receipt text is readable at this width and the upload is ~10x smaller. */
+export const OCR_MAX_IMAGE_WIDTH = 1600;
+/** The server may run tesseract up to three times (15 s each) on a cold, shared CPU. */
+export const OCR_TIMEOUT_MS = 60_000;
+
+function imageWidth(uri: string): Promise<number | null> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), 3000);
+    try {
+      Image.getSize(
+        uri,
+        (width) => {
+          clearTimeout(timer);
+          resolve(width);
+        },
+        () => {
+          clearTimeout(timer);
+          resolve(null);
+        }
+      );
+    } catch {
+      clearTimeout(timer);
+      resolve(null);
+    }
+  });
+}
+
 /**
- * Scans an uploaded receipt image/file via backend OCR (/api/expenses/ocr)
- * or falls back to client text parsing.
+ * Shrinks and re-encodes a photo as JPEG before upload. Re-encoding also applies the camera's EXIF
+ * rotation, which the server's image reader ignores (a sideways receipt reads as gibberish).
+ * Falls back to the original file if the image cannot be processed.
+ */
+async function prepareImageForUpload(
+  uri: string,
+  name: string,
+  mimeType: string
+): Promise<{ uri: string; name: string; type: string }> {
+  if (!mimeType.toLowerCase().startsWith('image/')) return { uri, name, type: mimeType };
+  try {
+    const width = await imageWidth(uri);
+    const actions = width && width > OCR_MAX_IMAGE_WIDTH ? [{ resize: { width: OCR_MAX_IMAGE_WIDTH } }] : [];
+    const out = await ImageManipulator.manipulateAsync(uri, actions, {
+      compress: 0.8,
+      format: ImageManipulator.SaveFormat.JPEG,
+    });
+    const base = name.replace(/\.[A-Za-z0-9]{2,5}$/, '') || 'receipt';
+    return { uri: out.uri, name: `${base}.jpg`, type: 'image/jpeg' };
+  } catch (err) {
+    console.warn('[ReceiptOCR] Could not shrink the image, uploading the original:', err);
+    return { uri, name, type: mimeType };
+  }
+}
+
+/**
+ * Scans a receipt image through the backend OCR (/api/expenses/ocr).
+ *
+ * Failures are reported, never disguised: an earlier version returned a built-in sample receipt when
+ * the call failed, so a failed scan looked like a scan of somebody else's receipt.
+ * @throws Error with a message that says what went wrong and what to do about it.
  */
 export async function scanReceiptWithOcr(
   fileUri: string,
@@ -289,48 +347,57 @@ export async function scanReceiptWithOcr(
   mimeType: string = 'image/png'
 ): Promise<ParsedReceipt> {
   const token = await safeStorageGet('auth_token');
+  const file = await prepareImageForUpload(fileUri, fileName, mimeType);
 
-  // Attempt backend OCR upload
+  const formData = new FormData();
+  formData.append('file', { uri: file.uri, name: file.name, type: file.type } as any);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), OCR_TIMEOUT_MS);
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  let res: Response;
   try {
-    const formData = new FormData();
-    formData.append('file', {
-      uri: fileUri,
-      name: fileName,
-      type: mimeType,
-    } as any);
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
-
-    const headers: Record<string, string> = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const res = await fetch(`${API_BASE_URL}/expenses/ocr`, {
+    res = await fetch(`${API_BASE_URL}/expenses/ocr`, {
       method: 'POST',
       headers,
       body: formData,
       signal: controller.signal,
     });
-    clearTimeout(timeout);
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.success) {
-        return {
-          rawText: data.rawText || '',
-          amount: typeof data.amount === 'number' ? data.amount : 0,
-          date: data.date || new Date().toISOString().slice(0, 10),
-          merchant: data.merchant || 'Receipt Purchase',
-          category: data.category || 'Miscellaneous',
-          confidence: data.confidence || 88,
-          breakdown: data.breakdown || {},
-        };
-      }
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      throw new Error('The scan took too long and was stopped. Check your connection and try again.');
     }
-  } catch (err) {
-    console.warn('[ReceiptOCR] Backend OCR call failed or timed out, evaluating fallback:', err);
+    throw new Error("Couldn't reach the server to scan the receipt. Check your connection and try again.");
+  } finally {
+    clearTimeout(timeout);
   }
 
-  // If text or fallback, return parsed sample
-  return parseReceiptText(SAMPLE_RECEIPTS[0].text);
+  if (res.status === 401 || res.status === 403) {
+    throw new Error('Your session has expired. Sign in again to scan receipts.');
+  }
+  if (res.status === 413) {
+    throw new Error('That file is too large for the server. Try a smaller photo.');
+  }
+  if (!res.ok) {
+    throw new Error(`The server could not scan this receipt (error ${res.status}). Try again in a moment.`);
+  }
+
+  const data = await res.json().catch(() => null);
+  if (!data || !data.success) {
+    throw new Error(
+      (data && data.message) || 'No readable text was found on this receipt. Try a clearer, well-lit photo.'
+    );
+  }
+
+  return {
+    rawText: data.rawText || '',
+    amount: typeof data.amount === 'number' ? data.amount : 0,
+    date: data.date || new Date().toISOString().slice(0, 10),
+    merchant: data.merchant || 'Receipt Purchase',
+    category: data.category || 'Miscellaneous',
+    confidence: data.confidence || 88,
+    breakdown: data.breakdown || {},
+  };
 }
