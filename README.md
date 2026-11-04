@@ -105,6 +105,7 @@
 - [🚀 Quick Start Guide](#-quick-start-guide)
 - [⚙️ Environment Variables Reference](#️-environment-variables-reference)
 - [🧪 Testing Ecosystem (557+ Tests)](#-testing-ecosystem-557-tests)
+- [🧭 Project Status, Operations & Known Issues](#-project-status-operations--known-issues)
 - [📦 Releases & Installation](#-releases--installation)
 
 </details>
@@ -543,6 +544,8 @@ Powered by client-side WebAssembly, the scanner processes invoices locally on th
 - **Comprehensive Tax Parsing**: Automatically tokenizes and isolates Base Net, CGST, SGST, IGST, VAT, Gratuity, and Promotional Discounts.
 - **Interactive Breakdown Matrix**: Renders visual tax pills below the scan viewport. Clicking any pill auto-fills the expense form in 1 click.
 
+> **Where OCR actually runs.** The website runs Tesseract.js in the browser and falls back to the server (`POST /api/expenses/ocr`, Tesseract 5 in the container) when the worker or CDN is unavailable. The **mobile app always uses the server**: photos are re-encoded as JPEG at most 1600 px wide before upload, the timeout is 60 s, and a failure is reported with a specific message (offline, timed out, session expired, file too large, nothing readable). It never substitutes a sample receipt. See [Project Status](#-project-status-operations--known-issues).
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/add-expense.png">
   <img src="docs/images/website/add-expense.png" alt="Multi-Tax Receipt OCR Scanner Interface" width="100%" />
@@ -777,12 +780,12 @@ The mobile companion application in `mobile/` is built on **React Native 0.88, R
 
 ### 3. SMS Banking Debit Parser Engine
 
-The mobile client embeds a high-precision regex extraction engine that automatically intercepts bank SMS notifications:
+The mobile client embeds a regex extraction engine (`mobile/services/debitParser.ts`) for bank debit messages:
 - Extracts **Amount**, **Merchant / Beneficiary**, **Date / Time**, and **Account Last 4 Digits**.
-- Supports formats across major global and regional financial institutions:
-  - **Indian Banks / UPI**: SBI, HDFC, ICICI, Axis, Kotak, Google Pay, PhonePe, Paytm, CRED.
-  - **Global Providers**: Chase, Bank of America, Wells Fargo, Citi, Barclays, HSBC, Revolut, Monzo.
-- Automatically launches a non-intrusive 1-tap confirmation card to record the expense immediately upon receipt.
+- Understands formats from Indian banks / UPI apps (SBI, HDFC, ICICI, Axis, Kotak, Google Pay, PhonePe, Paytm, CRED) and global providers (Chase, Bank of America, Wells Fargo, Citi, Barclays, HSBC, Revolut, Monzo).
+- Shows a 1-tap confirmation card before recording anything.
+
+> **Status: detection is manual or clipboard-based, not automatic.** The parser runs when you (a) paste a message in Profile, or (b) open the app while a bank message is on the clipboard (`mobile/app/_layout.tsx`). The app has **no permission or native component that reads SMS or other apps' notifications** (`RECEIVE_SMS`/`READ_SMS` and a notification-listener service are not declared; `expo-notifications` only sees this app's own notifications). Truly automatic capture needs native Android code; the design is in [Project Status](#-project-status-operations--known-issues).
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
@@ -1032,6 +1035,13 @@ docker run --rm -p 7860:7860   -e SPRING_DATASOURCE_URL="jdbc:h2:mem:expensetrac
 | `CORS_ALLOWED_ORIGINS` | Backend | Comma-separated allowed web origins | `http://localhost:5500,https://app.netlify.app` |
 | `HF_TOKEN` | Sync / ML | Hugging Face user write access token | `hf_••••••••••••` |
 | `DB_BACKUP_KEY` | Disaster Recovery | AES encryption key for client SQLite snapshots | 256-bit passphrase |
+| `HF_SPACE_REPO` | Disaster Recovery | Hugging Face repo that stores the encrypted snapshot (`hf.db.space`) | `Yoge-2004/expense-tracker-backend` |
+| `HF_REPO_TYPE` | Disaster Recovery | Type of that repo: `space` (default) or `dataset` | `space` |
+| `HF_DB_PATH` | Disaster Recovery | Path of the snapshot inside that repo | `database/expense_tracker.sqlite.enc` |
+| `hf.db.max-shrink-percent` | Disaster Recovery | A backup is refused if it has more than this % fewer rows than the stored snapshot (ignored under 50 rows) | `30` |
+| `app.trusted-proxy.enabled` / `.cidrs` / `.hops` | Backend | Honour `X-Forwarded-For` only from these proxies; client IP is read from the right of the chain | `false` / loopback / `0` |
+| `SYNC_LOOPBACK_BYPASS_ENABLED` | Backend | Let loopback callers use `/api/sync/*` without the sync token | `false` |
+| `ADMIN_EMAIL`, `NOTIFICATIONS_ENABLED`, `NOTIFICATIONS_ZONE` | Backend | Bootstrap admin account; notification scheduler switch and time zone | `Asia/Kolkata` |
 | `MODEL_ID` | ML Fleet | Hugging Face model repository ID | `Yoge-2004/expense-intelligence-model` |
 | `MODEL_TYPE` | ML Fleet | Inference engine choice (`tfidf` or `transformer`) | `tfidf` |
 
@@ -1076,6 +1086,77 @@ ExpenseTracker PRO enforces end-to-end quality assurance across unit, integratio
 ```
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
+
+## 🧭 Project Status, Operations & Known Issues
+
+This section is the working record for whoever picks the project up next. It contains **no secret values**: credentials are described by name and purpose only, and the actual values live in GitHub / Hugging Face secret stores and in the owner's private notes. Never put a token in this repository: it is public.
+
+### Deployment & operations
+
+| Item | How it works |
+|---|---|
+| Production | One Docker Space, `Yoge-2004/expense-tracker-backend`: nginx on :7860 in front of Spring Boot :8080 (and the Python ML service). The Space repository is **public**. |
+| Deploy | `.github/workflows/deploy-backend-hf.yml` builds the jar and uploads to the Space. It can run on push to `main` (paths: `src/**`, `pom.xml`, `Dockerfile`, `docker/**`, `ml/**`) and by manual dispatch. It does **not** wait for tests. It can be switched off in the Actions tab and was deliberately switched off at the time of writing: check its state before expecting a push to deploy. |
+| Side effects of a deploy | The container restarts. The workflow also frees old large LFS files and compacts the Space's git history (`super_squash_history`). Hugging Face rebuilds a Docker Space on **every** commit to its repo, so each snapshot backup commit also restarts the app. |
+| Android release | `.github/workflows/android-apk.yml` (manual) builds with EAS and publishes a GitHub release tagged from `mobile/app.json`. Phones on a build without the install permission must install the first new APK manually; in-app update works afterwards. |
+| CI | `ci.yml` (backend tests, web checks incl. mobile `tsc` + Jest, Playwright, hygiene) runs on PRs and `main`, and can be dispatched on any branch. A failing Maven step is turned into annotations by `.github/scripts/annotate_maven_failures.py`; job logs cannot be downloaded through the API, annotations can. |
+| Hugging Face from CI | Some networks (including the AI sandbox used to maintain this repo) cannot reach `huggingface.co`. `.github/workflows/hf-snapshot-recovery.yml` runs `scripts/recover_hf_snapshot.py` from GitHub (actions: `list`, `health`, `pause`, `restore-oid`, `cleanup`, `resume`). It needs a repository secret named `HF_RECOVERY_TOKEN`, which does not exist by default. |
+| Upload limits | nginx `client_max_body_size 60m`, matching Spring (`50MB` file / `60MB` request). nginx's default is 1 MB and silently rejected receipt photos, avatars, imports and theme saves with a wallpaper before this was set. nginx also gzips text and JSON responses. |
+
+### Credentials & secrets (names only)
+
+| Name | Where | Purpose |
+|---|---|---|
+| GitHub personal access token | the maintainer's machine / AI session | Pushing branches, opening PRs, dispatching workflows. Needs repository contents + workflows (+ Actions secrets only when creating the temporary recovery secret). Prefer a fine-grained token with a short expiry. |
+| `HF_TOKEN` | GitHub repository secret and Space secret | Hugging Face write access for the deploy upload and for the app's snapshot backups. |
+| `EXPO_TOKEN` | GitHub repository secret | EAS builds for the Android workflow. |
+| `HF_RECOVERY_TOKEN` | GitHub repository secret (create only when needed, delete afterwards) | Used by the recovery workflow. |
+| `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD` | Space secrets | Primary PostgreSQL (Neon). |
+| `JWT_SECRET` | Space secret | Signs sessions. `application.properties` ships a **fallback default for development only**; production must set its own. |
+| `DB_BACKUP_KEY` | Space secret | AES-256-GCM key for snapshots. Changing it makes existing snapshots unreadable. |
+| sync token (`app.sync.secret-key`) | Space secret | Authorises `/api/sync/*` calls. |
+
+### Database, fallback and the snapshot
+
+- Primary: Neon PostgreSQL. If it is unreachable the app serves an **emergency H2 fallback** (`databaseMode: FALLBACK` on `GET /api/health`) restored from the encrypted snapshot `database/expense_tracker.sqlite.enc`; writes made there are merged back to Neon on recovery (`docs/fallback-sync.md`).
+- The snapshot is a single file overwritten in place and committed to the same repository as the code. Design limits to be aware of: every backup commit restarts the Space; history is compacted on deploy, so older snapshot versions are not retained; the repo is public (the file is encrypted, so secrecy rests on `DB_BACKUP_KEY`); and during a Neon outage the fallback plus this snapshot are the only copy of new data.
+- Guard: a scheduled or startup backup is **refused** when its export has more than `hf.db.max-shrink-percent` (30%) fewer rows than the stored snapshot. An administrator can force a backup from the console.
+- Recommended hardening (not done): move snapshots to a private dataset repo (`HF_SPACE_REPO` + `HF_REPO_TYPE=dataset`) so commits there neither restart the Space nor get compacted; take scheduled `pg_dump` exports to private storage with retention; and add a restore drill against real PostgreSQL in CI.
+
+### Device ledger vault: export and restore from the phone
+
+The mobile app keeps a copy of each user's ledger on the device and **preserves a copy before any sync can overwrite it** (`mobile/services/ledgerVault.ts`). Use it when the server's data is missing or authentication fails:
+1. **Export without signing in:** on the login screen choose the export of data saved on this device. It writes every user's cached ledger (expenses, incomes, budgets, goals, loans, subscriptions) to a file; it works offline.
+2. **Export while signed in:** Export / Import, "device copy".
+3. **Restore to the server:** after signing in, import a device copy. `mobile/utils/ledgerReconcile.ts` compares it with what the server has and re-creates only the missing records, then verifies the result.
+
+The app never uploads anything while authentication is failing: unauthenticated writes would let anyone write to the database. Data stays on the device until a valid session exists.
+
+### Receipt OCR
+
+- Web: Tesseract.js in the browser; falls back to `POST /api/expenses/ocr`.
+- Mobile: always `POST /api/expenses/ocr`. Photos are shrunk to at most 1600 px wide (JPEG, quality 0.8) before upload, which also applies the camera's EXIF rotation, and the request timeout is 60 s.
+- Server: Tesseract runs single-threaded (`OMP_THREAD_LIMIT=1`), up to three attempts of 15 s each; text uploads are capped at 20,000 characters.
+- Historical bugs fixed: the app returned a built-in sample receipt whenever the call failed, and nginx rejected photos over 1 MB.
+
+### Automatic transaction capture (not implemented natively)
+
+What exists: the debit parser, the clipboard check on app open, manual paste, and a local-notification listener that only sees this app's own notifications. What is missing is any component that reads incoming SMS or other apps' notifications.
+
+Design to implement it: a small local Expo module (Kotlin) containing a `NotificationListenerService` (the user grants *Notification access* in system settings; no SMS permission is needed and it also catches bank and UPI app notifications) that appends matching notification texts to a native queue in `SharedPreferences`. On app foreground the JS side drains the queue, runs `debitParser`, de-duplicates (amount + merchant + minute), and shows the existing 1-tap confirmation card. This needs a native build and a device to test.
+
+### Appearance and colours
+
+Wallpaper colour extraction produces a palette that is applied through CSS variables on the web (`--primary`, `--primary-rgb`, fill and on-colour tokens, a `palettechange` event) and through theme tokens on mobile (`mobile/constants/theme.ts`). Recent work removed hard-coded colours from components so palettes apply in both themes.
+
+**Open:** `mobile/__tests__/themeTokens.test.ts` currently fails two category-colour assertions (the palette depends on the wallpaper and does not follow a chosen primary), and the Playwright check for the subscription metric token expects `#C0565E` but gets `#b96e65`. Both are on `main` and should be reconciled with the intended behaviour of the 8-colour spectrum change.
+
+### Other known issues and backlog
+
+- The website dashboard is a single long page with no navigation; a sidebar/views redesign was started but never pushed.
+- The mobile APK is a ~102 MB universal build; an arm64-only build would be much smaller but drops 32-bit devices.
+- Backend: very large classes (`ExportServiceImpl`, `RangeReportController`, `ExpenseController`), schema managed by `ddl-auto=update` plus a hand-rolled migration class, no Flyway/Liquibase, no coverage / static-analysis / dependency-scan gates, no Actuator/Micrometer, direct `now()` calls instead of an injected `Clock`, and unbounded `findAll()` calls in schedulers and reports.
+- Tests run on H2 while production is PostgreSQL.
 
 ## 📦 Releases & Installation
 
