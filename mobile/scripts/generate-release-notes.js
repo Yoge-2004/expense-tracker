@@ -27,8 +27,8 @@ function main() {
   const ipaShaPath = path.join(baseDir, 'expense-tracker.ipa.sha256');
   const outputPath = path.join(baseDir, 'release-notes.md');
 
-  let version = '1.0.11';
-  let versionCode = 13;
+  let version = '1.0.12';
+  let versionCode = 14;
   let packageId = 'com.yoge.expensetracker';
   let bundleId = 'com.yoge.expensetracker';
   if (fs.existsSync(appJsonPath)) {
@@ -65,20 +65,20 @@ function main() {
   const lines = [
     '# Expense Tracker Mobile v' + version,
     '',
-    'A theming and polish release: **colours now follow your palette everywhere, and the build runs on updated libraries**.',
+    'A receipt-scanning release: **a failed scan now says what went wrong, and photos are prepared on the phone before upload**.',
     '',
     '---',
     '',
     "## What's New in v" + version,
     '',
-    '### Colours that follow your palette',
-    '- Spend-by-category and other chart colours come from your chosen theme colours instead of the wallpaper image.',
-    '- Primary Brand and Primary Gradient are now two separate choices in the theme studio; picking one no longer overwrites the other.',
-    '- Buttons, chips, badges, the avatar, the calculator and spinners use text colours chosen for readability on your palette.',
-    '- Progress bars and the offline banner follow the theme instead of fixed colours.',
+    '### Receipt scanning',
+    '- A failed scan now tells you why (offline, timed out, session expired, file too large, nothing readable) instead of showing a sample receipt.',
+    '- Photos are resized to at most 1600 px wide and rotated correctly on the phone before upload, so scans start sooner.',
+    '- The scan waits up to 60 seconds for a slow server.',
     '',
-    '### Under the hood',
-    '- Updated TypeScript, Expo packages and test tooling to their latest compatible versions.',
+    '### With the matching server update',
+    '- Large photos, profile pictures and file imports are accepted up to 60 MB; they were refused above 1 MB.',
+    '- Text recognition on the server runs faster.',
     '- The data-safety tools from 1.0.10 (safety copy, compare and restore) are unchanged.',
     '',
     '---',

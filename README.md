@@ -21,7 +21,7 @@
     <img src="https://img.shields.io/badge/Hugging%20Face-Spaces%20Live-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black&labelColor=141812" alt="Hugging Face Space" />
   </a>
   <a href="https://github.com/Yoge-2004/expense-tracker/releases/latest">
-    <img src="https://img.shields.io/github/v/release/Yoge-2004/expense-tracker?label=Release%20v1.0.11&style=for-the-badge&color=C79A3E&labelColor=141812" alt="Release" />
+    <img src="https://img.shields.io/github/v/release/Yoge-2004/expense-tracker?label=Release%20v1.0.12&style=for-the-badge&color=C79A3E&labelColor=141812" alt="Release" />
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-Apache_2.0-D22128?style=for-the-badge&logo=apache&labelColor=141812" alt="Apache 2.0 License" />
@@ -1160,7 +1160,7 @@ Wallpaper colour extraction produces a palette that is applied through CSS varia
 
 ## 📦 Releases & Installation
 
-- **Latest Android APK**: [**Download v1.0.11 (Build 13)**](https://github.com/Yoge-2004/expense-tracker/releases/latest)
+- **Latest Android APK**: [**Download v1.0.12 (Build 14)**](https://github.com/Yoge-2004/expense-tracker/releases/latest)
 - **Detailed Release Notes**: Read [RELEASE_NOTES.md](RELEASE_NOTES.md) for full change logs, security enhancements, and migration notes.
 
 ---

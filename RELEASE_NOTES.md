@@ -1,5 +1,16 @@
 # Expense Tracker Release Notes
 
+## Version 1.0.12 (Android Version Code: 14, iOS Build: 10)
+
+A receipt-scanning release for the mobile app.
+
+- **Honest scan results**: a failed scan now says what went wrong (offline, timed out, session expired, file too large, nothing readable) instead of showing a sample receipt.
+- **Smaller uploads**: photos are resized to at most 1600 px wide and rotated correctly on the phone before they are sent, so scans start sooner.
+- **More patient**: the scan waits up to 60 seconds for a slow server.
+- **Server updates that go with it**: large photos, profile pictures and file imports are accepted up to 60 MB (they were refused above 1 MB), and text recognition runs faster.
+
+---
+
 ## Version 1.0.11 (Android Version Code: 13, iOS Build: 9)
 
 A theming and polish release for the mobile app.
