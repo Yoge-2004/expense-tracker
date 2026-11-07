@@ -62,7 +62,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
   userId,
   currSymbol,
   isStealthMode,
-  isLargeScreen,
+  isLargeScreen: _isLargeScreen,
   colors: c,
   theme,
   loans,

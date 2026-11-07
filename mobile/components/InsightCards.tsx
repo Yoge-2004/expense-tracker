@@ -195,7 +195,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
             });
           }
         }
-      } catch (_) {}
+      } catch {}
 
       // 2. Anomaly scoring (Model 4)
       try {
@@ -220,7 +220,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
             topOutlier: top ? { desc: top.description || "Outlier", amount: top.amount, score: top.anomaly_score } : undefined,
           });
         }
-      } catch (_) {}
+      } catch {}
     }
 
     loadMlInsights();
@@ -500,8 +500,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
       peak: peakExpense as ExpenseItem | null,
       recurringTotal,
       recurringRatio,
-      totalMonthlyInflow,
-      activeInflow,
+        activeInflow,
       netCashFlow,
       savingsRate,
       totalGoalsTarget,
@@ -528,8 +527,6 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
     discretionarySpent,
     discretionaryPct,
     potentialSavings,
-    weekendSpent,
-    weekdaySpent,
     avgWeekendTx,
     avgWeekdayTx,
     weekendMultiplier,
@@ -543,7 +540,6 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
     peak,
     recurringTotal,
     recurringRatio,
-    totalMonthlyInflow,
     activeInflow,
     netCashFlow,
     savingsRate,

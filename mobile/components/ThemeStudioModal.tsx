@@ -10,13 +10,12 @@
  * 4. Element Colors Customizer: Fine-tune or override individual UI element colors.
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   StyleSheet,
   View,
   TouchableOpacity,
-  ScrollView,
   Image,
   ActivityIndicator,
   useWindowDimensions,
@@ -31,7 +30,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { usePreferences, BackgroundAssetConfig } from '../context/PreferencesContext';
 import * as Font from 'expo-font';
-import { FontChoice, FontPresets, CategoryPalette } from '../constants/theme';
+import { FontChoice, CategoryPalette } from '../constants/theme';
 import {
   PRESET_BACKGROUNDS,
   PresetBackground,
@@ -50,9 +49,13 @@ interface ThemeStudioModalProps {
 
 type StudioTab = 'typography' | 'atmosphere' | 'colors';
 type ThemeProfile = {
-  id: string; name: string; theme: 'dark' | 'light'; fontChoice: FontChoice;
+  id: string;
+  name: string;
+  fontChoice: FontChoice;
   customFontFamily: string | null;
-  backgroundAsset: BackgroundAssetConfig; customPalette: ExtractedPalette | null;
+  backgroundAsset: BackgroundAssetConfig;
+  customPalette: ExtractedPalette | null;
+  theme?: 'dark' | 'light';
 };
 
 export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onClose }) => {
@@ -98,21 +101,33 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
 
   const saveThemeProfile = async () => {
     const name = profileName.trim();
-    if (!name) { setExtractSuccess('Enter a name for this theme profile.'); return; }
+    if (!name) { setExtractSuccess('Enter a name for this custom theme.'); return; }
     const profile: ThemeProfile = {
-      id: editingProfileId || `${Date.now()}`, name, theme, fontChoice, customFontFamily,
-      backgroundAsset: { ...backgroundAsset }, customPalette: customPalette ? { ...customPalette } : null,
+      id: editingProfileId || `${Date.now()}`,
+      name,
+      fontChoice,
+      customFontFamily,
+      backgroundAsset: { ...backgroundAsset },
+      customPalette: customPalette ? { ...customPalette } : null,
     };
     const next = editingProfileId
-      ? themeProfiles.map((item) => item.id === editingProfileId ? profile : item)
+      ? themeProfiles.map((item) => (item.id === editingProfileId ? profile : item))
       : [...themeProfiles, profile];
     await persistProfiles(next);
-    setEditingProfileId(null); setProfileName(''); setExtractSuccess(`Saved “${name}”.`);
+    setEditingProfileId(null);
+    setProfileName('');
+    setExtractSuccess(`Saved custom theme “${name}”.`);
   };
 
-  const editThemeProfile = async (profile: ThemeProfile) => {
-    setEditingProfileId(profile.id); setProfileName(profile.name);
-    await applyThemeProfile(profile);
+  const editThemeProfile = (profile: ThemeProfile) => {
+    setEditingProfileId(profile.id);
+    setProfileName(profile.name);
+    void applyThemeProfile(profile);
+  };
+
+  const cancelEditProfile = () => {
+    setEditingProfileId(null);
+    setProfileName('');
   };
 
   const deleteThemeProfile = async (profile: ThemeProfile) => {
@@ -121,6 +136,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
       setEditingProfileId(null);
       setProfileName('');
     }
+    setExtractSuccess(`Deleted “${profile.name}”.`);
   };
 
   const applyThemeProfile = async (profile: ThemeProfile) => {
@@ -128,7 +144,10 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
     await setFontChoice(profile.fontChoice);
     await setBackgroundAsset(profile.backgroundAsset);
     await setCustomPalette(profile.customPalette);
-    if (profile.theme !== theme) await toggleTheme();
+    if (profile.theme && profile.theme !== theme) {
+      await toggleTheme();
+    }
+    setExtractSuccess(`Applied custom theme “${profile.name}”.`);
   };
 
   // Custom Color Picker & Target States
@@ -146,23 +165,6 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
     const rgb = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
     return rgb ? `#${rgb.slice(1, 4).map((part) => Number(part).toString(16).padStart(2, '0')).join('')}` : '#171A14';
   };
-
-  // Curated accent swatch choices for quick customization
-  const QUICK_ACCENTS = useMemo(
-    () => [
-      { name: 'Imperial Gold', hex: '#C79A3E' },
-      { name: 'Emerald Jade', hex: '#10B981' },
-      { name: 'Galactic Amethyst', hex: '#8B5CF6' },
-      { name: 'Cyber Cobalt', hex: '#38BDF8' },
-      { name: 'Sunset Amber', hex: '#F59E0B' },
-      { name: 'Crimson Flame', hex: '#EF4444' },
-      { name: 'Vivid Rose', hex: '#EC4899' },
-      { name: 'Persian Teal', hex: '#0D9488' },
-      { name: 'Deep Indigo', hex: '#6366F1' },
-      { name: 'Warm Umber', hex: '#8B5E34' },
-    ],
-    []
-  );
 
   const handlePickLocalImage = async () => {
     try {
@@ -355,44 +357,6 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
     await setBackgroundAsset({
       ...backgroundAsset,
       overlayOpacity: opacity,
-    });
-  };
-
-  const handleSelectQuickPrimary = async (hex: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    const basePalette = customPalette || {
-      primary: hex,
-      primaryGradientEnd: adjustBrightness(hex, 0.85),
-      accent: c.accent,
-      highlight: c.highlight,
-      card: c.card,
-      surface: c.surface,
-      borderAccent: hex + '55',
-    };
-
-    await setCustomPalette({
-      ...basePalette,
-      primary: hex,
-      primaryGradientEnd: adjustBrightness(hex, 0.85),
-      borderAccent: hex + '55',
-    });
-  };
-
-  const handleSelectQuickAccent = async (hex: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    const basePalette = customPalette || {
-      primary: c.primary,
-      primaryGradientEnd: c.primaryGradientEnd,
-      accent: hex,
-      highlight: c.highlight,
-      card: c.card,
-      surface: c.surface,
-      borderAccent: c.borderAccent,
-    };
-
-    await setCustomPalette({
-      ...basePalette,
-      accent: hex,
     });
   };
 
@@ -857,34 +821,132 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                   Harmonized element colors extracted from the background and active theme:
                 </Text>
 
+                {/* Custom Themes Management (Decoupled from Dark/Light Mode) */}
                 <View style={[styles.customBgCard, { backgroundColor: c.card, borderColor: c.border }]}>
-                  <Text style={[styles.subSectionTitle, { color: c.textMuted }]}>MY THEME PROFILES</Text>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Ionicons name="color-palette-outline" size={16} color={c.primary} />
+                      <Text style={[styles.subSectionTitle, { color: c.text, marginTop: 0 }]}>SAVED CUSTOM THEMES</Text>
+                    </View>
+                    <Text style={{ fontSize: 11, color: c.textMuted }}>{themeProfiles.length} Saved</Text>
+                  </View>
+                  <Text style={[styles.fontCardSub, { color: c.textMuted, marginBottom: 12 }]}>
+                    Store custom themes with full CRUD operations. Custom themes preserve your wallpaper, surface tints, palette colors, and typography independently of light/dark mode.
+                  </Text>
+
+                  {/* Create / Update Input Row */}
+                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                     <TextInput
                       value={profileName}
                       onChangeText={setProfileName}
-                      placeholder="Name this theme profile"
+                      placeholder="Theme name (e.g. Neon Cyber, Emerald Oasis)"
                       placeholderTextColor={c.textMuted}
                       maxLength={40}
                       style={[styles.urlInput, { flex: 1, backgroundColor: c.inputBg, color: c.text, borderColor: c.inputBorder }]}
                     />
                     <TouchableOpacity onPress={saveThemeProfile} style={[styles.applyHexBtn, { backgroundColor: c.primary }]}>
-                      <Text style={[styles.applyHexBtnText, { color: c.onPrimary }]}>{editingProfileId ? 'Update' : 'Save'}</Text>
+                      <Ionicons name={editingProfileId ? 'checkmark' : 'add'} size={15} color={c.onPrimary} />
+                      <Text style={[styles.applyHexBtnText, { color: c.onPrimary }]}>{editingProfileId ? 'Update' : 'Save Theme'}</Text>
                     </TouchableOpacity>
+                    {editingProfileId && (
+                      <TouchableOpacity onPress={cancelEditProfile} style={[styles.applyHexBtn, { backgroundColor: c.inputBg, borderColor: c.border, borderWidth: 1 }]}>
+                        <Ionicons name="close" size={15} color={c.textMuted} />
+                      </TouchableOpacity>
+                    )}
                   </View>
+
+                  {/* Themes List (Read / List, Update, Delete, Apply) */}
                   {themeProfiles.length === 0 ? (
-                    <Text style={[styles.fontCardSub, { color: c.textMuted }]}>Save a combination of wallpaper, colors, font, and light/dark mode for later.</Text>
-                  ) : themeProfiles.map((profile) => (
-                    <View key={profile.id} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 7, paddingVertical: 4 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.fontCardTitle, { color: c.text }]}>{profile.name}</Text>
-                        <Text style={[styles.fontCardSub, { color: c.textMuted }]}>{profile.theme === 'light' ? 'Light' : 'Dark'} · {profile.fontChoice}</Text>
-                      </View>
-                      <TouchableOpacity onPress={() => void editThemeProfile(profile)} style={[styles.dimmerChip, { backgroundColor: c.inputBg, borderColor: c.border }]}><Text style={[styles.dimmerChipText, { color: c.text }]}>Edit</Text></TouchableOpacity>
-                      <TouchableOpacity onPress={() => void applyThemeProfile(profile)} style={[styles.dimmerChip, { backgroundColor: c.inputBg, borderColor: c.border }]}><Text style={[styles.dimmerChipText, { color: c.primary }]}>Apply</Text></TouchableOpacity>
-                      <TouchableOpacity onPress={() => void deleteThemeProfile(profile)} style={[styles.dimmerChip, { backgroundColor: c.inputBg, borderColor: c.border }]}><Text style={[styles.dimmerChipText, { color: c.accent }]}>Delete</Text></TouchableOpacity>
+                    <View style={{ paddingVertical: 12, alignItems: 'center' }}>
+                      <Text style={[styles.fontCardSub, { color: c.textMuted, textAlign: 'center' }]}>
+                        No custom themes created yet. Customize your colors, wallpaper, and fonts above, give it a name, and tap Save Theme.
+                      </Text>
                     </View>
-                  ))}
+                  ) : (
+                    <View style={{ gap: 8, marginTop: 10 }}>
+                      {themeProfiles.map((profile) => {
+                        const pColors = profile.customPalette;
+                        const dots = [
+                          pColors?.primary || c.primary,
+                          pColors?.accent || c.accent,
+                          pColors?.highlight || c.highlight,
+                          pColors?.card || c.card,
+                        ];
+                        const bgLabel = profile.backgroundAsset.type === 'custom'
+                          ? 'Wallpaper'
+                          : profile.backgroundAsset.type === 'preset'
+                          ? (profile.backgroundAsset.presetId || 'Preset')
+                          : 'Solid';
+
+                        return (
+                          <View
+                            key={profile.id}
+                            style={{
+                              backgroundColor: c.inputBg,
+                              borderRadius: 12,
+                              padding: 10,
+                              borderWidth: 1,
+                              borderColor: editingProfileId === profile.id ? c.primary : c.border,
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: 10,
+                            }}
+                          >
+                            <View style={{ flex: 1, gap: 4 }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <Text style={[styles.fontCardTitle, { color: c.text, fontSize: 14 }]}>
+                                  {profile.name}
+                                </Text>
+                                <View style={{ flexDirection: 'row', gap: 3, alignItems: 'center' }}>
+                                  {dots.map((hex, dotIdx) => (
+                                    <View
+                                      key={dotIdx}
+                                      style={{
+                                        width: 10,
+                                        height: 10,
+                                        borderRadius: 5,
+                                        backgroundColor: hex,
+                                        borderWidth: 1,
+                                        borderColor: 'rgba(0,0,0,0.15)',
+                                      }}
+                                    />
+                                  ))}
+                                </View>
+                              </View>
+                              <Text style={[styles.fontCardSub, { color: c.textMuted, fontSize: 11 }]}>
+                                {bgLabel} · {profile.fontChoice}
+                              </Text>
+                            </View>
+
+                            <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                              <TouchableOpacity
+                                onPress={() => void applyThemeProfile(profile)}
+                                style={[styles.dimmerChip, { backgroundColor: c.primary, borderColor: c.primary, paddingHorizontal: 10, paddingVertical: 5 }]}
+                                accessibilityLabel={`Apply theme ${profile.name}`}
+                              >
+                                <Text style={[styles.dimmerChipText, { color: c.onPrimary, fontWeight: '700' }]}>Apply</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() => editThemeProfile(profile)}
+                                style={[styles.dimmerChip, { backgroundColor: c.card, borderColor: c.border, paddingHorizontal: 8, paddingVertical: 5 }]}
+                                accessibilityLabel={`Edit theme ${profile.name}`}
+                              >
+                                <Ionicons name="pencil-outline" size={13} color={c.text} />
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() => void deleteThemeProfile(profile)}
+                                style={[styles.dimmerChip, { backgroundColor: c.danger + '18', borderColor: c.danger + '40', paddingHorizontal: 8, paddingVertical: 5 }]}
+                                accessibilityLabel={`Delete theme ${profile.name}`}
+                              >
+                                <Ionicons name="trash-outline" size={13} color={c.danger} />
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
                 </View>
 
                 {/* Swatches Grid (Tap to Select Target & Inspect) */}

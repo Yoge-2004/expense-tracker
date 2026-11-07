@@ -105,7 +105,7 @@ export async function checkForAppUpdate(): Promise<AppReleaseInfo> {
     }
 
     return releaseInfoFromGitHub(await response.json(), CURRENT_APP_VERSION);
-  } catch (error) {
+  } catch {
     return {
       hasUpdate: false,
       currentVersion: CURRENT_APP_VERSION,

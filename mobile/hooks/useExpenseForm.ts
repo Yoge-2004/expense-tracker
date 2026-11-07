@@ -163,7 +163,7 @@ export function useExpenseForm({
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
           }
         }
-      } catch (_) {
+      } catch {
         // Silently skip if network or ML unavailable
       } finally {
         setIsAiClassifying(false);
@@ -205,7 +205,7 @@ export function useExpenseForm({
             });
           setMerchantSuggestions(valid.slice(0, 4));
         }
-      } catch (_) {
+      } catch {
         // Silently skip if network or ML unavailable
       } finally {
         setIsMatchingMerchant(false);
@@ -262,7 +262,7 @@ export function useExpenseForm({
           }
         }
         setDuplicateMatch(null);
-      } catch (_) {
+      } catch {
         setDuplicateMatch(null);
       } finally {
         setIsCheckingDuplicates(false);

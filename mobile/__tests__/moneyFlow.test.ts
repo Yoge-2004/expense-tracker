@@ -1,7 +1,6 @@
 import {
   monthKey,
   shiftMonth,
-  monthLabel,
   kindOf,
   effectiveMonth,
   earnedTotal,

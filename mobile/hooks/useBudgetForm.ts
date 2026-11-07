@@ -53,7 +53,7 @@ export function useBudgetForm({
       if (Array.isArray(data)) {
         setExistingBudgets(data);
       }
-    } catch (e) {
+    } catch {
       // ignore
     } finally {
       setIsLoadingBudgets(false);

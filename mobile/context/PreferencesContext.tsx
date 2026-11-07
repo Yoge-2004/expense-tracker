@@ -116,11 +116,19 @@ export function createThemeColors(
 
   if (customPalette) {
     if (isLight) {
-      appSurface = blendThemeSurface('#F8F9FA', activePalette.surface || activePalette.primary || baseColors.primary, 0.05);
-      cardSurface = blendThemeSurface('#FFFFFF', activePalette.card || activePalette.primary || baseColors.primary, 0.04);
+      appSurface = activePalette.surface && activePalette.surface !== '#FFFFFF'
+        ? activePalette.surface
+        : blendThemeSurface('#F6F8FA', activePalette.primary || baseColors.primary, 0.12);
+      cardSurface = activePalette.card && !activePalette.card.startsWith('#FFFFFF')
+        ? activePalette.card
+        : blendThemeSurface('#FFFFFF', activePalette.primary || baseColors.primary, 0.09);
     } else {
-      appSurface = blendThemeSurface('#10120E', activePalette.surface || activePalette.primary || baseColors.primary, 0.12);
-      cardSurface = blendThemeSurface(baseColors.card, activePalette.card || activePalette.primary || baseColors.card, 0.16);
+      appSurface = activePalette.surface && activePalette.surface !== '#10120E'
+        ? activePalette.surface
+        : blendThemeSurface('#0D1117', activePalette.primary || baseColors.primary, 0.25);
+      cardSurface = activePalette.card && activePalette.card !== '#161814'
+        ? activePalette.card
+        : blendThemeSurface(baseColors.card, activePalette.primary || baseColors.card, 0.30);
     }
   } else {
     // Preset: Use preset-calibrated surface and card
@@ -181,10 +189,10 @@ export function createThemeColors(
     surface: appSurface,
     surfaceHover: blendThemeSurface(baseColors.surfaceHover, primary, 0.08),
     bg: appSurface,
-    inputBg: isLight ? '#F1F5F9' : blendThemeSurface(baseColors.inputBg, cardSurface, 0.10),
-    fillSubtle: blendThemeSurface(cardSurface, textColor, 0.06),
-    fillStrong: blendThemeSurface(cardSurface, textColor, 0.12),
-    keyBg: isLight ? cardSurface : blendThemeSurface(cardSurface, textColor, 0.05),
+    inputBg: isLight ? blendThemeSurface(cardSurface, appSurface, 0.35) : blendThemeSurface(baseColors.inputBg, cardSurface, 0.22),
+    fillSubtle: blendThemeSurface(cardSurface, textColor, 0.07),
+    fillStrong: blendThemeSurface(cardSurface, textColor, 0.14),
+    keyBg: isLight ? cardSurface : blendThemeSurface(cardSurface, textColor, 0.08),
     onSuccess: readableTextForSurfaces(success),
     onWarning: readableTextForSurfaces(warning),
     onDanger: readableTextForSurfaces(danger),

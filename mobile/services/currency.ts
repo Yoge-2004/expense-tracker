@@ -190,7 +190,7 @@ export async function getExchangeRate(fromCurrency: string, toCurrency = 'INR'):
         return Number(parsed.rates[to]);
       }
     }
-  } catch (_) {}
+  } catch {}
 
   // 2. Network fetch from open central-bank rate endpoint (open.er-api.com)
   try {
@@ -205,7 +205,7 @@ export async function getExchangeRate(fromCurrency: string, toCurrency = 'INR'):
             cacheKey,
             JSON.stringify({ timestamp: Date.now(), rates: data.rates })
           );
-        } catch (_) {}
+        } catch {}
         return rate;
       }
     }

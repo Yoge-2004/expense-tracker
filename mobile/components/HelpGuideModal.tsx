@@ -11,7 +11,6 @@ import {
   ScrollView,
   TouchableOpacity,
   useWindowDimensions,
-  Platform,
 } from 'react-native';
 import { ThemedText as Text } from './ThemedText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

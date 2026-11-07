@@ -11,8 +11,7 @@ import {
   Modal,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  Dimensions,
-  useWindowDimensions,
+
 } from 'react-native';
 import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,8 +45,6 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
 }) => {
   const { theme } = useAuth();
   const c = Colors[theme || 'dark'];
-  const isLight = theme === 'light';
-  const { width } = useWindowDimensions();
 
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());

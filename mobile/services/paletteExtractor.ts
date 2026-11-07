@@ -290,35 +290,6 @@ export function adjustBrightness(hex: string, factor: number): string {
   return rgbToHex(r * factor, g * factor, b * factor);
 }
 
-function colorVariant(color: RGB, hueOffset: number): RGB {
-  const red = color.r / 255, green = color.g / 255, blue = color.b / 255;
-  const max = Math.max(red, green, blue), min = Math.min(red, green, blue);
-  const delta = max - min;
-  let hue = 0;
-  if (delta > 0) {
-    if (max === red) hue = 60 * (((green - blue) / delta) % 6);
-    else if (max === green) hue = 60 * ((blue - red) / delta + 2);
-    else hue = 60 * ((red - green) / delta + 4);
-  }
-  hue = (hue + hueOffset + 360) % 360;
-  const lightness = Math.min(0.64, Math.max(0.42, (max + min) / 2));
-  const saturation = Math.min(0.82, Math.max(0.58, delta / (1 - Math.abs(2 * lightness - 1))));
-  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
-  const x = chroma * (1 - Math.abs(((hue / 60) % 2) - 1));
-  const match = lightness - chroma / 2;
-  const sectors: RGB[] = [
-    { r: chroma, g: x, b: 0 }, { r: x, g: chroma, b: 0 },
-    { r: 0, g: chroma, b: x }, { r: 0, g: x, b: chroma },
-    { r: x, g: 0, b: chroma }, { r: chroma, g: 0, b: x },
-  ];
-  const variant = sectors[Math.floor(hue / 60) % 6];
-  return {
-    r: Math.round((variant.r + match) * 255),
-    g: Math.round((variant.g + match) * 255),
-    b: Math.round((variant.b + match) * 255),
-  };
-}
-
 // Fast Base64 lookup table
 const B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 const B64_LOOKUP = new Uint8Array(256);
@@ -467,10 +438,12 @@ export function quantizePixels(
   const pRgb = hexToRgb(primaryHex);
 
   const cardSurface = isLight
-    ? `rgba(${Math.min(255, 248 + Math.floor(pRgb.r * 0.02))}, ${Math.min(255, 248 + Math.floor(pRgb.g * 0.02))}, ${Math.min(255, 252 + Math.floor(pRgb.b * 0.02))}, 0.94)`
-    : `rgba(${Math.max(16, 20 + Math.floor(pRgb.r * 0.05))}, ${Math.max(18, 22 + Math.floor(pRgb.g * 0.05))}, ${Math.max(22, 24 + Math.floor(pRgb.b * 0.05))}, 0.90)`;
+    ? hslToHex(primaryH, Math.min(0.20, Math.max(0.08, primaryS * 0.28)), 0.98)
+    : hslToHex(primaryH, Math.min(0.42, Math.max(0.18, primaryS * 0.55)), 0.14);
 
-  const opaqueSurface = isLight ? '#FFFFFF' : adjustBrightness(primaryHex, 0.12);
+  const opaqueSurface = isLight
+    ? hslToHex(primaryH, Math.min(0.25, Math.max(0.10, primaryS * 0.35)), 0.94)
+    : hslToHex(primaryH, Math.min(0.40, Math.max(0.16, primaryS * 0.50)), 0.08);
 
   return {
     primary: primaryHex,
@@ -506,7 +479,7 @@ export async function extractPaletteFromImageUri(
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             resolve(quantizePixels(imgData.data, isLight));
-          } catch (error) {
+          } catch {
             reject(new Error('This image URL does not allow palette extraction. Try downloading the image first.'));
           }
         };

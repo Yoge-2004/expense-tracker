@@ -94,7 +94,7 @@ if (!isExpoGo) {
         try {
           const val = await AsyncStorage.getItem(NOTIFICATION_SOUND_KEY);
           playSound = val === null ? true : val === 'true';
-        } catch (_) {}
+        } catch {}
         return {
           shouldShowAlert: true,
           shouldPlaySound: playSound,
@@ -104,7 +104,7 @@ if (!isExpoGo) {
         };
       },
     });
-  } catch (e) {
+  } catch {
     console.log('[Notifications] Module not available in this runtime.');
   }
 }
@@ -466,7 +466,7 @@ export async function detectAndAddExpenseFromMessage(
             });
             if (matched?.id) matchedCategoryId = matched.id;
           }
-        } catch (_) {
+        } catch {
           // Gracefully fallback to keyword heuristic if ML engine is unreachable
         }
 
@@ -482,7 +482,7 @@ export async function detectAndAddExpenseFromMessage(
         if (!matchedCategoryId && allCats.length > 0) {
           matchedCategoryId = allCats[0].id;
         }
-      } catch (_) {}
+      } catch {}
 
       const description = parsed.merchant
         ? `${parsed.merchant}${parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : ''}`
@@ -661,10 +661,10 @@ export function registerIncomingNotificationListener(userId?: string | null) {
       remove: () => {
         try {
           subReceived?.remove?.();
-        } catch (_) {}
+        } catch {}
         try {
           subResponse?.remove?.();
-        } catch (_) {}
+        } catch {}
       },
     };
   } catch (e) {

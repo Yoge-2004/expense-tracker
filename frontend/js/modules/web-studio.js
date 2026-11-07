@@ -616,8 +616,12 @@
         currentPrimaryEnd = adjustBrightness(primaryHex, isLight ? 0.85 : 0.80);
         currentAccent = accentHex;
         currentHighlight = highlightHex;
-        currentCardSurface = isLight ? '#FFFFFF' : '#171A14';
-        currentAppSurface = isLight ? '#F8F9FA' : '#10120E';
+        currentCardSurface = isLight
+            ? hslToHex(primaryH, Math.min(0.20, Math.max(0.08, primaryS * 0.28)), 0.98)
+            : hslToHex(primaryH, Math.min(0.42, Math.max(0.18, primaryS * 0.55)), 0.14);
+        currentAppSurface = isLight
+            ? hslToHex(primaryH, Math.min(0.25, Math.max(0.10, primaryS * 0.35)), 0.94)
+            : hslToHex(primaryH, Math.min(0.40, Math.max(0.16, primaryS * 0.50)), 0.08);
         currentWallpaperType = 'custom';
         currentWallpaperUri = canvas.toDataURL('image/jpeg', 0.88);
 

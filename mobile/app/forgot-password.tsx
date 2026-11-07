@@ -42,7 +42,6 @@ export default function ForgotPasswordScreen() {
   const { showAlert } = useAlert();
   const router = useRouter();
   const c = themeColors || Colors[theme];
-  const isLight = theme === "light";
   const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState("");

@@ -1,9 +1,6 @@
 import {
   parseLocalDate,
   monthKey,
-  monthOverMonth,
-  categoryTrends,
-  anomalies,
   detectRecurring,
   projection,
   generateInsights,

@@ -11,9 +11,7 @@ import {
   View,
   Modal,
   TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
-  Alert,
   useWindowDimensions,
 } from 'react-native';
 import { ThemedTextInput as TextInput } from './ThemedText';

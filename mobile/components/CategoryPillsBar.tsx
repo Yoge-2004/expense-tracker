@@ -58,7 +58,6 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
 }) => {
   const {theme, themeColors} = useAuth();
   const c = themeColors || Colors[theme];
-  const isLight = theme === 'light';
   const safeCategories = categories || [];
 
   // Calendar Picker state

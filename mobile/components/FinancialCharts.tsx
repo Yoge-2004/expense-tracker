@@ -9,19 +9,17 @@
  */
 
 import React, { useMemo } from 'react';
-import { StyleSheet, View, Dimensions, useWindowDimensions, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, useWindowDimensions, TouchableOpacity } from 'react-native';
 import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, {
   Path,
   Circle,
   G,
-  Rect,
   Line,
   Defs,
   LinearGradient,
   Stop,
-  Text as SvgText,
 } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
 import { Colors, getCategoryColor, getCategoryIconName } from '../constants/theme';

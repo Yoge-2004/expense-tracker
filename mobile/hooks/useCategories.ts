@@ -32,7 +32,7 @@ export function useCategories(userId: string | number | null) {
               setCategories(parsed.categories);
             }
           }
-        } catch (_) {}
+        } catch {}
       }
 
       const [globalRes, userRes] = await Promise.allSettled([

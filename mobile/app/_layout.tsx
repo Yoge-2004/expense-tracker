@@ -452,7 +452,7 @@ function RootLayoutNav() {
             );
           }
         }
-      } catch (_) {}
+      } catch {}
     };
 
     const timer = setTimeout(checkClipboardForSms, 800);

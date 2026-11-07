@@ -116,7 +116,6 @@ export default function TabLayout() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = themeColors || Colors[theme];
-  const isLight = theme === "light";
 
   // High-contrast, WCAG AA/AAA-compliant colors for crisp visibility across light and dark themes
   const activeColor = c.primary;

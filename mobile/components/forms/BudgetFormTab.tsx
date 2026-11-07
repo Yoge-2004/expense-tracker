@@ -39,8 +39,7 @@ export interface BudgetFormTabProps {
 }
 
 export const BudgetFormTab = memo(function BudgetFormTab(props: BudgetFormTabProps) {
-  const { colors: c, theme, currSymbol, categories, form, isEditMode } = props;
-  const isLight = theme === 'light';
+  const { colors: c, currSymbol, categories, form, isEditMode } = props;
 
   const budgetCategoryId = props.budgetCategoryId !== undefined ? props.budgetCategoryId : (form?.budgetCategoryId ?? null);
   const setBudgetCategoryId = props.setBudgetCategoryId ?? form?.setBudgetCategoryId ?? (() => {});

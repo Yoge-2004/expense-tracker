@@ -61,7 +61,7 @@ const ScrollContext = (ScrollView as any).Context;
 
 export const DashboardLedger = memo(function DashboardLedger({
   colors: c,
-  theme,
+  theme: _theme,
   currSymbol,
   isStealthMode,
   categories,

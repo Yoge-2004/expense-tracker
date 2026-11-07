@@ -48,9 +48,9 @@ describe('ledgerReconcile', () => {
   });
 
   it('flags a large drop but not normal edits or tiny ledgers', () => {
-    const big = { expenses: new Array(100).fill(exp()) };
-    expect(isSuspiciousDrop(big, { expenses: new Array(40).fill(exp()) })).toBe(true);
-    expect(isSuspiciousDrop(big, { expenses: new Array(90).fill(exp()) })).toBe(false);
+    const big = { expenses: Array.from({ length: 100 }, () => exp()) };
+    expect(isSuspiciousDrop(big, { expenses: Array.from({ length: 40 }, () => exp()) })).toBe(true);
+    expect(isSuspiciousDrop(big, { expenses: Array.from({ length: 90 }, () => exp()) })).toBe(false);
     expect(isSuspiciousDrop({ expenses: [exp(), exp()] }, { expenses: [] })).toBe(false);
     expect(ledgerRichness(null)).toBe(0);
   });

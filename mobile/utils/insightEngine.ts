@@ -338,7 +338,7 @@ export function projection(expenses: ExpenseLike[], now = new Date()): Insight {
   };
   if (done.length < 1) return fallback;
 
-  const dowTotals = new Array(7).fill(0) as number[];
+  const dowTotals = Array.from({ length: 7 }, () => 0);
   let historyTotal = 0;
   for (const key of done.slice(-6)) {
     for (const tx of items.get(key) ?? []) {
@@ -379,7 +379,7 @@ export function temporalPattern(expenses: ExpenseLike[]): Insight | null {
     .filter((x): x is { amt: number; date: Date } => x.date !== null && x.amt > 0);
   if (dated.length < 20) return null;
 
-  const dow = new Array(7).fill(0) as number[];
+  const dow = Array.from({ length: 7 }, () => 0);
   for (const x of dated) dow[x.date.getDay()] += x.amt;
   const total = sum(dow);
   if (total <= 0) return null;

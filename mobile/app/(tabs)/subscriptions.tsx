@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
@@ -118,7 +117,6 @@ export default function SubscriptionsScreen() {
   const { themeColors } = useAuth();
   const currSym = getCurrencySymbol(currency);
   const c = themeColors || Colors[theme];
-  const isLight = theme === 'light';
 
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 700;

@@ -335,12 +335,12 @@ export default function ProfileScreen() {
     if (Platform.OS === 'android') {
       try {
         await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.NOTIFICATION_LISTENER_SETTINGS);
-      } catch (_) {
+      } catch {
         try {
           await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.APP_NOTIFICATION_SETTINGS, {
             data: 'package:com.expense.tracker',
           });
-        } catch (e: any) {
+        } catch {
           showAlert('Notification Settings', 'Open your device Settings -> Apps -> ExpenseTracker -> Notifications.', undefined, 'info');
         }
       }

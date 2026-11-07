@@ -1,4 +1,3 @@
-import * as SecureStore from 'expo-secure-store';
 import {
   savedPinEmail,
   savePinForFingerprint,

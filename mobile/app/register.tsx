@@ -54,7 +54,6 @@ export default function RegisterScreen() {
   const { showAlert } = useAlert();
   const router = useRouter();
   const c = themeColors || Colors[theme];
-  const isLight = theme === 'light';
   const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
@@ -196,7 +195,7 @@ export default function RegisterScreen() {
         if (granted) {
           await scheduleDailyExpenseReminders();
         }
-      } catch (_) {}
+      } catch {}
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert('Welcome!', 'Account created successfully! Please sign in with your credentials.', [
         { text: 'Sign In', onPress: () => router.replace('/login') },
@@ -223,7 +222,7 @@ export default function RegisterScreen() {
         if (granted) {
           await scheduleDailyExpenseReminders();
         }
-      } catch (_) {}
+      } catch {}
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert('Welcome!', 'Account created successfully! Please sign in.', [
         { text: 'Sign In', onPress: () => router.replace('/login') },

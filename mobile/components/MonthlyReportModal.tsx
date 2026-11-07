@@ -12,19 +12,14 @@ import {
   View,
   Modal,
   TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
-  Share,
-  Dimensions,
-  Animated,
   useWindowDimensions,
 } from 'react-native';
 import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
-import { Colors, getCategoryColor } from '../constants/theme';
+import { Colors } from '../constants/theme';
 import { ThemedScrollView } from './ThemedScrollbar';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
@@ -67,7 +62,6 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
   const { userId, userName, theme, currency } = useAuth();
   const { showAlert } = useAlert();
   const c = Colors[theme || 'dark'];
-  const isLight = theme === 'light';
   const currSym = getCurrencySymbol(currency);
 
   const { width } = useWindowDimensions();

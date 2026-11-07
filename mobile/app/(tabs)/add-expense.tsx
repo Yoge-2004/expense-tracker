@@ -100,7 +100,6 @@ export default function AddExpenseScreen() {
 
   const { themeColors } = useAuth();
   const currSymbol = getCurrencySymbol(currency);
-  const isLight = theme === 'light';
   const c = themeColors || Colors[theme];
 
   const handleSuccessNavigate = useCallback(() => {
