@@ -58,7 +58,16 @@
     }
 
     function createCalculatorDOM() {
-        if (document.getElementById("floatingCalcContainer")) return;
+        const existingContainer = document.getElementById("floatingCalcContainer");
+        if (existingContainer) {
+            panel = document.getElementById("floatingCalcPanel");
+            const trigger = document.getElementById("floatingCalcTrigger");
+            restorePosition();
+            if (trigger) setupDraggable(trigger, false);
+            if (panel) setupDraggable(panel.querySelector(".floating-calc-header"), true);
+            bindEvents();
+            return;
+        }
 
         const container = document.createElement("div");
         container.id = "floatingCalcContainer";

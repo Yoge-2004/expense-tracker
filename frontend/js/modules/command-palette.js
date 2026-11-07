@@ -238,6 +238,15 @@
         if (typeof document === "undefined") return;
         if (overlayEl && document.body.contains(overlayEl)) return;
 
+        const existingOverlay = document.getElementById("commandPaletteOverlay");
+        if (existingOverlay) {
+            overlayEl = existingOverlay;
+            inputEl = document.getElementById("commandPaletteInput");
+            resultsEl = document.getElementById("commandPaletteResults");
+            bindPaletteEvents();
+            return;
+        }
+
         overlayEl = document.createElement("div");
         overlayEl.id = "commandPaletteOverlay";
         overlayEl.className = "command-palette-overlay";
@@ -274,6 +283,13 @@
 
         inputEl = document.getElementById("commandPaletteInput");
         resultsEl = document.getElementById("commandPaletteResults");
+        bindPaletteEvents();
+    }
+
+    let eventsBound = false;
+    function bindPaletteEvents() {
+        if (eventsBound || !overlayEl) return;
+        eventsBound = true;
 
         overlayEl.addEventListener("click", (e) => {
             if (e.target === overlayEl) close();
@@ -293,6 +309,7 @@
 
         // Prevent wheel scrolling on results or overlay from chaining into background website
         resultsEl?.addEventListener("wheel", (e) => {
+            if (!resultsEl) return;
             const { scrollTop, scrollHeight, clientHeight } = resultsEl;
             const deltaY = e.deltaY;
             const isAtTop = scrollTop <= 0 && deltaY < 0;

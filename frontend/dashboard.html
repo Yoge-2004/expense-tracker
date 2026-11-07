@@ -1987,6 +1987,167 @@
         </div>
     </div>
 
+    <!-- COMMAND PALETTE OVERLAY (Cmd+K / Ctrl+K) -->
+    <div class="command-palette-overlay" id="commandPaletteOverlay" style="display: none;">
+        <div class="command-palette-modal" id="commandPaletteModal" role="dialog" aria-modal="true" aria-label="Command Palette">
+            <div class="command-palette-search-wrap">
+                <svg class="command-palette-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="commandPaletteInput" class="command-palette-input" placeholder="Type a command or search actions..." autocomplete="off" spellcheck="false">
+                <kbd class="command-palette-kbd" id="commandPaletteEscHint">ESC</kbd>
+                <button type="button" class="command-palette-close-btn" id="commandPaletteCloseBtn" aria-label="Close command palette">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="command-palette-results" id="commandPaletteResults" role="listbox"></div>
+            <div class="command-palette-footer">
+                <span class="cp-footer-hint"><kbd>&uarr;</kbd><kbd>&darr;</kbd> Navigate</span>
+                <span class="cp-footer-hint"><kbd>&crarr;</kbd> Select</span>
+                <span class="cp-footer-hint"><kbd>esc</kbd> Dismiss</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUICK FLOATING CALCULATOR & BILL SPLITTER -->
+    <div id="floatingCalcContainer">
+        <div id="floatingCalcTrigger" class="floating-calc-trigger" role="button" aria-label="Open Quick Calculator (Alt+C)" title="Quick Calculator (Alt+C)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="3"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="16" y1="14" x2="16" y2="18"></line>
+                <path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"></path>
+            </svg>
+            <span class="calc-badge"></span>
+        </div>
+        <div id="floatingCalcPanel" class="floating-calc-panel" role="dialog" aria-label="Expense Calculator">
+            <div class="floating-calc-header" id="floatingCalcHeader">
+                <div class="floating-calc-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="2" width="16" height="20" rx="2.5"></rect>
+                        <line x1="8" y1="6" x2="16" y2="6"></line>
+                        <circle cx="8" cy="11" r="0.75" fill="currentColor"></circle>
+                        <circle cx="12" cy="11" r="0.75" fill="currentColor"></circle>
+                        <circle cx="16" cy="11" r="0.75" fill="currentColor"></circle>
+                        <circle cx="8" cy="15" r="0.75" fill="currentColor"></circle>
+                        <circle cx="12" cy="15" r="0.75" fill="currentColor"></circle>
+                        <circle cx="16" cy="15" r="0.75" fill="currentColor"></circle>
+                        <circle cx="8" cy="19" r="0.75" fill="currentColor"></circle>
+                        <circle cx="12" cy="19" r="0.75" fill="currentColor"></circle>
+                        <circle cx="16" cy="19" r="0.75" fill="currentColor"></circle>
+                    </svg>
+                    <span>Quick Calculator</span>
+                </div>
+                <div class="floating-calc-controls">
+                    <button type="button" class="modal-close" id="floatingCalcMinimize" title="Minimize (Esc)" aria-label="Minimize calculator">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="floating-calc-screen">
+                <div class="floating-calc-expr" id="floatingCalcExpr">0</div>
+                <div class="floating-calc-val" id="floatingCalcVal">0</div>
+            </div>
+
+            <div class="floating-calc-tools">
+                <div class="floating-calc-splits" id="floatingCalcSplits" title="Split total evenly">
+                    <span class="calc-split-label">Split:</span>
+                    <button type="button" class="floating-calc-split-chip is-active" data-split="1">1x</button>
+                    <button type="button" class="floating-calc-split-chip" data-split="2">&divide;2</button>
+                    <button type="button" class="floating-calc-split-chip" data-split="3">&divide;3</button>
+                    <button type="button" class="floating-calc-split-chip" data-split="4">&divide;4</button>
+                    <button type="button" class="floating-calc-split-chip" data-split="5">&divide;5</button>
+                </div>
+                <button type="button" class="floating-calc-use-btn" id="floatingCalcUseBtn" title="Insert into expense or income amount field">
+                    <span>Use Amount</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>
+
+            <div class="floating-calc-fx-bar" id="floatingCalcFxBar">
+                <div class="floating-calc-fx-controls">
+                    <span class="floating-calc-fx-label" title="Live daily rates with fixed fallback">Fx:</span>
+                    <select class="floating-calc-fx-select" id="floatingCalcFxFrom" title="From Currency">
+                        <option value="USD" selected>USD ($)</option>
+                        <option value="EUR">EUR (&euro;)</option>
+                        <option value="GBP">GBP (&pound;)</option>
+                        <option value="AED">AED (د.إ)</option>
+                        <option value="INR">INR (&#8377;)</option>
+                        <option value="CAD">CAD ($)</option>
+                        <option value="AUD">AUD ($)</option>
+                        <option value="JPY">JPY (&yen;)</option>
+                        <option value="SGD">SGD (S$)</option>
+                        <option value="SAR">SAR (&#65020;)</option>
+                        <option value="QAR">QAR (QR)</option>
+                        <option value="KWD">KWD (KD)</option>
+                        <option value="CHF">CHF (Fr)</option>
+                        <option value="CNY">CNY (&yen;)</option>
+                    </select>
+                    <button type="button" class="floating-calc-fx-swap" id="floatingCalcFxSwap" title="Swap currencies">&#8644;</button>
+                    <select class="floating-calc-fx-select" id="floatingCalcFxTo" title="To Currency">
+                        <option value="INR" selected>INR (&#8377;)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (&euro;)</option>
+                        <option value="GBP">GBP (&pound;)</option>
+                        <option value="AED">AED (د.إ)</option>
+                        <option value="CAD">CAD ($)</option>
+                        <option value="AUD">AUD ($)</option>
+                        <option value="JPY">JPY (&yen;)</option>
+                        <option value="SGD">SGD (S$)</option>
+                        <option value="SAR">SAR (&#65020;)</option>
+                        <option value="QAR">QAR (QR)</option>
+                        <option value="KWD">KWD (KD)</option>
+                        <option value="CHF">CHF (Fr)</option>
+                        <option value="CNY">CNY (&yen;)</option>
+                    </select>
+                    <button type="button" class="floating-calc-fx-convert-btn" id="floatingCalcFxConvert" title="Convert current amount">Convert</button>
+                </div>
+                <div class="floating-calc-fx-quick-chips">
+                    <button type="button" class="floating-calc-fx-chip" data-fx-from="USD" data-fx-to="INR" title="Convert USD into &#8377;">USD&#10148;&#8377;</button>
+                    <button type="button" class="floating-calc-fx-chip" data-fx-from="EUR" data-fx-to="INR" title="Convert EUR into &#8377;">EUR&#10148;&#8377;</button>
+                    <button type="button" class="floating-calc-fx-chip" data-fx-from="GBP" data-fx-to="INR" title="Convert GBP into &#8377;">GBP&#10148;&#8377;</button>
+                    <button type="button" class="floating-calc-fx-chip" data-fx-from="AED" data-fx-to="INR" title="Convert AED into &#8377;">AED&#10148;&#8377;</button>
+                    <button type="button" class="floating-calc-fx-chip" data-fx-from="INR" data-fx-to="USD" title="Convert &#8377; into USD">&#8377;&#10148;USD</button>
+                </div>
+            </div>
+
+            <div class="floating-calc-grid" id="floatingCalcGrid">
+                <button type="button" class="floating-calc-key is-func" data-action="all-clear">AC</button>
+                <button type="button" class="floating-calc-key is-func" data-action="negate">&plusmn;</button>
+                <button type="button" class="floating-calc-key is-func" data-action="percent">%</button>
+                <button type="button" class="floating-calc-key is-op" data-action="op" data-op="&divide;">&divide;</button>
+
+                <button type="button" class="floating-calc-key" data-digit="7">7</button>
+                <button type="button" class="floating-calc-key" data-digit="8">8</button>
+                <button type="button" class="floating-calc-key" data-digit="9">9</button>
+                <button type="button" class="floating-calc-key is-op" data-action="op" data-op="&times;">&times;</button>
+
+                <button type="button" class="floating-calc-key" data-digit="4">4</button>
+                <button type="button" class="floating-calc-key" data-digit="5">5</button>
+                <button type="button" class="floating-calc-key" data-digit="6">6</button>
+                <button type="button" class="floating-calc-key is-op" data-action="op" data-op="&minus;">&minus;</button>
+
+                <button type="button" class="floating-calc-key" data-digit="1">1</button>
+                <button type="button" class="floating-calc-key" data-digit="2">2</button>
+                <button type="button" class="floating-calc-key" data-digit="3">3</button>
+                <button type="button" class="floating-calc-key is-op" data-action="op" data-op="+">+</button>
+
+                <button type="button" class="floating-calc-key" data-digit="0">0</button>
+                <button type="button" class="floating-calc-key" data-action="decimal">.</button>
+                <button type="button" class="floating-calc-key is-func inline-flex-center" data-action="backspace" title="Backspace"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg></button>
+                <button type="button" class="floating-calc-key is-eq" data-action="equals">=</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/api.js"></script>
     <script src="js/theme-performance.js"></script>
     <script src="js/ui-regression-fixes.js"></script>
