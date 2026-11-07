@@ -316,7 +316,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
   }, [formExpenseId, expenses]);
 
   return (
-    <View style={[styles.container, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
+    <View style={[styles.container, { backgroundColor: c.card, borderColor: c.border }]}>
       {/* Header */}
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>

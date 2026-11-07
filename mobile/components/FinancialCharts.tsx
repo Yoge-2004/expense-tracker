@@ -106,7 +106,7 @@ export const CategoryDonutChart: React.FC<DonutChartProps> = React.memo(({ expen
   let currentAngle = 0;
 
   return (
-    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.accent }]}>
+    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border }]}>
       <Text style={[styles.chartTitle, { color: c.text }]}>Spend by Category</Text>
       <Text style={[styles.chartSub, { color: c.textMuted }]}>Distribution across all transactions</Text>
 
@@ -245,7 +245,7 @@ export const SpendTrendChart: React.FC<SpendTrendChartProps> = React.memo(({ exp
   }, [expenses, chartInnerWidth]);
 
   return (
-    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
+    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border }]}>
       <View style={styles.chartHeaderRow}>
         <View>
           <Text style={[styles.chartTitle, { color: c.text }]}>Spending Velocity</Text>
@@ -357,7 +357,7 @@ export const RecurringSplitChart: React.FC<RecurringSplitProps> = React.memo(({ 
   }, [expenses]);
 
   return (
-    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
+    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border }]}>
       <Text style={[styles.chartTitle, { color: c.text }]}>Spend Composition</Text>
       <Text style={[styles.chartSub, { color: c.textMuted }]}>Recurring Subscriptions vs Discretionary</Text>
 
@@ -446,7 +446,7 @@ export const DayOfWeekChart: React.FC<DayOfWeekProps> = React.memo(({ expenses }
   const barMaxHeight = 80;
 
   return (
-    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
+    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border }]}>
       <Text style={[styles.chartTitle, { color: c.text }]}>Weekly Spending Cadence</Text>
       <Text style={[styles.chartSub, { color: c.textMuted }]}>Total spend distributed by day of the week</Text>
 
@@ -457,7 +457,7 @@ export const DayOfWeekChart: React.FC<DayOfWeekProps> = React.memo(({ expenses }
           const isHighest = val === maxDayVal && val > 0;
           const palette = Array.isArray(c.paletteColors) && c.paletteColors.length >= 7
             ? c.paletteColors
-            : [c.primary, c.accent, c.highlight, c.teal, c.violet, c.gold, c.danger];
+            : [c.primary, c.accent, c.highlight, c.teal, c.warning, c.gold, c.danger];
           const dayColor = palette[i % palette.length];
 
           return (
@@ -530,7 +530,7 @@ export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = React.memo(({ 
   }
 
   return (
-    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
+    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border }]}>
       <Text style={[styles.chartTitle, { color: c.text }]}>Budget vs Actual Spend</Text>
       <Text style={[styles.chartSub, { color: c.textMuted }]}>Active category spending caps and utilization</Text>
 

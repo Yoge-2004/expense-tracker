@@ -235,6 +235,46 @@ export function getPerceivedLuminance(r: number, g: number, b: number): number {
 }
 
 /** The gradient end that follows the primary automatically until the user picks their own. */
+
+export function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h *= 60;
+  }
+  return { h: (h + 360) % 360, s, l };
+}
+
+export function hslToHex(h: number, s: number, l: number): string {
+  h = ((h % 360) + 360) % 360;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r1 = 0, g1 = 0, b1 = 0;
+  if (h >= 0 && h < 60) { r1 = c; g1 = x; b1 = 0; }
+  else if (h >= 60 && h < 120) { r1 = x; g1 = c; b1 = 0; }
+  else if (h >= 120 && h < 180) { r1 = 0; g1 = c; b1 = x; }
+  else if (h >= 180 && h < 240) { r1 = 0; g1 = x; b1 = c; }
+  else if (h >= 240 && h < 300) { r1 = x; g1 = 0; b1 = c; }
+  else { r1 = c; g1 = 0; b1 = x; }
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round((v + m) * 255)));
+  return '#' + [clamp(r1), clamp(g1), clamp(b1)].map((x) => x.toString(16).padStart(2, '0')).join('');
+}
+
+export function hueDistance(h1: number, h2: number): number {
+  const diff = Math.abs(h1 - h2) % 360;
+  return diff > 180 ? 360 - diff : diff;
+}
+
 export function derivedGradientEnd(primary: string): string {
   return adjustBrightness(primary, 0.85);
 }
@@ -320,133 +360,115 @@ export function quantizePixels(
   data: Uint8Array | Uint8ClampedArray,
   isLight: boolean
 ): ExtractedPalette {
-  const buckets = new Map<number, { r: number; g: number; b: number; count: number; score: number }>();
+  const HUE_SECTORS = 16;
+  const hueBins = Array.from({ length: HUE_SECTORS }, () => ({
+    rSum: 0, gSum: 0, bSum: 0, wSum: 0, count: 0, hSum: 0, sSum: 0, lSum: 0
+  }));
+  let neutralCount = 0;
+
   const totalPixels = Math.floor(data.length / 4);
-  const step = Math.max(1, Math.floor(totalPixels / 2500)) * 4;
+  const step = Math.max(1, Math.floor(totalPixels / 3000)) * 4;
 
   for (let i = 0; i < data.length; i += step) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    const a = data[i + 3];
+    const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
     if (a < 128) continue;
 
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    const sat = max - min;
-    const satRatio = max > 0 ? sat / max : 0;
-    const lum = (r * 299 + g * 587 + b * 114) / 255000;
-    const isExtreme = lum < 0.08 || (lum > 0.96 && satRatio < 0.12) || satRatio < 0.06;
+    const hsl = rgbToHsl(r, g, b);
+    if (hsl.l < 0.08 || hsl.l > 0.94 || hsl.s < 0.10) {
+      neutralCount++;
+      continue;
+    }
 
-    const qR = Math.floor(r / 16);
-    const qG = Math.floor(g / 16);
-    const qB = Math.floor(b / 16);
-    const key = (qR << 8) | (qG << 4) | qB;
-
-    const existing = buckets.get(key) || { r: 0, g: 0, b: 0, count: 0, score: 0 };
-    existing.r += r;
-    existing.g += g;
-    existing.b += b;
-    existing.count++;
-    // Strongly reward saturated, chromatic pixels so vibrant elements are picked
-    // over massive dark or dull background regions
-    existing.score += isExtreme ? 0.2 : (1 + Math.pow(satRatio, 1.4) * 3.5);
-    buckets.set(key, existing);
+    const binIdx = Math.min(HUE_SECTORS - 1, Math.floor((hsl.h / 360) * HUE_SECTORS));
+    const weight = Math.pow(hsl.s, 1.25) * (1 - Math.abs(hsl.l - 0.5) * 1.2);
+    const bin = hueBins[binIdx];
+    bin.rSum += r * weight;
+    bin.gSum += g * weight;
+    bin.bSum += b * weight;
+    bin.wSum += weight;
+    bin.count++;
+    bin.hSum += hsl.h * weight;
+    bin.sSum += hsl.s * weight;
+    bin.lSum += hsl.l * weight;
   }
 
-  const sorted = Array.from(buckets.values()).sort((a, b) => b.score - a.score);
+  const clusters = hueBins
+    .filter(b => b.count > 0 && b.wSum > 0)
+    .map(b => ({
+      h: b.hSum / b.wSum,
+      s: b.sSum / b.wSum,
+      l: b.lSum / b.wSum,
+      count: b.count,
+      score: b.wSum * Math.log2(b.count + 1)
+    }))
+    .sort((a, b) => b.score - a.score);
 
-  if (sorted.length === 0) {
+  if (clusters.length === 0) {
     return isLight ? PRESET_BACKGROUNDS[0].lightPalette : PRESET_BACKGROUNDS[0].darkPalette;
   }
 
-  // Prefer first bucket with distinct chroma and good midtone luminance
-  let primaryBucket = sorted[0];
-  for (const bucket of sorted) {
-    const r = Math.round(bucket.r / bucket.count);
-    const g = Math.round(bucket.g / bucket.count);
-    const b = Math.round(bucket.b / bucket.count);
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    const satRatio = max > 0 ? (max - min) / max : 0;
-    const lum = (r * 299 + g * 587 + b * 114) / 255000;
-    if (satRatio >= 0.15 && lum >= 0.12 && lum <= 0.88) {
-      primaryBucket = bucket;
-      break;
-    }
+  // Primary
+  const top = clusters[0];
+  const primaryH = top.h;
+  const primaryS = Math.min(0.92, Math.max(0.48, top.s * 1.1));
+  const primaryL = isLight ? Math.min(0.50, Math.max(0.38, top.l)) : Math.min(0.64, Math.max(0.48, top.l));
+  const primaryHex = hslToHex(primaryH, primaryS, primaryL);
+
+  // Accent (>= 45 deg separation)
+  let accentH = (primaryH + 150) % 360;
+  const bestAccent = clusters.find(c => hueDistance(c.h, primaryH) >= 45);
+  if (bestAccent) {
+    accentH = bestAccent.h;
   }
+  const accS = bestAccent ? Math.min(0.95, Math.max(0.52, bestAccent.s * 1.15)) : Math.max(0.60, primaryS);
+  const accL = isLight ? 0.44 : 0.58;
+  const accentHex = hslToHex(accentH, accS, accL);
 
-  const primaryRgb = {
-    r: Math.round(primaryBucket.r / primaryBucket.count),
-    g: Math.round(primaryBucket.g / primaryBucket.count),
-    b: Math.round(primaryBucket.b / primaryBucket.count),
-  };
-
-  const colorDistance = (a: RGB, b: RGB) => Math.sqrt(
-    Math.pow(a.r - b.r, 2) + Math.pow(a.g - b.g, 2) + Math.pow(a.b - b.b, 2)
-  );
-
-  // Find accent that has high color contrast/distance from primary
-  let accentRgb = primaryRgb;
-  for (let i = 0; i < sorted.length; i++) {
-    const candidate = {
-      r: Math.round(sorted[i].r / sorted[i].count),
-      g: Math.round(sorted[i].g / sorted[i].count),
-      b: Math.round(sorted[i].b / sorted[i].count),
-    };
-    if (colorDistance(candidate, primaryRgb) > 70) {
-      accentRgb = candidate;
-      break;
-    }
+  // Highlight (>= 32 deg from both)
+  let highlightH = (primaryH + 75) % 360;
+  const bestHighlight = clusters.find(c => hueDistance(c.h, primaryH) >= 32 && hueDistance(c.h, accentH) >= 32);
+  if (bestHighlight) {
+    highlightH = bestHighlight.h;
   }
-  if (colorDistance(primaryRgb, accentRgb) <= 70) accentRgb = colorVariant(primaryRgb, 150);
+  const hlS = bestHighlight ? Math.min(0.92, Math.max(0.48, bestHighlight.s * 1.1)) : Math.max(0.55, primaryS);
+  const hlL = isLight ? 0.45 : 0.56;
+  const highlightHex = hslToHex(highlightH, hlS, hlL);
 
-  // Find highlight that differs from both primary and accent
-  let highlightRgb = accentRgb;
-  for (let i = 0; i < sorted.length; i++) {
-    const candidate = {
-      r: Math.round(sorted[i].r / sorted[i].count),
-      g: Math.round(sorted[i].g / sorted[i].count),
-      b: Math.round(sorted[i].b / sorted[i].count),
-    };
-    const dist1 = colorDistance(candidate, primaryRgb);
-    const dist2 = colorDistance(candidate, accentRgb);
-    if (dist1 > 55 && dist2 > 55) {
-      highlightRgb = candidate;
-      break;
-    }
-  }
-  if (colorDistance(primaryRgb, highlightRgb) <= 55 || colorDistance(accentRgb, highlightRgb) <= 55) {
-    highlightRgb = colorVariant(primaryRgb, 60);
-  }
-
-  const primaryHex = rgbToHex(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-  const accentHex = rgbToHex(accentRgb.r, accentRgb.g, accentRgb.b);
-  const highlightHex = rgbToHex(highlightRgb.r, highlightRgb.g, highlightRgb.b);
-  const gradientEndHex = adjustBrightness(primaryHex, isLight ? 0.85 : 0.80);
-
+  // 8-color spectrum
+  const extractedHues = [primaryH, accentH, highlightH];
   const paletteColors: string[] = [primaryHex, accentHex, highlightHex];
-  for (const bucket of sorted) {
-    const candidate = {
-      r: Math.round(bucket.r / bucket.count),
-      g: Math.round(bucket.g / bucket.count),
-      b: Math.round(bucket.b / bucket.count),
-    };
-    if (paletteColors.every((hex) => colorDistance(hexToRgb(hex), candidate) >= 34)) {
-      paletteColors.push(rgbToHex(candidate.r, candidate.g, candidate.b));
-    }
-    if (paletteColors.length === 8) break;
-  }
-  for (const hueOffset of [45, 90, 135, 180, 225, 270, 315]) {
+
+  for (const cand of clusters) {
     if (paletteColors.length >= 8) break;
-    const variant = colorVariant(primaryRgb, hueOffset);
-    const hex = rgbToHex(variant.r, variant.g, variant.b);
-    if (!paletteColors.includes(hex)) paletteColors.push(hex);
+    if (extractedHues.every(h => hueDistance(cand.h, h) >= 22)) {
+      extractedHues.push(cand.h);
+      const tunedS = Math.min(0.92, Math.max(0.50, cand.s * 1.1));
+      const tunedL = isLight ? Math.min(0.50, Math.max(0.36, cand.l)) : Math.min(0.66, Math.max(0.48, cand.l));
+      paletteColors.push(hslToHex(cand.h, tunedS, tunedL));
+    }
   }
 
-  // Compute card surface with subtle ambient tint matching primary
+  const chords = [35, -35, 95, -95, 140, 210, 270, 315];
+  for (const offset of chords) {
+    if (paletteColors.length >= 8) break;
+    const chordH = (primaryH + offset + 360) % 360;
+    if (extractedHues.every(h => hueDistance(chordH, h) >= 20)) {
+      extractedHues.push(chordH);
+      paletteColors.push(hslToHex(chordH, Math.max(0.58, primaryS), isLight ? 0.46 : 0.58));
+    }
+  }
+
+  while (paletteColors.length < 8) {
+    const fallbackH = (primaryH + paletteColors.length * 45) % 360;
+    paletteColors.push(hslToHex(fallbackH, 0.65, isLight ? 0.46 : 0.58));
+  }
+
+  const gradientEndHex = adjustBrightness(primaryHex, isLight ? 0.85 : 0.80);
+  const pRgb = hexToRgb(primaryHex);
+
   const cardSurface = isLight
-    ? `rgba(${Math.min(255, 248 + Math.floor(primaryRgb.r * 0.02))}, ${Math.min(255, 248 + Math.floor(primaryRgb.g * 0.02))}, ${Math.min(255, 252 + Math.floor(primaryRgb.b * 0.02))}, 0.94)`
-    : `rgba(${Math.max(16, 20 + Math.floor(primaryRgb.r * 0.05))}, ${Math.max(18, 22 + Math.floor(primaryRgb.g * 0.05))}, ${Math.max(22, 24 + Math.floor(primaryRgb.b * 0.05))}, 0.90)`;
+    ? `rgba(${Math.min(255, 248 + Math.floor(pRgb.r * 0.02))}, ${Math.min(255, 248 + Math.floor(pRgb.g * 0.02))}, ${Math.min(255, 252 + Math.floor(pRgb.b * 0.02))}, 0.94)`
+    : `rgba(${Math.max(16, 20 + Math.floor(pRgb.r * 0.05))}, ${Math.max(18, 22 + Math.floor(pRgb.g * 0.05))}, ${Math.max(22, 24 + Math.floor(pRgb.b * 0.05))}, 0.90)`;
 
   const opaqueSurface = isLight ? '#FFFFFF' : adjustBrightness(primaryHex, 0.12);
 
@@ -457,15 +479,11 @@ export function quantizePixels(
     highlight: highlightHex,
     card: cardSurface,
     surface: opaqueSurface,
-    borderAccent: `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.35)`,
+    borderAccent: `rgba(${pRgb.r}, ${pRgb.g}, ${pRgb.b}, 0.35)`,
     paletteColors,
   };
 }
 
-/**
- * Extracts a dynamic palette from a file URI or remote URL.
- * Works completely on-device without uploading images to any external server.
- */
 export async function extractPaletteFromImageUri(
   uri: string,
   isLight: boolean

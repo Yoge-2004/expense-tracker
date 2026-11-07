@@ -644,7 +644,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                 advice: "Dynamic time-series projection generated from your spending velocity by the backend ML service.",
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: c.primary + '26' }]}>
@@ -701,7 +701,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                   : "Your spending patterns conform neatly to your behavioral baseline.",
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: (mlAnomaly.count > 0 ? c.danger : c.success) + "18" }]}>
@@ -749,7 +749,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : "Positive cash flow! Aim to increase your retention rate to 20% or higher.",
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: (netCashFlow >= 0 ? c.success : c.danger) + "18" }]}>
@@ -796,7 +796,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Healthy wealth loop: Cash flows smoothly from revenue into protected savings and essential living.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: '#3B82F618' }]}>
@@ -841,7 +841,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Excellent: Your recurring commitments leave ample flexibility for discretionary choices and emergency buffers.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: (commitmentAutonomyRatio > 50 ? c.danger : c.highlight) + '18' }]}>
@@ -886,7 +886,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Your monthly expenses currently exceed base salary. You depend on irregular or secondary inflows to balance the budget.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: (salaryCoverageRatio >= 100 ? c.success : c.warning) + '18' }]}>
@@ -933,7 +933,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Runway is below the recommended 3 months. Prioritize building reserves before increasing discretionary spending.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: (Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning) + '18' }]}>
@@ -979,7 +979,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Spending exceeds income this month. Review high-variance categories to eliminate cash drain.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: (netCashFlow >= 0 ? c.success : c.danger) + '18' }]}>
@@ -1026,7 +1026,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'All savings targets are currently fully funded! Time to set new financial horizons.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: c.warning + '18' }]}>
@@ -1066,7 +1066,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Maintain regular tracking to refine projection accuracy.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: c.primary + '18' }]}>
@@ -1101,7 +1101,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                 advice: `Trimming just 15% from non-essential spending could retain ${formatAmt(potentialSavings)} in monthly savings.`,
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: c.teal + '18' }]}>
@@ -1138,7 +1138,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Your weekend spending is well-balanced with weekday habits.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: c.accent + '18' }]}>
@@ -1176,7 +1176,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'All budgets are within healthy operational thresholds.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View
@@ -1247,7 +1247,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                 advice: `At your current velocity, this category will breach its cap before the month ends. Slow down daily transactions in this category to stay under budget.`,
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: c.accent + '18' }]}>
@@ -1284,7 +1284,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                   'Consolidating smaller purchases into planned shopping intervals helps reduce impulse spend.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: c.primary + '18' }]}>

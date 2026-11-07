@@ -315,9 +315,9 @@ export const DashboardLedger = memo(function DashboardLedger({
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
             setLedgerTab('expenses');
           }}
-          style={[styles.streamTabBtn, ledgerTab === 'expenses' && { backgroundColor: c.card, borderColor: c.primary, borderWidth: 1 }]}
+          style={[styles.streamTabBtn, ledgerTab === 'expenses' && { backgroundColor: c.card, borderColor: c.danger, borderWidth: 1 }]}
         >
-          <Text style={[styles.streamTabText, { color: ledgerTab === 'expenses' ? c.primary : c.textMuted, fontWeight: ledgerTab === 'expenses' ? '800' : '600' }]}>
+          <Text style={[styles.streamTabText, { color: ledgerTab === 'expenses' ? c.danger : c.textMuted, fontWeight: ledgerTab === 'expenses' ? '800' : '600' }]}>
             Outflows ({filteredExpensesCount})
           </Text>
         </TouchableOpacity>

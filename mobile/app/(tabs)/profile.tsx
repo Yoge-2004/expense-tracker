@@ -686,7 +686,7 @@ export default function ProfileScreen() {
 
         {/* User Card */}
         <StaggeredView delay={100} direction="up">
-          <View style={[styles.userCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
+          <View style={[styles.userCard, { backgroundColor: c.card, borderColor: c.border }]}>
             <View style={styles.userCardTop}>
               <TouchableOpacity
                 activeOpacity={0.8}

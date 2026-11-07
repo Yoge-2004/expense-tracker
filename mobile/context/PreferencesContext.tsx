@@ -190,7 +190,7 @@ export function createThemeColors(
     onDanger: readableTextForSurfaces(danger),
     onAccent: readableTextForSurfaces(accent),
     onHighlight: readableTextForSurfaces(highlight),
-    border: isLight ? primary + '26' : primary + '2E',
+    border: isLight ? 'rgba(15, 23, 42, 0.09)' : 'rgba(236, 231, 216, 0.09)',
     borderAccent: primary + '80',
     inputBorder: primary + '33',
     trackBg: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
