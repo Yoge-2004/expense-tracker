@@ -525,7 +525,7 @@
         const tbody = document.getElementById("userTableBody");
         if (!tbody) return;
 
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted);">Querying secured user registry…</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="table-msg-row">Querying secured user registry…</td></tr>`;
 
         try {
             let url = `/admin/users?page=${userPage}&size=${userPageSize}`;
@@ -534,7 +534,7 @@
 
             const data = await apiRequest(url);
             if (!data || !Array.isArray(data.content) || data.content.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted);">No users match the search criteria.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="table-msg-row">No users match the search criteria.</td></tr>`;
                 return;
             }
 
@@ -551,25 +551,25 @@
                 const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—";
 
                 tr.innerHTML = `
-                    <td style="font-family:var(--font-mono); color:var(--text-muted);">#${escapeHtml(u.id)}</td>
+                    <td class="admin-td-mono">#${escapeHtml(u.id)}</td>
                     <td>
-                        <strong style="color:var(--text-main);">${escapeHtml(u.name || "Unnamed")}</strong>
-                        <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">@${escapeHtml(u.username || "—")}</div>
+                        <strong class="admin-user-title">${escapeHtml(u.name || "Unnamed")}</strong>
+                        <div class="admin-user-handle">@${escapeHtml(u.username || "—")}</div>
                     </td>
-                    <td style="color:var(--text-muted);">${escapeHtml(u.email)}</td>
+                    <td class="admin-user-email">${escapeHtml(u.email)}</td>
                     <td><span class="status-badge badge-netflow">${escapeHtml(u.role)}</span></td>
                     <td>${statusHtml}</td>
-                    <td style="font-family:var(--font-mono); color:var(--text-main); font-weight:600;">${u.expenseCount || 0}</td>
-                    <td style="color:var(--text-muted); font-size:12px;">${dateStr}</td>
-                    <td style="text-align:right;">
-                        <div style="display:inline-flex; gap:6px; align-items:center;">
-                            <button class="btn-secondary" style="padding:5px 10px; font-size:11px; font-weight:600;" data-action="inspect" data-id="${u.id}" title="Inspect Details & Security">
+                    <td class="admin-td-mono-main">${u.expenseCount || 0}</td>
+                    <td class="text-muted-xs">${dateStr}</td>
+                    <td class="text-right">
+                        <div class="admin-user-actions">
+                            <button class="btn-secondary admin-btn-action" data-action="inspect" data-id="${u.id}" title="Inspect Details & Security">
                                 Inspect
                             </button>
-                            <button class="btn-secondary" style="padding:5px 10px; font-size:11px; font-weight:600;" data-action="edit" data-id="${u.id}" title="Edit Account">
+                            <button class="btn-secondary admin-btn-action" data-action="edit" data-id="${u.id}" title="Edit Account">
                                 Edit
                             </button>
-                            <button class="btn-danger" style="padding:5px 10px; font-size:11px; font-weight:600; background:rgba(239, 68, 68, 0.15); color:var(--danger, #EF4444); border:1px solid rgba(239, 68, 68, 0.3); border-radius:8px;" data-action="delete" data-id="${u.id}" data-name="${escapeHtml(u.name || u.username)}" title="Delete User">
+                            <button class="btn-danger admin-btn-danger" data-action="delete" data-id="${u.id}" data-name="${escapeHtml(u.name || u.username)}" title="Delete User">
                                 Delete
                             </button>
                         </div>
@@ -608,7 +608,7 @@
 
         } catch (e) {
             console.error("User directory load error:", e);
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:32px; color:var(--accent-text);">Failed to load user directory.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="table-msg-row text-accent">Failed to load user directory.</td></tr>`;
         }
     }
 
@@ -666,7 +666,7 @@
     async function loadUserDrawerLedger(userId, type) {
         const tbody = document.getElementById("drawerLedgerTableBody");
         if (!tbody) return;
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:16px; color:var(--text-muted);">Loading transactions…</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="table-msg-row pad-16">Loading transactions…</td></tr>`;
 
         document.getElementById("drawerTabExpensesBtn")?.classList.toggle("active", type === "expenses");
         document.getElementById("drawerTabIncomesBtn")?.classList.toggle("active", type === "incomes");
@@ -677,7 +677,7 @@
             const items = Array.isArray(data) ? data : (data?.content || []);
 
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:16px; color:var(--text-muted);">No records found for this user.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="table-msg-row pad-16">No records found for this user.</td></tr>`;
                 return;
             }
 
@@ -691,17 +691,17 @@
                 const desc = escapeHtml(it.description || it.note || "—");
 
                 tr.innerHTML = `
-                    <td style="color:var(--text-muted);">${dClean}</td>
+                    <td class="text-muted">${dClean}</td>
                     <td><span class="status-badge badge-netflow">${cat}</span></td>
-                    <td style="font-family:var(--font-mono); font-weight:700; color:${type === 'incomes' ? 'var(--metric-inflow)' : 'var(--metric-outflow)'};">
+                    <td class="${type === 'incomes' ? 'admin-td-inflow' : 'admin-td-outflow'}">
                         ${type === 'incomes' ? '+' : '-'}${amt}
                     </td>
-                    <td style="color:var(--text-main); max-width:140px; overflow:hidden; text-overflow:ellipsis;">${desc}</td>
+                    <td class="admin-desc-cell">${desc}</td>
                 `;
                 tbody.appendChild(tr);
             });
         } catch {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:16px; color:var(--danger-text);">Error loading transactions</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="table-msg-row pad-16 text-danger">Error loading transactions</td></tr>`;
         }
     }
 
@@ -729,7 +729,7 @@
         const tbody = document.getElementById("databaseTableBody");
         if (!tbody) return;
 
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">Querying platform database…</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="table-msg-row">Querying platform database…</td></tr>`;
 
         try {
             let endpoint = dbStreamType === "incomes" ? "/admin/data/incomes" : "/admin/data/expenses";
@@ -742,7 +742,7 @@
             const items = Array.isArray(data) ? data : (data?.content || []);
 
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">No records found in this stream.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="table-msg-row">No records found in this stream.</td></tr>`;
                 document.getElementById("dbPaginationLabel").textContent = `Showing page ${dbPage + 1}`;
                 document.getElementById("dbPrevBtn").disabled = dbPage === 0;
                 document.getElementById("dbNextBtn").disabled = true;
@@ -762,15 +762,15 @@
                 const userDisplay = item.userId ? `#${item.userId} (${escapeHtml(item.userName || item.username || item.userEmail || "User")})` : "System";
 
                 tr.innerHTML = `
-                    <td style="font-family:var(--font-mono); color:var(--text-muted);">#${escapeHtml(item.id)}</td>
-                    <td style="font-size:12px; font-weight:600; color:var(--text-main);">${userDisplay}</td>
-                    <td style="color:var(--text-muted); font-size:12px;">${dateClean}</td>
+                    <td class="admin-td-mono">#${escapeHtml(item.id)}</td>
+                    <td class="text-bold-main text-xs">${userDisplay}</td>
+                    <td class="text-muted-xs">${dateClean}</td>
                     <td><span class="status-badge badge-netflow">${categoryOrSource}</span></td>
-                    <td style="font-family:var(--font-mono); font-weight:700; color:${isExpense ? 'var(--metric-outflow)' : 'var(--metric-inflow)'};">
+                    <td class="${isExpense ? 'admin-td-outflow' : 'admin-td-inflow'}">
                         ${isExpense ? '-' : '+'}${amountFormatted}
                     </td>
-                    <td style="color:var(--text-main); max-width:240px; overflow:hidden; text-overflow:ellipsis;">${desc}</td>
-                    <td><span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${method}</span></td>
+                    <td class="admin-desc-cell-wide">${desc}</td>
+                    <td><span class="admin-method-badge">${method}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -781,7 +781,7 @@
             document.getElementById("dbNextBtn").disabled = (dbPage + 1) >= totalPages;
         } catch (e) {
             console.error("Database load error:", e);
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--danger-text);">Failed to load platform database: ${escapeHtml(e.message)}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="table-msg-row text-danger">Failed to load platform database: ${escapeHtml(e.message)}</td></tr>`;
         }
     }
 
@@ -814,6 +814,7 @@
 
             const modal = document.getElementById("editUserModal");
             modal.classList.add("active");
+                modal.querySelectorAll(".sandbox-bar-fill[data-pct]").forEach(el => { el.style.width = el.dataset.pct + "%"; });
             modal.classList.add("open");
 
             setTimeout(() => {
@@ -863,9 +864,9 @@
         const hStatusEl = document.getElementById("dbHfStatus");
 
         if (isManualProbe) {
-            if (sStatusEl) { sStatusEl.className = "status-badge badge-warning"; sStatusEl.innerHTML = '<span class="pulse-dot" style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;margin-right:4px;"></span>PROBING...'; }
-            if (nStatusEl) { nStatusEl.className = "status-badge badge-warning"; nStatusEl.innerHTML = '<span class="pulse-dot" style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;margin-right:4px;"></span>PROBING...'; }
-            if (hStatusEl) { hStatusEl.className = "status-badge badge-warning"; hStatusEl.innerHTML = '<span class="pulse-dot" style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;margin-right:4px;"></span>PROBING...'; }
+            if (sStatusEl) { sStatusEl.className = "status-badge badge-warning"; sStatusEl.innerHTML = '<span class="pulse-dot pulse-dot-probing"></span>PROBING...'; }
+            if (nStatusEl) { nStatusEl.className = "status-badge badge-warning"; nStatusEl.innerHTML = '<span class="pulse-dot pulse-dot-probing"></span>PROBING...'; }
+            if (hStatusEl) { hStatusEl.className = "status-badge badge-warning"; hStatusEl.innerHTML = '<span class="pulse-dot pulse-dot-probing"></span>PROBING...'; }
             const lat1 = document.getElementById("dbServerLatency");
             const lat2 = document.getElementById("dbNeonLatency");
             const lat3 = document.getElementById("dbHfLatency");
@@ -985,18 +986,14 @@
             const raw = await apiRequest("/admin/ml/feedback/pending");
             const data = Array.isArray(raw) ? raw : (raw?.content || []);
             if (data.length === 0) {
-                queueList.innerHTML = `<div style="padding:24px; text-align:center; color:var(--text-muted);">All feedback items reviewed. Queue clear!</div>`;
+                queueList.innerHTML = `<div class="admin-viewport-msg">All feedback items reviewed. Queue clear!</div>`;
                 return;
             }
 
             queueList.innerHTML = "";
             data.forEach(item => {
                 const card = document.createElement("div");
-                card.className = "card";
-                card.style.background = "var(--input-bg)";
-                card.style.border = "1px solid var(--border)";
-                card.style.padding = "14px";
-                card.style.borderRadius = "12px";
+                card.className = "card ml-feedback-item-card";
 
                 const desc = escapeHtml(item.text || item.expenseDescription || "Category feedback");
                 const predicted = escapeHtml(item.predictedCategory || item.suggestedCategory || "—");
@@ -1004,26 +1001,40 @@
                 const user = escapeHtml(item.userEmail ? `by ${item.userEmail}` : "");
 
                 card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <strong style="color:var(--text-main); font-size:13px;">"${desc}"</strong>
-                        <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">${user}</span>
+                    <div class="ml-feedback-card-header">
+                        <strong class="ml-feedback-desc">"${desc}"</strong>
+                        <span class="ml-feedback-user">${user}</span>
                     </div>
-                    <div style="font-size:12px; margin-bottom:12px; display:flex; gap:10px; align-items:center;">
-                        <span style="color:var(--danger-text); text-decoration:line-through;">Model: ${predicted}</span>
-                        <span style="color:var(--text-muted);">➔</span>
-                        <span style="color:var(--metric-inflow); font-weight:700;">User: ${corrected}</span>
+                    <div class="ml-feedback-comparison">
+                        <span class="ml-feedback-pred">Model: ${predicted}</span>
+                        <span class="ml-feedback-arrow">➔</span>
+                        <span class="ml-feedback-corr">User: ${corrected}</span>
                     </div>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn-primary" style="flex:1; padding:6px 10px; font-size:11px;" onclick="reviewMlFeedback(${item.id}, 'ACCEPT')">
+                    <div class="ml-feedback-actions">
+                        <button class="btn-primary btn-ml-review" data-action="review-ml" data-id="${item.id}" data-decision="ACCEPT">
                             Accept Correction
                         </button>
-                        <button class="btn-secondary" style="flex:1; padding:6px 10px; font-size:11px;" onclick="reviewMlFeedback(${item.id}, 'REJECT')">
+                        <button class="btn-secondary btn-ml-review" data-action="review-ml" data-id="${item.id}" data-decision="REJECT">
                             Reject
                         </button>
                     </div>
                 `;
                 queueList.appendChild(card);
             });
+
+            if (!queueList.dataset.bound) {
+                queueList.dataset.bound = "true";
+                queueList.addEventListener("click", (e) => {
+                    const btn = e.target.closest("[data-action='review-ml']");
+                    if (!btn) return;
+                    const id = Number(btn.dataset.id);
+                    const decision = btn.dataset.decision;
+                    if (id && decision) {
+                        reviewMlFeedback(id, decision);
+                    }
+                });
+            }
+
         } catch (e) {
             console.error("ML queue error:", e);
         }
@@ -1049,7 +1060,7 @@
         const tbody = document.getElementById("retrainingRunsTbody");
         const logsEl = document.getElementById("retrainTerminalLogs");
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">Syncing automated retraining logs…</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="table-msg-row pad-16">Syncing automated retraining logs…</td></tr>`;
         }
 
         try {
@@ -1059,7 +1070,7 @@
             if (tbody) {
                 const runs = Array.isArray(data.runs) ? data.runs : [];
                 if (runs.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">No retraining runs recorded yet.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" class="table-msg-row pad-16">No retraining runs recorded yet.</td></tr>`;
                 } else {
                     tbody.innerHTML = "";
                     runs.forEach(r => {
@@ -1096,12 +1107,12 @@
                         const timeClean = r.timestamp ? new Date(r.timestamp).toLocaleString() : "—";
 
                         tr.innerHTML = `
-                            <td style="padding:10px 12px; font-family:var(--font-mono); color:var(--primary); font-weight:600; white-space:nowrap;">${escapeHtml(r.runId || "—")}</td>
-                            <td style="padding:10px 12px; font-size:11px; color:var(--text-muted); white-space:nowrap;">${timeClean}</td>
-                            <td style="padding:10px 12px; font-size:11px; white-space:nowrap;"><span class="status-badge badge-netflow" style="display:inline-flex; align-items:center; white-space:nowrap;">${escapeHtml(r.trigger || "CRON")}</span></td>
-                            <td style="padding:10px 12px; white-space:nowrap;"><span class="status-badge ${badgeClass}" style="display:inline-flex; align-items:center; gap:5px; white-space:nowrap;">● ${escapeHtml(r.status || "UNKNOWN")}</span></td>
-                            <td style="padding:10px 12px; font-family:var(--font-mono); white-space:nowrap;">${samplesCount}</td>
-                            <td style="padding:10px 12px; font-size:11px; color:var(--text-muted); line-height:1.4;" title="${escapeHtml(r.message || r.details || "")}">${metricsStr}</td>
+                            <td class="admin-td-pad admin-td-mono-primary">${escapeHtml(r.runId || "—")}</td>
+                            <td class="admin-td-pad text-muted-xs text-nowrap">${timeClean}</td>
+                            <td class="admin-td-pad text-xs text-nowrap"><span class="status-badge badge-netflow admin-badge-flex">${escapeHtml(r.trigger || "CRON")}</span></td>
+                            <td class="admin-td-pad text-nowrap"><span class="status-badge ${badgeClass} admin-badge-flex-gap">● ${escapeHtml(r.status || "UNKNOWN")}</span></td>
+                            <td class="admin-td-pad font-mono text-nowrap">${samplesCount}</td>
+                            <td class="admin-td-pad admin-metrics-cell" title="${escapeHtml(r.message || r.details || "")}">${metricsStr}</td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -1115,7 +1126,7 @@
         } catch (e) {
             console.error("Retraining logs query error:", e);
             if (tbody) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--danger-text);">Failed to load retraining logs: ${escapeHtml(e.message)}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="table-msg-row pad-16 text-danger">Failed to load retraining logs: ${escapeHtml(e.message)}</td></tr>`;
             }
         }
     }
@@ -1170,7 +1181,7 @@
             if (!viewport) return;
 
             if (logs.length === 0) {
-                viewport.innerHTML = `<div style="color:var(--text-muted); padding:24px; text-align:center;">No matching log events recorded in buffer.</div>`;
+                viewport.innerHTML = `<div class="admin-viewport-msg">No matching log events recorded in buffer.</div>`;
                 return;
             }
 
@@ -1199,7 +1210,7 @@
         } catch (err) {
             console.error("Failed to load application logs:", err);
             if (viewport) {
-                viewport.innerHTML = `<div style="color:var(--danger-text); padding:24px; text-align:center;">Failed to retrieve logs: ${escapeHtml(err.message || "Unknown error")}</div>`;
+                viewport.innerHTML = `<div class="admin-viewport-err">Failed to retrieve logs: ${escapeHtml(err.message || "Unknown error")}</div>`;
             }
         }
     }
@@ -1229,7 +1240,7 @@
         const tbody = document.getElementById("auditTableBody");
         if (!tbody) return;
 
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">Streaming audit trail…</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="table-msg-row">Streaming audit trail…</td></tr>`;
 
         try {
             let url = `/admin/audit-logs?page=${auditPage}&size=${auditPageSize}`;
@@ -1237,7 +1248,7 @@
 
             const data = await apiRequest(url);
             if (!data || !Array.isArray(data.content) || data.content.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">No audit records found matching parameters.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="table-msg-row">No audit records found matching parameters.</td></tr>`;
                 return;
             }
 
@@ -1247,13 +1258,13 @@
                 const dateStr = log.createdAt ? new Date(log.createdAt).toLocaleString() : "—";
 
                 tr.innerHTML = `
-                    <td style="color:var(--text-muted); font-size:12px; font-family:var(--font-mono); white-space:nowrap;">${dateStr}</td>
-                    <td><strong style="color:var(--primary);">${escapeHtml(log.actorUsername)}</strong></td>
+                    <td class="text-muted-xs font-mono text-nowrap">${dateStr}</td>
+                    <td><strong class="text-primary">${escapeHtml(log.actorUsername)}</strong></td>
                     <td><span class="status-badge badge-netflow">${escapeHtml(log.action)}</span></td>
-                    <td style="color:var(--text-muted);">${escapeHtml(log.targetResource)}</td>
-                    <td style="font-family:var(--font-mono); color:var(--text-muted);">${escapeHtml(log.targetId || "—")}</td>
-                    <td style="font-family:var(--font-mono); color:var(--text-muted); font-size:12px;">${escapeHtml(log.ipAddress || "—")}</td>
-                    <td style="font-size:12px; color:var(--text-main); max-width:320px; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(log.details || "—")}</td>
+                    <td class="text-muted">${escapeHtml(log.targetResource)}</td>
+                    <td class="admin-td-mono">${escapeHtml(log.targetId || "—")}</td>
+                    <td class="admin-td-mono text-xs">${escapeHtml(log.ipAddress || "—")}</td>
+                    <td class="admin-details-cell">${escapeHtml(log.details || "—")}</td>
                 `;
 
                 tbody.appendChild(tr);
@@ -1267,7 +1278,7 @@
 
         } catch (e) {
             console.error("Audit trail load error:", e);
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--accent-text);">Failed to load audit logs.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="table-msg-row text-accent">Failed to load audit logs.</td></tr>`;
         }
     }
 
@@ -1634,7 +1645,7 @@
                                     <span>${pct}%</span>
                                 </div>
                                 <div class="sandbox-bar-track">
-                                    <div class="sandbox-bar-fill" style="width:${pct}%;"></div>
+                                    <div class="sandbox-bar-fill" data-pct="${pct}"></div>
                                 </div>
                             `;
                             barsStage.appendChild(wrap);
@@ -1871,7 +1882,7 @@
         document.getElementById("clearLogsViewBtn")?.addEventListener("click", () => {
             const viewport = document.getElementById("logsTerminalViewport");
             if (viewport) {
-                viewport.innerHTML = '<div style="color:var(--text-muted); padding:24px; text-align:center;">Console view cleared. Click Refresh to reload stream.</div>';
+                viewport.innerHTML = '<div class="admin-viewport-msg">Console view cleared. Click Refresh to reload stream.</div>';
             }
             const countEl = document.getElementById("logEntriesCount");
             if (countEl) countEl.textContent = "0 events";
@@ -1960,6 +1971,7 @@
         const modal = document.getElementById("stepUpModal");
         modal.classList.add("open");
         modal.classList.add("active");
+                modal.querySelectorAll(".sandbox-bar-fill[data-pct]").forEach(el => { el.style.width = el.dataset.pct + "%"; });
         pinInput.focus();
     }
 

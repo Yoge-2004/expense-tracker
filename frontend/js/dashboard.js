@@ -346,7 +346,7 @@ function renderList(expenses) {
     if (expenses.length === 0) {
         elements.expenseList.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.85;"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+                <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="opacity-85"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
                 <div class="empty-state-title">No transactions yet</div>
                 <div class="empty-state-sub">Click <strong>Record Expense</strong> above to add your first transaction and start tracking your finances.</div>
             </div>`;
@@ -358,33 +358,44 @@ function renderList(expenses) {
         const isRecurring = exp.recurring || exp.isRecurring;
         const delay = Math.min(idx * 0.04, 0.4);
         return `
-        <div class="expense-item" style="animation-delay: ${delay}s;">
-            <div class="expense-emoji-box" style="width:40px; height:40px; border-radius:12px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0; line-height:0; padding:0; box-sizing:border-box; overflow:hidden;">
+        <div class="expense-item" data-delay="${delay}">
+            <div class="expense-emoji-box" data-bg="${catColor.bg}">
                 ${getCategoryEmoji(catName)}
             </div>
-            <div class="expense-info" style="flex:1; min-width:0;">
+            <div class="expense-info">
                 <h4 class="expense-title">${escapeHtml(exp.description || "")}</h4>
-                <div class="expense-meta" style="display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
+                <div class="expense-meta">
                     <span>${formatDate(exp.expenseDate)}</span>
-                    <span class="cat-chip" style="background:${catColor.bg}; color:${catColor.color}; border:1px solid ${catColor.color}30;">${escapeHtml(catName)}</span>
-                    ${isRecurring ? '<span style="font-family:var(--font-mono); font-size:9px; letter-spacing:0.08em; font-weight:600; color:var(--accent); background:rgba(162,62,50,0.08); padding:2px 8px; border-radius:3px; border:1px solid rgba(162,62,50,0.35); display:inline-flex; align-items:center; gap:3px;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>RECURRING</span>' : ''}
+                    <span class="cat-chip" data-cat-bg="${catColor.bg}" data-cat-color="${catColor.color}">${escapeHtml(catName)}</span>
+                    ${isRecurring ? '<span class="recurring-tag"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>RECURRING</span>' : ''}
                 </div>
             </div>
-            <div class="expense-actions-col" style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-                <div class="expense-amount" style="font-family:var(--font-mono); font-variant-numeric:tabular-nums; color:var(--text-main); font-size:15px; font-weight:600;">${formatCurrency(exp.amount)}</div>
-                <button class="btn-text-icon btn-split-loan" data-action="split" data-id="${exp.id}" data-desc="${escapeHtml(exp.description || '')}" data-amount="${exp.amount}" data-date="${exp.expenseDate}" onclick="window.LoansManager && window.LoansManager.openWithExpense(${exp.id}, '${jsAttrEscape(exp.description || '')}', ${exp.amount}, '${exp.expenseDate}')" title="Split / Link to Peer Loan" style="padding:4px 7px; border-radius:6px; color:#8B5CF6; border:1px solid rgba(139,92,246,0.35); background:rgba(139,92,246,0.08); font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+            <div class="expense-actions-col">
+                <div class="expense-amount">${formatCurrency(exp.amount)}</div>
+                <button class="btn-text-icon btn-split-loan" data-action="split" data-id="${exp.id}" data-desc="${escapeHtml(exp.description || '')}" data-amount="${exp.amount}" data-date="${exp.expenseDate}" title="Split / Link to Peer Loan">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
                     <span>Split</span>
                 </button>
-                <button class="btn-edit" data-action="edit" data-id="${exp.id}" onclick="editExpense(${exp.id})" title="Edit">
+                <button class="btn-edit" data-action="edit" data-id="${exp.id}" title="Edit">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 </button>
-                <button class="btn-delete" data-action="delete" data-id="${exp.id}" onclick="deleteExpense(${exp.id}, event)" title="Delete">
+                <button class="btn-delete" data-action="delete" data-id="${exp.id}" title="Delete">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
             </div>
         </div>`;
     }).join("");
+    elements.expenseList.querySelectorAll('.expense-item[data-delay]').forEach(el => {
+        el.style.animationDelay = `${el.dataset.delay}s`;
+    });
+    elements.expenseList.querySelectorAll('.expense-emoji-box[data-bg]').forEach(el => {
+        el.style.background = el.dataset.bg;
+    });
+    elements.expenseList.querySelectorAll('.cat-chip[data-cat-bg]').forEach(el => {
+        el.style.background = el.dataset.catBg;
+        el.style.color = el.dataset.catColor;
+        el.style.borderColor = `${el.dataset.catColor}30`;
+    });
 }
 
 function populateCategoryDropdown(categories) {
@@ -708,11 +719,11 @@ async function renderManageCategoriesList() {
     if (!listEl) return;
 
     if (userOnlyCategories.length === 0) {
-        listEl.innerHTML = `<p style="font-size:13px; color:var(--text-muted); padding:8px 0;">You haven't created any custom categories yet.</p>`;
+        listEl.innerHTML = `<p class="custom-cat-empty">You haven't created any custom categories yet.</p>`;
         return;
     }
 
-    listEl.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">Checking usage...</p>`;
+    listEl.innerHTML = `<p class="custom-cat-checking">Checking usage...</p>`;
 
     // Determine usage: one-off expenses are already loaded client-side
     // (allExpenses); recurring subscriptions need a fresh fetch since they
@@ -734,11 +745,10 @@ async function renderManageCategoriesList() {
     listEl.innerHTML = userOnlyCategories.map(cat => {
         const inUse = usedCategoryIds.has(cat.id);
         return `
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--input-bg); border:1px solid var(--border); border-radius:10px;">
-                <span style="font-size:14px; color:var(--text-main);">${escapeHtml(cat.name)}</span>
-                <button type="button" class="btn-icon" data-delete-category="${cat.id}" data-category-name="${escapeHtml(cat.name)}"
-                    ${inUse ? 'disabled title="This category is used by one or more expenses and can\'t be deleted"' : 'title="Delete category"'}
-                    style="${inUse ? 'opacity:0.4; cursor:not-allowed;' : 'color:var(--danger, #C0392B);'}">
+            <div class="custom-cat-row">
+                <span class="custom-cat-name">${escapeHtml(cat.name)}</span>
+                <button type="button" class="btn-icon btn-delete-cat ${inUse ? 'cat-in-use' : 'cat-can-delete'}" data-delete-category="${cat.id}" data-category-name="${escapeHtml(cat.name)}"
+                    ${inUse ? 'disabled title="This category is used by one or more expenses and can\'t be deleted"' : 'title="Delete category"'}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 </button>
             </div>`;
@@ -1368,7 +1378,7 @@ const TransferDock = (() => {
             </div>
             <div class="transfer-dock-footer">
                 <span id="transferDockDetail">Connecting...</span>
-                <span id="transferDockPct" style="font-weight:700;">0%</span>
+                <span id="transferDockPct" class="font-bold">0%</span>
             </div>
         `;
         document.body.appendChild(dockEl);
@@ -1827,7 +1837,7 @@ let isSubsOffline = false;
 
 async function loadSubscriptions() {
     if (elements.subsList) {
-        elements.subsList.innerHTML = '<p class="text-muted" style="text-align:center; padding:20px 0;">Loading active recurring commitments & inflows...</p>';
+        elements.subsList.innerHTML = '<p class="text-muted subs-loading-text">Loading active recurring commitments & inflows...</p>';
     }
 
     try {
@@ -2003,13 +2013,13 @@ function renderSubsModalContent() {
 
     if (isSubsOffline) {
         elements.subsList.innerHTML = `
-            <div class="empty-state connection-error" style="text-align:center; padding:36px 16px;">
-                <div class="empty-state-icon" style="margin-bottom:8px;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                <div class="empty-state-title" style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">Server Connection Failed</div>
-                <div class="empty-state-sub" style="color:var(--text-muted); font-size:13px; max-width:340px; margin:0 auto 16px;">
+            <div class="empty-state connection-error subs-empty-connection">
+                <div class="empty-state-icon mb-8"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" class="stroke-danger" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                <div class="empty-state-title subs-empty-title">Server Connection Failed</div>
+                <div class="empty-state-sub subs-empty-sub">
                     Could not reach the server to load your subscriptions and recurring cash flow.
                 </div>
-                <button type="button" class="btn-primary btn-sm" onclick="loadSubscriptions()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; padding:8px 18px; font-size:13px; border-radius:8px;">
+                <button type="button" class="btn-primary btn-sm btn-retry-subs" data-action="retry-subs">
                     Retry Connection
                 </button>
             </div>`;
@@ -2019,34 +2029,33 @@ function renderSubsModalContent() {
     if (currentSubsModalTab === 'expenses') {
         if (!cachedSubsExpenses || cachedSubsExpenses.length === 0) {
             elements.subsList.innerHTML = `
-                <div class="empty-state-compact" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
-                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No active subscription expenses found</p>
-                    <span style="font-size:12px;">Mark expenses as <strong>Recurring</strong> to monitor renewals, software SaaS, and recurring bills.</span>
+                <div class="empty-state-compact subs-empty-compact">
+                    <p class="subs-empty-p">No active subscription expenses found</p>
+                    <span class="subs-empty-span">Mark expenses as <strong>Recurring</strong> to monitor renewals, software SaaS, and recurring bills.</span>
                 </div>`;
             return;
         }
 
         elements.subsList.innerHTML = cachedSubsExpenses.map(sub => {
             const freqLabel = formatFrequency(sub);
-            const freqColor = 'var(--text-muted)';
             return `
-            <div class="sub-row" style="display:flex; justify-content:space-between; align-items:center; padding:14px 12px; border-bottom:1px solid var(--border); margin-bottom:8px; border-radius:12px; background:var(--card-bg); transition:background 0.2s;" onmouseenter="this.style.background='var(--input-bg)'" onmouseleave="this.style.background='var(--card-bg)'">
-                <div style="flex:1; min-width:0;">
-                    <div style="font-weight:700; color:var(--text-main); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(sub.description)}</div>
-                    <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
-                        <span>Next: <span style="color:var(--accent); font-weight:600;">${formatDate(sub.nextDueDate)}</span></span>
-                        <span style="opacity:0.4;">•</span>
-                        <span style="font-weight:600; color:var(--text-main);">${formatCurrency(sub.amount)}</span>
-                        <span style="opacity:0.4;">•</span>
-                        <span style="background:rgba(var(--ink-rgb),0.06); color:${freqColor}; border:1px solid var(--border); font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">${freqLabel}</span>
-                        <span style="opacity:0.7; font-size:11px; color:var(--text-muted);">${escapeHtml(sub.categoryName || 'General')}</span>
+            <div class="sub-row">
+                <div class="sub-row-info">
+                    <div class="sub-row-title">${escapeHtml(sub.description)}</div>
+                    <div class="sub-row-meta">
+                        <span>Next: <span class="text-accent font-semibold">${formatDate(sub.nextDueDate)}</span></span>
+                        <span class="opacity-40">•</span>
+                        <span class="font-semibold text-main">${formatCurrency(sub.amount)}</span>
+                        <span class="opacity-40">•</span>
+                        <span class="sub-freq-chip">${freqLabel}</span>
+                        <span class="sub-cat-name">${escapeHtml(sub.categoryName || 'General')}</span>
                     </div>
                 </div>
-                <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
-                    <button onclick="openEditSubscription(${sub.id}, '${jsAttrEscape(sub.description)}', '${sub.amount}', '${sub.nextDueDate}', '${sub.frequency || 'MONTHLY'}', ${sub.intervalDays || 1}, ${sub.categoryId || 'null'})" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
+                <div class="sub-row-actions">
+                    <button class="btn-edit sub-action-btn" data-action="edit-sub" data-id="${sub.id}" data-desc="${jsAttrEscape(sub.description)}" data-amount="${sub.amount}" data-due="${sub.nextDueDate}" data-freq="${sub.frequency || 'MONTHLY'}" data-interval="${sub.intervalDays || 1}" data-cat="${sub.categoryId || ''}" title="Edit Subscription">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     </button>
-                    <button onclick="cancelSubscription(${sub.id}, event)" class="btn-delete" title="Cancel Subscription" style="height:32px; width:32px;">
+                    <button class="btn-delete sub-action-btn" data-action="cancel-sub" data-id="${sub.id}" title="Cancel Subscription">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
@@ -2056,9 +2065,9 @@ function renderSubsModalContent() {
     } else if (currentSubsModalTab === 'savings') {
         if (!cachedSubsSavings || cachedSubsSavings.length === 0) {
             elements.subsList.innerHTML = `
-                <div class="empty-state-compact" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
-                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No recurring chit funds or savings plans</p>
-                    <span style="font-size:12px;">Create a savings goal and check <strong>Recurring Contribution (Chit Fund / RD / SIP)</strong> to schedule automated contributions.</span>
+                <div class="empty-state-compact subs-empty-compact">
+                    <p class="subs-empty-p">No recurring chit funds or savings plans</p>
+                    <span class="subs-empty-span">Create a savings goal and check <strong>Recurring Contribution (Chit Fund / RD / SIP)</strong> to schedule automated contributions.</span>
                 </div>`;
             return;
         }
@@ -2068,30 +2077,30 @@ function renderSubsModalContent() {
             const target = Number(goal.targetAmount || 0);
             const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
             return `
-            <div class="sub-row" style="display:flex; justify-content:space-between; align-items:center; padding:14px 12px; border-bottom:1px solid var(--border); margin-bottom:8px; border-radius:12px; background:var(--card-bg); transition:background 0.2s;" onmouseenter="this.style.background='var(--input-bg)'" onmouseleave="this.style.background='var(--card-bg)'">
-                <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
-                    <div style="width:36px; height:36px; border-radius:10px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.25); display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <div class="sub-row">
+                <div class="sub-savings-left">
+                    <div class="sub-savings-icon-box">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5a2.5 2.5 0 0 0-5 0c0 3 5 2 5 5a2.5 2.5 0 0 1-5 0"/></svg>
                     </div>
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-weight:700; color:var(--text-main); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    <div class="sub-row-info">
+                        <div class="sub-row-title">
                             ${escapeHtml(goal.name || "Chit / Savings Goal")}
                         </div>
-                        <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; flex-wrap:gap; gap:6px;">
-                            <span>Installment: <span style="color:#F59E0B; font-weight:700;">${formatCurrency(goal.recurringAmount || 0)}</span></span>
-                            <span style="opacity:0.4;">•</span>
-                            <span style="background:rgba(245,158,11,0.12); color:#F59E0B; border:1px solid rgba(245,158,11,0.3); font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:3px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>${escapeHtml(formatGoalFrequency(goal.frequency, goal.intervalDays))}
+                        <div class="sub-row-meta">
+                            <span>Installment: <span class="sub-installment-val">${formatCurrency(goal.recurringAmount || 0)}</span></span>
+                            <span class="opacity-40">•</span>
+                            <span class="sub-goal-freq-chip">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="svg-inline-tight"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>${escapeHtml(formatGoalFrequency(goal.frequency, goal.intervalDays))}
                             </span>
-                            ${goal.nextDueDate ? `<span style="opacity:0.4;">•</span><span>Next: <strong style="color:var(--text-main);">${formatDate(goal.nextDueDate)}</strong></span>` : ''}
+                            ${goal.nextDueDate ? `<span class="opacity-40">•</span><span>Next: <strong class="text-main">${formatDate(goal.nextDueDate)}</strong></span>` : ''}
                         </div>
-                        <div style="margin-top:6px; font-size:11px; color:var(--text-muted);">
+                        <div class="sub-goal-accumulated">
                             Accumulated ${formatCurrency(current)} of ${formatCurrency(target)} (${pct}%)
                         </div>
                     </div>
                 </div>
-                <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
-                    <button onclick="closeModal(elements.subsModal); document.getElementById('depositGoalId').value = '${goal.id}'; const dt = document.getElementById('savingsDepositTitle'); if(dt) dt.textContent='Contribute to ${jsAttrEscape(goal.name)}'; openModal(document.getElementById('savingsDepositModal'));" class="btn-primary btn-small" style="background:#F59E0B; border-color:#F59E0B; font-size:12px; padding:5px 12px; cursor:pointer;" title="Contribute Installment">
+                <div class="sub-row-actions">
+                    <button class="btn-primary btn-small btn-deposit-sub" data-action="deposit-goal" data-id="${goal.id}" data-name="${jsAttrEscape(goal.name)}" title="Contribute Installment">
                         + Deposit
                     </button>
                 </div>
@@ -2102,9 +2111,9 @@ function renderSubsModalContent() {
         // 'incomes' tab
         if (!cachedSubsIncomes || cachedSubsIncomes.length === 0) {
             elements.subsList.innerHTML = `
-                <div class="empty-state-compact" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
-                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No recurring income streams found</p>
-                    <span style="font-size:12px;">Mark salary, client retainers, or rental payments as <strong>Recurring</strong> in the Cash Inflow section to view them here.</span>
+                <div class="empty-state-compact subs-empty-compact">
+                    <p class="subs-empty-p">No recurring income streams found</p>
+                    <span class="subs-empty-span">Mark salary, client retainers, or rental payments as <strong>Recurring</strong> in the Cash Inflow section to view them here.</span>
                 </div>`;
             return;
         }
@@ -2112,38 +2121,77 @@ function renderSubsModalContent() {
         elements.subsList.innerHTML = cachedSubsIncomes.map(inc => {
             const freqLabel = formatIncomeFrequency(inc.frequency, inc.intervalDays);
             return `
-            <div class="sub-row" style="display:flex; justify-content:space-between; align-items:center; padding:14px 12px; border-bottom:1px solid var(--border); margin-bottom:8px; border-radius:12px; background:var(--card-bg); transition:background 0.2s;" onmouseenter="this.style.background='var(--input-bg)'" onmouseleave="this.style.background='var(--card-bg)'">
-                <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
-                    <div class="income-emoji-box" style="width:36px; height:36px; border-radius:10px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25); display:flex; align-items:center; justify-content:center; line-height:0; flex-shrink:0; padding:0; box-sizing:border-box;">
+            <div class="sub-row">
+                <div class="sub-savings-left">
+                    <div class="income-emoji-box sub-income-emoji-box">
                         ${getIncomeSourceEmoji(inc.source)}
                     </div>
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-weight:700; color:var(--text-main); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    <div class="sub-row-info">
+                        <div class="sub-row-title">
                             ${escapeHtml(inc.source || "Income")}
-                            ${inc.description ? `<span style="font-weight:400; font-size:12px; color:var(--text-muted); margin-left:6px;">— ${escapeHtml(inc.description)}</span>` : ''}
+                            ${inc.description ? `<span class="sub-income-desc">— ${escapeHtml(inc.description)}</span>` : ''}
                         </div>
-                        <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
-                            <span>Logged: <span style="color:#10B981; font-weight:600;">${inc.incomeDate || '—'}</span></span>
-                            <span style="opacity:0.4;">•</span>
-                            <span style="font-weight:600; color:#10B981;">+${formatCurrency(inc.amount)}</span>
-                            <span style="opacity:0.4;">•</span>
-                            <span style="background:rgba(16,185,129,0.12); color:#10B981; border:1px solid rgba(16,185,129,0.3); font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:3px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>${freqLabel}
+                        <div class="sub-row-meta">
+                            <span>Logged: <span class="text-inflow font-semibold">${inc.incomeDate || '—'}</span></span>
+                            <span class="opacity-40">•</span>
+                            <span class="font-semibold text-inflow">+${formatCurrency(inc.amount)}</span>
+                            <span class="opacity-40">•</span>
+                            <span class="sub-income-freq-chip">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="svg-inline-tight"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>${freqLabel}
                             </span>
                         </div>
                     </div>
                 </div>
-                <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
-                    <button onclick="editIncomeFromSubsModal(${inc.id})" class="btn-edit" title="Edit Recurring Income" style="height:32px; width:32px;">
+                <div class="sub-row-actions">
+                    <button class="btn-edit sub-action-btn" data-action="edit-income" data-id="${inc.id}" title="Edit Recurring Income">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     </button>
-                    <button onclick="deleteIncomeFromSubsModal(${inc.id})" class="btn-delete" title="Delete Income" style="height:32px; width:32px;">
+                    <button class="btn-delete sub-action-btn" data-action="delete-income" data-id="${inc.id}" title="Delete Income">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     </button>
                 </div>
             </div>`;
         }).join("");
     }
+}
+
+if (elements.subsList && !elements.subsList.__subsDelegated) {
+    elements.subsList.__subsDelegated = true;
+    elements.subsList.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn || !elements.subsList.contains(btn)) return;
+        const action = btn.getAttribute("data-action");
+        if (action === "retry-subs") {
+            loadSubscriptions();
+        } else if (action === "edit-sub") {
+            const id = Number(btn.getAttribute("data-id"));
+            const desc = btn.getAttribute("data-desc") || "";
+            const amount = btn.getAttribute("data-amount") || "";
+            const due = btn.getAttribute("data-due") || "";
+            const freq = btn.getAttribute("data-freq") || "MONTHLY";
+            const interval = Number(btn.getAttribute("data-interval")) || 1;
+            const cat = btn.getAttribute("data-cat") || "null";
+            openEditSubscription(id, desc, amount, due, freq, interval, cat === "null" || !cat ? null : cat);
+        } else if (action === "cancel-sub") {
+            const id = Number(btn.getAttribute("data-id"));
+            cancelSubscription(id, e);
+        } else if (action === "deposit-goal") {
+            const id = btn.getAttribute("data-id");
+            const name = btn.getAttribute("data-name") || "";
+            closeModal(elements.subsModal);
+            const goalInput = document.getElementById("depositGoalId");
+            if (goalInput) goalInput.value = id;
+            const dt = document.getElementById("savingsDepositTitle");
+            if (dt) dt.textContent = `Contribute to ${name}`;
+            openModal(document.getElementById("savingsDepositModal"));
+        } else if (action === "edit-income") {
+            const id = Number(btn.getAttribute("data-id"));
+            editIncomeFromSubsModal(id);
+        } else if (action === "delete-income") {
+            const id = Number(btn.getAttribute("data-id"));
+            deleteIncomeFromSubsModal(id);
+        }
+    });
 }
 
 window.editIncomeFromSubsModal = (incId) => {
@@ -2374,7 +2422,7 @@ function updateModalAvatarPreview(name, photoUrl) {
     const rawPhoto = photoUrl !== undefined ? photoUrl : localStorage.getItem("userProfilePicture");
     const photo = resolveAvatarUrl(rawPhoto);
     if (photo && photo.trim().length > 0) {
-        previewEl.innerHTML = `<img src="${photo}" alt="${initial}" style="width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;" onerror="this.onerror=null; this.parentElement.textContent='${initial}';" />`;
+        previewEl.innerHTML = `<img src="${photo}" alt="${initial}" class="avatar-preview-img" onerror="this.onerror=null; this.parentElement.textContent='${initial}';" />`;
         if (removeBtn) removeBtn.style.display = "inline-flex";
     } else {
         previewEl.textContent = initial;
@@ -2742,7 +2790,7 @@ function applyIncomeFilters() {
     if (!allIncomes || allIncomes.length === 0) {
         listEl.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.85;"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5a2.5 2.5 0 0 0-5 0c0 3 5 2 5 5a2.5 2.5 0 0 1-5 0"/></svg></div>
+                <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="opacity-85"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5a2.5 2.5 0 0 0-5 0c0 3 5 2 5 5a2.5 2.5 0 0 1-5 0"/></svg></div>
                 <div class="empty-state-title">No income records logged yet</div>
                 <div class="empty-state-sub">Click <strong>Record Income</strong> above to track your salary, investments, client retainers, or other inflows.</div>
             </div>`;
@@ -2819,7 +2867,7 @@ window.applyIncomeFilters = applyIncomeFilters;
 
 function getIncomeSourceSvg(source) {
     const s = (source || '').toLowerCase();
-    const st = 'style="display:block; margin:auto; flex-shrink:0;"';
+    const st = 'class="svg-block-center"';
     if (s.includes('salary') || s.includes('paycheck') || s.includes('wage') || s.includes('job') || s.includes('employer')) {
         return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${st}><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
     }
@@ -2861,23 +2909,32 @@ window.getIncomeSourceEmoji = getIncomeSourceEmoji;
 function renderIncomesTableOnly(incomes) {
     const listEl = document.getElementById("incomeList");
     if (!listEl) return;
+    if (!listEl.__incomeResetDelegated) {
+        listEl.__incomeResetDelegated = true;
+        listEl.addEventListener("click", (e) => {
+            const btn = e.target.closest("button[data-action=\"reset-income-filters\"]");
+            if (btn && listEl.contains(btn)) {
+                resetIncomeFilters();
+            }
+        });
+    }
 
     if (!incomes || incomes.length === 0) {
         const isFiltered = (allIncomes && allIncomes.length > 0);
         if (isFiltered) {
             listEl.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.85;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+                    <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="opacity-85"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
                     <div class="empty-state-title">No matching incomes found</div>
                     <div class="empty-state-sub">Try adjusting your search query, cadence filter, or date range.</div>
-                    <button type="button" class="btn-icon btn-text-icon" onclick="resetIncomeFilters()" style="display:inline-flex; align-items:center; gap:6px; margin:12px auto 0; cursor:pointer;">
+                    <button type="button" class="btn-icon btn-text-icon btn-reset-income-filters" data-action="reset-income-filters">
                         <span>Clear Income Filters</span>
                     </button>
                 </div>`;
         } else {
             listEl.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.85;"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5a2.5 2.5 0 0 0-5 0c0 3 5 2 5 5a2.5 2.5 0 0 1-5 0"/></svg></div>
+                    <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="opacity-85"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5a2.5 2.5 0 0 0-5 0c0 3 5 2 5 5a2.5 2.5 0 0 1-5 0"/></svg></div>
                     <div class="empty-state-title">No income records logged yet</div>
                     <div class="empty-state-sub">Click <strong>Record Income</strong> above to track your salary, investments, client retainers, or other inflows.</div>
                 </div>`;
@@ -2886,31 +2943,31 @@ function renderIncomesTableOnly(incomes) {
     }
 
     listEl.innerHTML = `
-        <div class="income-list-stream" style="display:flex; flex-direction:column; gap:8px; width:100%; box-sizing:border-box;">
+        <div class="income-list-stream">
             ${incomes.map((inc, idx) => {
                 const isRec = !!(inc.isRecurring || inc.recurring);
                 const freqLabel = formatIncomeFrequency(inc.frequency, inc.intervalDays);
                 const delay = Math.min(idx * 0.03, 0.35);
                 return `
-                <div class="expense-item income-item table-row-stagger" style="animation-delay: ${delay}s; border-left: 3px solid #10B981;">
-                    <div class="income-emoji-box" title="${escapeHtml(inc.source || 'Income')}" style="width:40px; height:40px; border-radius:12px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0; line-height:0; padding:0; box-sizing:border-box; overflow:hidden;">
+                <div class="expense-item income-item table-row-stagger border-l-inflow" data-delay="${delay}">
+                    <div class="income-emoji-box income-emoji-box-styled" title="${escapeHtml(inc.source || 'Income')}">
                         ${getIncomeSourceEmoji(inc.source)}
                     </div>
-                    <div class="expense-info" style="flex:1; min-width:0;">
-                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                            <h4 class="expense-title" style="margin:0; font-size:14px; font-weight:700; color:var(--text-main);">${escapeHtml(inc.source || "Income")}</h4>
+                    <div class="expense-info">
+                        <div class="income-title-row">
+                            <h4 class="expense-title income-title-h4">${escapeHtml(inc.source || "Income")}</h4>
                             ${incomeClassificationTags(inc)}
                         </div>
-                        ${inc.description ? `<div class="income-desc-text" style="font-size:12px; color:var(--text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(inc.description)}">${escapeHtml(inc.description)}</div>` : ''}
-                        <div class="expense-meta" style="display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
+                        ${inc.description ? `<div class="income-desc-text income-desc-text-styled" title="${escapeHtml(inc.description)}">${escapeHtml(inc.description)}</div>` : ''}
+                        <div class="expense-meta">
                             <span>${formatDate(inc.incomeDate)}</span>
                             ${isRec 
-                                ? `<span class="status-badge badge-success" style="font-size:10px; background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:4px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Recurring (${freqLabel})</span>` 
-                                : '<span class="status-badge badge-neutral" style="font-size:10px; display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:4px; white-space:nowrap;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> One-Time</span>'}
+                                ? `<span class="status-badge badge-success badge-recurring-inflow"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Recurring (${freqLabel})</span>` 
+                                : '<span class="status-badge badge-neutral badge-onetime-inflow"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> One-Time</span>'}
                         </div>
                     </div>
-                    <div class="expense-actions-col" style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-                        <div class="expense-amount" style="font-family:var(--font-mono); font-variant-numeric:tabular-nums; color:#10B981; font-size:15px; font-weight:700;">
+                    <div class="expense-actions-col">
+                        <div class="expense-amount amount-inflow">
                             +${formatCurrency(inc.amount)}
                         </div>
                         <button class="btn-edit edit-income-btn" data-inc-id="${inc.id}" data-inc-source="${escapeHtml(inc.source || "")}" data-inc-amount="${inc.amount || 0}" data-inc-date="${inc.incomeDate || ""}" data-inc-desc="${escapeHtml(inc.description || "")}" data-inc-recurring="${isRec}" data-inc-freq="${escapeHtml(inc.frequency || "MONTHLY")}" data-inc-interval="${inc.intervalDays || 1}" data-inc-kind="${escapeHtml(inc.kind || "")}" data-inc-month="${escapeHtml(inc.countsTowardMonth || "")}" data-inc-cat="${inc.reimbursedCategoryId || ""}" title="Edit Income">
@@ -2924,6 +2981,9 @@ function renderIncomesTableOnly(incomes) {
                 `;}).join("")}
         </div>
     `;
+    listEl.querySelectorAll('.income-item[data-delay]').forEach(el => {
+        el.style.animationDelay = `${el.dataset.delay}s`;
+    });
 
     listEl.querySelectorAll(".edit-income-btn").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -3038,15 +3098,27 @@ function renderSavingsSkeleton() {
 window.renderSavingsSkeleton = renderSavingsSkeleton;
 
 function renderSavingsGoals(goals) {
+if (container && !container.__goalsDelegated) {
+    container.__goalsDelegated = true;
+    container.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn || !container.contains(btn)) return;
+        const action = btn.getAttribute("data-action");
+        if (action === "create-goal") {
+            document.getElementById("addGoalBtn")?.click();
+        }
+    });
+}
+
     allSavingsGoals = Array.isArray(goals) ? goals : [];
     const container = document.getElementById("savingsGoalsList");
     if (!container) return;
     if (!allSavingsGoals || allSavingsGoals.length === 0) {
         container.innerHTML = `
-            <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; max-width:100%; box-sizing:border-box;">
-                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No savings goals configured yet</p>
-                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Set targets for emergency reserves, investments, or travel milestones.</span>
-                <button type="button" class="btn-primary btn-small" onclick="document.getElementById('addGoalBtn')?.click()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#F59E0B; border-color:#F59E0B; color:#fff;">
+            <div class="empty-state-compact goal-empty-compact">
+                <p class="goal-empty-title">No savings goals configured yet</p>
+                <span class="goal-empty-desc">Set targets for emergency reserves, investments, or travel milestones.</span>
+                <button type="button" class="btn-primary btn-small btn-create-goal" data-action="create-goal">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span>Create Savings Goal</span>
                 </button>
@@ -3061,38 +3133,38 @@ function renderSavingsGoals(goals) {
         const isCompleted = current >= target;
 
         return `
-            <div class="card savings-goal-card hover-lift table-row-stagger" style="animation-delay: ${Math.min(idx * 45, 450)}ms; padding:18px; border:1px solid var(--border); border-radius:14px; background:var(--card-bg, rgba(255,255,255,0.03)); width:100%; max-width:100%; box-sizing:border-box;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+            <div class="card savings-goal-card hover-lift table-row-stagger goal-card-styled" data-delay="${Math.min(idx * 45, 450)}">
+                <div class="goal-header-row">
                     <div>
-                        <h4 style="margin:0; font-size:15px; font-weight:700;">${escapeHtml(goal.name || "Savings Goal")}</h4>
-                        <span style="font-size:11.5px; color:var(--text-muted);">Target: ${goal.targetDate || "Flexible"}</span>
+                        <h4 class="goal-name-title">${escapeHtml(goal.name || "Savings Goal")}</h4>
+                        <span class="goal-target-date">Target: ${goal.targetDate || "Flexible"}</span>
                         ${goal.isRecurring ? `
-                            <div style="margin-top:4px; font-size:11px; color:#F59E0B; display:inline-flex; align-items:center; gap:4px; background:rgba(245,158,11,0.1); padding:2px 6px; border-radius:6px; border:1px solid rgba(245,158,11,0.25);">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:3px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><strong>${formatCurrency(goal.recurringAmount)}</strong> / ${escapeHtml(formatGoalFrequency(goal.frequency, goal.intervalDays))}
+                            <div class="goal-recurring-badge">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="svg-inline-tight"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><strong>${formatCurrency(goal.recurringAmount)}</strong> / ${escapeHtml(formatGoalFrequency(goal.frequency, goal.intervalDays))}
                                 ${goal.nextDueDate ? `• Next: ${formatDate(goal.nextDueDate)}` : ''}
                             </div>
                         ` : ''}
                     </div>
                     ${isCompleted 
-                        ? '<span class="status-badge badge-success badge-pulse-glow" style="font-size:11px; display:inline-flex; align-items:center; gap:4px;">Completed <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>'
-                        : `<span class="status-badge badge-warning" style="font-size:11px;">${ratio}% Achieved</span>`}
+                        ? '<span class="status-badge badge-success badge-pulse-glow font-11-inline-flex">Completed <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>'
+                        : `<span class="status-badge badge-warning font-11">${ratio}% Achieved</span>`}
                 </div>
                 
-                <div style="margin: 12px 0 6px;">
-                    <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px;">
-                        <span style="font-weight:700; color:#F59E0B;">${formatCurrency(current)}</span>
-                        <span style="color:var(--text-muted);">${formatCurrency(target)}</span>
+                <div class="goal-progress-wrap">
+                    <div class="goal-progress-values">
+                        <span class="goal-current-val">${formatCurrency(current)}</span>
+                        <span class="goal-target-val">${formatCurrency(target)}</span>
                     </div>
-                    <div style="height:8px; width:100%; background:var(--border); border-radius:4px; overflow:hidden;">
-                        <div class="goal-progress-fill" data-target-width="${ratio}%" style="height:100%; width:0%; background: linear-gradient(90deg, #F59E0B, #10B981); border-radius:4px;"></div>
+                    <div class="goal-progress-track">
+                        <div class="goal-progress-fill" data-target-width="${ratio}%"></div>
                     </div>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:10px; border-top:1px solid var(--border);">
-                    <button class="btn-primary btn-small deposit-goal-btn" data-goal-id="${goal.id}" data-goal-name="${escapeHtml(goal.name)}" style="background:#F59E0B; border-color:#F59E0B; font-size:12px; padding:4px 12px; cursor:pointer;">
+                <div class="goal-actions-row">
+                    <button class="btn-primary btn-small deposit-goal-btn btn-deposit-gold" data-goal-id="${goal.id}" data-goal-name="${escapeHtml(goal.name)}">
                         + Deposit
                     </button>
-                    <div style="display:flex; align-items:center; gap:6px;">
+                    <div class="goal-edit-delete-group">
                         <button class="btn-icon btn-edit edit-goal-btn" data-goal-id="${goal.id}" title="Edit Goal" aria-label="Edit savings goal">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
@@ -3104,6 +3176,12 @@ function renderSavingsGoals(goals) {
             </div>
         `;
     }).join("");
+    container.querySelectorAll('.savings-goal-card[data-delay]').forEach(el => {
+        el.style.animationDelay = `${el.dataset.delay}ms`;
+    });
+    container.querySelectorAll('.goal-progress-fill[data-target-width]').forEach(el => {
+        el.style.width = el.getAttribute('data-target-width');
+    });
 
     requestAnimationFrame(() => {
         container.querySelectorAll(".goal-progress-fill").forEach(fill => {
@@ -4519,8 +4597,8 @@ async function openSecurityPinDialog() {
             pinStatusIndicator.style.border = `1px solid ${hasPin ? "#4C7A78" : "#E6A23C"}`;
             pinStatusIndicator.style.color = hasPin ? "#4C7A78" : "#E6A23C";
             pinStatusIndicator.innerHTML = hasPin
-                ? `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><strong>Active:</strong> 6-Digit PIN is set. Enter a new PIN below if you want to update it.</span>`
-                : `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Not Configured:</strong> Set a 6-digit PIN below for zero-email instant recovery.</span>`;
+                ? `<span class="inline-flex-align-gap6"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><strong>Active:</strong> 6-Digit PIN is set. Enter a new PIN below if you want to update it.</span>`
+                : `<span class="inline-flex-align-gap6"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Not Configured:</strong> Set a 6-digit PIN below for zero-email instant recovery.</span>`;
         }
     } catch (err) {
         console.warn("Could not fetch user security status:", err);
@@ -4589,14 +4667,14 @@ async function renderBiometricsModal() {
     biometricsStatusIndicator.style.background = "rgba(100, 116, 139, 0.1)";
     biometricsStatusIndicator.style.border = "1px solid rgba(100, 116, 139, 0.2)";
     biometricsStatusIndicator.style.color = "var(--text-muted)";
-    biometricsStatusIndicator.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Checking biometric authenticator & passkey status...</span>`;
+    biometricsStatusIndicator.innerHTML = `<span class="inline-flex-align-gap6"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Checking biometric authenticator & passkey status...</span>`;
     biometricsActionsContainer.innerHTML = "";
 
     if (!window.WebBiometrics) {
         biometricsStatusIndicator.style.background = "rgba(230, 80, 60, 0.15)";
         biometricsStatusIndicator.style.border = "1px solid #E6503C";
         biometricsStatusIndicator.style.color = "#E6503C";
-        biometricsStatusIndicator.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Module Unavailable:</strong> Biometrics script could not be loaded.</span>`;
+        biometricsStatusIndicator.innerHTML = `<span class="inline-flex-align-gap6"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Module Unavailable:</strong> Biometrics script could not be loaded.</span>`;
         return;
     }
 
@@ -4625,12 +4703,12 @@ async function renderBiometricsModal() {
         biometricsStatusIndicator.style.background = "rgba(230, 162, 60, 0.15)";
         biometricsStatusIndicator.style.border = "1px solid #E6A23C";
         biometricsStatusIndicator.style.color = "#E6A23C";
-        biometricsStatusIndicator.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Device Unsupported:</strong> ${safeEscapeBio(msg)}</span>`;
+        biometricsStatusIndicator.innerHTML = `<span class="inline-flex-align-gap6"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Device Unsupported:</strong> ${safeEscapeBio(msg)}</span>`;
 
         if (isServerEnabled) {
             biometricsActionsContainer.innerHTML = `
-                <p style="font-size:12px; color:var(--text-muted); margin:0;">Passkeys are currently registered on your account from another device.</p>
-                <button type="button" id="removePasskeyBtn" class="btn-danger" style="width:100%; padding:9px 12px; font-size:13px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <p class="bio-registered-note">Passkeys are currently registered on your account from another device.</p>
+                <button type="button" id="removePasskeyBtn" class="btn-danger btn-bio-full">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     Remove Passkeys / Disable Biometrics
                 </button>
@@ -4644,13 +4722,13 @@ async function renderBiometricsModal() {
         biometricsStatusIndicator.style.background = "rgba(76, 122, 120, 0.15)";
         biometricsStatusIndicator.style.border = "1px solid #4C7A78";
         biometricsStatusIndicator.style.color = "#4C7A78";
-        biometricsStatusIndicator.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><strong>Passkey Active:</strong> Biometric sign-in is active for your account. You can sign in passwordless using Touch ID, Face ID, or Windows Hello.</span>`;
+        biometricsStatusIndicator.innerHTML = `<span class="inline-flex-align-gap6"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><strong>Passkey Active:</strong> Biometric sign-in is active for your account. You can sign in passwordless using Touch ID, Face ID, or Windows Hello.</span>`;
 
         biometricsActionsContainer.innerHTML = `
-            <button type="button" id="registerAnotherPasskeyBtn" class="btn-secondary" style="width:100%; padding:9px 12px; font-size:13px; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <button type="button" id="registerAnotherPasskeyBtn" class="btn-secondary btn-bio-full">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34"/><path d="M21 12a9 9 0 0 0-9-9"/><path d="M12 7a5 5 0 0 1 5 5"/></svg> Register / Update Passkey for This Device
             </button>
-            <button type="button" id="removePasskeyBtn" class="btn-danger" style="width:100%; padding:9px 12px; font-size:13px; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <button type="button" id="removePasskeyBtn" class="btn-danger btn-bio-full">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 Remove Passkeys / Disable Biometrics
             </button>
@@ -4661,10 +4739,10 @@ async function renderBiometricsModal() {
         biometricsStatusIndicator.style.background = "rgba(100, 116, 139, 0.12)";
         biometricsStatusIndicator.style.border = "1px solid rgba(100, 116, 139, 0.25)";
         biometricsStatusIndicator.style.color = "var(--text-muted)";
-        biometricsStatusIndicator.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg><strong>Not Configured:</strong> No biometric passkeys are linked to your account. Set up biometric unlock to sign in without passwords.</span>`;
+        biometricsStatusIndicator.innerHTML = `<span class="inline-flex-align-gap6"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg><strong>Not Configured:</strong> No biometric passkeys are linked to your account. Set up biometric unlock to sign in without passwords.</span>`;
 
         biometricsActionsContainer.innerHTML = `
-            <button type="button" id="enablePasskeyBtn" class="btn-primary" style="width:100%; padding:10px 14px; font-size:13.5px; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <button type="button" id="enablePasskeyBtn" class="btn-primary btn-bio-enable">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34"/><path d="M21 12a9 9 0 0 0-9-9"/><path d="M12 7a5 5 0 0 1 5 5"/></svg> Set Up Biometric Sign-In on This Device
             </button>
         `;

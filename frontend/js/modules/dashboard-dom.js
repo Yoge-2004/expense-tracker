@@ -144,28 +144,28 @@
     const loansList = document.getElementById("loansListContainer");
     if (loansList) {
         loansList.innerHTML = `
-            <div class="loans-skeleton-loader" style="padding:16px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02); display:flex; flex-direction:column; gap:10px;">
-                <div class="skeleton" style="width:35%; height:20px; border-radius:6px;"></div>
-                <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
-                <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
+            <div class="loans-skeleton-loader">
+                <div class="skeleton skeleton-loan-head"></div>
+                <div class="skeleton skeleton-loan-row"></div>
+                <div class="skeleton skeleton-loan-row"></div>
             </div>`;
     }
     // Financial insights skeleton
     const insightsGrid = document.getElementById("insightsCardsGrid");
     if (insightsGrid && !insightsGrid.children.length) {
         insightsGrid.innerHTML = Array.from({ length: 3 }, () =>
-            `<div class="skeleton skeleton-card" style="min-height:110px;"></div>`
+            `<div class="skeleton skeleton-card skeleton-card-110"></div>`
         ).join('');
     }
     // Money flow skeleton
     const moneyFlowBody = document.getElementById("moneyFlowBody");
     if (moneyFlowBody && !moneyFlowBody.children.length) {
         moneyFlowBody.innerHTML = `
-            <div class="money-flow-skeleton" style="display:flex; flex-direction:column; gap:8px; padding:6px 0;">
-                <div class="skeleton skeleton-row" style="height:28px;"></div>
-                <div class="skeleton skeleton-row" style="height:28px;"></div>
-                <div class="skeleton skeleton-row" style="height:28px;"></div>
-                <div class="skeleton skeleton-row" style="height:28px;"></div>
+            <div class="money-flow-skeleton">
+                <div class="skeleton skeleton-row skeleton-row-28"></div>
+                <div class="skeleton skeleton-row skeleton-row-28"></div>
+                <div class="skeleton skeleton-row skeleton-row-28"></div>
+                <div class="skeleton skeleton-row skeleton-row-28"></div>
             </div>`;
     }
 }

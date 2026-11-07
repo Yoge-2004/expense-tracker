@@ -42,7 +42,7 @@
 
         ribbon.innerHTML = `
             <!-- External Slicers Header - Positioned Above & Outside the Filter Container -->
-            <div class="bi-slicers-top bi-slicers-external-top" style="margin-bottom: 12px;">
+            <div class="bi-slicers-top bi-slicers-external-top">
                 <div class="bi-slicers-heading">
                     <span class="bi-badge">
                         <span class="bi-badge-dot"></span>
@@ -51,7 +51,7 @@
                     <h3 class="bi-slicers-title">Dimensional Analytics &amp; Cross-Filtering</h3>
                 </div>
                 <div class="bi-slicers-actions">
-                    <div id="biCrossFilterContainer" style="display:none;"></div>
+                    <div id="biCrossFilterContainer" class="hidden"></div>
                     <button type="button" class="bi-action-btn" id="biWhatIfBtn" title="Interactive What-If Scenario Simulator">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                         <span>What-If Simulator</span>
@@ -76,34 +76,34 @@
                 <div class="bi-slicers-row">
                     <!-- Horizon Slicer -->
                     <div class="bi-slicer-group" id="biHorizonSlicer" role="group" aria-label="Time Horizon Slicer">
-                        <span class="bi-slicer-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Horizon</span>
+                        <span class="bi-slicer-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="bi-slicer-icon"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Horizon</span>
                         <div class="bi-slicer-pills-wrap">
-                            <button type="button" class="bi-slicer-pill active" style="border:none; outline:none;" data-horizon="all">All Time</button>
-                            <button type="button" class="bi-slicer-pill" style="border:none; outline:none;" data-horizon="mtd">This Month</button>
-                            <button type="button" class="bi-slicer-pill" style="border:none; outline:none;" data-horizon="last30">Last 30 Days</button>
-                            <button type="button" class="bi-slicer-pill" style="border:none; outline:none;" data-horizon="qtd">This Quarter</button>
-                            <button type="button" class="bi-slicer-pill" style="border:none; outline:none;" data-horizon="ytd">Year to Date</button>
-                            <button type="button" class="bi-slicer-pill" style="border:none; outline:none;" data-horizon="last7">Last 7 Days</button>
+                            <button type="button" class="bi-slicer-pill active" data-horizon="all">All Time</button>
+                            <button type="button" class="bi-slicer-pill" data-horizon="mtd">This Month</button>
+                            <button type="button" class="bi-slicer-pill" data-horizon="last30">Last 30 Days</button>
+                            <button type="button" class="bi-slicer-pill" data-horizon="qtd">This Quarter</button>
+                            <button type="button" class="bi-slicer-pill" data-horizon="ytd">Year to Date</button>
+                            <button type="button" class="bi-slicer-pill" data-horizon="last7">Last 7 Days</button>
                         </div>
                     </div>
 
                     <!-- Commitment Slicer -->
                     <div class="bi-slicer-group" id="biCommitmentSlicer" role="group" aria-label="Commitment Type Slicer">
-                        <span class="bi-slicer-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:4px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Commitment</span>
+                        <span class="bi-slicer-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="bi-slicer-icon"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Commitment</span>
                         <div class="bi-slicer-pills-wrap">
-                            <button type="button" class="bi-slicer-pill active" style="border:none; outline:none;" data-commitment="all">All Types</button>
-                            <button type="button" class="bi-slicer-pill" style="border:none; outline:none;" data-commitment="onetime">One-Time</button>
-                            <button type="button" class="bi-slicer-pill" style="border:none; outline:none;" data-commitment="recurring">Subscriptions</button>
+                            <button type="button" class="bi-slicer-pill active" data-commitment="all">All Types</button>
+                            <button type="button" class="bi-slicer-pill" data-commitment="onetime">One-Time</button>
+                            <button type="button" class="bi-slicer-pill" data-commitment="recurring">Subscriptions</button>
                         </div>
                     </div>
 
                     <!-- Cashflow Direction Slicer -->
                     <div class="bi-slicer-group" id="biStreamSlicer" role="group" aria-label="Cashflow Stream Slicer">
-                        <span class="bi-slicer-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:4px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Cash Flow</span>
+                        <span class="bi-slicer-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="bi-slicer-icon"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Cash Flow</span>
                         <div class="bi-slicer-pills-wrap">
-                            <button type="button" class="bi-slicer-pill active" style="border:none; outline:none;" data-stream="all">All Cash</button>
-                            <button type="button" class="bi-slicer-pill" style="border:none; outline:none;" data-stream="expenses">Outflow Only</button>
-                            <button type="button" class="bi-slicer-pill" style="border:none; outline:none;" data-stream="incomes">Inflow Only</button>
+                            <button type="button" class="bi-slicer-pill active" data-stream="all">All Cash</button>
+                            <button type="button" class="bi-slicer-pill" data-stream="expenses">Outflow Only</button>
+                            <button type="button" class="bi-slicer-pill" data-stream="incomes">Inflow Only</button>
                         </div>
                     </div>
                 </div>
@@ -173,10 +173,10 @@
             modal.innerHTML = `
                 <div class="bi-decomp-box">
                     <div class="bi-decomp-top">
-                        <h3 class="bi-decomp-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="display:inline-block; vertical-align:-2px; margin-right:6px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Variance Decomposition &amp; Cost Driver Tree</h3>
+                        <h3 class="bi-decomp-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="bi-decomp-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Variance Decomposition &amp; Cost Driver Tree</h3>
                         <button type="button" class="bi-crossfilter-close" id="biCloseDecompBtn">&times;</button>
                     </div>
-                    <p style="font-size:12px;color:var(--text-muted,#9E988A);margin:0;">
+                    <p class="bi-decomp-desc">
                         Decomposes period-over-period spend variance across categories to isolate primary cost drivers.
                     </p>
                     <div class="bi-decomp-waterfall" id="biWaterfallContainer"></div>
@@ -326,7 +326,7 @@
         container.style.display = "inline-flex";
         container.innerHTML = `
             <span class="bi-active-crossfilter-pill">
-                <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="display:inline-block; vertical-align:-2px; margin-right:5px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>Filtered: <strong>${escapeHtml(activeCrossFilter.label)}</strong></span>
+                <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="bi-crossfilter-icon"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>Filtered: <strong>${escapeHtml(activeCrossFilter.label)}</strong></span>
                 <button type="button" class="bi-crossfilter-close" id="biClearCrossFilterBtn" title="Clear cross-filter">&times;</button>
             </span>
         `;
@@ -615,7 +615,7 @@
         const maxAbsDelta = Math.max(...deltas.map(d => Math.abs(d.delta)), 100);
 
         let rowsHtml = `
-            <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08);font-size:11px;font-weight:700;color:var(--text-muted,#9E988A);">
+            <div class="bi-waterfall-header">
                 <span>CATEGORY COST DRIVER</span>
                 <span>VARIANCE DELTA (MOM)</span>
             </div>
@@ -628,9 +628,9 @@
                 <div class="bi-waterfall-row">
                     <span class="bi-waterfall-label" title="${escapeHtml(d.category)}">${escapeHtml(d.category)}</span>
                     <div class="bi-waterfall-bar-track">
-                        <div class="bi-waterfall-bar-fill ${isSurge ? 'surge' : 'savings'}" style="width:${pctBar}%;"></div>
+                        <div class="bi-waterfall-bar-fill ${isSurge ? 'surge' : 'savings'}" data-width="${pctBar}%"></div>
                     </div>
-                    <span class="bi-waterfall-val" style="color:${isSurge ? '#EF4444' : '#10B981'};">
+                    <span class="bi-waterfall-val ${isSurge ? 'bi-val-surge' : 'bi-val-savings'}">
                         ${isSurge ? '+' : ''}${fmt(d.delta)}
                     </span>
                 </div>
@@ -638,10 +638,13 @@
         });
 
         if (deltas.length === 0) {
-            rowsHtml += `<p style="text-align:center;color:var(--text-muted);font-size:12px;padding:12px;">No historical transactions available to decompose.</p>`;
+            rowsHtml += `<p class="bi-waterfall-empty">No historical transactions available to decompose.</p>`;
         }
 
         container.innerHTML = rowsHtml;
+        container.querySelectorAll('[data-width]').forEach(el => {
+            el.style.width = el.getAttribute('data-width');
+        });
         modal.classList.add("open");
     }
 
@@ -884,15 +887,18 @@
             }
         }
 
+        const targetWidth = Math.min(spendPct || monthProgress, 100);
         gauge.innerHTML = `
             <div class="bi-pacing-header">
                 <span>Budget Velocity</span>
                 <span>${pacingText}</span>
             </div>
             <div class="bi-pacing-track" title="${pacingText}">
-                <div class="bi-pacing-fill ${pacingStatus}" style="width: ${Math.min(spendPct || monthProgress, 100)}%;"></div>
+                <div class="bi-pacing-fill ${pacingStatus}"></div>
             </div>
         `;
+        const fillEl = gauge.querySelector('.bi-pacing-fill');
+        if (fillEl) fillEl.style.width = `${targetWidth}%`;
     }
 
     // Period-over-period variance badges

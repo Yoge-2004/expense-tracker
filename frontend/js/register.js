@@ -398,15 +398,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
                         Suggested usernames:
                     </div>
-                    <span class="suggestion-chip" onclick="pickUsername('${s1}')">@${s1}</span>
-                    <span class="suggestion-chip" onclick="pickUsername('${s2}')">@${s2}</span>
-                    <span class="suggestion-chip" onclick="pickUsername('${s3}')">@${s3}</span>
+                    <span class="suggestion-chip" data-username="${s1}">@${s1}</span>
+                    <span class="suggestion-chip" data-username="${s2}">@${s2}</span>
+                    <span class="suggestion-chip" data-username="${s3}">@${s3}</span>
                 `;
                 suggestionsBox.style.display = 'flex';
             } else {
                 suggestionsBox.style.display = 'none';
             }
         }
+
+        suggestionsBox.addEventListener("click", (e) => {
+            const chip = e.target.closest("[data-username]");
+            if (chip && chip.dataset.username) {
+                userInput.value = chip.dataset.username;
+                suggestionsBox.style.display = "none";
+                updateFormState();
+            }
+        });
 
         window.pickUsername = function(suggested) {
             userInput.value = suggested;
@@ -438,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="text" class="custom-select-search" placeholder="Search 100+ currencies (USD, EUR, ₹, Yen)..." aria-label="Search currencies">
                 <div class="custom-options-list">
                     <div class="custom-option selected" data-value="" data-name="none select currency" data-symbol="">
-                        <span><span class="custom-option-flag" style="display:inline-flex; align-items:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg></span> None (Select Currency)</span>
+                        <span><span class="custom-option-flag inline-flex-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg></span> None (Select Currency)</span>
                     </div>
                     ${currencyList.map(item => `
                         <div class="custom-option" data-value="${item.code}" data-name="${item.name.toLowerCase()}" data-symbol="${item.symbol.toLowerCase()}">

@@ -91,12 +91,10 @@
     }
 
     function cardHtml(insight) {
-        const style = KIND_STYLE[insight.kind] || KIND_STYLE.informational;
-        const colour = `var(${style.varName}, ${style.fallback})`;
         return `
             <div class="insight-card-item insight-card-engine" data-insight-kind="${escapeHtml(insight.kind)}">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: color-mix(in srgb, ${colour} 15%, transparent); color: ${colour};">${iconFor(insight)}</div>
+                    <div class="insight-icon-box kind-${insight.kind || 'informational'}">${iconFor(insight)}</div>
                     <span class="insight-card-label">${escapeHtml(titleFor(insight))}</span>
                     ${confidenceBadge(insight.confidence)}
                 </div>

@@ -2,6 +2,74 @@
 (function () {
     "use strict";
 
+    function renderConnectionErrorFull(desc, action) {
+        action = action || "reload";
+        return `<div class="empty-state connection-error empty-state-connection">
+            <div class="empty-state-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+            <div class="empty-state-title">Server Connection Failed</div>
+            <div class="empty-state-sub">${desc}</div>
+            <button type="button" class="btn-primary btn-sm" data-retry-action="${action}">
+                Retry Connection
+            </button>
+        </div>`;
+    }
+
+    function renderConnectionErrorCompact(opts) {
+        opts = opts || {};
+        const title = opts.title || "Server Connection Failed";
+        const desc = opts.desc || "";
+        const action = opts.action || "reload";
+        const btnTheme = opts.btnTheme || "";
+        const compactSm = !!opts.compactSm;
+        const spanAll = !!opts.spanAll;
+
+        const size = compactSm ? 20 : 24;
+        const classes = [
+            "empty-state-compact",
+            "connection-error",
+            "empty-state-compact-connection",
+            compactSm ? "compact-sm" : "",
+            spanAll ? "grid-col-all" : ""
+        ].filter(Boolean).join(" ");
+
+        const btnClasses = [
+            "btn-primary",
+            "btn-small",
+            btnTheme === "warning" ? "btn-retry-warning" : "",
+            btnTheme === "purple" ? "btn-retry-purple" : ""
+        ].filter(Boolean).join(" ");
+
+        return `<div class="${classes}">
+            <div><svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+            <p class="empty-state-title">${title}</p>
+            <span class="empty-state-desc">${desc}</span>
+            <button type="button" class="${btnClasses}" data-retry-action="${action}">
+                <span>Retry Connection</span>
+            </button>
+        </div>`;
+    }
+
+    document.addEventListener("click", function(e) {
+        const retryBtn = e.target.closest("[data-retry-action]");
+        if (!retryBtn) return;
+        const action = retryBtn.dataset.retryAction;
+        if (action === "reload") {
+            location.reload();
+        } else if (action === "loadBudgets") {
+            if (typeof window.loadBudgets === "function") {
+                window.loadBudgets();
+            } else {
+                location.reload();
+            }
+        } else if (action === "fetchLoans") {
+            if (window.LoansManager && typeof window.LoansManager.fetchLoans === "function") {
+                window.LoansManager.fetchLoans();
+            } else {
+                location.reload();
+            }
+        }
+    });
+
     function createController(deps) {
         const {
             getState,
@@ -126,17 +194,7 @@
                 if (incomes === null) {
                     const incomeListEl = document.getElementById("incomeList");
                     if (incomeListEl) {
-                        incomeListEl.innerHTML = `
-                            <div class="empty-state connection-error" style="text-align:center; padding:36px 16px;">
-                                <div class="empty-state-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                                <div class="empty-state-title" style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">Server Connection Failed</div>
-                                <div class="empty-state-sub" style="color:var(--text-muted); font-size:13px; max-width:340px; margin:0 auto 16px;">
-                                    Could not reach the server to load your income records.
-                                </div>
-                                <button type="button" class="btn-primary btn-sm" onclick="location.reload()" style="padding:8px 18px; font-size:13px; border-radius:8px;">
-                                    Retry Connection
-                                </button>
-                            </div>`;
+                        incomeListEl.innerHTML = renderConnectionErrorFull("Could not reach the server to load your income records.");
                     }
                 } else {
                     renderIncomes(allIncomes);
@@ -145,27 +203,20 @@
                 if (savingsGoals === null) {
                     const budgetListEl = document.getElementById("budgetList");
                     if (budgetListEl) {
-                        budgetListEl.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your budget limits.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="window.loadBudgets ? window.loadBudgets() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
-                                    <span>Retry Connection</span>
-                                </button>
-                            </div>`;
+                        budgetListEl.innerHTML = renderConnectionErrorCompact({
+                            desc: "Could not reach the server to load your budget limits.",
+                            action: "loadBudgets",
+                            spanAll: true
+                        });
                     }
                     const savingsGoalsEl = document.getElementById("savingsGoalsList");
                     if (savingsGoalsEl) {
-                        savingsGoalsEl.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your savings goals.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#F59E0B; border-color:#F59E0B; color:#fff;">
-                                    <span>Retry Connection</span>
-                                </button>
-                            </div>`;
+                        savingsGoalsEl.innerHTML = renderConnectionErrorCompact({
+                            desc: "Could not reach the server to load your savings goals.",
+                            action: "reload",
+                            btnTheme: "warning",
+                            spanAll: true
+                        });
                     }
                 } else {
                     renderSavingsGoals(allSavingsGoals);
@@ -208,7 +259,7 @@
                     document.querySelectorAll(".metric-card, .grid-4-metrics .metric-card").forEach(c => {
                         c.classList.remove("is-loading");
                         const val = c.querySelector(".metric-value");
-                        if (val) val.innerHTML = '<span style="font-size:15px; color:var(--text-muted); font-weight:500;">Unavailable</span>';
+                        if (val) val.innerHTML = '<span class="unavailable-metric">Unavailable</span>';
                         const badge = c.querySelector(".status-badge");
                         if (badge) {
                             badge.textContent = "Offline";
@@ -229,19 +280,15 @@
                         });
                     });
                     const subsTotal = document.getElementById("subsMonthlyTotal");
-                    if (subsTotal) subsTotal.innerHTML = '<span style="font-size:15px; color:var(--text-muted); font-weight:500;">Unavailable</span>';
+                    if (subsTotal) subsTotal.innerHTML = '<span class="unavailable-metric">Unavailable</span>';
 
                     const budgetListEl = document.getElementById("budgetList");
                     if (budgetListEl) {
-                        budgetListEl.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your budget limits.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="window.loadBudgets ? window.loadBudgets() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
-                                    <span>Retry Connection</span>
-                                </button>
-                            </div>`;
+                        budgetListEl.innerHTML = renderConnectionErrorCompact({
+                            desc: "Could not reach the server to load your budget limits.",
+                            action: "loadBudgets",
+                            spanAll: true
+                        });
                     }
                     const budgetUsageBadge = document.getElementById("budgetUsageBadge");
                     if (budgetUsageBadge) {
@@ -287,82 +334,49 @@
                     }
                     const expenseListEl = document.getElementById("expenseList");
                     if (expenseListEl) {
-                        expenseListEl.innerHTML = `
-                            <div class="empty-state connection-error" style="text-align:center; padding:36px 16px;">
-                                <div class="empty-state-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                                <div class="empty-state-title" style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">Server Connection Failed</div>
-                                <div class="empty-state-sub" style="color:var(--text-muted); font-size:13px; max-width:340px; margin:0 auto 16px;">
-                                    Could not reach the server to load your transactions.
-                                </div>
-                                <button type="button" class="btn-primary btn-sm" onclick="location.reload()" style="padding:8px 18px; font-size:13px; border-radius:8px;">
-                                    Retry Connection
-                                </button>
-                            </div>`;
+                        expenseListEl.innerHTML = renderConnectionErrorFull("Could not reach the server to load your transactions.");
                     }
                     const incomeListEl = document.getElementById("incomeList");
                     if (incomeListEl) {
-                        incomeListEl.innerHTML = `
-                            <div class="empty-state connection-error" style="text-align:center; padding:36px 16px;">
-                                <div class="empty-state-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                                <div class="empty-state-title" style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">Server Connection Failed</div>
-                                <div class="empty-state-sub" style="color:var(--text-muted); font-size:13px; max-width:340px; margin:0 auto 16px;">
-                                    Could not reach the server to load your income records.
-                                </div>
-                                <button type="button" class="btn-primary btn-sm" onclick="location.reload()" style="padding:8px 18px; font-size:13px; border-radius:8px;">
-                                    Retry Connection
-                                </button>
-                            </div>`;
+                        incomeListEl.innerHTML = renderConnectionErrorFull("Could not reach the server to load your income records.");
                     }
                     const savingsGoalsEl = document.getElementById("savingsGoalsList");
                     if (savingsGoalsEl) {
-                        savingsGoalsEl.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your savings goals.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#F59E0B; border-color:#F59E0B; color:#fff;">
-                                    <span>Retry Connection</span>
-                                </button>
-                            </div>`;
+                        savingsGoalsEl.innerHTML = renderConnectionErrorCompact({
+                            desc: "Could not reach the server to load your savings goals.",
+                            action: "reload",
+                            btnTheme: "warning",
+                            spanAll: true
+                        });
                     }
                     const moneyFlowBody = document.getElementById("moneyFlowBody");
                     if (moneyFlowBody) {
-                        moneyFlowBody.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="text-align:center; padding:24px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:4px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                                <p style="font-size:13px; font-weight:600; margin:0 0 4px; color:var(--text-main);">Server Connection Failed</p>
-                                <span style="font-size:11.5px; display:block; margin-bottom:10px;">Could not reach the server to compute monthly cash flow.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; padding:6px 14px; font-size:12px;">
-                                    <span>Retry Connection</span>
-                                </button>
-                            </div>`;
+                        moneyFlowBody.innerHTML = renderConnectionErrorCompact({
+                            desc: "Could not reach the server to compute monthly cash flow.",
+                            action: "reload",
+                            compactSm: true
+                        });
                     }
                     const insightsGrid = document.getElementById("insightsCardsGrid");
                     if (insightsGrid) {
-                        insightsGrid.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:24px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:4px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                                <p style="font-size:13px; font-weight:600; margin:0 0 4px; color:var(--text-main);">Smart Intelligence Unavailable</p>
-                                <span style="font-size:11.5px; display:block; margin-bottom:10px;">Financial intelligence requires connection to your ledger.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; padding:6px 14px; font-size:12px;">
-                                    <span>Retry Connection</span>
-                                </button>
-                            </div>`;
+                        insightsGrid.innerHTML = renderConnectionErrorCompact({
+                            title: "Smart Intelligence Unavailable",
+                            desc: "Financial intelligence requires connection to your ledger.",
+                            action: "reload",
+                            compactSm: true,
+                            spanAll: true
+                        });
                     }
                     if (window.LoansManager && typeof window.LoansManager.renderOfflineState === "function") {
                         window.LoansManager.renderOfflineState();
                     } else {
                         const loansContainer = document.getElementById("loansListContainer");
                         if (loansContainer) {
-                            loansContainer.innerHTML = `
-                                <div class="empty-state-compact connection-error" style="text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                    <div><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                                    <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your peer loan adjustments.</span>
-                                    <button type="button" class="btn-primary btn-small" onclick="window.LoansManager ? window.LoansManager.fetchLoans() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#8B5CF6; border-color:#8B5CF6; color:#fff;">
-                                        <span>Retry Connection</span>
-                                    </button>
-                                </div>`;
+                            loansContainer.innerHTML = renderConnectionErrorCompact({
+                                desc: "Could not reach the server to load your peer loan adjustments.",
+                                action: "fetchLoans",
+                                btnTheme: "purple"
+                            });
                         }
                     }
                     if (typeof window.renderChartEmptyStates === "function") {

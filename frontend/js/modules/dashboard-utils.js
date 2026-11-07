@@ -129,7 +129,7 @@
 
     function getCategorySvg(name, size = 16) {
         const value = String(name || "").toLowerCase();
-        const svgAttrs = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; flex-shrink:0;"`;
+        const svgAttrs = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-inline-middle"`;
         if (value.includes("saving") || value.includes("deposit") || value.includes("invest") || value.includes("finance") || value.includes("bank")) {
             return `<svg ${svgAttrs}><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a8 8 0 0 1-16 0V6"/><circle cx="12" cy="14" r="2"/></svg>`;
         }

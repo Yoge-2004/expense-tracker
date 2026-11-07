@@ -93,29 +93,29 @@
             card.classList.add("is-loading");
         });
         const lentVal = document.getElementById("loansTotalLent");
-        if (lentVal) lentVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
+        if (lentVal) lentVal.innerHTML = "<span class=\"skeleton skeleton-value skeleton-loan-val\"></span>";
         const borrowedVal = document.getElementById("loansTotalBorrowed");
-        if (borrowedVal) borrowedVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
+        if (borrowedVal) borrowedVal.innerHTML = "<span class=\"skeleton skeleton-value skeleton-loan-val\"></span>";
         const netVal = document.getElementById("loansNetBalance");
-        if (netVal) netVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
+        if (netVal) netVal.innerHTML = "<span class=\"skeleton skeleton-value skeleton-loan-val\"></span>";
         const pendingCountEl = document.getElementById("loansPendingCount");
         if (pendingCountEl && pendingCountEl.parentElement) {
-            pendingCountEl.parentElement.innerHTML = "<span id=\"loansPendingCount\"><span class=\"skeleton skeleton-value\" style=\"width:36px; height:22px; display:inline-block; margin-bottom:0;\"></span></span> <span style=\"font-size:12px; font-weight:600; color:var(--text-muted);\">open / </span><span id=\"loansSettledCount\"><span class=\"skeleton skeleton-value\" style=\"width:36px; height:22px; display:inline-block; margin-bottom:0;\"></span></span> <span style=\"font-size:12px; font-weight:600; color:#10B981;\">done</span>";
+            pendingCountEl.parentElement.innerHTML = "<span id=\"loansPendingCount\"><span class=\"skeleton skeleton-value skeleton-loan-count\"></span></span> <span class=\"loan-count-open\">open / </span><span id=\"loansSettledCount\"><span class=\"skeleton skeleton-value skeleton-loan-count\"></span></span> <span class=\"loan-count-done\">done</span>";
         }
         const lentPendingSubEl = document.getElementById("loansLentPendingCount");
-        if (lentPendingSubEl) lentPendingSubEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:28px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+        if (lentPendingSubEl) lentPendingSubEl.innerHTML = "<span class=\"skeleton skeleton-text short skeleton-loan-text\"></span>";
         const borrowedPendingSubEl = document.getElementById("loansBorrowedPendingCount");
-        if (borrowedPendingSubEl) borrowedPendingSubEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:28px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+        if (borrowedPendingSubEl) borrowedPendingSubEl.innerHTML = "<span class=\"skeleton skeleton-text short skeleton-loan-text\"></span>";
         const netStatusEl = document.getElementById("loansNetStatus");
-        if (netStatusEl) netStatusEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:65px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+        if (netStatusEl) netStatusEl.innerHTML = "<span class=\"skeleton skeleton-text short skeleton-loan-status\"></span>";
 
         const container = document.getElementById("loansListContainer");
         if (!container) return;
         container.innerHTML = `
-            <div class="loans-skeleton-loader" style="padding:16px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02); display:flex; flex-direction:column; gap:10px;">
-                <div class="skeleton" style="width:35%; height:20px; border-radius:6px;"></div>
-                <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
-                <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
+            <div class="loans-skeleton-loader">
+                <div class="skeleton skeleton-loan-head"></div>
+                <div class="skeleton skeleton-loan-row"></div>
+                <div class="skeleton skeleton-loan-row"></div>
             </div>
         `;
     }
@@ -147,11 +147,11 @@
         const container = document.getElementById("loansListContainer");
         if (container && (!loansList || loansList.length === 0)) {
             container.innerHTML = `
-                <div class="empty-state-compact connection-error" style="text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                    <div style="margin-bottom:6px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                    <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your peer loan adjustments.</span>
-                    <button type="button" class="btn-primary btn-small" onclick="window.LoansManager ? window.LoansManager.fetchLoans() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#8B5CF6; border-color:#8B5CF6; color:#fff;">
+                <div class="empty-state-compact connection-error empty-state-compact-connection">
+                    <div><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                    <p class="empty-state-title">Server Connection Failed</p>
+                    <span class="empty-state-desc">Could not reach the server to load your peer loan adjustments.</span>
+                    <button type="button" class="btn-primary btn-small btn-retry-purple" data-action="fetch-loans">
                         <span>Retry Connection</span>
                     </button>
                 </div>`;
@@ -217,16 +217,16 @@
 
         noticeBox.style.display = "flex";
         noticeBox.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; background:rgba(212,175,55,0.18); color:#D4AF37;">
+            <div class="flex-align-center-gap10">
+                <span class="loan-cat-badge-gold">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>
                 </span>
                 <div>
-                    <strong style="font-size:12.5px; color:var(--text-main);">Found ${loanExpenses.length} transaction(s) categorized under "Loan"</strong>
-                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:1px;">Convert them into dedicated Peer Loans to keep your living expenses accurate.</div>
+                    <strong class="loan-cat-bridge-title">Found ${loanExpenses.length} transaction(s) categorized under "Loan"</strong>
+                    <div class="loan-cat-bridge-sub">Convert them into dedicated Peer Loans to keep your living expenses accurate.</div>
                 </div>
             </div>
-            <button type="button" class="btn-small" onclick="window.LoansManager.convertFirstLoanCategoryExpense()" style="padding:5px 12px; font-size:11.5px; font-weight:700; border-radius:7px; background:#D4AF37; color:#10120E; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+            <button type="button" class="btn-small btn-gold-pill" data-action="convert-first-loan">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
                 <span>Track as Peer Loan</span>
             </button>
@@ -322,19 +322,19 @@
                 netEl.textContent = `+${sym}${formatAmount(net)}`;
                 netEl.style.color = "#10B981";
                 if (netStatusEl) {
-                    netStatusEl.innerHTML = `<span style="display:inline-flex; align-items:center; gap:4px; color:#10B981;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg> Friends owe you net ${sym}${formatAmount(net)}</span>`;
+                    netStatusEl.innerHTML = `<span class="net-status-positive"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg> Friends owe you net ${sym}${formatAmount(net)}</span>`;
                 }
             } else if (net < 0) {
                 netEl.textContent = `-${sym}${formatAmount(Math.abs(net))}`;
                 netEl.style.color = "#EF4444";
                 if (netStatusEl) {
-                    netStatusEl.innerHTML = `<span style="display:inline-flex; align-items:center; gap:4px; color:#EF4444;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg> You owe lenders net ${sym}${formatAmount(Math.abs(net))}</span>`;
+                    netStatusEl.innerHTML = `<span class="net-status-negative"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg> You owe lenders net ${sym}${formatAmount(Math.abs(net))}</span>`;
                 }
             } else {
                 netEl.textContent = `${sym}0.00`;
                 netEl.style.color = "var(--text-main)";
                 if (netStatusEl) {
-                    netStatusEl.innerHTML = `<span style="display:inline-flex; align-items:center; gap:4px; color:var(--text-muted);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 8l9-5 9 5M6 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0zM18 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0z"/></svg> All peer balances settled</span>`;
+                    netStatusEl.innerHTML = `<span class="net-status-neutral"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 8l9-5 9 5M6 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0zM18 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0z"/></svg> All peer balances settled</span>`;
                 }
             }
         }
@@ -389,23 +389,23 @@
         if (filtered.length === 0) {
             const loanExpenses = getLoanCategoryExpenses();
             const loanConvertCta = loanExpenses.length > 0
-                ? `<button type="button" class="btn-secondary btn-small" onclick="window.LoansManager.convertFirstLoanCategoryExpense()" style="display:inline-flex; align-items:center; gap:6px; border-color:rgba(212,175,55,0.4); color:#D4AF37;">
+                ? `<button type="button" class="btn-secondary btn-small btn-gold-outline" data-action="convert-first-loan">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
                     <span>Convert "${escapeHtml(loanExpenses[0].description || 'Loan')}" (${getCurrencySymbol()}${formatAmount(loanExpenses[0].amount)})</span>
                    </button>`
                 : "";
 
             container.innerHTML = `
-                <div class="empty-state-luxury" style="text-align:center; padding:36px 20px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); transition:all 0.3s ease;">
-                    <div style="display:inline-flex; align-items:center; justify-content:center; width:52px; height:52px; border-radius:14px; background:rgba(212,175,55,0.12); color:#D4AF37; margin-bottom:12px;">
+                <div class="empty-state-luxury loan-empty-state">
+                    <div class="loan-empty-icon-wrap">
                         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     </div>
-                    <p style="font-size:15px; font-weight:700; margin:0 0 6px; color:var(--text-main);">No peer loans recorded in this view</p>
-                    <span style="font-size:12.5px; display:block; max-width:440px; margin:0 auto 16px; line-height:1.5; color:var(--text-muted);">
+                    <p class="loan-empty-title">No peer loans recorded in this view</p>
+                    <span class="loan-empty-desc">
                         Track casual bill splits, borrowed cash, or peer loans without distorting your personal living expense budget.
                     </span>
-                    <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-                        <button type="button" class="btn-primary btn-small" onclick="document.getElementById('addLoanBtn')?.click()" style="display:inline-flex; align-items:center; gap:6px; background:#8B5CF6; border-color:#8B5CF6; color:#fff; box-shadow:0 4px 14px rgba(139,92,246,0.35);">
+                    <div class="loan-empty-actions">
+                        <button type="button" class="btn-primary btn-small btn-purple-shadow" data-action="open-add-loan">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             <span>Add New Adjustment</span>
                         </button>
@@ -419,17 +419,17 @@
         const sym = getCurrencySymbol();
 
         let html = `
-            <div class="loans-table-container" style="overflow-x:auto; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,0.01);">
-                <table class="data-table loans-table" style="width:100%; border-collapse:collapse; text-align:left; font-size:13px;">
+            <div class="loans-table-container">
+                <table class="data-table loans-table">
                     <thead>
-                        <tr style="background:rgba(255,255,255,0.03); border-bottom:1px solid var(--border);">
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted);">Date & Reminders</th>
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted);">Person / Friend</th>
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted);">Direction</th>
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted);">Notes & Linked Expense</th>
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); text-align:right;">Amount</th>
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); text-align:center;">Status</th>
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); text-align:right;">Actions</th>
+                        <tr class="loans-thead-tr">
+                            <th class="loans-th">Date & Reminders</th>
+                            <th class="loans-th">Person / Friend</th>
+                            <th class="loans-th">Direction</th>
+                            <th class="loans-th">Notes & Linked Expense</th>
+                            <th class="loans-th loans-th-right">Amount</th>
+                            <th class="loans-th loans-th-center">Status</th>
+                            <th class="loans-th loans-th-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -437,71 +437,69 @@
 
         for (const item of filtered) {
             const isLent = item.type === "LENT";
-            const amtColor = isLent ? "#10B981" : "#EF4444";
+            const amtClass = isLent ? "loan-amt-lent" : "loan-amt-borrowed";
             const amtSign = isLent ? "+" : "-";
             const dirLabel = isLent ? "Lent (Receivable)" : "Borrowed (Payable)";
-            const dirBg = isLent ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)";
-            const dirColor = isLent ? "#10B981" : "#EF4444";
+            const dirClass = isLent ? "loan-dir-lent" : "loan-dir-borrowed";
             const dirIcon = isLent
                 ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>`
                 : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg>`;
 
             const statusBadge = item.isSettled
-                ? `<span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Settled</span>`
-                : `<span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; background:rgba(245,158,11,0.15); color:#F59E0B; border:1px solid rgba(245,158,11,0.3);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pending</span>`;
+                ? `<span class="badge-status-settled"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Settled</span>`
+                : `<span class="badge-status-pending"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pending</span>`;
 
             const settleActionText = item.isSettled ? "Reopen" : "Mark Settled";
-            const settleBtnColor = item.isSettled ? "var(--text-muted)" : "#10B981";
 
             const dueDateTag = item.dueDate
-                ? `<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Due: ${item.dueDate}</div>`
+                ? `<div class="loan-due-text">Due: ${item.dueDate}</div>`
                 : "";
 
             const reminderTag = item.reminderEnabled && !item.isSettled
-                ? `<div style="font-size:10.5px; color:#8B5CF6; font-weight:600; margin-top:4px; display:inline-flex; align-items:center; gap:4px; background:rgba(139,92,246,0.08); padding:2px 6px; border-radius:4px; border:1px solid rgba(139,92,246,0.2);">
+                ? `<div class="loan-reminder-badge">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                     <span>${escapeHtml(item.reminderFrequency || 'DAILY')} @ ${escapeHtml(item.reminderTime || '10:00')}</span>
                    </div>`
                 : "";
 
             const linkedExpenseTag = (item.expenseId || item.expenseDescription)
-                ? `<div style="margin-top:4px; font-size:11px; color:#8B5CF6; display:inline-flex; align-items:center; gap:4px; background:rgba(139,92,246,0.1); padding:2px 7px; border-radius:4px; border:1px solid rgba(139,92,246,0.25);">
+                ? `<div class="loan-linked-badge">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                     <span>Split from: <strong>${escapeHtml(item.expenseDescription || ('Expense #' + item.expenseId))}</strong> (${sym}${formatAmount(item.expenseAmount || 0)})</span>
                    </div>`
                 : "";
 
             html += `
-                <tr style="border-bottom:1px solid var(--border); transition:background 0.15s ease;">
-                    <td style="padding:12px 14px; white-space:nowrap; color:var(--text-muted);">
+                <tr class="loans-tr">
+                    <td class="loans-td loans-td-date">
                         <div>${item.adjustmentDate}</div>
                         ${dueDateTag}
                         ${reminderTag}
                     </td>
-                    <td style="padding:12px 14px; font-weight:700; color:var(--text-main);">
+                    <td class="loans-td loans-td-person">
                         ${escapeHtml(item.counterparty)}
                     </td>
-                    <td style="padding:12px 14px; white-space:nowrap;">
-                        <span style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; background:${dirBg}; color:${dirColor};">
+                    <td class="loans-td loans-td-direction">
+                        <span class="loan-dir-badge ${dirClass}">
                             ${dirIcon}
                             ${dirLabel}
                         </span>
                     </td>
-                    <td style="padding:12px 14px; color:var(--text-muted); max-width:260px;">
-                        <div>${item.notes ? escapeHtml(item.notes) : "<span style='opacity:0.4;'>—</span>"}</div>
+                    <td class="loans-td loans-td-notes">
+                        <div>${item.notes ? escapeHtml(item.notes) : "<span class=\"opacity-40\">—</span>"}</div>
                         ${linkedExpenseTag}
                     </td>
-                    <td style="padding:12px 14px; text-align:right; font-weight:800; font-size:14px; color:${amtColor}; white-space:nowrap;">
+                    <td class="loans-td loans-td-amount ${amtClass}">
                         <span class="stealth-sensitive">${amtSign}${sym}${formatAmount(item.amount)}</span>
                     </td>
-                    <td style="padding:12px 14px; text-align:center; white-space:nowrap;">
+                    <td class="loans-td loans-td-center">
                         ${statusBadge}
                     </td>
-                    <td style="padding:12px 14px; text-align:right; white-space:nowrap;">
-                        <button type="button" class="btn-text-icon" onclick="window.LoansManager.toggleSettle(${item.id})" style="padding:4px 8px; font-size:11.5px; font-weight:600; color:${settleBtnColor}; border:1px solid var(--border); border-radius:6px; margin-right:6px;" title="${item.isSettled ? 'Mark pending again' : 'Mark fully repaid'}">
+                    <td class="loans-td loans-td-right">
+                        <button type="button" class="btn-text-icon btn-loan-settle ${item.isSettled ? 'is-settled' : ''}" data-action="toggle-settle" data-id="${item.id}" title="${item.isSettled ? 'Mark pending again' : 'Mark fully repaid'}">
                             ${settleActionText}
                         </button>
-                        <button type="button" class="btn-text-icon btn-text-icon--danger" onclick="window.LoansManager.deleteLoan(${item.id})" style="padding:4px 8px; font-size:11.5px; border-radius:6px; color:#EF4444;" title="Delete this record">
+                        <button type="button" class="btn-text-icon btn-text-icon--danger btn-loan-delete" data-action="delete-loan" data-id="${item.id}" title="Delete this record">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                     </td>
@@ -628,6 +626,25 @@
     }
 
     function setupEventListeners() {
+        document.addEventListener("click", (e) => {
+            const btn = e.target.closest("[data-action]");
+            if (!btn) return;
+            const action = btn.dataset.action;
+            if (action === "fetch-loans") {
+                fetchLoans();
+            } else if (action === "convert-first-loan") {
+                convertFirstLoanCategoryExpense();
+            } else if (action === "open-add-loan") {
+                document.getElementById("addLoanBtn")?.click();
+            } else if (action === "toggle-settle") {
+                const id = Number(btn.dataset.id);
+                if (id) toggleSettle(id);
+            } else if (action === "delete-loan") {
+                const id = Number(btn.dataset.id);
+                if (id) deleteLoan(id);
+            }
+        });
+
         const addBtn = document.getElementById("addLoanBtn");
         const modal = document.getElementById("loanModal");
         const closeBtn = document.getElementById("closeLoanModalBtn");

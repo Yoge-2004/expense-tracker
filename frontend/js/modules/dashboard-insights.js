@@ -16,8 +16,8 @@
     
         if (safeExpenses.length === 0 && safeIncomes.length === 0 && safeGoals.length === 0) {
             grid.innerHTML = `
-                <div class="insight-card-item" style="grid-column: 1 / -1; width: 100%; max-width: 100%; box-sizing: border-box; text-align: center; padding: 20px 16px;">
-                    <p class="text-muted" style="margin: 0; font-size: 13.5px; line-height: 1.5; word-break: break-word;">No transactions, incomes, or savings goals recorded. Add entries to generate real-time financial intelligence.</p>
+                <div class="insight-card-item insight-empty-card">
+                    <p class="text-muted insight-empty-text">No transactions, incomes, or savings goals recorded. Add entries to generate real-time financial intelligence.</p>
                 </div>
             `;
             if (healthBadge) healthBadge.textContent = "--% Financial Health";
@@ -240,47 +240,47 @@
         }
     
         grid.innerHTML = `
-            <div class="insight-card-item highlight-card" style="grid-column: 1 / -1; background: var(--card-bg, rgba(255,255,255,0.04)); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div class="insight-icon-box" style="background: var(--metric-inflow-glow, rgba(16, 185, 129, 0.15)); color: var(--metric-inflow, #10B981);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+            <div class="insight-card-item highlight-card insight-monthly-summary">
+                <div class="insight-summary-header">
+                    <div class="insight-summary-title-wrap">
+                        <div class="insight-icon-box box-inflow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
                         <div>
-                            <span class="insight-card-label" style="font-size:14px; font-weight:700; color:var(--text-main);">Monthly Inflows & Outflows Summary</span>
-                            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Net monthly liquidity balance & cash flow performance</div>
+                            <span class="insight-card-label insight-summary-heading">Monthly Inflows & Outflows Summary</span>
+                            <div class="insight-summary-sub">Net monthly liquidity balance & cash flow performance</div>
                         </div>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <span class="status-badge ${netCashflow >= 0 ? "badge-netflow" : "badge-danger"}" style="font-size:12px; padding:4px 10px; border-radius:6px; font-weight:700;">
+                    <div class="insight-summary-badges">
+                        <span class="status-badge ${netCashflow >= 0 ? "badge-netflow" : "badge-danger"} insight-netflow-badge">
                             ${netCashflow >= 0 ? "Surplus" : "Deficit"}: ${netCashflow >= 0 ? "+" : "-"}${formatCurrency(Math.abs(netCashflow))}
                         </span>
-                        <span style="font-size:12px; color:var(--text-muted); font-weight:600;">(${savingsRate}% saved)</span>
+                        <span class="insight-saved-pct">(${savingsRate}% saved)</span>
                     </div>
                 </div>
                 <div class="insights-metric-triplet">
-                    <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:10px; padding:12px;">
-                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--metric-inflow, #10B981); font-weight:700;">${periodNoun} Inflow</div>
-                        <div style="font-size:18px; font-weight:800; color:var(--text-main); margin-top:4px;">+${formatCurrency(activeInflow)}</div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${inflowCount} inflow transaction${inflowCount === 1 ? "" : "s"}</div>
+                    <div class="insight-stat-box box-inflow-stat">
+                        <div class="insight-stat-title title-inflow">${periodNoun} Inflow</div>
+                        <div class="insight-stat-val">+${formatCurrency(activeInflow)}</div>
+                        <div class="insight-stat-sub">${inflowCount} inflow transaction${inflowCount === 1 ? "" : "s"}</div>
                     </div>
-                    <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:10px; padding:12px;">
-                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--metric-outflow, #EF4444); font-weight:700;">${periodNoun} Outflow</div>
-                        <div style="font-size:18px; font-weight:800; color:var(--text-main); margin-top:4px;">-${formatCurrency(activeOutflow)}</div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${outflowCount} expense transaction${outflowCount === 1 ? "" : "s"}</div>
+                    <div class="insight-stat-box box-outflow-stat">
+                        <div class="insight-stat-title title-outflow">${periodNoun} Outflow</div>
+                        <div class="insight-stat-val">-${formatCurrency(activeOutflow)}</div>
+                        <div class="insight-stat-sub">${outflowCount} expense transaction${outflowCount === 1 ? "" : "s"}</div>
                     </div>
-                    <div style="background:rgba(var(--primary-rgb),0.08); border:1px solid rgba(var(--primary-rgb),0.25); border-radius:10px; padding:12px;">
-                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--primary); font-weight:700;">Net Cash Flow</div>
-                        <div style="font-size:18px; font-weight:800; color:${netCashflow >= 0 ? "var(--metric-inflow, #10B981)" : "var(--metric-outflow, #EF4444)"}; margin-top:4px;">${netCashflow >= 0 ? "+" : "-"}${formatCurrency(Math.abs(netCashflow))}</div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${activeInflow > 0 ? `${savingsRate}% retention` : "No inflow logged"}</div>
+                    <div class="insight-stat-box box-netflow-stat">
+                        <div class="insight-stat-title title-netflow">Net Cash Flow</div>
+                        <div class="insight-stat-val ${netCashflow >= 0 ? "val-inflow" : "val-outflow"}">${netCashflow >= 0 ? "+" : "-"}${formatCurrency(Math.abs(netCashflow))}</div>
+                        <div class="insight-stat-sub">${activeInflow > 0 ? `${savingsRate}% retention` : "No inflow logged"}</div>
                     </div>
                 </div>
-                <div class="insight-card-content" style="font-size:13px; line-height:1.5; color:var(--text-muted);">
+                <div class="insight-card-content insight-summary-content">
                     ${cashflowInsight}
                 </div>
             </div>
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: var(--metric-savings-glow, rgba(245, 158, 11, 0.15)); color: var(--metric-savings, #F59E0B);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+                    <div class="insight-icon-box box-savings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
                     <span class="insight-card-label">Savings Goals Trajectory</span>
                 </div>
                 <div class="insight-card-content">
@@ -290,7 +290,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: var(--metric-inflow-glow, rgba(16, 185, 129, 0.15)); color: var(--metric-inflow, #10B981);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg></div>
+                    <div class="insight-icon-box box-inflow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg></div>
                     <span class="insight-card-label">Salary Coverage & Stability</span>
                 </div>
                 <div class="insight-card-content">
@@ -300,7 +300,7 @@
 
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: var(--metric-savings-glow, rgba(245, 158, 11, 0.15)); color: var(--metric-savings, #F59E0B);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                    <div class="insight-icon-box box-savings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
                     <span class="insight-card-label">Emergency Savings Runway</span>
                 </div>
                 <div class="insight-card-content">
@@ -310,7 +310,7 @@
 
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: var(--palette-4-glow, rgba(var(--palette-4-rgb, 59, 130, 246), 0.18)); color: var(--palette-4, #3B82F6);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg></div>
+                    <div class="insight-icon-box box-palette4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg></div>
                     <span class="insight-card-label">Recurring Baseline Coverage</span>
                 </div>
                 <div class="insight-card-content">
@@ -320,7 +320,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: var(--primary-glow, rgba(var(--primary-rgb, 199, 154, 62), 0.18)); color: var(--primary, #C79A3E);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-1.63-1.5-2.5-1.5-4.5 0-2 1.5-3 1.5-3s-1.5.5-2.5 2c-1.1 1.65-2.5 3.5-2.5 5.5z"/><path d="M12 2c-4 4.5-6 8-6 12a6 6 0 0 0 12 0c0-4-2-7.5-6-12z"/></svg></div>
+                    <div class="insight-icon-box box-primary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-1.63-1.5-2.5-1.5-4.5 0-2 1.5-3 1.5-3s-1.5.5-2.5 2c-1.1 1.65-2.5 3.5-2.5 5.5z"/><path d="M12 2c-4 4.5-6 8-6 12a6 6 0 0 0 12 0c0-4-2-7.5-6-12z"/></svg></div>
                     <span class="insight-card-label">Burn Velocity & Runway</span>
                 </div>
                 <div class="insight-card-content">
@@ -330,7 +330,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: var(--highlight-glow, rgba(var(--highlight-rgb, 76, 122, 120), 0.18)); color: var(--highlight, #4C7A78);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
+                    <div class="insight-icon-box box-highlight"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
                     <span class="insight-card-label">Category Concentration</span>
                 </div>
                 <div class="insight-card-content">
@@ -340,7 +340,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: var(--accent-glow, rgba(var(--accent-rgb, 162, 62, 50), 0.18)); color: var(--accent, #A23E32);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                    <div class="insight-icon-box box-accent"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
                     <span class="insight-card-label">Budget Governance</span>
                 </div>
                 <div class="insight-card-content">

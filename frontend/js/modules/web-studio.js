@@ -1187,8 +1187,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h3 id="studioModalTitle" style="margin:0; font-size:17px; font-weight:700;">Studio & Appearance</h3>
-                            <p style="margin:2px 0 0; font-size:12px; color:var(--text-muted);">Personalize typography, live colors, and cross-device theme sync</p>
+                            <h3 id="studioModalTitle" class="studio-modal-heading">Studio & Appearance</h3>
+                            <p class="studio-modal-subheading">Personalize typography, live colors, and cross-device theme sync</p>
                         </div>
                     </div>
                     <button type="button" class="modal-close" id="closeStudioModalBtn" aria-label="Close Studio Modal">
@@ -1241,7 +1241,7 @@
                         <span class="studio-section-label">Curated Themes & Atmospheric Presets</span>
                         <div class="studio-presets-grid" id="studioPresetsGrid"></div>
                         <span class="studio-section-label">My Theme Profiles</span>
-                        <div class="studio-wallpaper-input-row" style="margin-bottom:10px;">
+                        <div class="studio-wallpaper-input-row mb-10">
                             <input type="text" id="studioProfileName" class="studio-wallpaper-field" maxlength="40" placeholder="Name this theme profile">
                             <button type="button" class="btn-secondary" id="studioSaveProfileBtn">Save Profile</button>
                         </div>
@@ -1253,26 +1253,26 @@
                         <span class="studio-section-label">Select Workspace Font</span>
                         <div class="studio-font-cards" id="studioFontCards">
                             <div class="studio-font-card active" data-font="grotesk">
-                                <div class="studio-font-title" style="font-family:'Hanken Grotesk', sans-serif;">Hanken Grotesk</div>
+                                <div class="studio-font-title font-preview-hanken">Hanken Grotesk</div>
                                 <div class="studio-font-sample">Modern neo-grotesque Swiss sans-serif for sharp financial readouts.</div>
                             </div>
                             <div class="studio-font-card" data-font="fraunces">
-                                <div class="studio-font-title" style="font-family:'Fraunces', serif;">Fraunces Luxury Serif</div>
+                                <div class="studio-font-title font-preview-fraunces">Fraunces Luxury Serif</div>
                                 <div class="studio-font-sample">Refined editorial serif evoking bespoke private wealth ledgers.</div>
                             </div>
                             <div class="studio-font-card" data-font="mono">
-                                <div class="studio-font-title" style="font-family:'IBM Plex Mono', monospace;">IBM Plex Mono</div>
+                                <div class="studio-font-title font-preview-mono">IBM Plex Mono</div>
                                 <div class="studio-font-sample">Technical terminal tabular precision for quantitative analysis.</div>
                             </div>
                             <div class="studio-font-card" data-font="system">
-                                <div class="studio-font-title" style="font-family:system-ui, sans-serif;">Native System UI</div>
+                                <div class="studio-font-title font-preview-system">Native System UI</div>
                                 <div class="studio-font-sample">Clean zero-latency native operating system font stack (San Francisco / Segoe).</div>
                             </div>
                         </div>
 
                         <span class="studio-section-label">Import Outsourced Font (.ttf / .otf / .woff2)</span>
                         <div class="studio-font-upload-box" id="studioFontDropzone">
-                            <input type="file" id="studioFontFileInput" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
+                            <input type="file" id="studioFontFileInput" accept=".ttf,.otf,.woff,.woff2">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="17 8 12 3 7 8"></polyline>
@@ -1280,7 +1280,7 @@
                             </svg>
                             <h4>Drop your font file here or click to browse</h4>
                             <p>Upload any outsourced brand font (.ttf, .otf, .woff2) to apply across the system</p>
-                            <div id="studioCustomFontStatus" style="display:none;"></div>
+                            <div id="studioCustomFontStatus"></div>
                         </div>
 
                         <span class="studio-section-label">Live Typography & Numbers Preview</span>
@@ -1294,19 +1294,19 @@
                     <!-- TAB 3: ATMOSPHERE & WALLPAPER -->
                     <div class="studio-tab-pane" id="pane-atmosphere">
                         <span class="studio-section-label">Atmosphere Background Mode</span>
-                        <div class="studio-target-chips" style="margin-bottom:16px;">
+                        <div class="studio-target-chips mb-16">
                             <button type="button" class="studio-target-chip active" id="bgModePreset">Ambient Gradients</button>
                             <button type="button" class="studio-target-chip" id="bgModeCustom">Custom Image URL</button>
                             <button type="button" class="studio-target-chip" id="bgModeNone">Clean Minimal</button>
                         </div>
 
-                        <div id="studioCustomWallpaperGroup" style="display:none; margin-bottom:20px;">
+                        <div id="studioCustomWallpaperGroup">
                             <label class="studio-section-label" for="studioWallpaperUrlInput">Wallpaper Image URL or File</label>
                             <div class="studio-wallpaper-input-row">
                                 <input type="url" id="studioWallpaperUrlInput" class="studio-wallpaper-field" placeholder="Paste image URL (https://...) or choose Browse">
                                 <button type="button" class="btn-secondary" id="studioLoadWallpaperUrlBtn">Load & Extract</button>
                                 <button type="button" class="btn-secondary" id="studioBrowseWallpaperBtn">Browse File</button>
-                                <input type="file" id="studioWallpaperFileInput" accept="image/*" style="display:none;">
+                                <input type="file" id="studioWallpaperFileInput" accept="image/*">
                             </div>
                             <p class="studio-crop-instructions">Drag across the image to select an area. Drag inside the selection to move it; use the corner handle to resize.</p>
                             <div class="studio-crop-frame" id="studioCropFrame" aria-label="Select wallpaper crop area" hidden>
@@ -1316,7 +1316,7 @@
                                 </div>
                             </div>
                             <button type="button" class="btn-secondary" id="studioApplyCropBtn" disabled>Apply Crop & Extract Palette</button>
-                            <span class="studio-section-label" style="margin-top:12px;">Extracted Image Colors · Tap to apply to the selected target</span>
+                            <span class="studio-section-label mt-12">Extracted Image Colors · Tap to apply to the selected target</span>
                             <div id="studioExtractedPalette" class="studio-extracted-palette" aria-live="polite"></div>
                             <small id="studioWallpaperStatus" role="status"></small>
                         </div>
@@ -1408,12 +1408,13 @@
         if (swatchesGrid) {
             swatchesGrid.innerHTML = LUXURY_SWATCHES.map(color => `
                 <button type="button" class="studio-swatch-btn ${color.toLowerCase() === currentPrimary.toLowerCase() ? 'active' : ''}"
-                    data-color="${color}" style="background-color: ${color};" title="${color}"></button>
+                    data-color="${color}" title="${color}"></button>
             `).join('');
 
             swatchesGrid.querySelectorAll('.studio-swatch-btn').forEach(btn => {
+                const color = btn.getAttribute('data-color');
+                btn.style.backgroundColor = color;
                 btn.addEventListener('click', () => {
-                    const color = btn.getAttribute('data-color');
                     applyColorChange(color);
                 });
             });
@@ -1424,14 +1425,18 @@
             presetsGrid.innerHTML = STUDIO_PRESETS.map(p => `
                 <div class="studio-preset-card ${p.id === currentPresetId ? 'active' : ''}" data-preset-id="${p.id}">
                     <div class="studio-preset-dots">
-                        <span class="studio-preset-dot" style="background:${p.primary};"></span>
-                        <span class="studio-preset-dot" style="background:${p.accent};"></span>
-                        <span class="studio-preset-dot" style="background:${p.highlight};"></span>
+                        <span class="studio-preset-dot" data-bg="${p.primary}"></span>
+                        <span class="studio-preset-dot" data-bg="${p.accent}"></span>
+                        <span class="studio-preset-dot" data-bg="${p.highlight}"></span>
                     </div>
                     <div class="studio-preset-name">${p.name}</div>
                     <div class="studio-preset-sub">${p.subtitle}</div>
                 </div>
             `).join('');
+
+            presetsGrid.querySelectorAll('.studio-preset-dot').forEach(dot => {
+                dot.style.background = dot.getAttribute('data-bg');
+            });
 
             presetsGrid.querySelectorAll('.studio-preset-card').forEach(card => {
                 card.addEventListener('click', () => {
@@ -1723,9 +1728,11 @@
                 syncAtmosphereMode(); syncUiControls(); updateCropPreview();
                 if (extractedPaletteView) {
                     extractedPaletteView.innerHTML = currentExtractedPalette.map((color, index) =>
-                        `<button type="button" class="studio-extracted-swatch" data-extracted-color="${color}" title="Apply ${color} to the selected color target"><i style="background:${color}"></i>Color ${index + 1} <code>${color}</code></button>`
+                        `<button type="button" class="studio-extracted-swatch" data-extracted-color="${color}" title="Apply ${color} to the selected color target"><i data-color="${color}"></i>Color ${index + 1} <code>${color}</code></button>`
                     ).join('');
                     extractedPaletteView.querySelectorAll('[data-extracted-color]').forEach((swatch) => {
+                        const icon = swatch.querySelector('i');
+                        if (icon) icon.style.background = icon.getAttribute('data-color');
                         swatch.addEventListener('click', () => applyColorChange(swatch.getAttribute('data-extracted-color')));
                     });
                 }
@@ -1794,10 +1801,13 @@
         function renderProfiles() {
             if (!profilesList) return;
             profilesList.innerHTML = savedProfiles.map((profile) => `<div class="studio-preset-card" data-profile="${profile.id}">
-                <div class="studio-preset-dots"><span class="studio-preset-dot" style="background:${profile.primary}"></span><span class="studio-preset-dot" style="background:${profile.accent}"></span><span class="studio-preset-dot" style="background:${profile.highlight}"></span></div>
+                <div class="studio-preset-dots"><span class="studio-preset-dot" data-bg="${profile.primary}"></span><span class="studio-preset-dot" data-bg="${profile.accent}"></span><span class="studio-preset-dot" data-bg="${profile.highlight}"></span></div>
                 <div class="studio-preset-name">${String(profile.name).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}</div>
                 <div class="studio-preset-sub"><button type="button" data-action="apply">Apply</button> <button type="button" data-action="edit">Edit</button> <button type="button" data-action="delete">Delete</button></div>
             </div>`).join('') || '<small>No saved profiles yet.</small>';
+            profilesList.querySelectorAll('.studio-preset-dot').forEach((dot) => {
+                dot.style.background = dot.getAttribute('data-bg');
+            });
             profilesList.querySelectorAll('[data-profile]').forEach((card) => card.addEventListener('click', (event) => {
                 const action = event.target.closest('[data-action]')?.getAttribute('data-action');
                 if (!action) return;
