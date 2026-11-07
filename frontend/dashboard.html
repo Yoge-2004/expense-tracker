@@ -138,7 +138,7 @@
                     </svg>
                     <span>Record Expense</span>
                 </button>
-                <button type="button" class="btn-primary add-income-button" id="openIncomeModalBtn" onclick="openNewIncomeModal()" title="Record Income Stream">
+                <button type="button" class="btn-primary add-income-button" id="openIncomeModalBtn" title="Record Income Stream">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -742,14 +742,14 @@
                     </button>
 
                     <!-- Primary Actions -->
-                    <button type="button" id="addIncomeTableBtn" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" title="Record Income Stream" style="background:var(--metric-inflow, #10B981); border-color:var(--metric-inflow, #10B981); color:#fff; font-weight:600;">
+                    <button type="button" id="addIncomeTableBtn" class="btn-primary add-income-button btn-small" title="Record Income Stream" style="background:var(--metric-inflow, #10B981); border-color:var(--metric-inflow, #10B981); color:#fff; font-weight:600;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                         <span>Inflow</span>
                     </button>
-                    <button type="button" id="addExpenseTableBtn" class="btn-primary btn-small" onclick="openNewExpenseModal()" title="Record Expense" style="font-weight:600;">
+                    <button type="button" id="addExpenseTableBtn" class="btn-primary btn-small" title="Record Expense" style="font-weight:600;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -978,7 +978,7 @@
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                 Browse
                             </button>
-                            <button type="button" class="btn-scan-receipt" id="triggerSmsPasteBtn" title="Paste bank SMS or transaction text to auto-fill" onclick="if(window.DashboardNotifications) window.DashboardNotifications.promptPasteBankSMS();" style="background:rgba(212,175,55,0.15); border-color:rgba(212,175,55,0.3); color:var(--text-main);">
+                            <button type="button" class="btn-scan-receipt" id="triggerSmsPasteBtn" title="Paste bank SMS or transaction text to auto-fill"  style="background:rgba(212,175,55,0.15); border-color:rgba(212,175,55,0.3); color:var(--text-main);">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                                 Paste SMS
                             </button>
@@ -1215,13 +1215,13 @@
                 <!-- Injected via loadSubscriptions() -->
             </div>
             <div class="subs-tab-bar">
-                <button type="button" id="subsTabExpensesBtn" class="subs-tab-btn active" onclick="switchSubsModalTab('expenses')">
+                <button type="button" id="subsTabExpensesBtn" class="subs-tab-btn active" >
                     Outflows (Subscriptions)
                 </button>
-                <button type="button" id="subsTabIncomesBtn" class="subs-tab-btn" onclick="switchSubsModalTab('incomes')">
+                <button type="button" id="subsTabIncomesBtn" class="subs-tab-btn" >
                     Inflows (Recurring Income)
                 </button>
-                <button type="button" id="subsTabSavingsBtn" class="subs-tab-btn" onclick="switchSubsModalTab('savings')">
+                <button type="button" id="subsTabSavingsBtn" class="subs-tab-btn" >
                     Chits & Recurring Savings
                 </button>
             </div>

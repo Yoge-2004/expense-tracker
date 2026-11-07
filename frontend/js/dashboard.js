@@ -1869,21 +1869,21 @@ async function loadSubscriptions() {
             const summaryEl = document.getElementById("subsCashflowSummary");
             if (summaryEl) {
                 summaryEl.innerHTML = `
-                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
-                        <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Inflows</div>
-                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                    <div class="summary-metric-tile">
+                        <div class="tile-label">Recurring Inflows</div>
+                        <div class="tile-value offline">Offline</div>
                     </div>
-                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
-                        <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Subscriptions</div>
-                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                    <div class="summary-metric-tile">
+                        <div class="tile-label">Recurring Subscriptions</div>
+                        <div class="tile-value offline">Offline</div>
                     </div>
-                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
-                        <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Chits & Recurring Savings</div>
-                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                    <div class="summary-metric-tile">
+                        <div class="tile-label">Chits & Recurring Savings</div>
+                        <div class="tile-value offline">Offline</div>
                     </div>
-                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
-                        <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Net Autonomy Flow</div>
-                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                    <div class="summary-metric-tile">
+                        <div class="tile-label">Net Autonomy Flow</div>
+                        <div class="tile-value offline">Offline</div>
                     </div>
                 `;
             }
@@ -1927,21 +1927,21 @@ async function loadSubscriptions() {
         const summaryEl = document.getElementById("subsCashflowSummary");
         if (summaryEl) {
             summaryEl.innerHTML = `
-                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
-                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Inflows</div>
-                    <div style="font-size:14.5px; font-weight:700; color:#10B981; margin-top:2px; font-family:var(--font-mono); font-variant-numeric:tabular-nums;">+${formatCurrency(monthlyInflow)}<span style="font-size:10.5px; font-weight:500; opacity:0.8;">/mo</span></div>
+                <div class="summary-metric-tile">
+                    <div class="tile-label">Recurring Inflows</div>
+                    <div class="tile-value positive">+${formatCurrency(monthlyInflow)}<span class="tile-unit">/mo</span></div>
                 </div>
-                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
-                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Subscriptions</div>
-                    <div style="font-size:14.5px; font-weight:700; color:var(--accent); margin-top:2px; font-family:var(--font-mono); font-variant-numeric:tabular-nums;">-${formatCurrency(monthlyOutflow)}<span style="font-size:10.5px; font-weight:500; opacity:0.8;">/mo</span></div>
+                <div class="summary-metric-tile">
+                    <div class="tile-label">Recurring Subscriptions</div>
+                    <div class="tile-value negative">-${formatCurrency(monthlyOutflow)}<span class="tile-unit">/mo</span></div>
                 </div>
-                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
-                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Chits & Recurring Savings</div>
-                    <div style="font-size:14.5px; font-weight:700; color:#F59E0B; margin-top:2px; font-family:var(--font-mono); font-variant-numeric:tabular-nums;">${formatCurrency(monthlySavings)}<span style="font-size:10.5px; font-weight:500; opacity:0.8;">/mo</span></div>
+                <div class="summary-metric-tile">
+                    <div class="tile-label">Chits & Recurring Savings</div>
+                    <div class="tile-value warning">${formatCurrency(monthlySavings)}<span class="tile-unit">/mo</span></div>
                 </div>
-                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
-                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Net Autonomy Flow</div>
-                    <div style="font-size:14.5px; font-weight:700; color:${netRecurring >= 0 ? '#10B981' : 'var(--danger)'}; margin-top:2px; font-family:var(--font-mono); font-variant-numeric:tabular-nums;">${netRecurring >= 0 ? '+' : ''}${formatCurrency(netRecurring)}<span style="font-size:10.5px; font-weight:500; opacity:0.8;">/mo</span></div>
+                <div class="summary-metric-tile">
+                    <div class="tile-label">Net Autonomy Flow</div>
+                    <div class="tile-value ${netRecurring >= 0 ? "positive" : "negative"}">${netRecurring >= 0 ? "+" : ""}${formatCurrency(netRecurring)}<span class="tile-unit">/mo</span></div>
                 </div>
             `;
         }
@@ -1953,23 +1953,23 @@ async function loadSubscriptions() {
         const summaryEl = document.getElementById("subsCashflowSummary");
         if (summaryEl) {
             summaryEl.innerHTML = `
-                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
-                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Inflows</div>
-                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
-                </div>
-                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
-                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Subscriptions</div>
-                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
-                </div>
-                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
-                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Chits & Recurring Savings</div>
-                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
-                </div>
-                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
-                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Net Autonomy Flow</div>
-                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
-                </div>
-            `;
+                    <div class="summary-metric-tile">
+                        <div class="tile-label">Recurring Inflows</div>
+                        <div class="tile-value offline">Offline</div>
+                    </div>
+                    <div class="summary-metric-tile">
+                        <div class="tile-label">Recurring Subscriptions</div>
+                        <div class="tile-value offline">Offline</div>
+                    </div>
+                    <div class="summary-metric-tile">
+                        <div class="tile-label">Chits & Recurring Savings</div>
+                        <div class="tile-value offline">Offline</div>
+                    </div>
+                    <div class="summary-metric-tile">
+                        <div class="tile-label">Net Autonomy Flow</div>
+                        <div class="tile-value offline">Offline</div>
+                    </div>
+                `;
         }
         renderSubsModalContent();
     }
@@ -1991,6 +1991,12 @@ function switchSubsModalTab(tab) {
     renderSubsModalContent();
 }
 window.switchSubsModalTab = switchSubsModalTab;
+document.getElementById("subsTabExpensesBtn")?.addEventListener("click", () => switchSubsModalTab('expenses'));
+document.getElementById("subsTabIncomesBtn")?.addEventListener("click", () => switchSubsModalTab('incomes'));
+document.getElementById("subsTabSavingsBtn")?.addEventListener("click", () => switchSubsModalTab('savings'));
+document.getElementById("triggerSmsPasteBtn")?.addEventListener("click", () => {
+    if (window.DashboardNotifications) window.DashboardNotifications.promptPasteBankSMS();
+});
 
 function renderSubsModalContent() {
     if (!elements.subsList) return;
