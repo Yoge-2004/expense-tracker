@@ -22,6 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { FormattedReleaseNotes } from './FormattedReleaseNotes';
 import {
   checkForAppUpdate,
   AppReleaseInfo,
@@ -47,12 +48,6 @@ export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (visible) {
-      void checkUpdate();
-    }
-  }, [visible]);
-
   const checkUpdate = async () => {
     setCheckingUpdate(true);
     setDownloadError(null);
@@ -65,6 +60,12 @@ export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
       setCheckingUpdate(false);
     }
   };
+
+  useEffect(() => {
+    if (visible) {
+      void checkUpdate();
+    }
+  }, [visible]);
 
   const handleOpenRelease = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -182,6 +183,15 @@ export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
                     <Text style={[styles.releaseName, { color: c.primary }]}>
                       {updateInfo.releaseName}
                     </Text>
+                  )}
+
+                  {!!updateInfo.releaseNotes && (
+                    <FormattedReleaseNotes
+                      rawNotes={updateInfo.releaseNotes}
+                      colors={c}
+                      maxHeight={160}
+                      compact
+                    />
                   )}
 
                   {/* Real-time download progress */}

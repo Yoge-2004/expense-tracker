@@ -190,7 +190,9 @@ export async function getExchangeRate(fromCurrency: string, toCurrency = 'INR'):
         return Number(parsed.rates[to]);
       }
     }
-  } catch {}
+  } catch (e) {
+    console.debug('[Currency] Rate cache read failed:', e);
+  }
 
   // 2. Network fetch from open central-bank rate endpoint (open.er-api.com)
   try {
@@ -205,7 +207,9 @@ export async function getExchangeRate(fromCurrency: string, toCurrency = 'INR'):
             cacheKey,
             JSON.stringify({ timestamp: Date.now(), rates: data.rates })
           );
-        } catch {}
+        } catch (e) {
+          console.debug('[Currency] Rate cache write failed:', e);
+        }
         return rate;
       }
     }

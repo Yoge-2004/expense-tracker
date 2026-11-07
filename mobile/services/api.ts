@@ -159,12 +159,16 @@ export async function readSavedTheme(): Promise<'dark' | 'light' | null> {
   try {
     const direct = await AsyncStorage.getItem('app_theme');
     if (direct === 'light' || direct === 'dark') return direct;
-  } catch {}
+  } catch (e) {
+    console.debug('[API] Direct theme read failed:', e);
+  }
 
   try {
     const val = await safeStorageGet('app_theme');
     if (val === 'light' || val === 'dark') return val;
-  } catch {}
+  } catch (e) {
+    console.debug('[API] Secure theme read failed:', e);
+  }
 
   return null;
 }
@@ -176,7 +180,9 @@ export async function readSavedTheme(): Promise<'dark' | 'light' | null> {
 export async function persistSavedTheme(theme: 'light' | 'dark'): Promise<void> {
   try {
     await AsyncStorage.setItem('app_theme', theme);
-  } catch {}
+  } catch (e) {
+    console.debug('[API] Direct theme write failed:', e);
+  }
 }
 
 export async function saveSession(token: string, userId: string, name: string, photo?: string | null): Promise<void> {

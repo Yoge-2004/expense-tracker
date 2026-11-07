@@ -110,11 +110,10 @@ function toMonthlyRate(amt: number, frequency?: string, intervalDays?: number): 
  * and Recurring Chit Funds / Deposits (Savings) into one comprehensive view.
  */
 export default function SubscriptionsScreen() {
-  const { userId, theme, currency, isStealthMode } = useAuth();
+  const { userId, theme, currency, isStealthMode, themeColors } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { themeColors } = useAuth();
   const currSym = getCurrencySymbol(currency);
   const c = themeColors || Colors[theme];
 

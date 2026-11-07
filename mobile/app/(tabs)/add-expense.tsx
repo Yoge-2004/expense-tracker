@@ -42,7 +42,7 @@ import { BudgetFormTab } from '../../components/forms/BudgetFormTab';
 import { screenStyles as styles } from '../../components/forms/screenStyles';
 
 export default function AddExpenseScreen() {
-  const { userId, theme, currency } = useAuth();
+  const { userId, theme, currency, themeColors } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -98,7 +98,6 @@ export default function AddExpenseScreen() {
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [calendarTarget, setCalendarTarget] = useState<'expense' | 'income' | 'savings'>('expense');
 
-  const { themeColors } = useAuth();
   const currSymbol = getCurrencySymbol(currency);
   const c = themeColors || Colors[theme];
 

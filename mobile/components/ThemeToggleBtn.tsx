@@ -62,3 +62,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+
+ThemeToggleBtn.displayName = 'ThemeToggleBtn';

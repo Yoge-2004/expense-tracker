@@ -195,7 +195,9 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
             });
           }
         }
-      } catch {}
+      } catch (err) {
+        console.debug('[InsightCards] ML forecast endpoint unavailable:', err);
+      }
 
       // 2. Anomaly scoring (Model 4)
       try {
@@ -220,7 +222,9 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
             topOutlier: top ? { desc: top.description || "Outlier", amount: top.amount, score: top.anomaly_score } : undefined,
           });
         }
-      } catch {}
+      } catch (err) {
+        console.debug('[InsightCards] ML anomaly scoring unavailable:', err);
+      }
     }
 
     loadMlInsights();
@@ -1637,3 +1641,5 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+
+InsightCards.displayName = 'InsightCards';

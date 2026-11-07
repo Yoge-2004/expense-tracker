@@ -32,7 +32,9 @@ export function useCategories(userId: string | number | null) {
               setCategories(parsed.categories);
             }
           }
-        } catch {}
+        } catch (e) {
+          console.debug('[useCategories] Cache hydration skipped:', e);
+        }
       }
 
       const [globalRes, userRes] = await Promise.allSettled([

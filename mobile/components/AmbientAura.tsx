@@ -7,18 +7,28 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View, Animated, useWindowDimensions, Image } from 'react-native';
-import { usePreferences } from '../context/PreferencesContext';
+import { useOptionalPreferences } from '../context/PreferencesContext';
+import { Colors, ThemeColors } from '../constants/theme';
 
 interface AmbientAuraProps {
   /** Optional touch pass-through configuration (defaults to 'none'). */
   pointerEvents?: 'box-none' | 'none' | 'box-only' | 'auto';
+  customColors?: ThemeColors;
+  theme?: 'dark' | 'light';
 }
 
 /**
  * Atmospheric ambient aura background mesh with custom wallpaper and dynamic orbs.
  */
-export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEvents = 'none' }) => {
-  const { theme, themeColors, backgroundAsset } = usePreferences();
+export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({
+  pointerEvents = 'none',
+  customColors,
+  theme: propTheme,
+}) => {
+  const prefs = useOptionalPreferences();
+  const theme = propTheme || prefs?.theme || 'dark';
+  const themeColors = customColors || prefs?.themeColors || Colors[theme];
+  const backgroundAsset = prefs?.backgroundAsset || { type: 'preset', presetId: 'default' };
   const { width, height } = useWindowDimensions();
   const isLight = theme === 'light';
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -216,3 +226,5 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
 });
+
+AmbientAura.displayName = 'AmbientAura';

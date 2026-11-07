@@ -108,7 +108,9 @@ export const FloatingCalculator: React.FC = () => {
               currentPos.current = { x: clampedX, y: clampedY };
               pan.setValue({ x: clampedX, y: clampedY });
             }
-          } catch {}
+          } catch (e) {
+            console.debug('[FloatingCalculator] Position parse failed:', e);
+          }
         }
       })
       .catch(() => {});

@@ -49,7 +49,6 @@ import { MonthlyReportModal } from '../../components/MonthlyReportModal';
 import { HelpGuideModal } from '../../components/HelpGuideModal';
 import { AboutModal } from '../../components/AboutModal';
 import { ThemeStudioModal } from '../../components/ThemeStudioModal';
-import { usePreferences } from '../../context/PreferencesContext';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 import { checkForAppUpdate, AppReleaseInfo, DISPLAY_VERSION } from '../../services/appUpdate';
 import {
@@ -82,10 +81,10 @@ export default function ProfileScreen() {
     profilePicture,
     updateUserProfile,
     refreshUserProfile,
+    themeColors,
   } = useAuth();
   const { showAlert } = useAlert();
   const insets = useSafeAreaInsets();
-  const { themeColors } = usePreferences();
   const isLight = theme === 'light';
   const c = themeColors || Colors[theme];
 
@@ -174,6 +173,7 @@ export default function ProfileScreen() {
 
   const [smartRemindersEnabled, setSmartRemindersEnabled] = useState(true);
   const [transactionAlertsEnabled, setTransactionAlertsOn] = useState(true);
+  const [instantDebitEnabled, setInstantDebitEnabled] = useState(true);
 
   React.useEffect(() => {
     void getDailyRemindersEnabled().then((enabled) => setRemindersEnabled(enabled)).catch(() => {});
@@ -228,8 +228,6 @@ export default function ProfileScreen() {
       }
     }
   };
-
-  const [instantDebitEnabled, setInstantDebitEnabled] = useState(true);
 
   const handleToggleInstantDebit = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -1007,7 +1005,7 @@ export default function ProfileScreen() {
 
             <View style={{ padding: 12, backgroundColor: c.primary + '14', borderRadius: 10, margin: 12, borderWidth: 1, borderColor: c.primary + '40' }}>
               <Text style={{ fontSize: 11.5, lineHeight: 17, color: c.text }}>
-                <Text style={{ fontWeight: '700' }}>How Bank SMS capture works:</Text> Whenever you receive a bank debit SMS, copy it. ExpenseTracker automatically parses the amount & merchant the moment you switch to the app or tap "Paste SMS" on the Record screen!
+                <Text style={{ fontWeight: '700' }}>How Bank SMS capture works:</Text> Whenever you receive a bank debit SMS, copy it. ExpenseTracker automatically parses the amount & merchant the moment you switch to the app or tap &quot;Paste SMS&quot; on the Record screen!
               </Text>
             </View>
           </View>

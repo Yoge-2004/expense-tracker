@@ -10,9 +10,8 @@ import { AlertProvider, useAlert } from '../context/AlertContext';
 import { UpdateProvider, useUpdate } from '../context/UpdateContext';
 import UpdateBanner from '../components/UpdateBanner';
 import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Text, Animated, StyleSheet, StatusBar, Easing, useColorScheme, AppState, AppStateStatus, Platform } from 'react-native';
+import { View, StatusBar, useColorScheme, AppState, AppStateStatus, Platform } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { useFonts } from 'expo-font';
 import { Fraunces_500Medium, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
@@ -27,10 +26,11 @@ import {
   IBMPlexMono_500Medium,
   IBMPlexMono_600SemiBold,
 } from '@expo-google-fonts/ibm-plex-mono';
-import { Colors, FontTokens, ThemeColors } from '../constants/theme';
+import { ThemeColors } from '../constants/theme';
 import { ExtractedPalette } from '../services/paletteExtractor';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { FloatingCalculator } from '../components/FloatingCalculator';
+import { ImmersiveLoader } from '../components/ImmersiveLoader';
 import {
   scheduleDailyExpenseReminders,
   getDailyRemindersEnabled,
@@ -42,302 +42,14 @@ import {
   detectAndAddCreditFromMessage,
   formatNotificationAmount,
 } from '../services/notifications';
-import { useReducedMotion } from '../hooks/useReducedMotion';
 import { readSavedTheme, safeStorageGet } from '../services/api';
 import { createThemeColors, usePreferences } from '../context/PreferencesContext';
 
 WebBrowser.maybeCompleteAuthSession();
 
-interface SplashLoaderProps {
-  theme?: 'dark' | 'light';
-  colors?: ThemeColors;
-  fonts?: FontTokens;
-}
-
-function tintColor(color: string, opacity: number): string {
-  const hex = color.match(/^#([0-9a-f]{6})$/i)?.[1];
-  if (hex) {
-    const [r, g, b] = [0, 2, 4].map((offset) => parseInt(hex.slice(offset, offset + 2), 16));
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-  }
-  const rgb = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
-  return rgb ? `rgba(${rgb[1]}, ${rgb[2]}, ${rgb[3]}, ${opacity})` : color;
-}
-
-function SplashLoader({ theme: themeProp, colors, fonts }: SplashLoaderProps = {}) {
-  const systemScheme = useColorScheme();
-  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>(() => {
-    if (themeProp === 'light' || themeProp === 'dark') return themeProp;
-    return systemScheme === 'light' ? 'light' : 'dark';
-  });
-
-  useEffect(() => {
-    if (themeProp === 'light' || themeProp === 'dark') {
-      setResolvedTheme(themeProp);
-      return;
-    }
-    readSavedTheme()
-      .then((saved) => {
-        if (saved === 'light' || saved === 'dark') {
-          setResolvedTheme(saved);
-        }
-      })
-      .catch(() => {});
-  }, [themeProp]);
-
-  const isLight = resolvedTheme === 'light';
-  const c = colors || Colors[resolvedTheme];
-
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(0)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-  const shimmerAnim = useRef(new Animated.Value(-80)).current;
-  const reducedMotion = useReducedMotion();
-
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: reducedMotion ? 0 : 350,
-      useNativeDriver: true,
-    }).start();
-
-    if (reducedMotion) {
-      pulseAnim.setValue(1);
-      shimmerAnim.setValue(40);
-      return;
-    }
-
-    const rotateLoop = Animated.loop(
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 2000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    );
-
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 900,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 0,
-          duration: 900,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    const shimmerLoop = Animated.loop(
-      Animated.timing(shimmerAnim, {
-        toValue: 160,
-        duration: 1300,
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: true,
-      })
-    );
-
-    rotateLoop.start();
-    pulseLoop.start();
-    shimmerLoop.start();
-
-    return () => {
-      rotateLoop.stop();
-      pulseLoop.stop();
-      shimmerLoop.stop();
-    };
-  }, [fadeAnim, pulseAnim, rotateAnim, shimmerAnim, reducedMotion]);
-
-  const spin = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  const auraScale = pulseAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.92, 1.2],
-  });
-
-  const auraOpacity = pulseAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.35, 0.75],
-  });
-
-  const logoScale = pulseAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.97, 1.03],
-  });
-
-  return (
-    <Animated.View style={[splashStyles.container, { opacity: fadeAnim, backgroundColor: c.bg }]}>
-      <StatusBar
-        barStyle={isLight ? 'dark-content' : 'light-content'}
-        {...({ backgroundColor: c.bg } as any)}
-      />
-
-      {/* Bespoke animated brand aura & rotating orbital halo */}
-      <View style={splashStyles.coreContainer}>
-        <Animated.View
-          style={[
-            splashStyles.auraGlow,
-            {
-              backgroundColor: tintColor(c.primary, 0.18),
-              transform: [{ scale: auraScale }],
-              opacity: auraOpacity,
-            },
-          ]}
-        />
-
-        <Animated.View
-          style={[
-            splashStyles.orbitalRing,
-            {
-              borderColor: tintColor(c.primary, 0.2),
-              borderTopColor: c.primary,
-              borderRightColor: c.accent,
-              transform: [{ rotate: spin }],
-            },
-          ]}
-        />
-
-        <Animated.View
-          style={[
-            splashStyles.logoBox,
-            {
-              backgroundColor: c.primary,
-              shadowColor: c.primary,
-              shadowOpacity: isLight ? 0.35 : 0.45,
-              transform: [{ scale: logoScale }],
-            },
-          ]}
-        >
-          <Ionicons name="wallet" size={32} color={c.onPrimary} />
-        </Animated.View>
-      </View>
-
-      <Text style={[splashStyles.brandName, { color: c.text, fontFamily: fonts?.display }]}>ExpenseTracker</Text>
-      <View
-        style={[
-          splashStyles.badge,
-          {
-            backgroundColor: tintColor(c.primary, 0.12),
-            borderColor: tintColor(c.primary, 0.35),
-          },
-        ]}
-      >
-        <Text style={[splashStyles.badgeText, { color: c.primary, fontFamily: fonts?.bodyBold }]}>
-          EXECUTIVE COMMAND CENTER
-        </Text>
-      </View>
-
-      {/* Custom Shimmer Progress Beam */}
-      <View
-        style={[
-          splashStyles.loadingTrack,
-          {
-            backgroundColor: tintColor(c.text, 0.1),
-          },
-        ]}
-      >
-        <Animated.View
-          style={[
-            splashStyles.shimmerBeam,
-            {
-              backgroundColor: c.primary,
-              transform: [{ translateX: shimmerAnim }],
-            },
-          ]}
-        />
-      </View>
-      <Text style={[splashStyles.statusText, { color: c.textMuted, fontFamily: fonts?.bodyMedium }]}>
-        AUTHENTICATING SECURE LEDGER
-      </Text>
-    </Animated.View>
-  );
-}
-
-const splashStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  coreContainer: {
-    width: 96,
-    height: 96,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    position: 'relative',
-  },
-  auraGlow: {
-    position: 'absolute',
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-  },
-  orbitalRing: {
-    position: 'absolute',
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    borderWidth: 2,
-  },
-  logoBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 14,
-    elevation: 8,
-  },
-  brandName: {
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 28,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-  },
-  loadingTrack: {
-    width: 140,
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginBottom: 10,
-  },
-  shimmerBeam: {
-    width: 60,
-    height: 4,
-    borderRadius: 2,
-  },
-  statusText: {
-    fontSize: 9.5,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-});
 
 function RootLayoutNav() {
-  const { token, userId, isLoading, theme, themeColors, activeFonts } = useAuth();
+  const { token, userId, isLoading, theme, themeColors, activeFonts: _activeFonts } = useAuth();
   const { appearanceLoaded } = usePreferences();
   const { showAlert } = useAlert();
   const { hasUpdate } = useUpdate();
@@ -452,7 +164,9 @@ function RootLayoutNav() {
             );
           }
         }
-      } catch {}
+      } catch (err) {
+        console.debug('[AppLayout] Clipboard check error:', err);
+      }
     };
 
     const timer = setTimeout(checkClipboardForSms, 800);
@@ -469,7 +183,17 @@ function RootLayoutNav() {
     };
   }, [isLoading, token, userId, showAlert, router]);
 
-  if (isLoading || !appearanceLoaded) return <SplashLoader theme={theme} colors={themeColors} fonts={activeFonts} />;
+  if (isLoading || !appearanceLoaded) {
+    return (
+      <ImmersiveLoader
+        message="Synchronizing Ledger..."
+        subMessage="Authenticating secure environment..."
+        fullScreen
+        customColors={themeColors}
+        theme={theme}
+      />
+    );
+  }
 
   return (
     <>
@@ -524,11 +248,15 @@ export default function RootLayout() {
         try {
           const parsed = savedPalette ? JSON.parse(savedPalette) : null;
           if (parsed && typeof parsed === 'object') palette = parsed as ExtractedPalette;
-        } catch {}
+        } catch (e) {
+          console.debug('[AppLayout] Failed parsing savedPalette:', e);
+        }
         try {
           const parsed = savedBackground ? JSON.parse(savedBackground) : null;
           if (typeof parsed?.presetId === 'string') presetId = parsed.presetId;
-        } catch {}
+        } catch (e) {
+          console.debug('[AppLayout] Failed parsing savedBackground:', e);
+        }
         setInitialTheme(resolvedTheme);
         setInitialColors(createThemeColors(resolvedTheme, palette, presetId));
         setThemeLoaded(true);
@@ -555,7 +283,17 @@ export default function RootLayout() {
     IBMPlexMono_600SemiBold,
   });
 
-  if (!fontsLoaded || !themeLoaded) return <SplashLoader theme={initialTheme} colors={initialColors || undefined} />;
+  if (!fontsLoaded || !themeLoaded) {
+    return (
+      <ImmersiveLoader
+        message="ExpenseTracker"
+        subMessage="Initializing executive command center..."
+        fullScreen
+        customColors={initialColors}
+        theme={initialTheme}
+      />
+    );
+  }
 
   return (
     <ErrorBoundary>

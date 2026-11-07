@@ -12,12 +12,12 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   useWindowDimensions,
   View,
 } from 'react-native';
 import { ThemedText as Text } from './ThemedText';
+import { FormattedReleaseNotes } from './FormattedReleaseNotes';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
@@ -75,7 +75,7 @@ export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptPro
   }
 
   const canInstallInApp = Platform.OS === 'android' && !!info.apkDownloadUrl;
-  const notes = formatReleaseNotes(info.releaseNotes);
+  const _notes = formatReleaseNotes(info.releaseNotes);
   const size = formatSize(info.apkSize);
 
   const openReleasePage = () => {
@@ -150,20 +150,12 @@ export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptPro
             {size ? `  ·  ${size}` : ''}
           </Text>
 
-          {notes ? (
-            <View style={[styles.notes, { backgroundColor: c.bg, borderColor: c.border }]}>
-              <ScrollView
-                style={{ maxHeight: Math.max(120, Math.round(windowHeight * 0.32)) }}
-                nestedScrollEnabled
-                persistentScrollbar
-                showsVerticalScrollIndicator
-                accessibilityLabel="Release notes"
-              >
-                <Text style={[styles.notesText, { color: c.inkDim }]} selectable>
-                  {notes}
-                </Text>
-              </ScrollView>
-            </View>
+          {info.releaseNotes ? (
+            <FormattedReleaseNotes
+              rawNotes={info.releaseNotes}
+              colors={c}
+              maxHeight={Math.max(140, Math.round(windowHeight * 0.35))}
+            />
           ) : null}
 
           {busy ? (

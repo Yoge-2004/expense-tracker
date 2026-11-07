@@ -4,6 +4,7 @@ import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { DashboardMetricsMatrix } from '../components/dashboard/DashboardMetricsMatrix';
 import { DashboardLedger } from '../components/dashboard/DashboardLedger';
 import { SavingsGoalsSection } from '../components/dashboard/SavingsGoalsSection';
+import { DashboardSegmentSwitcher } from '../components/dashboard/DashboardSegmentSwitcher';
 
 describe('Dashboard Extracted Components', () => {
   it('TransactionRow exports a valid memo component', () => {
@@ -34,5 +35,10 @@ describe('Dashboard Extracted Components', () => {
   it('SavingsGoalsSection exports a valid memo component', () => {
     expect(SavingsGoalsSection).toBeDefined();
     expect(typeof SavingsGoalsSection).toBe('object');
+  });
+
+  it('DashboardSegmentSwitcher exports a valid memo component', () => {
+    expect(DashboardSegmentSwitcher).toBeDefined();
+    expect(typeof DashboardSegmentSwitcher).toBe('object');
   });
 });

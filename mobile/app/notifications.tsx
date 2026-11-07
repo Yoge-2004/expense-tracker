@@ -420,7 +420,7 @@ export default function NotificationsScreen() {
               tintColor={c.primary}
             />
           }
-          ListEmptyComponent={<Text style={[styles.empty, { color: c.textMuted }]}>You're all caught up.</Text>}
+          ListEmptyComponent={<Text style={[styles.empty, { color: c.textMuted }]}>You&apos;re all caught up.</Text>}
           ListFooterComponent={settings}
         />
       )}

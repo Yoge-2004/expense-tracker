@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   AppState,
@@ -77,7 +77,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
   const [transferProgress, setTransferProgress] = useState<TransferProgressInfo | null>(null);
 
   // Synchronize and persist transfer status so that OS low-power suspension or screen locks never lose transfer state
-  const updateProgress = (info: TransferProgressInfo | null) => {
+  const updateProgress = useCallback((info: TransferProgressInfo | null) => {
     setTransferProgress(info);
     if (!info) {
       AsyncStorage.removeItem(STORAGE_TRANSFER_JOB_KEY).catch(() => {});
@@ -87,7 +87,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
         JSON.stringify({ ...info, timestamp: Date.now() })
       ).catch(() => {});
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Restore any active/recent transfer task upon mount
@@ -101,7 +101,9 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
           } else {
             AsyncStorage.removeItem(STORAGE_TRANSFER_JOB_KEY).catch(() => {});
           }
-        } catch {}
+        } catch (e) {
+          console.debug('[ExportImportModal] Corrupted transfer progress cache:', e);
+        }
       }
     }).catch(() => {});
 
@@ -115,7 +117,9 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
               if (Date.now() - (parsed.timestamp || 0) < 7200000) {
                 setTransferProgress(parsed);
               }
-            } catch {}
+            } catch (e) {
+              console.debug('[ExportImportModal] Wakeup transfer cache read error:', e);
+            }
           }
         }).catch(() => {});
       }

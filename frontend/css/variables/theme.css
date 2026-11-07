@@ -1,100 +1,119 @@
 /* Theme tokens. Theme switching is intentionally instantaneous on the dashboard;
    the performance guard suppresses any component-level transitions during the toggle. */
 [data-theme="light"] {
-    color-scheme: light;
-    --bg-dark: #EEF1F6;
-    --card-bg: #FFFFFF;
-    --card-bg-hover: #FFFFFF;
-    --text-main: #0F172A;
-    --text-muted: #475569;
-    --border: rgba(var(--primary-rgb), 0.28);
-    --border-accent: rgba(var(--primary-rgb), 0.55);
-    --input-bg: #FFFFFF;
+  color-scheme: light;
+  --bg-dark: #eef1f6;
+  --card-bg: #ffffff;
+  --card-bg-hover: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --border: rgba(var(--primary-rgb), 0.28);
+  --border-accent: rgba(var(--primary-rgb), 0.55);
+  --input-bg: #ffffff;
 
-    --primary-rgb: 212, 175, 55;
-    --accent-rgb: 231, 76, 60;
-    --highlight-rgb: 14, 165, 233;
-    --success-rgb: 16, 185, 129;
-    --warning-rgb: 245, 158, 11;
-    --ink-rgb: 15, 23, 42;
+  --primary-rgb: 212, 175, 55;
+  --accent-rgb: 231, 76, 60;
+  --highlight-rgb: 14, 165, 233;
+  --success-rgb: 16, 185, 129;
+  --warning-rgb: 245, 158, 11;
+  --ink-rgb: 15, 23, 42;
 
-    --primary: #D4AF37;
-    --primary-gradient: linear-gradient(135deg, #E6C25B 0%, #D4AF37 50%, #B8860B 100%);
-    --primary-glow: rgba(var(--primary-rgb), 0.32);
+  --primary: #d4af37;
+  --primary-gradient: linear-gradient(
+    135deg,
+    #e6c25b 0%,
+    #d4af37 50%,
+    #b8860b 100%
+  );
+  --primary-glow: rgba(var(--primary-rgb), 0.32);
 
-    --accent: #E74C3C;
-    --accent-gradient: linear-gradient(135deg, #FF6B6B 0%, #E74C3C 100%);
-    --accent-glow: rgba(231, 76, 60, 0.25);
+  --accent: #e74c3c;
+  --accent-gradient: linear-gradient(135deg, #ff6b6b 0%, #e74c3c 100%);
+  --accent-glow: rgba(231, 76, 60, 0.25);
 
-    /* Text/icon-safe variants for light theme (see tokens.css for rationale).
+  /* Text/icon-safe variants for light theme (see tokens.css for rationale).
        Darkened rather than lightened since the surface is now light. */
-    --accent-text: #DF2E1B;
-    --danger-text: #EB1515;
-    --success-text: #0C855D;
-    --metric-subs-text: #B54858;
+  --accent-text: #df2e1b;
+  --danger-text: #eb1515;
+  --success-text: #0c855d;
+  --metric-subs-text: #b54858;
 
-    --highlight: #0EA5E9;
-    --highlight-gradient: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
+  --highlight: #0ea5e9;
+  --highlight-gradient: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
 
-    --success: #10B981;
-    --success-gradient: linear-gradient(135deg, #34D399 0%, #059669 100%);
-    --warning: #F59E0B;
-    --warning-gradient: linear-gradient(135deg, #FBBF24 0%, #D97706 100%);
-    --danger: #EF4444;
-    --danger-gradient: linear-gradient(135deg, #F87171 0%, #DC2626 100%);
+  --success: #10b981;
+  --success-gradient: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  --warning: #f59e0b;
+  --warning-gradient: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  --danger: #ef4444;
+  --danger-gradient: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
 
-    --glass: blur(28px);
-    --shadow-premium: 0 20px 45px -12px rgba(15, 23, 42, 0.09), 0 0 20px rgba(var(--primary-rgb), 0.10);
-    --shadow-glow: 0 12px 35px -8px rgba(var(--primary-rgb), 0.28);
+  --glass: blur(28px);
+  --shadow-premium:
+    0 20px 45px -12px rgba(15, 23, 42, 0.09),
+    0 0 20px rgba(var(--primary-rgb), 0.1);
+  --shadow-glow: 0 12px 35px -8px rgba(var(--primary-rgb), 0.28);
 
-    --metric-inflow: #059669;
-    --metric-inflow-rgb: 5, 150, 105;
-    --metric-inflow-glow: rgba(5, 150, 105, 0.15);
-    --metric-outflow: #DC2626;
-    --metric-outflow-rgb: 220, 38, 38;
-    --metric-outflow-glow: rgba(220, 38, 38, 0.15);
-    --metric-netflow: #2563EB;
-    --metric-netflow-rgb: 37, 99, 235;
-    --metric-netflow-glow: rgba(37, 99, 235, 0.15);
-    --metric-savings: #B45309;
-    --metric-savings-rgb: 180, 83, 9;
-    --metric-savings-glow: rgba(180, 83, 9, 0.15);
-    --metric-subs: #B54858;
-    --metric-subs-rgb: 181, 72, 88;
-    --metric-subs-glow: rgba(181, 72, 88, 0.15);
+  --metric-inflow: #059669;
+  --metric-inflow-rgb: 5, 150, 105;
+  --metric-inflow-glow: rgba(5, 150, 105, 0.15);
+  --metric-outflow: #dc2626;
+  --metric-outflow-rgb: 220, 38, 38;
+  --metric-outflow-glow: rgba(220, 38, 38, 0.15);
+  --metric-netflow: #2563eb;
+  --metric-netflow-rgb: 37, 99, 235;
+  --metric-netflow-glow: rgba(37, 99, 235, 0.15);
+  --metric-savings: #b45309;
+  --metric-savings-rgb: 180, 83, 9;
+  --metric-savings-glow: rgba(180, 83, 9, 0.15);
+  --metric-subs: #b54858;
+  --metric-subs-rgb: 181, 72, 88;
+  --metric-subs-glow: rgba(181, 72, 88, 0.15);
 
-    /* Universal 8-color spectrum tokens */
-    --palette-1: #D4AF37;
-    --palette-1-rgb: 212, 175, 55;
-    --palette-1-glow: rgba(212, 175, 55, 0.20);
-    --palette-2: #E74C3C;
-    --palette-2-rgb: 231, 76, 60;
-    --palette-2-glow: rgba(231, 76, 60, 0.20);
-    --palette-3: #0EA5E9;
-    --palette-3-rgb: 14, 165, 233;
-    --palette-3-glow: rgba(14, 165, 233, 0.20);
-    --palette-4: #10B981;
-    --palette-4-rgb: 16, 185, 129;
-    --palette-4-glow: rgba(16, 185, 129, 0.20);
-    --palette-5: #F59E0B;
-    --palette-5-rgb: 245, 158, 11;
-    --palette-5-glow: rgba(245, 158, 11, 0.20);
-    --palette-6: #8B5CF6;
-    --palette-6-rgb: 139, 92, 246;
-    --palette-6-glow: rgba(139, 92, 246, 0.20);
-    --palette-7: #EC4899;
-    --palette-7-rgb: 236, 72, 153;
-    --palette-7-glow: rgba(236, 72, 153, 0.20);
-    --palette-8: #6366F1;
-    --palette-8-rgb: 99, 102, 241;
-    --palette-8-glow: rgba(99, 102, 241, 0.20);
+  /* Universal 8-color spectrum tokens */
+  --palette-1: #d4af37;
+  --palette-1-rgb: 212, 175, 55;
+  --palette-1-glow: rgba(212, 175, 55, 0.2);
+  --palette-2: #e74c3c;
+  --palette-2-rgb: 231, 76, 60;
+  --palette-2-glow: rgba(231, 76, 60, 0.2);
+  --palette-3: #0ea5e9;
+  --palette-3-rgb: 14, 165, 233;
+  --palette-3-glow: rgba(14, 165, 233, 0.2);
+  --palette-4: #10b981;
+  --palette-4-rgb: 16, 185, 129;
+  --palette-4-glow: rgba(16, 185, 129, 0.2);
+  --palette-5: #f59e0b;
+  --palette-5-rgb: 245, 158, 11;
+  --palette-5-glow: rgba(245, 158, 11, 0.2);
+  --palette-6: #8b5cf6;
+  --palette-6-rgb: 139, 92, 246;
+  --palette-6-glow: rgba(139, 92, 246, 0.2);
+  --palette-7: #ec4899;
+  --palette-7-rgb: 236, 72, 153;
+  --palette-7-glow: rgba(236, 72, 153, 0.2);
+  --palette-8: #6366f1;
+  --palette-8-rgb: 99, 102, 241;
+  --palette-8-glow: rgba(99, 102, 241, 0.2);
 
-    --cursor-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L20 11L12 14L9 22L4 3Z' fill='%230284C7' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='4' cy='3' r='1.5' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, auto;
-    --cursor-pointer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%230284C7' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, pointer;
-    --cursor-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cg stroke='%230284C7' stroke-width='2.2' stroke-linecap='round'%3E%3Cline x1='14' y1='4' x2='14' y2='24'/%3E%3Cline x1='9' y1='4' x2='19' y2='4'/%3E%3Cline x1='9' y1='24' x2='19' y2='24'/%3E%3C/g%3E%3C/svg%3E") 14 14, text;
-    --cursor-clicked: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%234F46E5' stroke='%230F172A' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2.5' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, pointer;
+  --cursor-default:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L20 11L12 14L9 22L4 3Z' fill='%230284C7' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='4' cy='3' r='1.5' fill='%23FFFFFF'/%3E%3C/svg%3E")
+      4 3,
+    auto;
+  --cursor-pointer:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%230284C7' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2' fill='%23FFFFFF'/%3E%3C/svg%3E")
+      4 3,
+    pointer;
+  --cursor-text:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cg stroke='%230284C7' stroke-width='2.2' stroke-linecap='round'%3E%3Cline x1='14' y1='4' x2='14' y2='24'/%3E%3Cline x1='9' y1='4' x2='19' y2='4'/%3E%3Cline x1='9' y1='24' x2='19' y2='24'/%3E%3C/g%3E%3C/svg%3E")
+      14 14,
+    text;
+  --cursor-clicked:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%234F46E5' stroke='%230F172A' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2.5' fill='%23FFFFFF'/%3E%3C/svg%3E")
+      4 3,
+    pointer;
 }
 
 :root {
-    color-scheme: dark;
+  color-scheme: dark;
 }

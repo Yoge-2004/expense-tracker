@@ -158,12 +158,9 @@ export function createThemeColors(
   const textColor = readableTextForSurfaces(appSurface, cardSurface);
   const mutedText = ensureColorContrast(baseColors.textMuted, appSurface, 4.5);
   const primaryGradientEnd = ensureColorContrast(activePalette.primaryGradientEnd || baseColors.primaryGradientEnd, onPrimary);
-  // Category/chart colours follow the user's theme colours plus fixed hues
-  // Category/chart colours follow the user's extracted palette spectrum plus theme seeds
-  const paletteSeeds = Array.isArray(activePalette.paletteColors) && activePalette.paletteColors.length > 0
-    ? activePalette.paletteColors
-    : [primary, accent, highlight, primaryGradientEnd];
-  const paletteColors = buildCategoryPalette(paletteSeeds, cardSurface);
+  // Category/chart colours follow the user's theme colours plus fixed hues; the wallpaper's extracted swatches
+  // (activePalette.paletteColors) are only a picker for the studio and must not recolour the app's data.
+  const paletteColors = buildCategoryPalette([primary, accent, highlight, primaryGradientEnd], cardSurface);
 
   return {
     ...baseColors,
@@ -620,6 +617,11 @@ export function usePreferences() {
     throw new Error('usePreferences must be used within a PreferencesProvider');
   }
   return context;
+}
+
+export function useOptionalPreferences(): PreferencesContextType | null {
+  const context = useContext(PreferencesContext);
+  return context ?? null;
 }
 
 export function useOptionalActiveFonts(): FontTokens {

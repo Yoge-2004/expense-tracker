@@ -440,7 +440,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
             <Ionicons name="sparkles" size={16} color={c.primary} />
             <View style={{ flex: 1, marginLeft: 8 }}>
               <Text style={[styles.loanNoticeTitle, { color: c.text }]}>
-                {loanCategoryExpenses.length} transaction(s) tagged as "Loan"
+                {loanCategoryExpenses.length} transaction(s) tagged as &quot;Loan&quot;
               </Text>
               <Text style={[styles.loanNoticeSub, { color: c.textMuted }]}>
                 Tap to convert into Peer Loans & keep living expenses separated.
@@ -1156,7 +1156,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                       { color: expenseFilterTab === 'LOAN' ? (c.onPrimary) : c.text },
                     ]}
                   >
-                    Tagged as "Loan" ({loanCategoryExpenses.length})
+                    Tagged as &quot;Loan&quot; ({loanCategoryExpenses.length})
                   </Text>
                 </TouchableOpacity>
               )}
@@ -1846,3 +1846,5 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 });
+
+LoansSection.displayName = 'LoansSection';

@@ -65,3 +65,5 @@ export const SampleReceiptsPicker: React.FC<SampleReceiptsPickerProps> = React.m
     );
   }
 );
+
+SampleReceiptsPicker.displayName = 'SampleReceiptsPicker';

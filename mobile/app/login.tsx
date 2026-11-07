@@ -50,6 +50,7 @@ function isValidEmail(email: string): boolean {
 export default function LoginScreen() {
   const { login, loginWithGoogle, loginWithBiometrics, isBiometricsAvailable, theme, themeColors } = useAuth();
   const [isBioLoading, setIsBioLoading] = useState(false);
+  const [deviceCopies, setDeviceCopies] = useState(0);
   useEffect(() => {
     void listDeviceUserIds().then((ids) => setDeviceCopies(ids.length));
   }, []);
@@ -59,7 +60,6 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState('');
-  const [deviceCopies, setDeviceCopies] = useState(0);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

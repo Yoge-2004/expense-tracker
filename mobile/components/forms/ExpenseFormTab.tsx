@@ -480,7 +480,7 @@ backgroundColor: c.inputBg,
                   Similar Transaction Detected ({Math.round(duplicateMatch.similarity * 100)}% Match)
                 </Text>
                 <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 2 }}>
-                  "{duplicateMatch.text}" recorded recently with matching amount.
+                  &quot;{duplicateMatch.text}&quot; recorded recently with matching amount.
                 </Text>
               </View>
             </View>

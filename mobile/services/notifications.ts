@@ -15,6 +15,8 @@ import { Platform } from 'react-native';
 import { planDueReminders, planMonthEndReminders, ReminderSources, REMINDER_ID_PREFIX } from '../utils/reminderPlan';
 import { getCurrencySymbol } from './currency';
 import { apiRequest, getSession, invalidateApiCache } from './api';
+import { parseFinancialMessage, ParsedTransaction } from './debitParser';
+import { APP_UPDATE_ROUTE, CURRENT_APP_VERSION } from './appUpdate';
 
 const REMINDERS_STORAGE_KEY = 'expense_tracker_daily_reminders_enabled';
 const MIDDAY_NOTIFICATION_ID = 'daily_midday_expense_reminder';
@@ -25,6 +27,9 @@ const SERVER_PUSH_KEY = 'expense_tracker_server_push_active';
 const INSTANT_DEBIT_STORAGE_KEY = 'expense_tracker_instant_debit_alerts_enabled';
 const NOTIFICATION_SOUND_KEY = 'expense_tracker_notification_sound_enabled';
 export const CUSTOM_NOTIFICATION_SOUND = 'custom_chime.wav';
+export const DEBIT_CHANNEL_ID = 'debit-alerts';
+export const ALERTS_CHANNEL_ID = 'financial-alerts';
+export const REMINDERS_CHANNEL_ID = 'expense-reminders';
 
 export async function getNotificationSoundEnabled(): Promise<boolean> {
   try {
@@ -94,7 +99,9 @@ if (!isExpoGo) {
         try {
           const val = await AsyncStorage.getItem(NOTIFICATION_SOUND_KEY);
           playSound = val === null ? true : val === 'true';
-        } catch {}
+        } catch (e) {
+          console.debug('[Notifications] Sound pref lookup error:', e);
+        }
         return {
           shouldShowAlert: true,
           shouldPlaySound: playSound,
@@ -281,13 +288,10 @@ export async function getDailyRemindersEnabled(): Promise<boolean> {
 // Real-time Debit Alerts & Notification-based Expense Tracking
 // ---------------------------------------------------------------------------------------------------
 
-import { parseFinancialMessage, ParsedTransaction } from "./debitParser";
-import { APP_UPDATE_ROUTE, CURRENT_APP_VERSION } from './appUpdate';
+// imports moved to top
 export { parseFinancialMessage, ParsedTransaction };
 
-const DEBIT_CHANNEL_ID = "debit-alerts";
-const ALERTS_CHANNEL_ID = "financial-alerts";
-const REMINDERS_CHANNEL_ID = "expense-reminders";
+// Channel IDs moved to top of file
 
 /**
  * Checks if automatic real-time debit detection and alerts are enabled.
@@ -482,7 +486,9 @@ export async function detectAndAddExpenseFromMessage(
         if (!matchedCategoryId && allCats.length > 0) {
           matchedCategoryId = allCats[0].id;
         }
-      } catch {}
+      } catch (e) {
+        console.debug('[Notifications] Category matching failed:', e);
+      }
 
       const description = parsed.merchant
         ? `${parsed.merchant}${parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : ''}`
@@ -631,12 +637,12 @@ export function registerIncomingNotificationListener(userId?: string | null) {
         return;
       }
 
-      // 3. Guard against internal notification keywords
+      // 3. Guard against internal notification keywords (do not block standard bank 'Debit Alert' or 'Transaction Alert')
       const title = notification?.request?.content?.title || '';
       const body = notification?.request?.content?.body || '';
       const fullText = `${title} ${body}`.trim();
 
-      if (/Auto-Added Debit|Debit Alert|Transaction Alert|Debit recorded|Credit recorded|ExpenseTracker|Midday Expense Check|Daily Ledger Wrap-up/i.test(fullText)) {
+      if (/Auto-Added Debit|ExpenseTracker|Midday Expense Check|Daily Ledger Wrap-up|Recorded to your expenses automatically|Allocate to savings goals/i.test(fullText)) {
         return;
       }
 
@@ -657,14 +663,27 @@ export function registerIncomingNotificationListener(userId?: string | null) {
       void handleNotification(response?.notification);
     });
 
+    // Capture any bank notification tapped while app was closed or backgrounded
+    Notifications.getLastNotificationResponseAsync?.().then((resp: any) => {
+      if (resp?.notification) {
+        void handleNotification(resp.notification);
+      }
+    }).catch((e: any) => {
+      console.debug('[Notifications] getLastNotificationResponse error:', e);
+    });
+
     return {
       remove: () => {
         try {
           subReceived?.remove?.();
-        } catch {}
+        } catch (e) {
+          console.debug('[Notifications] subReceived removal error:', e);
+        }
         try {
           subResponse?.remove?.();
-        } catch {}
+        } catch (e) {
+          console.debug('[Notifications] subResponse removal error:', e);
+        }
       },
     };
   } catch (e) {

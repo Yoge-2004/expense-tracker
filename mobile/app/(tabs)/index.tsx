@@ -49,6 +49,7 @@ import { DatePresetType } from '../../components/CategoryPillsBar';
 import { ExportImportModal } from '../../components/ExportImportModal';
 import { HelpGuideModal } from '../../components/HelpGuideModal';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
+import { DashboardSegmentSwitcher, DashboardSegment } from '../../components/dashboard/DashboardSegmentSwitcher';
 import { DashboardMetricsMatrix } from '../../components/dashboard/DashboardMetricsMatrix';
 import { DashboardLedger } from '../../components/dashboard/DashboardLedger';
 import { SavingsGoalsSection } from '../../components/dashboard/SavingsGoalsSection';
@@ -141,21 +142,10 @@ interface Subscription {
  */
 
 export default function DashboardScreen() {
-  const { userId, userName, theme, currency, profilePicture, isStealthMode, toggleStealthMode, refreshUserProfile } = useAuth();
+  const { userId, userName, theme, currency, profilePicture, isStealthMode, toggleStealthMode, refreshUserProfile, themeColors } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
 
-  // Unread count for the bell, refreshed whenever this screen comes into focus.
-  useFocusEffect(
-    useCallback(() => {
-      if (!userId) return;
-      refreshUserProfile?.().catch(() => {});
-      apiRequest(`/notifications/user/${userId}?limit=1`)
-        .then((inbox) => setUnreadNotifications(inbox?.unreadCount || 0))
-        .catch(() => {});
-    }, [userId, refreshUserProfile])
-  );
-  const { themeColors } = useAuth();
   const insets = useSafeAreaInsets();
   const currSymbol = getCurrencySymbol(currency);
   const c = themeColors || Colors[theme];
@@ -187,6 +177,18 @@ export default function DashboardScreen() {
   const [partialError, setPartialError] = useState(false);
   /** Unread notifications, shown as a badge on the bell. */
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [activeSegment, setActiveSegment] = useState<DashboardSegment>('overview');
+
+  // Unread count for the bell, refreshed whenever this screen comes into focus.
+  useFocusEffect(
+    useCallback(() => {
+      if (!userId) return;
+      refreshUserProfile?.().catch(() => {});
+      apiRequest(`/notifications/user/${userId}?limit=1`)
+        .then((inbox) => setUnreadNotifications(inbox?.unreadCount || 0))
+        .catch(() => {});
+    }, [userId, refreshUserProfile])
+  );
   const [cachedTime, setCachedTime] = useState<string | null>(null);
 
   // Filters state
@@ -597,7 +599,7 @@ export default function DashboardScreen() {
     const isCustom = datePreset === 'custom';
     const nowD = new Date();
     const todayStr = isToday ? nowD.toISOString().split('T')[0] : '';
-    const thirtyAgo = isLast30 ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : null;
+    const thirtyAgo = isLast30 ? new Date(nowD.getTime() - 30 * 24 * 60 * 60 * 1000) : null;
 
     return expenses.filter((e) => {
       const matchSearch =
@@ -643,7 +645,7 @@ export default function DashboardScreen() {
     const nowD = new Date();
     const todayStr = isToday ? nowD.toISOString().split('T')[0] : '';
     const thisMonth = isMonth ? monthKey(nowD) : '';
-    const thirtyAgo = isLast30 ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : null;
+    const thirtyAgo = isLast30 ? new Date(nowD.getTime() - 30 * 24 * 60 * 60 * 1000) : null;
 
     return incomes.filter((inc) => {
       const matchSearch =
@@ -974,152 +976,162 @@ export default function DashboardScreen() {
         )}
 
         {/* =========================================
-            2. CASH FLOW OVERVIEW & 4-METRIC MATRIX KPI GRID
+            SEGMENT SWITCHER (Overview | Analytics | Goals & Loans)
            ========================================= */}
-        <DashboardMetricsMatrix
+        <DashboardSegmentSwitcher
+          activeSegment={activeSegment}
+          onSelectSegment={setActiveSegment}
           colors={c}
           theme={theme}
-          currSymbol={currSymbol}
-          isStealthMode={isStealthMode}
-          isLargeScreen={isLargeScreen}
-          matrixCardWidth={matrixCardWidth}
-          monthlyNet={currentMonthNet}
-          monthlyInflow={currentMonthInflow}
-          monthlyOutflow={currentMonthSpent}
-          allTimeNet={netCashFlow}
-          totalIncome={totalIncome}
-          totalSpent={totalSpent}
-          safeDailySpend={safeDailySpend}
-          noSpendStreak={noSpendStreak}
-          currentDay={currentDay}
-          daysInMonth={daysInMonth}
-          dailyBurn={dailyBurn}
-          monthEndForecast={monthEndForecast}
-          highestCatName={highestCatName}
-          highestCatAmt={highestCatAmt}
+          goalsCount={savingsGoals.length}
+          loansCount={loans.length}
         />
 
         {/* =========================================
-            3. IN-DEPTH FINANCIAL INTELLIGENCE CARDS
+            VIEW 1: OVERVIEW & RECENT TRANSACTIONS
            ========================================= */}
-        <InsightCards
-          expenses={dashboardExpenses}
-          budgets={budgets}
-          incomes={incomes}
-          savingsGoals={savingsGoals}
-        />
+        {activeSegment === 'overview' && (
+          <>
+            <DashboardMetricsMatrix
+              colors={c}
+              theme={theme}
+              currSymbol={currSymbol}
+              isStealthMode={isStealthMode}
+              isLargeScreen={isLargeScreen}
+              matrixCardWidth={matrixCardWidth}
+              monthlyNet={currentMonthNet}
+              monthlyInflow={currentMonthInflow}
+              monthlyOutflow={currentMonthSpent}
+              allTimeNet={netCashFlow}
+              totalIncome={totalIncome}
+              totalSpent={totalSpent}
+              safeDailySpend={safeDailySpend}
+              noSpendStreak={noSpendStreak}
+              currentDay={currentDay}
+              daysInMonth={daysInMonth}
+              dailyBurn={dailyBurn}
+              monthEndForecast={monthEndForecast}
+              highestCatName={highestCatName}
+              highestCatAmt={highestCatAmt}
+            />
+
+            <StaggeredView delay={80} direction="up">
+              <DashboardLedger
+                colors={c}
+                theme={theme}
+                currSymbol={currSymbol}
+                isStealthMode={isStealthMode}
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+                datePreset={datePreset}
+                onSelectDatePreset={setDatePreset}
+                startDate={startDate}
+                onStartDateChange={setStartDate}
+                endDate={endDate}
+                onEndDateChange={setEndDate}
+                ledgerTab={ledgerTab}
+                setLedgerTab={setLedgerTab}
+                filteredExpensesCount={filteredExpenses.length}
+                filteredIncomesCount={filteredIncomes.length}
+                unifiedTransactions={unifiedTransactions}
+                onSearch={handleSearch}
+                searchQuery={searchQuery}
+                sortOption={sortOption}
+                setSortOption={setSortOption}
+                onRowPress={onRowPress}
+                onRowEdit={onRowEdit}
+                onRowDelete={onRowDelete}
+                isLoading={isLoading}
+                isRefreshing={refreshing}
+                onOpenHelpGuide={() => setHelpGuideVisible(true)}
+              />
+            </StaggeredView>
+          </>
+        )}
 
         {/* =========================================
-            4. VISUAL SVG ANALYTICS & CHARTS
+            VIEW 2: VISUAL ANALYTICS & INSIGHTS
            ========================================= */}
-        <StaggeredView delay={180} direction="up">
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Visual Analytics</Text>
-              <Text style={[styles.sectionSub, { color: c.textMuted }]}>
-                Dynamic trend breakdown & category distributions
-              </Text>
-            </View>
-          </View>
-        </StaggeredView>
+        {activeSegment === 'analytics' && (
+          <>
+            <InsightCards
+              expenses={dashboardExpenses}
+              budgets={budgets}
+              incomes={incomes}
+              savingsGoals={savingsGoals}
+            />
 
-        {/* 1. Category Donut */}
-        <StaggeredView delay={220} direction="up">
-          <CategoryDonutChart expenses={dashboardExpenses} />
-        </StaggeredView>
+            <StaggeredView delay={60} direction="up">
+              <View style={styles.sectionHeader}>
+                <View>
+                  <Text style={[styles.sectionTitle, { color: c.text }]}>Visual Analytics</Text>
+                  <Text style={[styles.sectionSub, { color: c.textMuted }]}>
+                    Dynamic trend breakdown & category distributions
+                  </Text>
+                </View>
+              </View>
+            </StaggeredView>
 
-        {/* 2. Spend Trend Line */}
-        <StaggeredView delay={280} direction="up">
-          <SpendTrendChart expenses={dashboardExpenses} />
-        </StaggeredView>
+            <StaggeredView delay={100} direction="up">
+              <CategoryDonutChart expenses={dashboardExpenses} />
+            </StaggeredView>
 
-        {/* 3. Recurring vs Variable Spend Split */}
-        <StaggeredView delay={340} direction="up">
-          <RecurringSplitChart expenses={dashboardExpenses} />
-        </StaggeredView>
+            <StaggeredView delay={140} direction="up">
+              <SpendTrendChart expenses={dashboardExpenses} />
+            </StaggeredView>
 
-        {/* 4. Day of the Week Distribution */}
-        <StaggeredView delay={400} direction="up">
-          <DayOfWeekChart expenses={dashboardExpenses} />
-        </StaggeredView>
+            <StaggeredView delay={180} direction="up">
+              <RecurringSplitChart expenses={dashboardExpenses} />
+            </StaggeredView>
 
-        {/* 5. Budget vs Actual Progress Bar */}
-        <StaggeredView delay={460} direction="up">
-          <BudgetVsActualChart
-            budgets={budgets}
-            onEditBudget={handleBudgetEdit}
-            onDeleteBudget={handleBudgetDelete}
-          />
-        </StaggeredView>
+            <StaggeredView delay={220} direction="up">
+              <DayOfWeekChart expenses={dashboardExpenses} />
+            </StaggeredView>
+
+            <StaggeredView delay={260} direction="up">
+              <BudgetVsActualChart
+                budgets={budgets}
+                onEditBudget={handleBudgetEdit}
+                onDeleteBudget={handleBudgetDelete}
+              />
+            </StaggeredView>
+          </>
+        )}
 
         {/* =========================================
-            4.5 SAVINGS GOALS & MILESTONES
+            VIEW 3: SAVINGS GOALS & PEER LOANS
            ========================================= */}
-        <SavingsGoalsSection
-          savingsGoals={savingsGoals}
-          colors={c}
-          currSymbol={currSymbol}
-          isStealthMode={isStealthMode}
-          isLargeScreen={isLargeScreen}
-          onEditGoal={handleGoalEdit}
-          onDeleteGoal={handleGoalDelete}
-        />
+        {activeSegment === 'goals' && (
+          <>
+            <SavingsGoalsSection
+              savingsGoals={savingsGoals}
+              colors={c}
+              currSymbol={currSymbol}
+              isStealthMode={isStealthMode}
+              isLargeScreen={isLargeScreen}
+              onEditGoal={handleGoalEdit}
+              onDeleteGoal={handleGoalDelete}
+            />
 
-        {/* =========================================
-            4.8 LOANS & FRIEND ADJUSTMENTS
-           ========================================= */}
-        <StaggeredView delay={500} direction="up">
-          <LoansSection
-            userId={userId}
-            currSymbol={currSymbol}
-            isStealthMode={isStealthMode}
-            isLargeScreen={isLargeScreen}
-            colors={c}
-            theme={theme}
-            loans={loans}
-            loanMetrics={loanMetrics}
-            expenses={expenses}
-            setLoans={setLoans}
-            setLoanMetrics={setLoanMetrics}
-            showAlert={showAlert}
-          />
-        </StaggeredView>
-
-        {/* =========================================
-            5. BOUNDED TRANSACTIONS CONTAINER
-           ========================================= */}
-        <StaggeredView delay={520} direction="up">
-          <DashboardLedger
-            colors={c}
-            theme={theme}
-            currSymbol={currSymbol}
-            isStealthMode={isStealthMode}
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-            datePreset={datePreset}
-            onSelectDatePreset={setDatePreset}
-            startDate={startDate}
-            onStartDateChange={setStartDate}
-            endDate={endDate}
-            onEndDateChange={setEndDate}
-            ledgerTab={ledgerTab}
-            setLedgerTab={setLedgerTab}
-            filteredExpensesCount={filteredExpenses.length}
-            filteredIncomesCount={filteredIncomes.length}
-            unifiedTransactions={unifiedTransactions}
-            onSearch={handleSearch}
-            searchQuery={searchQuery}
-            sortOption={sortOption}
-            setSortOption={setSortOption}
-            onRowPress={onRowPress}
-            onRowEdit={onRowEdit}
-            onRowDelete={onRowDelete}
-            isLoading={isLoading}
-            isRefreshing={refreshing}
-            onOpenHelpGuide={() => setHelpGuideVisible(true)}
-          />
-        </StaggeredView>
+            <StaggeredView delay={80} direction="up">
+              <LoansSection
+                userId={userId}
+                currSymbol={currSymbol}
+                isStealthMode={isStealthMode}
+                isLargeScreen={isLargeScreen}
+                colors={c}
+                theme={theme}
+                loans={loans}
+                loanMetrics={loanMetrics}
+                expenses={expenses}
+                setLoans={setLoans}
+                setLoanMetrics={setLoanMetrics}
+                showAlert={showAlert}
+              />
+            </StaggeredView>
+          </>
+        )}
 
         <View style={{ height: 40 }} />
       </ThemedScrollView>

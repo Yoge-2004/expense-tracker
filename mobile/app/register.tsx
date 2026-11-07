@@ -195,7 +195,9 @@ export default function RegisterScreen() {
         if (granted) {
           await scheduleDailyExpenseReminders();
         }
-      } catch {}
+      } catch (e) {
+        console.debug('[Register] Notification setup skipped:', e);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert('Welcome!', 'Account created successfully! Please sign in with your credentials.', [
         { text: 'Sign In', onPress: () => router.replace('/login') },
@@ -222,7 +224,9 @@ export default function RegisterScreen() {
         if (granted) {
           await scheduleDailyExpenseReminders();
         }
-      } catch {}
+      } catch (e) {
+        console.debug('[Register] Notification setup skipped:', e);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert('Welcome!', 'Account created successfully! Please sign in.', [
         { text: 'Sign In', onPress: () => router.replace('/login') },

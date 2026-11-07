@@ -4,151 +4,198 @@
    ========================================================================== */
 
 /* 5 Primary KPI Cards - Signature 4px Left Color Strips (Guaranteed in Light & Dark Themes, Idle & Hover) */
-:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-inflow,
+:is(
+  .metric-card,
+  [data-theme="light"] .metric-card,
+  [data-theme="dark"] .metric-card
+).metric-card-inflow,
 #metricCardInflow {
-    border-left: 4px solid var(--metric-inflow) !important;
+  border-left: 4px solid var(--metric-inflow) !important;
 }
 
-:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-inflow:hover,
+:is(
+    .metric-card,
+    [data-theme="light"] .metric-card,
+    [data-theme="dark"] .metric-card
+  ).metric-card-inflow:hover,
 #metricCardInflow:hover {
-    border-left: 4px solid var(--metric-inflow) !important;
-    box-shadow: 0 14px 34px -6px var(--metric-inflow-glow), 0 0 24px rgba(16, 185, 129, 0.15);
+  border-left: 4px solid var(--metric-inflow) !important;
+  box-shadow:
+    0 14px 34px -6px var(--metric-inflow-glow),
+    0 0 24px rgba(16, 185, 129, 0.15);
 }
 
 .metric-card.metric-card-inflow .card-label,
 .metric-card.metric-card-inflow .metric-value {
-    color: var(--metric-inflow);
+  color: var(--metric-inflow);
 }
 
 .metric-card.metric-card-inflow .card-label {
-    font-weight: 700;
+  font-weight: 700;
 }
 
-:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-outflow,
+:is(
+  .metric-card,
+  [data-theme="light"] .metric-card,
+  [data-theme="dark"] .metric-card
+).metric-card-outflow,
 #metricCardOutflow {
-    border-left: 4px solid var(--metric-outflow) !important;
+  border-left: 4px solid var(--metric-outflow) !important;
 }
 
-:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-outflow:hover,
+:is(
+    .metric-card,
+    [data-theme="light"] .metric-card,
+    [data-theme="dark"] .metric-card
+  ).metric-card-outflow:hover,
 #metricCardOutflow:hover {
-    border-left: 4px solid var(--metric-outflow) !important;
-    box-shadow: 0 14px 34px -6px var(--metric-outflow-glow), 0 0 24px rgba(239, 68, 68, 0.15);
+  border-left: 4px solid var(--metric-outflow) !important;
+  box-shadow:
+    0 14px 34px -6px var(--metric-outflow-glow),
+    0 0 24px rgba(239, 68, 68, 0.15);
 }
 
 .metric-card.metric-card-outflow .card-label,
 .metric-card.metric-card-outflow .metric-value {
-    color: var(--metric-outflow);
+  color: var(--metric-outflow);
 }
 
 .metric-card.metric-card-outflow .card-label {
-    font-weight: 700;
+  font-weight: 700;
 }
 
-:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-netflow,
+:is(
+  .metric-card,
+  [data-theme="light"] .metric-card,
+  [data-theme="dark"] .metric-card
+).metric-card-netflow,
 #metricCardNetflow {
-    border-left: 4px solid var(--metric-netflow) !important;
+  border-left: 4px solid var(--metric-netflow) !important;
 }
 
-:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-netflow:hover,
+:is(
+    .metric-card,
+    [data-theme="light"] .metric-card,
+    [data-theme="dark"] .metric-card
+  ).metric-card-netflow:hover,
 #metricCardNetflow:hover {
-    border-left: 4px solid var(--metric-netflow) !important;
-    box-shadow: 0 14px 34px -6px var(--metric-netflow-glow), 0 0 24px rgba(59, 130, 246, 0.18);
+  border-left: 4px solid var(--metric-netflow) !important;
+  box-shadow:
+    0 14px 34px -6px var(--metric-netflow-glow),
+    0 0 24px rgba(59, 130, 246, 0.18);
 }
 
 .metric-card.metric-card-netflow .card-label,
 .metric-card.metric-card-netflow .metric-value {
-    color: var(--metric-netflow);
+  color: var(--metric-netflow);
 }
 
 .metric-card.metric-card-netflow .card-label {
-    font-weight: 700;
+  font-weight: 700;
 }
 
-:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-savings,
+:is(
+  .metric-card,
+  [data-theme="light"] .metric-card,
+  [data-theme="dark"] .metric-card
+).metric-card-savings,
 #metricCardSavings {
-    border-left: 4px solid var(--metric-savings) !important;
+  border-left: 4px solid var(--metric-savings) !important;
 }
 
-:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-savings:hover,
+:is(
+    .metric-card,
+    [data-theme="light"] .metric-card,
+    [data-theme="dark"] .metric-card
+  ).metric-card-savings:hover,
 #metricCardSavings:hover {
-    border-left: 4px solid var(--metric-savings) !important;
-    box-shadow: 0 14px 34px -6px var(--metric-savings-glow), 0 0 24px rgba(245, 158, 11, 0.15);
+  border-left: 4px solid var(--metric-savings) !important;
+  box-shadow:
+    0 14px 34px -6px var(--metric-savings-glow),
+    0 0 24px rgba(245, 158, 11, 0.15);
 }
 
 .metric-card.metric-card-savings .card-label,
 .metric-card.metric-card-savings .metric-value {
-    color: var(--metric-savings);
+  color: var(--metric-savings);
 }
 
 .metric-card.metric-card-savings .card-label {
-    font-weight: 700;
+  font-weight: 700;
 }
 
-:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-subs,
+:is(
+  .metric-card,
+  [data-theme="light"] .metric-card,
+  [data-theme="dark"] .metric-card
+).metric-card-subs,
 #metricCardSubs {
-    border-left: 4px solid var(--metric-subs) !important;
+  border-left: 4px solid var(--metric-subs) !important;
 }
 
-:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-subs:hover,
+:is(
+    .metric-card,
+    [data-theme="light"] .metric-card,
+    [data-theme="dark"] .metric-card
+  ).metric-card-subs:hover,
 #metricCardSubs:hover {
-    border-left: 4px solid var(--metric-subs) !important;
-    box-shadow: 0 14px 34px -6px var(--metric-subs-glow), 0 0 24px rgba(192, 86, 94, 0.15);
+  border-left: 4px solid var(--metric-subs) !important;
+  box-shadow:
+    0 14px 34px -6px var(--metric-subs-glow),
+    0 0 24px rgba(192, 86, 94, 0.15);
 }
 
 .metric-card.metric-card-subs .card-label {
-    color: var(--metric-subs-text);
+  color: var(--metric-subs-text);
+  font-weight: 700;
 }
 
 .metric-card.metric-card-subs .metric-value {
-    color: var(--metric-subs);
-}
-
-.metric-card.metric-card-subs .card-label {
-    font-weight: 700;
+  color: var(--metric-subs);
 }
 
 .badge-subs {
-    background: rgba(var(--metric-subs-rgb), 0.12);
-    color: var(--metric-subs-text);
-    border: 1px solid rgba(var(--metric-subs-rgb), 0.25);
+  background: rgba(var(--metric-subs-rgb), 0.12);
+  color: var(--metric-subs-text);
+  border: 1px solid rgba(var(--metric-subs-rgb), 0.25);
 }
 
 .subs-link-action,
 .metric-card-subs .link-action {
-    color: var(--metric-subs-text);
+  color: var(--metric-subs-text);
 }
 
 .subs-link-action:hover,
 .metric-card-subs .link-action:hover {
-    color: var(--metric-subs-text);
-    filter: brightness(1.15);
-    text-decoration: underline;
+  color: var(--metric-subs-text);
+  filter: brightness(1.15);
+  text-decoration: underline;
 }
 
 .metric-card-inflow .status-badge,
 .badge-inflow {
-    background: rgba(var(--metric-inflow-rgb), 0.12);
-    color: var(--metric-inflow);
-    border: 1px solid rgba(var(--metric-inflow-rgb), 0.25);
+  background: rgba(var(--metric-inflow-rgb), 0.12);
+  color: var(--metric-inflow);
+  border: 1px solid rgba(var(--metric-inflow-rgb), 0.25);
 }
 
 .metric-card-outflow .status-badge,
 .badge-outflow {
-    background: rgba(var(--metric-outflow-rgb), 0.12);
-    color: var(--metric-outflow);
-    border: 1px solid rgba(var(--metric-outflow-rgb), 0.25);
+  background: rgba(var(--metric-outflow-rgb), 0.12);
+  color: var(--metric-outflow);
+  border: 1px solid rgba(var(--metric-outflow-rgb), 0.25);
 }
 
 .metric-card-netflow .status-badge,
 .badge-netflow {
-    background: rgba(var(--metric-netflow-rgb), 0.12);
-    color: var(--metric-netflow);
-    border: 1px solid rgba(var(--metric-netflow-rgb), 0.25);
+  background: rgba(var(--metric-netflow-rgb), 0.12);
+  color: var(--metric-netflow);
+  border: 1px solid rgba(var(--metric-netflow-rgb), 0.25);
 }
 
 .metric-card-savings .status-badge,
 .badge-savings {
-    background: rgba(var(--metric-savings-rgb), 0.12);
-    color: var(--metric-savings);
-    border: 1px solid rgba(var(--metric-savings-rgb), 0.25);
+  background: rgba(var(--metric-savings-rgb), 0.12);
+  color: var(--metric-savings);
+  border: 1px solid rgba(var(--metric-savings-rgb), 0.25);
 }

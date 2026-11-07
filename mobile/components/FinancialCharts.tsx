@@ -826,3 +826,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 });
+
+CategoryDonutChart.displayName = 'CategoryDonutChart';
+SpendTrendChart.displayName = 'SpendTrendChart';
+RecurringSplitChart.displayName = 'RecurringSplitChart';
+DayOfWeekChart.displayName = 'DayOfWeekChart';
+BudgetVsActualChart.displayName = 'BudgetVsActualChart';

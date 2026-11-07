@@ -366,6 +366,10 @@ export function quantizePixels(
   const clusters = hueBins
     .filter(b => b.count > 0 && b.wSum > 0)
     .map(b => ({
+      rSum: b.rSum,
+      gSum: b.gSum,
+      bSum: b.bSum,
+      wSum: b.wSum,
       h: b.hSum / b.wSum,
       s: b.sSum / b.wSum,
       l: b.lSum / b.wSum,
@@ -381,29 +385,42 @@ export function quantizePixels(
   // Primary
   const top = clusters[0];
   const primaryH = top.h;
-  const primaryS = Math.min(0.92, Math.max(0.48, top.s * 1.1));
-  const primaryL = isLight ? Math.min(0.50, Math.max(0.38, top.l)) : Math.min(0.64, Math.max(0.48, top.l));
-  const primaryHex = hslToHex(primaryH, primaryS, primaryL);
+  const primaryR = Math.round(top.rSum / top.wSum);
+  const primaryG = Math.round(top.gSum / top.wSum);
+  const primaryB = Math.round(top.bSum / top.wSum);
+  const primaryHex = rgbToHex(primaryR, primaryG, primaryB);
 
   // Accent (>= 45 deg separation)
   let accentH = (primaryH + 150) % 360;
+  let accentHex: string;
   const bestAccent = clusters.find(c => hueDistance(c.h, primaryH) >= 45);
   if (bestAccent) {
     accentH = bestAccent.h;
+    const accR = Math.round(bestAccent.rSum / bestAccent.wSum);
+    const accG = Math.round(bestAccent.gSum / bestAccent.wSum);
+    const accB = Math.round(bestAccent.bSum / bestAccent.wSum);
+    accentHex = rgbToHex(accR, accG, accB);
+  } else {
+    const accS = Math.max(0.60, top.s);
+    const accL = isLight ? 0.44 : 0.58;
+    accentHex = hslToHex(accentH, accS, accL);
   }
-  const accS = bestAccent ? Math.min(0.95, Math.max(0.52, bestAccent.s * 1.15)) : Math.max(0.60, primaryS);
-  const accL = isLight ? 0.44 : 0.58;
-  const accentHex = hslToHex(accentH, accS, accL);
 
   // Highlight (>= 32 deg from both)
   let highlightH = (primaryH + 75) % 360;
+  let highlightHex: string;
   const bestHighlight = clusters.find(c => hueDistance(c.h, primaryH) >= 32 && hueDistance(c.h, accentH) >= 32);
   if (bestHighlight) {
     highlightH = bestHighlight.h;
+    const hlR = Math.round(bestHighlight.rSum / bestHighlight.wSum);
+    const hlG = Math.round(bestHighlight.gSum / bestHighlight.wSum);
+    const hlB = Math.round(bestHighlight.bSum / bestHighlight.wSum);
+    highlightHex = rgbToHex(hlR, hlG, hlB);
+  } else {
+    const hlS = Math.max(0.55, top.s);
+    const hlL = isLight ? 0.45 : 0.56;
+    highlightHex = hslToHex(highlightH, hlS, hlL);
   }
-  const hlS = bestHighlight ? Math.min(0.92, Math.max(0.48, bestHighlight.s * 1.1)) : Math.max(0.55, primaryS);
-  const hlL = isLight ? 0.45 : 0.56;
-  const highlightHex = hslToHex(highlightH, hlS, hlL);
 
   // 8-color spectrum
   const extractedHues = [primaryH, accentH, highlightH];
@@ -413,9 +430,10 @@ export function quantizePixels(
     if (paletteColors.length >= 8) break;
     if (extractedHues.every(h => hueDistance(cand.h, h) >= 22)) {
       extractedHues.push(cand.h);
-      const tunedS = Math.min(0.92, Math.max(0.50, cand.s * 1.1));
-      const tunedL = isLight ? Math.min(0.50, Math.max(0.36, cand.l)) : Math.min(0.66, Math.max(0.48, cand.l));
-      paletteColors.push(hslToHex(cand.h, tunedS, tunedL));
+      const candR = Math.round(cand.rSum / cand.wSum);
+      const candG = Math.round(cand.gSum / cand.wSum);
+      const candB = Math.round(cand.bSum / cand.wSum);
+      paletteColors.push(rgbToHex(candR, candG, candB));
     }
   }
 
@@ -425,7 +443,7 @@ export function quantizePixels(
     const chordH = (primaryH + offset + 360) % 360;
     if (extractedHues.every(h => hueDistance(chordH, h) >= 20)) {
       extractedHues.push(chordH);
-      paletteColors.push(hslToHex(chordH, Math.max(0.58, primaryS), isLight ? 0.46 : 0.58));
+      paletteColors.push(hslToHex(chordH, Math.max(0.58, top.s), isLight ? 0.46 : 0.58));
     }
   }
 
@@ -438,12 +456,10 @@ export function quantizePixels(
   const pRgb = hexToRgb(primaryHex);
 
   const cardSurface = isLight
-    ? hslToHex(primaryH, Math.min(0.20, Math.max(0.08, primaryS * 0.28)), 0.98)
-    : hslToHex(primaryH, Math.min(0.42, Math.max(0.18, primaryS * 0.55)), 0.14);
+    ? `rgba(${Math.min(255, 248 + Math.floor(pRgb.r * 0.02))}, ${Math.min(255, 248 + Math.floor(pRgb.g * 0.02))}, ${Math.min(255, 252 + Math.floor(pRgb.b * 0.02))}, 0.94)`
+    : `rgba(${Math.max(16, 20 + Math.floor(pRgb.r * 0.05))}, ${Math.max(18, 22 + Math.floor(pRgb.g * 0.05))}, ${Math.max(22, 24 + Math.floor(pRgb.b * 0.05))}, 0.90)`;
 
-  const opaqueSurface = isLight
-    ? hslToHex(primaryH, Math.min(0.25, Math.max(0.10, primaryS * 0.35)), 0.94)
-    : hslToHex(primaryH, Math.min(0.40, Math.max(0.16, primaryS * 0.50)), 0.08);
+  const opaqueSurface = isLight ? '#FFFFFF' : adjustBrightness(primaryHex, 0.12);
 
   return {
     primary: primaryHex,

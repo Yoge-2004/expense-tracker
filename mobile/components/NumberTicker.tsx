@@ -87,3 +87,5 @@ export const NumberTicker: React.FC<NumberTickerProps> = React.memo(({
 
   return <Text style={style}>{prefix}{formattedNumber}{suffix}</Text>;
 });
+
+NumberTicker.displayName = 'NumberTicker';

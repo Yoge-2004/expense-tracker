@@ -8,8 +8,8 @@ import {
   StyleProp,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../context/AuthContext';
-import { Colors } from '../constants/theme';
+import { Colors, ThemeColors } from '../constants/theme';
+import { useOptionalPreferences } from '../context/PreferencesContext';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { AmbientAura } from './AmbientAura';
 import { ThemedText as Text } from './ThemedText';
@@ -20,6 +20,8 @@ interface ImmersiveLoaderProps {
   fullScreen?: boolean;
   compact?: boolean;
   style?: StyleProp<ViewStyle>;
+  customColors?: ThemeColors;
+  theme?: 'dark' | 'light';
 }
 
 export const ImmersiveLoader: React.FC<ImmersiveLoaderProps> = ({
@@ -28,9 +30,12 @@ export const ImmersiveLoader: React.FC<ImmersiveLoaderProps> = ({
   fullScreen = true,
   compact = false,
   style,
+  customColors,
+  theme: propTheme,
 }) => {
-  const {theme, themeColors} = useAuth();
-  const c = themeColors || Colors[theme];
+  const prefs = useOptionalPreferences();
+  const theme = propTheme || prefs?.theme || 'dark';
+  const c = customColors || prefs?.themeColors || Colors[theme];
   const reducedMotion = useReducedMotion();
 
   const spinOuter = useRef(new Animated.Value(0)).current;
@@ -256,7 +261,7 @@ export const ImmersiveLoader: React.FC<ImmersiveLoaderProps> = ({
   if (fullScreen) {
     return (
       <View style={[styles.fullScreenWrapper, { backgroundColor: c.bg }]}>
-        <AmbientAura />
+        <AmbientAura customColors={c} theme={theme} />
         {content}
       </View>
     );
