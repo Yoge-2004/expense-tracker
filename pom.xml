@@ -50,6 +50,9 @@
         <sonar-maven-plugin.version>5.8.0.7211</sonar-maven-plugin.version>
         <sonar.projectKey>expense-tracker</sonar.projectKey>
         <sonar.projectName>Expense Tracker System</sonar.projectName>
+        <logback.version>1.6.6</logback.version>
+        <json-smart.version>2.6.1</json-smart.version>
+        <asm.version>9.11.1</asm.version>
     </properties>
 
     <dependencies>
@@ -156,11 +159,23 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.vaadin.external.google</groupId>
+                    <artifactId>android-json</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-webmvc-test</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.vaadin.external.google</groupId>
+                    <artifactId>android-json</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
