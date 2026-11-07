@@ -62,7 +62,7 @@
                 currency: info.code,
                 maximumFractionDigits: 0
             }).format(amount);
-        } catch (error) {
+        } catch {
             amountElement.textContent = `${info.symbol || "$"}${amount.toLocaleString()}`;
         }
 

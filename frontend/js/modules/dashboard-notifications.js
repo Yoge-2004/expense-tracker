@@ -16,7 +16,7 @@
             if (path.startsWith("http://") || path.startsWith("https://")) return path;
             const clean = path.startsWith("/") ? path : `/${path}`;
             return new URL(clean, window.location.origin).href;
-        } catch (_) {
+        } catch {
             return path;
         }
     }
@@ -30,8 +30,8 @@
     const AMOUNT_REGEX = /(?:(?:Rs\.?|INR|₹|\$|EUR|€|GBP|£)\s*([\d,]+(?:\.\d{1,2})?)|([\d,]+(?:\.\d{1,2})?)\s*(?:Rs\.?|INR|₹|\$|EUR|€|GBP|£))/i;
     const FALLBACK_AMOUNT_REGEX = /\b(?:amount|amt|for|of)\s*(?:is|:)?\s*(?:Rs\.?|INR|₹|\$)?\s*([\d,]+(?:\.\d{1,2})?)\b/i;
     const MERCHANT_PATTERNS = [
-        /(?:at|to|vpa|towards|for)\s+([A-Za-z0-9\s&\'.-]{2,30}?)(?:\s+(?:on|using|via|ref|bal|avbl|avl|dated|through|card|ac|ending|\.|\,)|$)/i,
-        /(?:paid to|transferred to)\s+([A-Za-z0-9\s&\'.-]{2,30}?)(?:\s+(?:on|via|ref|bal|\.|\,)|$)/i,
+        /(?:at|to|vpa|towards|for)\s+([A-Za-z0-9\s&'.-]{2,30}?)(?:\s+(?:on|using|via|ref|bal|avbl|avl|dated|through|card|ac|ending|\.|,)|$)/i,
+        /(?:paid to|transferred to)\s+([A-Za-z0-9\s&'.-]{2,30}?)(?:\s+(?:on|via|ref|bal|\.|,)|$)/i,
         /(?:vpa\s+)([a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+)/i
     ];
     const ACCOUNT_PATTERNS = [
@@ -175,7 +175,7 @@
                 }
             };
             tryPlay(0);
-        } catch (_) {
+        } catch {
             playSynthesizedChime();
         }
     }
@@ -218,7 +218,7 @@
                     }
                 });
                 return reg;
-            } catch (e) {
+            } catch {
                 // Proceed to next candidate path
             }
         }

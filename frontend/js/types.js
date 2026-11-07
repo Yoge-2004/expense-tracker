@@ -91,3 +91,8 @@
  * @property {string} [currency] - ISO currency code (e.g. "INR", "USD")
  * @property {string} [profilePictureUrl] - Avatar image URL
  */
+
+// Export runtime marker for global contract validation
+if (typeof window !== "undefined") {
+    window.__EXPENSE_TRACKER_TYPES_LOADED__ = true;
+}

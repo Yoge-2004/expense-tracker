@@ -86,7 +86,7 @@
             root.style.setProperty("--cursor-pointer", `url("data:image/svg+xml,${ptrCursor}") 4 3, pointer`);
             root.style.setProperty("--cursor-text", `url("data:image/svg+xml,${txtCursor}") 14 14, text`);
             root.style.setProperty("--cursor-clicked", `url("data:image/svg+xml,${clkCursor}") 4 3, pointer`);
-        } catch (e) {}
+        } catch {}
     }
 
     const FONT_PRESETS = {
@@ -105,7 +105,7 @@
             const rawPal = localStorage.getItem('app_custom_palette') || localStorage.getItem('et_appearance_palette');
             let pal = null;
             if (rawPal) {
-                try { pal = JSON.parse(rawPal); } catch (e) { pal = null; }
+                try { pal = JSON.parse(rawPal); } catch { pal = null; }
             }
 
             const inlineColorVars = [
@@ -260,7 +260,7 @@
                             root.style.setProperty('--font-main', `"${customFamily}", sans-serif`);
                             root.style.setProperty('--font-display', `"${customFamily}", sans-serif`);
                         }).catch(() => {});
-                    } catch (e) {}
+                    } catch {}
                 } else {
                     root.style.setProperty('--font-sans', `"${customFamily}", sans-serif`);
                     root.style.setProperty('--font-body', `"${customFamily}", sans-serif`);
@@ -289,7 +289,7 @@
                     if (parsedBg.uri) wpUri = parsedBg.uri;
                     if (typeof parsedBg.overlayOpacity === 'number') opacity = parsedBg.overlayOpacity;
                     if (typeof parsedBg.blurIntensity === 'number') blur = parsedBg.blurIntensity;
-                } catch (e) {}
+                } catch {}
             } else {
                 wpType = localStorage.getItem('et_appearance_wallpaper_type') || 'preset';
                 wpUri = localStorage.getItem('et_appearance_wallpaper_uri') || '';
@@ -350,7 +350,7 @@
             } else {
                 applyBg();
             }
-        } catch (e) {}
+        } catch {}
     }
 
     // Apply appearance immediately

@@ -268,25 +268,6 @@
             .map(x => x.toString(16).padStart(2, '0')).join('');
     }
 
-    function colorVariant(hex, hueOffset) {
-        const channels = colorChannels(hex).map(value => value / 255);
-        const max = Math.max(...channels), min = Math.min(...channels), delta = max - min;
-        let hue = 0;
-        if (delta) {
-            if (max === channels[0]) hue = 60 * (((channels[1] - channels[2]) / delta) % 6);
-            else if (max === channels[1]) hue = 60 * ((channels[2] - channels[0]) / delta + 2);
-            else hue = 60 * ((channels[0] - channels[1]) / delta + 4);
-        }
-        hue = (hue + hueOffset + 360) % 360;
-        const lightness = Math.min(0.64, Math.max(0.42, (max + min) / 2));
-        const saturation = Math.min(0.82, Math.max(0.58, delta / (1 - Math.abs(2 * lightness - 1))));
-        const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
-        const x = chroma * (1 - Math.abs(((hue / 60) % 2) - 1));
-        const match = lightness - chroma / 2;
-        const variants = [[chroma, x, 0], [x, chroma, 0], [0, chroma, x], [0, x, chroma], [x, 0, chroma], [chroma, 0, x]];
-        return '#' + variants[Math.floor(hue / 60) % 6]
-            .map(value => Math.round((value + match) * 255).toString(16).padStart(2, '0')).join('');
-    }
 
     function isValidHex(hex) {
         return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(hex);
@@ -438,7 +419,7 @@
     let cropRect = { x: 0, y: 0, width: 1, height: 1 };
     let currentExtractedPalette = [];
     let savedProfiles = [];
-    try { savedProfiles = JSON.parse(localStorage.getItem('app_theme_profiles') || '[]'); } catch (e) { savedProfiles = []; }
+    try { savedProfiles = JSON.parse(localStorage.getItem('app_theme_profiles') || '[]'); } catch { savedProfiles = []; }
 
     let activeColorTarget = 'primary';
     let syncUiControls = () => {};
@@ -712,7 +693,7 @@
                 currentExtractedPalette = parsed.paletteColors;
             }
         }
-    } catch (e) {}
+    } catch {}
 
     // Try reading cached background asset
     try {
@@ -729,7 +710,7 @@
             if (typeof parsed.overlayOpacity === 'number') currentOverlayOpacity = parsed.overlayOpacity;
             if (typeof parsed.blurIntensity === 'number') currentBlurIntensity = parsed.blurIntensity;
         }
-    } catch (e) {}
+    } catch {}
 
     if (!sameColor(currentPrimary, DEFAULT_PALETTE.primary) && currentPresetId === 'default') {
         currentPresetId = 'custom';
@@ -1172,7 +1153,7 @@
                 window.showToast('Studio appearance synced across all devices!', 'success');
             }
             return true;
-        } catch (err) {
+        } catch {
             if (syncDot) syncDot.classList.remove('syncing');
             if (syncText) syncText.textContent = 'Saved locally (offline)';
             if (typeof window.showToast === 'function') {

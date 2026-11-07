@@ -16,8 +16,6 @@
             renderFinancialInsights,
             showToast,
             appConfirm,
-            openModal,
-            closeModal,
             getExpenses,
             getCachedBudgets,
             setCachedBudgets

@@ -8,6 +8,8 @@
     const STORAGE_POS_KEY = "et_floating_calc_pos";
     const STORAGE_STATE_KEY = "et_floating_calc_open";
 
+    let panel = null;
+
     let state = {
         currentValue: "0",
         previousValue: null,
@@ -79,7 +81,7 @@
         `;
 
         // Floating calculator expanded card
-        const panel = document.createElement("div");
+        panel = document.createElement("div");
         panel.id = "floatingCalcPanel";
         panel.className = "floating-calc-panel";
         panel.setAttribute("role", "dialog");
@@ -444,9 +446,8 @@
 
     function toggleCalculator(forceState) {
         state.isOpen = typeof forceState === "boolean" ? forceState : !state.isOpen;
-        const panel = document.getElementById("floatingCalcPanel");
         const trigger = document.getElementById("floatingCalcTrigger");
-
+        if (!panel) panel = document.getElementById("floatingCalcPanel");
         if (!panel || !trigger) return;
 
         if (state.isOpen) {
@@ -466,7 +467,7 @@
 
     function syncPanelPositionWithTrigger() {
         const trigger = document.getElementById("floatingCalcTrigger");
-        const panel = document.getElementById("floatingCalcPanel");
+        if (!panel) panel = document.getElementById("floatingCalcPanel");
         if (!trigger || !panel) return;
 
         const rect = trigger.getBoundingClientRect();
@@ -558,7 +559,7 @@
             onPointerMove(e);
         }
 
-        function onPointerUp(e) {
+        function onPointerUp() {
             if (!isDragging) return;
             isDragging = false;
             target.classList.remove("is-dragging");
@@ -725,7 +726,6 @@
     }
 
     function bindEvents() {
-        const panel = document.getElementById("floatingCalcPanel");
         const minimizeBtn = document.getElementById("floatingCalcMinimize");
         const useBtn = document.getElementById("floatingCalcUseBtn");
         const splits = document.getElementById("floatingCalcSplits");
@@ -873,7 +873,6 @@
                 localStorage.removeItem(STORAGE_STATE_KEY);
             } catch (err) { console.debug("[Calc] Reset storage fallback:", err.message); }
             const trigger = document.getElementById("floatingCalcTrigger");
-            const panel = document.getElementById("floatingCalcPanel");
             if (trigger) {
                 trigger.style.left = "";
                 trigger.style.top = "";
@@ -881,6 +880,7 @@
                 trigger.style.right = "28px";
                 trigger.style.display = "flex";
             }
+            if (!panel) panel = document.getElementById("floatingCalcPanel");
             if (panel) {
                 panel.classList.remove("is-open");
                 panel.style.left = "";

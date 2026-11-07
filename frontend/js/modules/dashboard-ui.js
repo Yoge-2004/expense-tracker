@@ -91,7 +91,7 @@
         if (modalEl._previousActiveElement && typeof modalEl._previousActiveElement.focus === "function") {
             try {
                 modalEl._previousActiveElement.focus();
-            } catch (_) {}
+            } catch {}
             modalEl._previousActiveElement = null;
         }
     }

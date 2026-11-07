@@ -425,7 +425,17 @@
             const expAmt = parseFloat(exp.amount);
             if (isNaN(expAmt)) return false;
             const diff = Math.abs(expAmt - numAmount);
-            return diff <= 1.50 || (diff / Math.max(numAmount, 1)) <= 0.10;
+            const isCloseAmount = diff <= 1.50 || (diff / Math.max(numAmount, 1)) <= 0.10;
+            if (!isCloseAmount) return false;
+            if (date) {
+                const expDate = new Date(exp.expenseDate || exp.date);
+                const targetDate = new Date(date);
+                if (!isNaN(expDate.getTime()) && !isNaN(targetDate.getTime())) {
+                    const daysDiff = Math.abs((expDate.getTime() - targetDate.getTime()) / 86400000);
+                    if (daysDiff > 60) return false;
+                }
+            }
+            return true;
         });
 
         if (candidates.length === 0) {

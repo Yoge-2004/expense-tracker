@@ -245,7 +245,7 @@ async function checkHealth() {
         updateServerStatus(false, "Waking up server...");
         scheduleHealthCheck(4000);
         return false;
-    } catch (e) {
+    } catch {
         wasOffline = true;
         isServerOnline = false;
         updateServerStatus(false, "Waking up server...");
@@ -264,7 +264,7 @@ function checkPendingFlashToast() {
                 setTimeout(() => showToast(parsed.message, parsed.type || "success"), 200);
             }
         }
-    } catch (_) { /* flash toast parse skipped */ }
+    } catch { /* flash toast parse skipped */ }
 }
 
 // Check once on page load, then once per day. Regular API requests still wake
@@ -358,7 +358,7 @@ async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
 
     try {
         response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers, signal: fetchSignal });
-    } catch (error) {
+    } catch {
         if (timeoutTimer) clearTimeout(timeoutTimer);
         if (retriesLeft > 0) {
             updateServerStatus(false, "Connecting to server...");
@@ -421,7 +421,7 @@ async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
         try {
             const parsed = JSON.parse(text);
             msg = parsed.message || parsed.error || null;
-        } catch (_) { msg = null; }
+        } catch { msg = null; }
 
         if (msg && msg.toLowerCase().includes("database")) {
             msg = "Unable to connect to the server. Please try again in a moment.";
@@ -462,7 +462,7 @@ async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
     if (text) {
         try {
             data = JSON.parse(text);
-        } catch (e) {
+        } catch {
             // Server returned a 2xx response with non-JSON body (proxy error page, empty string, etc.)
             throw new Error("The server returned an unexpected response. Please try again.");
         }
@@ -659,7 +659,7 @@ function detectLikelyCurrencyCode() {
             if (match) return match.code;
         }
         return null;
-    } catch (e) { return null; }
+    } catch { return null; }
 }
 
 async function detectClientLocationCurrency() {
@@ -694,7 +694,7 @@ function formatGlobalCurrency(amt) {
     try {
         const str = new Intl.NumberFormat(info.locale, { style: 'currency', currency: info.code, maximumFractionDigits: 2 }).format(amt || 0);
         return str.replace(/([^\w\s])\s+([\d,.-]+)/, '$1$2');
-    } catch (e) {
+    } catch {
         const isAlpha = /^[A-Z]{3}$/.test(info.symbol);
         return isAlpha ? `${info.symbol} ${Number(amt || 0).toFixed(2)}` : `${info.symbol}${Number(amt || 0).toFixed(2)}`;
     }
@@ -704,7 +704,7 @@ function formatGlobalCompactCurrency(amt) {
     try {
         const str = new Intl.NumberFormat(info.locale, { style: 'currency', currency: info.code, notation: 'compact', maximumFractionDigits: 1 }).format(amt || 0);
         return str.replace(/([^\w\s])\s+([\d,.-]+)/, '$1$2');
-    } catch (e) {
+    } catch {
         const isAlpha = /^[A-Z]{3}$/.test(info.symbol);
         return isAlpha ? `${info.symbol} ${Number(amt || 0).toFixed(0)}` : `${info.symbol}${Number(amt || 0).toFixed(0)}`;
     }
@@ -797,4 +797,13 @@ if (typeof window !== "undefined") {
             document.documentElement.setAttribute("data-theme", e.newValue);
         }
     });
+}
+
+if (typeof window !== "undefined") {
+    window.apiRequest = apiRequest;
+    window.detectClientLocationCurrency = detectClientLocationCurrency;
+    window.getCurrenciesSortedByLikelihood = getCurrenciesSortedByLikelihood;
+    window.getCurrencySymbol = getCurrencySymbol;
+    window.formatGlobalCurrency = formatGlobalCurrency;
+    window.formatGlobalCompactCurrency = formatGlobalCompactCurrency;
 }

@@ -233,8 +233,8 @@
         setChartEmptyState('trendChart', !hasData);
 
         const ctx = canvas.getContext('2d');
-        const isLight = document.body.getAttribute("data-theme") === "light";
-        const { grid: gridColor, text: textColor } = chartColors();
+        const colors = chartColors();
+        const { grid: gridColor, text: textColor, isLight } = colors;
 
         const dailyTotals = {};
         if (hasData) {
@@ -255,7 +255,7 @@
                 datasets: [{
                     label: 'Daily Spending',
                     data: values,
-                    borderColor: chartColors().primary,
+                    borderColor: colors.primary,
                     backgroundColor: (context) => getTrendGradient(context.chart),
                     fill: 'origin',
                     tension: 0.35,
@@ -263,8 +263,8 @@
                     borderWidth: 3,
                     pointRadius: dates.length > 31 ? 0 : 3,
                     pointHoverRadius: 6,
-                    pointBackgroundColor: isLight ? chartColors().card : chartColors().primary,
-                    pointBorderColor: chartColors().primaryEdge,
+                    pointBackgroundColor: isLight ? colors.card : colors.primary,
+                    pointBorderColor: colors.primaryEdge,
                     pointBorderWidth: 2
                 }]
             },
@@ -291,7 +291,6 @@
         setChartEmptyState('recurringSplitChart', !hasData);
 
         const ctx = canvas.getContext('2d');
-        const isLight = document.body.getAttribute("data-theme") === "light";
         const { grid: gridColor, text: textColor } = chartColors();
 
         if (chartState.recurringSplitChart) chartState.recurringSplitChart.destroy();
@@ -338,7 +337,6 @@
         setChartEmptyState('dayOfWeekChart', !hasData);
 
         const ctx = canvas.getContext('2d');
-        const isLight = document.body.getAttribute("data-theme") === "light";
         const { grid: gridColor, text: textColor } = chartColors();
         const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -386,7 +384,6 @@
         setChartEmptyState('budgetVsActualChart', !hasData, "No budget limits set yet");
 
         const ctx = canvas.getContext('2d');
-        const isLight = document.body.getAttribute("data-theme") === "light";
         const { grid: gridColor, text: textColor } = chartColors();
 
         if (chartState.budgetVsActualChart) chartState.budgetVsActualChart.destroy();

@@ -3,7 +3,7 @@
  * Enhances desktop navigation with a fluid geometric tracking reticle.
  * Automatically disabled on touch screens / mobile devices.
  */
-(function (global) {
+(function () {
     "use strict";
 
     if (typeof window === "undefined" || typeof document === "undefined") return;
@@ -22,6 +22,7 @@
     let isInitialized = false;
 
     function initReticle() {
+        if (isInitialized) return;
         reticleEl = document.getElementById("executiveReticle");
         if (!reticleEl) {
             reticleEl = document.createElement("div");
@@ -131,4 +132,4 @@
     } else {
         initReticle();
     }
-})(typeof window !== "undefined" ? window : this);
+})();

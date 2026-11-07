@@ -247,13 +247,13 @@
             prevUnreadCount = currentUnread;
             setBadge(currentUnread);
             renderItems(inbox?.items || []);
-        } catch (_) { /* offline or signed out: keep what is shown */ }
+        } catch { /* offline or signed out: keep what is shown */ }
     }
 
     async function markRead(ids) {
         try {
             await apiRequest(`${base}/read`, { method: "POST", body: JSON.stringify({ ids }) });
-        } catch (_) { /* the next refresh shows the truth */ }
+        } catch { /* the next refresh shows the truth */ }
     }
 
     async function openItem(item) {
@@ -311,7 +311,7 @@
                 label.append(input, text);
                 prefsBox.append(label);
             });
-        } catch (_) { /* leave the section empty */ }
+        } catch { /* leave the section empty */ }
     }
 
     async function savePreferences() {

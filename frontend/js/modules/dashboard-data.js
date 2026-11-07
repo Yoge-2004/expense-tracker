@@ -8,7 +8,6 @@
             setState,
             getUserId,
             apiRequest,
-            getCacheKey,
             loadExpenseCache,
             saveExpenseCache,
             showSkeletonLoading,

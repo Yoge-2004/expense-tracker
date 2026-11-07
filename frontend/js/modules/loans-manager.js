@@ -99,7 +99,6 @@
         const netVal = document.getElementById("loansNetBalance");
         if (netVal) netVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
         const pendingCountEl = document.getElementById("loansPendingCount");
-        const settledCountEl = document.getElementById("loansSettledCount");
         if (pendingCountEl && pendingCountEl.parentElement) {
             pendingCountEl.parentElement.innerHTML = "<span id=\"loansPendingCount\"><span class=\"skeleton skeleton-value\" style=\"width:36px; height:22px; display:inline-block; margin-bottom:0;\"></span></span> <span style=\"font-size:12px; font-weight:600; color:var(--text-muted);\">open / </span><span id=\"loansSettledCount\"><span class=\"skeleton skeleton-value\" style=\"width:36px; height:22px; display:inline-block; margin-bottom:0;\"></span></span> <span style=\"font-size:12px; font-weight:600; color:#10B981;\">done</span>";
         }
@@ -161,7 +160,7 @@
 
     async function fetchLoans() {
         const userId = getUserId();
-        if (!userId) return;
+        if (!userId || isLoading) return;
 
         if (loansList.length === 0) {
             renderSkeleton();
@@ -202,7 +201,6 @@
             return;
         }
 
-        const sym = getCurrencySymbol();
         const loansSection = document.getElementById("loansSection");
         if (!loansSection) return;
 

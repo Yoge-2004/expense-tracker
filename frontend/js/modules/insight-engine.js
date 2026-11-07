@@ -372,7 +372,7 @@
         }
 
         /* Build a day-of-week spending weight from completed months. */
-        const dowTotals = new Array(7).fill(0);
+        const dowTotals = [0, 0, 0, 0, 0, 0, 0];
         let historyTotal = 0;
         for (const key of completed.slice(-6)) {
             for (const tx of items.get(key) || []) {
@@ -434,7 +434,7 @@
             .filter((x) => x.date && x.amt > 0);
         if (dated.length < 20) return null;
 
-        const dow = new Array(7).fill(0);
+        const dow = [0, 0, 0, 0, 0, 0, 0];
         for (const x of dated) dow[x.date.getDay()] += x.amt;
         const total = sum(dow);
         if (total <= 0) return null;

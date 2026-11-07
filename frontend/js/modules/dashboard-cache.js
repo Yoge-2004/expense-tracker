@@ -40,7 +40,7 @@
             const parsed = JSON.parse(raw);
             if (!parsed || !Array.isArray(parsed.expenses)) return null;
             return parsed;
-        } catch (_) {
+        } catch {
             return null;
         }
     }

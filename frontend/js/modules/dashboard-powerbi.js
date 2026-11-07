@@ -1067,7 +1067,6 @@
                         borderColor: themePrimary,
                         backgroundColor: `rgba(${themePrimaryRgb}, 0.15)`,
                         fill: true,
-                        fill: true,
                         tension: 0.3,
                         borderWidth: 3,
                         pointRadius: 2,

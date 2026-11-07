@@ -16,7 +16,7 @@
             const raw = localStorage.getItem(key);
             try {
                 values[key] = { raw, parsed: JSON.parse(raw) };
-            } catch (_) {
+            } catch {
                 values[key] = { raw, parsed: null, parseError: true };
             }
         }

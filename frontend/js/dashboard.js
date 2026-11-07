@@ -83,7 +83,6 @@ Object.defineProperty(window, 'cachedBudgets', {
     get: () => cachedBudgets,
     set: (v) => { cachedBudgets = v; }
 });
-const chartState = window.DashboardChartState;
 const updateProMetrics = window.DashboardMetrics.updateProMetrics;
 
 
@@ -722,7 +721,7 @@ async function renderManageCategoriesList() {
     let recurring = [];
     try {
         recurring = await apiRequest(`/expenses/recurring/user/${userId}`) || [];
-    } catch (e) {
+    } catch {
         // If this fails, fall back to allowing the click and letting the
         // backend's authoritative check catch it.
     }
@@ -995,7 +994,7 @@ if (sendMonthlyReportBtn) {
                 const periodEmailBtn = document.getElementById("periodEmailReportBtn");
                 if (periodEmailBtn) periodEmailBtn.style.display = "flex";
             }
-        } catch (e) {
+        } catch {
             // Ignore config lookup errors on legacy servers
         }
     })();
@@ -1506,7 +1505,7 @@ function uploadFileWithProgress(url, formData, onProgress) {
                 try {
                     const json = JSON.parse(xhr.responseText);
                     resolve(json);
-                } catch (_) {
+                } catch {
                     resolve({ message: xhr.responseText || "Import completed successfully" });
                 }
             } else {
@@ -1514,7 +1513,7 @@ function uploadFileWithProgress(url, formData, onProgress) {
                 try {
                     const errObj = JSON.parse(xhr.responseText);
                     errMsg = errObj.message || errObj.error || errMsg;
-                } catch (_) {
+                } catch {
                     if (xhr.responseText) errMsg = xhr.responseText;
                 }
                 reject(new Error(errMsg));
@@ -1894,7 +1893,7 @@ async function loadSubscriptions() {
 
         renderSubsModalContent();
 
-    } catch (error) {
+    } catch {
         isSubsOffline = true;
         const summaryEl = document.getElementById("subsCashflowSummary");
         if (summaryEl) {
@@ -3648,7 +3647,6 @@ const monthlyReportPeriodModal = document.getElementById("monthlyReportPeriodMod
 const closePeriodModalBtn = document.getElementById("closePeriodModalBtn");
 const reportYearChips = document.getElementById("reportYearChips");
 const reportMonthGrid = document.getElementById("reportMonthGrid");
-const reportPeriodBanner = document.getElementById("reportPeriodBanner");
 const reportSelectedPeriodText = document.getElementById("reportSelectedPeriodText");
 const reportInceptionVal = document.getElementById("reportInceptionVal");
 
@@ -3768,10 +3766,7 @@ function renderPeriodPickerUI() {
     }
 }
 
-let currentPeriodModalMode = "view"; // "view" | "export"
-
 function setPeriodModalMode(mode) {
-    currentPeriodModalMode = mode;
     const modalIcon = document.getElementById("periodModalIcon");
     const modalTitle = document.getElementById("periodModalTitle");
     const modalSubtitle = document.getElementById("periodModalSubtitle");
@@ -3870,7 +3865,7 @@ function applyLuxuryScrollbarToReportFrame(frame) {
                 scrollbar-color: rgba(199, 154, 62, 0.5) rgba(11, 13, 9, 0.9) !important;
             }
         `;
-    } catch (e) {
+    } catch {
         // Cross-origin safety
     }
 }
@@ -3890,14 +3885,14 @@ async function openMonthlyReportPreview(year = selectedReportYear, month = selec
         cachedReportHtml = await res.text();
         if (monthlyReportFrame) {
             if (currentReportBlobUrl) {
-                try { URL.revokeObjectURL(currentReportBlobUrl); } catch (_) {}
+                try { URL.revokeObjectURL(currentReportBlobUrl); } catch {}
             }
             try {
                 const blob = new Blob([cachedReportHtml], { type: "text/html;charset=utf-8" });
                 currentReportBlobUrl = URL.createObjectURL(blob);
                 monthlyReportFrame.onload = () => applyLuxuryScrollbarToReportFrame(monthlyReportFrame);
                 monthlyReportFrame.src = currentReportBlobUrl;
-            } catch (_) {
+            } catch {
                 monthlyReportFrame.onload = () => applyLuxuryScrollbarToReportFrame(monthlyReportFrame);
                 monthlyReportFrame.srcdoc = cachedReportHtml;
             }
@@ -3954,7 +3949,7 @@ async function emailMonthlyReport(year = selectedReportYear, month = selectedRep
         setLoading(true, `Dispatching ${monthObj.full} ${year} report to your email...`);
         const res = await apiRequest(`/reports/monthly/user/${userId}/send-email?year=${year}&month=${month}`, { method: "POST" });
         showToast(res?.message || `Financial statement for ${monthObj.full} ${year} emailed successfully!`, "success");
-    } catch (err) {
+    } catch {
         showToast("Email is not configured. Starting report download instead...", "warning");
         await downloadMonthlyReport(year, month);
     } finally {
@@ -4199,7 +4194,7 @@ function executeMonthlyReportPrint() {
                 try {
                     monthlyReportFrame.contentWindow.focus();
                     monthlyReportFrame.contentWindow.print();
-                } catch (_) {
+                } catch {
                     window.print();
                 }
             } else {

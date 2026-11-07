@@ -106,7 +106,7 @@ const WebBiometrics = (() => {
         if (window.PublicKeyCredential && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function") {
             try {
                 platformAuthenticator = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-            } catch (_) {
+            } catch {
                 platformAuthenticator = false;
             }
         }

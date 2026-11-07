@@ -293,7 +293,7 @@
 
             if (pill) pill.className = "status-badge badge-success";
             if (text) text.textContent = "Telemetry Online";
-        } catch (e) {
+        } catch {
             const pill = document.getElementById("heartbeatPill");
             const text = document.getElementById("heartbeatText");
             if (pill) pill.className = "status-badge badge-warning";
@@ -663,9 +663,7 @@
         }
     }
 
-    let drawerTxnType = "expenses";
     async function loadUserDrawerLedger(userId, type) {
-        drawerTxnType = type;
         const tbody = document.getElementById("drawerLedgerTableBody");
         if (!tbody) return;
         tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:16px; color:var(--text-muted);">Loading transactions…</td></tr>`;
@@ -702,7 +700,7 @@
                 `;
                 tbody.appendChild(tr);
             });
-        } catch (e) {
+        } catch {
             tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:16px; color:var(--danger-text);">Error loading transactions</td></tr>`;
         }
     }
