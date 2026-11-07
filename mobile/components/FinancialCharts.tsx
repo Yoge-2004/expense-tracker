@@ -106,7 +106,7 @@ export const CategoryDonutChart: React.FC<DonutChartProps> = React.memo(({ expen
   let currentAngle = 0;
 
   return (
-    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
+    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.accent }]}>
       <Text style={[styles.chartTitle, { color: c.text }]}>Spend by Category</Text>
       <Text style={[styles.chartSub, { color: c.textMuted }]}>Distribution across all transactions</Text>
 
@@ -455,10 +455,14 @@ export const DayOfWeekChart: React.FC<DayOfWeekProps> = React.memo(({ expenses }
           const val = dowTotals[i];
           const heightPct = (val / maxDayVal) * barMaxHeight;
           const isHighest = val === maxDayVal && val > 0;
+          const palette = Array.isArray(c.paletteColors) && c.paletteColors.length >= 7
+            ? c.paletteColors
+            : [c.primary, c.accent, c.highlight, c.teal, c.violet, c.gold, c.danger];
+          const dayColor = palette[i % palette.length];
 
           return (
             <View key={i} style={styles.dowCol}>
-              <Text style={[styles.dowValText, { color: isHighest ? c.primary : c.textMuted }]}>
+              <Text style={[styles.dowValText, { color: isHighest ? dayColor : c.textMuted }]}>
                 {val > 0 ? formatCompact(val, currSym) : '-'}
               </Text>
               <View style={[styles.dowBarBg, { height: barMaxHeight, backgroundColor: c.trackBg }]}>
@@ -467,12 +471,13 @@ export const DayOfWeekChart: React.FC<DayOfWeekProps> = React.memo(({ expenses }
                     styles.dowBarFill,
                     {
                       height: Math.max(heightPct, val > 0 ? 6 : 0),
-                      backgroundColor: isHighest ? c.primary : c.teal,
+                      backgroundColor: dayColor,
+                      opacity: isHighest ? 1.0 : 0.85,
                     },
                   ]}
                 />
               </View>
-              <Text style={[styles.dowLabel, { color: isHighest ? c.primary : c.textMuted, fontWeight: isHighest ? '800' : '600' }]}>
+              <Text style={[styles.dowLabel, { color: isHighest ? dayColor : c.textMuted, fontWeight: isHighest ? '800' : '600' }]}>
                 {name}
               </Text>
             </View>

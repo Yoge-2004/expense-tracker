@@ -97,6 +97,14 @@
             text: read('--text-muted', isLight ? '#6B6558' : '#A8A395'),
             grid: read('--line-soft', isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)'),
             barTrack: read('--fill-strong', isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)'),
+            palette1: read('--palette-1', '#C79A3E'),
+            palette2: read('--palette-2', '#A23E32'),
+            palette3: read('--palette-3', '#4C7A78'),
+            palette4: read('--palette-4', '#5B8C5A'),
+            palette5: read('--palette-5', '#3B82F6'),
+            palette6: read('--palette-6', '#8B5CF6'),
+            palette7: read('--palette-7', '#B06B5C'),
+            palette8: read('--palette-8', '#0EA5E9'),
         };
     }
 
@@ -344,13 +352,15 @@
             totalsByDay[d.getDay()] += Number(exp.amount || 0);
         });
 
+        const cCols = chartColors();
+        const dowPalette = [cCols.palette1, cCols.palette2, cCols.palette3, cCols.palette4, cCols.palette5, cCols.palette6, cCols.palette7];
         chartState.dayOfWeekChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: dayLabels,
                 datasets: [{
                     data: totalsByDay,
-                    backgroundColor: chartColors().highlight,
+                    backgroundColor: dowPalette,
                     borderRadius: 6,
                 }],
             },
@@ -385,7 +395,11 @@
         const labels = budgets.map(b => b.categoryName || 'Uncategorized');
         const limits = budgets.map(b => Number(b.limit || 0));
         const spent = budgets.map(b => Number(b.spent || 0));
-        const overBudgetColors = budgets.map(b => (b.percentage > 100 ? chartColors().danger : chartColors().primary));
+        const overBudgetColors = budgets.map((b, i) => (
+            b.percentage > 100 
+                ? chartColors().danger 
+                : (utils && utils.getCategoryColor ? utils.getCategoryColor(b.categoryName, i).color : chartColors().primary)
+        ));
 
         chartState.budgetVsActualChart = new Chart(ctx, {
             type: 'bar',
@@ -419,6 +433,7 @@
             },
         });
         chartState.budgetVsActualChart.$overBudget = budgets.map(b => b.percentage > 100);
+        chartState.budgetVsActualChart.$categories = budgets.map(b => b.categoryName);
     }
 
     function updateChartsTheme() {
@@ -463,7 +478,10 @@
 
         if (chartState.dayOfWeekChart) {
             if (chartState.dayOfWeekChart.data?.datasets?.[0]) {
-                chartState.dayOfWeekChart.data.datasets[0].backgroundColor = colors.highlight;
+                chartState.dayOfWeekChart.data.datasets[0].backgroundColor = [
+                    colors.palette1, colors.palette2, colors.palette3, colors.palette4,
+                    colors.palette5, colors.palette6, colors.palette7
+                ];
             }
             if (chartState.dayOfWeekChart.options?.scales?.x?.ticks) chartState.dayOfWeekChart.options.scales.x.ticks.color = textColor;
             if (chartState.dayOfWeekChart.options?.scales?.y?.ticks) chartState.dayOfWeekChart.options.scales.y.ticks.color = textColor;
@@ -476,8 +494,11 @@
                 chartState.budgetVsActualChart.data.datasets[0].backgroundColor = colors.barTrack;
             }
             if (chartState.budgetVsActualChart.data?.datasets?.[1] && Array.isArray(chartState.budgetVsActualChart.$overBudget)) {
+                const cats = chartState.budgetVsActualChart.$categories || [];
                 chartState.budgetVsActualChart.data.datasets[1].backgroundColor =
-                    chartState.budgetVsActualChart.$overBudget.map(over => (over ? colors.danger : colors.primary));
+                    chartState.budgetVsActualChart.$overBudget.map((over, i) => (
+                        over ? colors.danger : (utils && utils.getCategoryColor ? utils.getCategoryColor(cats[i], i).color : colors.primary)
+                    ));
             }
             if (chartState.budgetVsActualChart.options?.scales?.x?.ticks) chartState.budgetVsActualChart.options.scales.x.ticks.color = textColor;
             if (chartState.budgetVsActualChart.options?.scales?.y?.ticks) chartState.budgetVsActualChart.options.scales.y.ticks.color = textColor;

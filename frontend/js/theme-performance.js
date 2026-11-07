@@ -214,13 +214,17 @@
                 root.style.setProperty('--metric-savings', isLight ? '#D97706' : '#F59E0B');
                 root.style.setProperty('--metric-savings-rgb', isLight ? '217, 119, 6' : '245, 158, 11');
                 root.style.setProperty('--metric-savings-glow', isLight ? 'rgba(217, 119, 6, 0.15)' : 'rgba(245, 158, 11, 0.20)');
-                root.style.setProperty('--metric-netflow', primaryColor);
-                root.style.setProperty('--metric-netflow-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-                root.style.setProperty('--metric-netflow-glow', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.20)`);
-                root.style.setProperty('--metric-subs', accentColor);
-                root.style.setProperty('--metric-subs-rgb', `${accRgb.r}, ${accRgb.g}, ${accRgb.b}`);
-                root.style.setProperty('--metric-subs-glow', `rgba(${accRgb.r}, ${accRgb.g}, ${accRgb.b}, 0.20)`);
-                root.style.setProperty('--metric-subs-text', accentColor);
+                const netColor = isLight ? '#2563EB' : '#3B82F6';
+                const netRgb = isLight ? '37, 99, 235' : '59, 130, 246';
+                const subColor = isLight ? '#7C3AED' : '#8B5CF6';
+                const subRgb = isLight ? '124, 58, 237' : '139, 92, 246';
+                root.style.setProperty('--metric-netflow', netColor);
+                root.style.setProperty('--metric-netflow-rgb', netRgb);
+                root.style.setProperty('--metric-netflow-glow', isLight ? 'rgba(37, 99, 235, 0.15)' : 'rgba(59, 130, 246, 0.20)');
+                root.style.setProperty('--metric-subs', subColor);
+                root.style.setProperty('--metric-subs-rgb', subRgb);
+                root.style.setProperty('--metric-subs-glow', isLight ? 'rgba(124, 58, 237, 0.15)' : 'rgba(139, 92, 246, 0.20)');
+                root.style.setProperty('--metric-subs-text', subColor);
 
                 root.style.setProperty('--success', isLight ? '#059669' : '#10B981');
                 root.style.setProperty('--success-rgb', isLight ? '5, 150, 105' : '16, 185, 129');

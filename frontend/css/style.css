@@ -100,6 +100,32 @@
     --metric-subs-rgb: 192, 86, 94;
     --metric-subs-glow: rgba(192, 86, 94, 0.18);
 
+    /* Universal 8-color spectrum tokens */
+    --palette-1: #C79A3E;
+    --palette-1-rgb: 199, 154, 62;
+    --palette-1-glow: rgba(199, 154, 62, 0.20);
+    --palette-2: #A23E32;
+    --palette-2-rgb: 162, 62, 50;
+    --palette-2-glow: rgba(162, 62, 50, 0.20);
+    --palette-3: #4C7A78;
+    --palette-3-rgb: 76, 122, 120;
+    --palette-3-glow: rgba(76, 122, 120, 0.20);
+    --palette-4: #5B8C5A;
+    --palette-4-rgb: 91, 140, 90;
+    --palette-4-glow: rgba(91, 140, 90, 0.20);
+    --palette-5: #8B5E34;
+    --palette-5-rgb: 139, 94, 52;
+    --palette-5-glow: rgba(139, 94, 52, 0.20);
+    --palette-6: #B06B5C;
+    --palette-6-rgb: 176, 107, 92;
+    --palette-6-glow: rgba(176, 107, 92, 0.20);
+    --palette-7: #3B82F6;
+    --palette-7-rgb: 59, 130, 246;
+    --palette-7-glow: rgba(59, 130, 246, 0.20);
+    --palette-8: #8B5CF6;
+    --palette-8-rgb: 139, 92, 246;
+    --palette-8-glow: rgba(139, 92, 246, 0.20);
+
     /* Standardized Stacking Order (Z-Index scale) */
     --z-base: 1;
     --z-sticky: 100;
@@ -203,6 +229,32 @@
     --metric-subs: #B54858;
     --metric-subs-rgb: 181, 72, 88;
     --metric-subs-glow: rgba(181, 72, 88, 0.15);
+
+    /* Universal 8-color spectrum tokens */
+    --palette-1: #D4AF37;
+    --palette-1-rgb: 212, 175, 55;
+    --palette-1-glow: rgba(212, 175, 55, 0.20);
+    --palette-2: #E74C3C;
+    --palette-2-rgb: 231, 76, 60;
+    --palette-2-glow: rgba(231, 76, 60, 0.20);
+    --palette-3: #0EA5E9;
+    --palette-3-rgb: 14, 165, 233;
+    --palette-3-glow: rgba(14, 165, 233, 0.20);
+    --palette-4: #10B981;
+    --palette-4-rgb: 16, 185, 129;
+    --palette-4-glow: rgba(16, 185, 129, 0.20);
+    --palette-5: #F59E0B;
+    --palette-5-rgb: 245, 158, 11;
+    --palette-5-glow: rgba(245, 158, 11, 0.20);
+    --palette-6: #8B5CF6;
+    --palette-6-rgb: 139, 92, 246;
+    --palette-6-glow: rgba(139, 92, 246, 0.20);
+    --palette-7: #EC4899;
+    --palette-7-rgb: 236, 72, 153;
+    --palette-7-glow: rgba(236, 72, 153, 0.20);
+    --palette-8: #6366F1;
+    --palette-8-rgb: 99, 102, 241;
+    --palette-8-glow: rgba(99, 102, 241, 0.20);
 
     --cursor-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L20 11L12 14L9 22L4 3Z' fill='%2310B981' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='4' cy='3' r='1.5' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, auto;
     --cursor-pointer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%2310B981' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, pointer;
@@ -10769,14 +10821,12 @@ button[type="submit"]:active {
 
 .insight-card-item:hover {
     transform: translateY(-2px);
-    border-color: rgba(var(--primary-rgb), 0.38);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.30), 0 0 14px rgba(var(--primary-rgb), 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.30);
     background: var(--card-bg-hover, rgba(23, 26, 20, 0.92));
 }
 
 [data-theme="light"] .insight-card-item:hover {
-    border-color: rgba(var(--primary-rgb), 0.40);
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08), 0 0 12px rgba(var(--primary-rgb), 0.10);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
     background: var(--card-bg-hover, #F8FAFC);
 }
 
@@ -14527,12 +14577,12 @@ body {
 
 /* Universal Soft Floating Luxury Golden Aura Hover:
    Eliminates harsh outline rings and delivers true diffused golden shadow depth across ALL cards & sections */
-:is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .insight-card-item, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury) {
+:is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury) {
     border-radius: 14px;
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease;
 }
 
-:is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .insight-card-item, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
+:is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
     transform: translateY(-3px);
     border-color: rgba(var(--primary-rgb), 0.35);
     box-shadow:
@@ -14540,7 +14590,7 @@ body {
         0 0 16px rgba(var(--primary-rgb), 0.12);
 }
 
-[data-theme="light"] :is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .insight-card-item, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
+[data-theme="light"] :is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
     transform: translateY(-3px);
     border-color: rgba(var(--primary-rgb), 0.40);
     box-shadow:
@@ -16395,4 +16445,36 @@ body.has-custom-wallpaper .top-bar {
     background: rgba(255, 255, 255, 0.78) !important;
     backdrop-filter: blur(28px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+}
+
+/* Slicer Group 2: Commitment uses Accent Spectrum */
+#biCommitmentSlicer .bi-slicer-label {
+    color: var(--accent, #A23E32);
+}
+#biCommitmentSlicer .bi-slicer-pill:hover {
+    border-color: var(--accent, #A23E32);
+    background: rgba(var(--accent-rgb, 162, 62, 50), 0.12);
+    box-shadow: 0 4px 14px rgba(var(--accent-rgb, 162, 62, 50), 0.25);
+}
+#biCommitmentSlicer .bi-slicer-pill.active {
+    background: var(--accent-gradient, linear-gradient(135deg, #A23E32, #802E24));
+    color: #FFFFFF !important;
+    border: 1px solid var(--accent, #A23E32) !important;
+    box-shadow: 0 4px 14px var(--accent-glow, rgba(var(--accent-rgb, 162, 62, 50), 0.45));
+}
+
+/* Slicer Group 3: Cash Flow Stream uses Highlight Spectrum */
+#biStreamSlicer .bi-slicer-label {
+    color: var(--highlight, #4C7A78);
+}
+#biStreamSlicer .bi-slicer-pill:hover {
+    border-color: var(--highlight, #4C7A78);
+    background: rgba(var(--highlight-rgb, 76, 122, 120), 0.12);
+    box-shadow: 0 4px 14px rgba(var(--highlight-rgb, 76, 122, 120), 0.25);
+}
+#biStreamSlicer .bi-slicer-pill.active {
+    background: var(--highlight-gradient, linear-gradient(135deg, #4C7A78, #355655));
+    color: #FFFFFF !important;
+    border: 1px solid var(--highlight, #4C7A78) !important;
+    box-shadow: 0 4px 14px var(--highlight-glow, rgba(var(--highlight-rgb, 76, 122, 120), 0.45));
 }

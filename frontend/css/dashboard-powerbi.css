@@ -815,3 +815,35 @@
     text-align: right;
     font-weight: 700;
 }
+
+/* Slicer Group 2: Commitment uses Accent Spectrum */
+#biCommitmentSlicer .bi-slicer-label {
+    color: var(--accent, #A23E32);
+}
+#biCommitmentSlicer .bi-slicer-pill:hover {
+    border-color: var(--accent, #A23E32);
+    background: rgba(var(--accent-rgb, 162, 62, 50), 0.12);
+    box-shadow: 0 4px 14px rgba(var(--accent-rgb, 162, 62, 50), 0.25);
+}
+#biCommitmentSlicer .bi-slicer-pill.active {
+    background: var(--accent-gradient, linear-gradient(135deg, #A23E32, #802E24));
+    color: #FFFFFF !important;
+    border: 1px solid var(--accent, #A23E32) !important;
+    box-shadow: 0 4px 14px var(--accent-glow, rgba(var(--accent-rgb, 162, 62, 50), 0.45));
+}
+
+/* Slicer Group 3: Cash Flow Stream uses Highlight Spectrum */
+#biStreamSlicer .bi-slicer-label {
+    color: var(--highlight, #4C7A78);
+}
+#biStreamSlicer .bi-slicer-pill:hover {
+    border-color: var(--highlight, #4C7A78);
+    background: rgba(var(--highlight-rgb, 76, 122, 120), 0.12);
+    box-shadow: 0 4px 14px rgba(var(--highlight-rgb, 76, 122, 120), 0.25);
+}
+#biStreamSlicer .bi-slicer-pill.active {
+    background: var(--highlight-gradient, linear-gradient(135deg, #4C7A78, #355655));
+    color: #FFFFFF !important;
+    border: 1px solid var(--highlight, #4C7A78) !important;
+    box-shadow: 0 4px 14px var(--highlight-glow, rgba(var(--highlight-rgb, 76, 122, 120), 0.45));
+}

@@ -75,8 +75,8 @@
                     elements.budgetList.innerHTML = normalizedBudgets.map(b => {
                         const pct = Math.min(Number(b.percentage || 0), 100);
                         const usage = Number(b.percentage || 0);
-                        const barColor = usage > 100 ? 'var(--danger)' : usage > 80 ? 'var(--warning)' : 'var(--primary)';
                         const catColor = getCategoryColor(b.categoryName);
+                        const barColor = usage > 100 ? 'var(--danger)' : usage > 80 ? 'var(--warning)' : (catColor?.color || 'var(--primary)');
                         const periodLabel = b.period ? b.period.toUpperCase() : 'MONTHLY';
                         const startStr = b.startDate || '';
                         const endStr = b.endDate || '';

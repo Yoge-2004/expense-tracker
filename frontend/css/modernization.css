@@ -836,12 +836,12 @@
 
 /* Universal Soft Floating Luxury Golden Aura Hover:
    Eliminates harsh outline rings and delivers true diffused golden shadow depth across ALL cards & sections */
-:is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .insight-card-item, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury) {
+:is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury) {
     border-radius: 14px;
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease;
 }
 
-:is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .insight-card-item, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
+:is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
     transform: translateY(-3px);
     border-color: rgba(var(--primary-rgb), 0.35);
     box-shadow:
@@ -849,7 +849,7 @@
         0 0 16px rgba(var(--primary-rgb), 0.12);
 }
 
-[data-theme="light"] :is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .insight-card-item, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
+[data-theme="light"] :is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
     transform: translateY(-3px);
     border-color: rgba(var(--primary-rgb), 0.40);
     box-shadow:

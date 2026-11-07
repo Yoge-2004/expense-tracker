@@ -847,8 +847,8 @@
         const metricInflow = ensureContrast(isLight ? '#059669' : '#10B981', safeCard);
         const metricOutflow = ensureContrast(isLight ? '#DC2626' : '#EF4444', safeCard);
         const metricSavings = ensureContrast(isLight ? '#D97706' : '#F59E0B', safeCard);
-        const metricNetflow = ensureContrast(effPrimary, safeCard);
-        const metricSubs = ensureContrast(effAccent, safeCard);
+        const metricNetflow = ensureContrast(isLight ? '#2563EB' : '#3B82F6', safeCard);
+        const metricSubs = ensureContrast(isLight ? '#7C3AED' : '#8B5CF6', safeCard);
 
         const metricColors = {
             inflow: metricInflow,

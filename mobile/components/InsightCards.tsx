@@ -592,13 +592,13 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
           onPress={() => setActiveTab('habits')}
           style={[
             styles.filterTab,
-            activeTab === 'habits' && { backgroundColor: c.primary },
+            activeTab === 'habits' && { backgroundColor: c.accent },
           ]}
         >
           <Text
             style={[
               styles.filterTabText,
-              { color: activeTab === 'habits' ? (c.onPrimary) : c.textMuted },
+              { color: activeTab === 'habits' ? '#FFFFFF' : c.textMuted },
             ]}
           >
             Habits & Savings
@@ -609,13 +609,13 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
           onPress={() => setActiveTab('forecasts')}
           style={[
             styles.filterTab,
-            activeTab === 'forecasts' && { backgroundColor: c.primary },
+            activeTab === 'forecasts' && { backgroundColor: c.highlight },
           ]}
         >
           <Text
             style={[
               styles.filterTabText,
-              { color: activeTab === 'forecasts' ? (c.onPrimary) : c.textMuted },
+              { color: activeTab === 'forecasts' ? '#FFFFFF' : c.textMuted },
             ]}
           >
             Alerts & Forecast

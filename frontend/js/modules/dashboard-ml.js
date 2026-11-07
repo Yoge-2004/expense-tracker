@@ -791,7 +791,7 @@
                 </div>
                 <div style="display:flex; gap:8px; align-items:center;">
                     <input type="text" id="mlMerchantInput" placeholder="Search merchant (e.g. Swiggy, Uber, Amazon, Starbucks)..." style="flex:1; height:34px; font-size:12px; border-radius:8px; padding:0 12px; background:var(--input-bg, rgba(255,255,255,0.05)); border:1px solid var(--border); color:var(--text-main); outline:none;" />
-                    <button type="button" id="mlMerchantBtn" class="btn-primary btn-small" style="height:34px; padding:0 14px; font-size:11.5px; border-radius:8px;">Match</button>
+                    <button type="button" id="mlMerchantBtn" class="btn-small" style="background:var(--accent, #A23E32); color:#FFFFFF; border:none; height:34px; padding:0 14px; font-size:11.5px; border-radius:8px; cursor:pointer;" style="height:34px; padding:0 14px; font-size:11.5px; border-radius:8px;">Match</button>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:8px; font-size:11px; color:var(--text-muted);">
                     <span>Quick Test:</span>
@@ -810,7 +810,7 @@
                 </div>
                 <div style="display:flex; gap:8px; align-items:center;">
                     <input type="text" id="mlDupQuery" placeholder="Query: e.g. Uber cab to office" style="flex:1; height:34px; font-size:12px; border-radius:8px; padding:0 12px; background:var(--input-bg, rgba(255,255,255,0.05)); border:1px solid var(--border); color:var(--text-main); outline:none;" value="Uber cab to office" />
-                    <button type="button" id="mlDupBtn" class="btn-primary btn-small" style="height:34px; padding:0 14px; font-size:11.5px; border-radius:8px;">Check</button>
+                    <button type="button" id="mlDupBtn" class="btn-small" style="background:var(--highlight, #4C7A78); color:#FFFFFF; border:none; height:34px; padding:0 14px; font-size:11.5px; border-radius:8px; cursor:pointer;" style="height:34px; padding:0 14px; font-size:11.5px; border-radius:8px;">Check</button>
                 </div>
                 <div style="margin-top:8px;">
                     <input type="text" id="mlDupCandidates" placeholder="Candidates separated by comma" style="width:100%; height:32px; font-size:11.5px; border-radius:8px; padding:0 10px; background:var(--input-bg, rgba(255,255,255,0.05)); border:1px solid var(--border); color:var(--text-main); outline:none;" value="uber office ride, whole foods groceries, netflix subscription, office taxi trip" />
@@ -824,7 +824,7 @@
                     <div style="font-size:12px; color:var(--text-muted);">
                         Isolation Forest & pattern anomaly engine scores transactions to uncover irregular spending spikes or unexpected categories.
                     </div>
-                    <button type="button" id="mlScoreAnomaliesBtn" class="btn-primary btn-small" style="height:30px; padding:0 12px; font-size:11.5px; border-radius:8px;">
+                    <button type="button" id="mlScoreAnomaliesBtn" class="btn-small" style="background:var(--palette-4, #E06C75); color:#FFFFFF; border:none; height:30px; padding:0 12px; font-size:11.5px; border-radius:8px; cursor:pointer;" style="height:30px; padding:0 12px; font-size:11.5px; border-radius:8px;">
                         Analyze Loaded Expenses
                     </button>
                 </div>
@@ -845,7 +845,7 @@
                         <button type="button" class="btn-scan-receipt ml-forecast-horizon active" data-days="7" style="height:28px; padding:0 8px; font-size:11px; font-weight:700; border-radius:6px; background:var(--primary, #C79A3E); color:#10120E;">7 Days</button>
                         <button type="button" class="btn-scan-receipt ml-forecast-horizon" data-days="14" style="height:28px; padding:0 8px; font-size:11px; border-radius:6px;">14 Days</button>
                         <button type="button" class="btn-scan-receipt ml-forecast-horizon" data-days="30" style="height:28px; padding:0 8px; font-size:11px; border-radius:6px;">30 Days</button>
-                        <button type="button" id="mlRunForecastBtn" class="btn-primary btn-small" style="height:28px; padding:0 12px; font-size:11px; border-radius:6px;">Generate</button>
+                        <button type="button" id="mlRunForecastBtn" class="btn-small" style="background:var(--palette-5, #3B82F6); color:#FFFFFF; border:none; height:28px; padding:0 12px; font-size:11px; border-radius:6px; cursor:pointer;" style="height:28px; padding:0 12px; font-size:11px; border-radius:6px;">Generate</button>
                     </div>
                 </div>
                 <div id="mlForecastResult" style="margin-top:10px;">
@@ -866,6 +866,14 @@
         const tabBtns = card.querySelectorAll(".ml-suite-tab-btn");
         const panels = card.querySelectorAll(".ml-suite-panel");
 
+        const tabColors = {
+            classify:   { bg: "var(--primary, #C79A3E)",   color: "var(--on-primary, #10120E)" },
+            merchants:  { bg: "var(--accent, #A23E32)",    color: "#FFFFFF" },
+            duplicates: { bg: "var(--highlight, #4C7A78)", color: "#FFFFFF" },
+            anomalies:  { bg: "var(--palette-4, #E06C75)", color: "#FFFFFF" },
+            forecast:   { bg: "var(--palette-5, #3B82F6)", color: "#FFFFFF" },
+        };
+
         tabBtns.forEach(btn => {
             btn.addEventListener("click", () => {
                 tabBtns.forEach(b => {
@@ -875,11 +883,12 @@
                     b.style.border = "1px solid var(--border)";
                 });
                 btn.classList.add("active");
-                btn.style.background = "var(--primary, #C79A3E)";
-                btn.style.color = "#10120E";
+                const tabKey = btn.getAttribute("data-tab");
+                const conf = tabColors[tabKey] || tabColors.classify;
+                btn.style.background = conf.bg;
+                btn.style.color = conf.color;
                 btn.style.border = "none";
 
-                const tabKey = btn.getAttribute("data-tab");
                 panels.forEach(p => p.style.display = "none");
                 const target = card.querySelector(`#mlTabContent_${tabKey}`);
                 if (target) target.style.display = "block";
