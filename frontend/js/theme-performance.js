@@ -136,7 +136,16 @@
                 '--palette-8', '--palette-8-rgb'
             ];
 
-            if (!pal || !pal.primary) {
+            const isDefault = !pal || !pal.primary || (
+                (pal.presetId === 'default' || !pal.presetId) &&
+                String(pal.primary).toLowerCase() === '#c79a3e' &&
+                String(pal.accent || '#a23e32').toLowerCase() === '#a23e32' &&
+                String(pal.highlight || '#4c7a78').toLowerCase() === '#4c7a78' &&
+                (!pal.cardSurface || String(pal.cardSurface).toLowerCase() === '#171a14' || String(pal.cardSurface).toLowerCase().includes('23, 26, 20')) &&
+                (!pal.surface || String(pal.surface).toLowerCase() === '#10120e' || String(pal.surface).toLowerCase() === '#171a14')
+            );
+
+            if (isDefault) {
                 // Default theme look: stylesheet [data-theme] rules dictate all tokens.
                 inlineColorVars.forEach(v => root.style.removeProperty(v));
                 updateThemeCursor(isLight ? '#0284C7' : '#10B981', isLight ? '#4F46E5' : '#34D399', isLight);
@@ -184,9 +193,9 @@
                 } else {
                     root.style.setProperty('--text-main', '#ECE7D8');
                     root.style.setProperty('--text-muted', '#A8A395');
-                    const cSurf = (pal.cardSurface && !String(pal.cardSurface).toLowerCase().startsWith('#c7') && !String(pal.cardSurface).toLowerCase().startsWith('#d4'))
+                    const cSurf = (pal.cardSurface && !String(pal.cardSurface).toLowerCase().startsWith('#c7') && !String(pal.cardSurface).toLowerCase().startsWith('#d4') && String(pal.cardSurface).toLowerCase() !== '#ffffff')
                         ? pal.cardSurface
-                        : 'rgba(23, 26, 20, 0.90)';
+                        : '#171A14';
                     root.style.setProperty('--card-bg', cSurf);
                     root.style.setProperty('--card-bg-hover', adjustBrightness(cSurf, 1.15));
                     root.style.setProperty('--bg-dark', pal.surface || '#10120E');
@@ -292,12 +301,19 @@
                     root.style.setProperty('--card-bg-hover', isLight ? 'rgba(255, 255, 255, 0.86)' : 'rgba(32, 36, 28, 0.84)');
                 } else {
                     document.body?.classList.remove('has-custom-wallpaper');
-                    if (isLight) {
-                        root.style.setProperty('--card-bg', '#FFFFFF');
-                        root.style.setProperty('--card-bg-hover', '#F8FAFC');
-                    } else if (pal && pal.cardSurface) {
-                        root.style.setProperty('--card-bg', pal.cardSurface);
-                        root.style.setProperty('--card-bg-hover', adjustBrightness(pal.cardSurface, 1.15));
+                    if (!isDefault) {
+                        if (isLight) {
+                            root.style.setProperty('--card-bg', '#FFFFFF');
+                            root.style.setProperty('--card-bg-hover', '#F8FAFC');
+                        } else {
+                            const cSurf = (pal && pal.cardSurface && !String(pal.cardSurface).toLowerCase().startsWith('#c7') && !String(pal.cardSurface).toLowerCase().startsWith('#d4') && String(pal.cardSurface).toLowerCase() !== '#ffffff')
+                                ? pal.cardSurface : '#171A14';
+                            root.style.setProperty('--card-bg', cSurf);
+                            root.style.setProperty('--card-bg-hover', adjustBrightness(cSurf, 1.15));
+                        }
+                    } else {
+                        root.style.removeProperty('--card-bg');
+                        root.style.removeProperty('--card-bg-hover');
                     }
                 }
                 bgs.forEach(heroBg => {
@@ -309,6 +325,7 @@
                         const bgRule = `linear-gradient(rgba(${tint}, ${opacity}), rgba(${tint}, ${opacity})), url("${wpUri}")`;
                         heroBg.style.setProperty('background-image', bgRule, 'important');
                         heroBg.style.setProperty('background-size', 'cover', 'important');
+                        heroBg.style.position = '';
                         heroBg.style.setProperty('background-position', 'center', 'important');
                         heroBg.style.setProperty('background-repeat', 'no-repeat', 'important');
                         heroBg.style.setProperty('opacity', '1', 'important');
@@ -357,9 +374,8 @@
             restoreStoredAppearance();
         });
 
-        // Re-apply on custom appearancechange or palettechange events
+        // Re-apply on custom appearancechange events
         document.addEventListener("appearancechange", restoreStoredAppearance);
-        document.addEventListener("palettechange", restoreStoredAppearance);
 
         if (typeof MutationObserver !== "undefined") {
             new MutationObserver((mutations) => {

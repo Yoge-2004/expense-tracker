@@ -571,6 +571,11 @@
         const savedPalette = localStorage.getItem('app_custom_palette');
         if (savedPalette) {
             const parsed = JSON.parse(savedPalette);
+            if (parsed.presetId) {
+                currentPresetId = parsed.presetId;
+            } else if (parsed.primary && !sameColor(parsed.primary, DEFAULT_PALETTE.primary)) {
+                currentPresetId = 'custom';
+            }
             if (parsed.primary) currentPrimary = parsed.primary;
             if (parsed.primaryGradientEnd) currentPrimaryEnd = parsed.primaryGradientEnd;
             if (parsed.accent) currentAccent = parsed.accent;
@@ -589,12 +594,20 @@
         if (savedBg) {
             const parsed = JSON.parse(savedBg);
             if (parsed.type) currentWallpaperType = parsed.type;
-            if (parsed.presetId) currentPresetId = parsed.presetId;
+            if (parsed.presetId) {
+                if (currentPresetId === 'default' || !currentPresetId) {
+                    currentPresetId = parsed.presetId;
+                }
+            }
             if (parsed.uri) currentWallpaperUri = parsed.uri;
             if (typeof parsed.overlayOpacity === 'number') currentOverlayOpacity = parsed.overlayOpacity;
             if (typeof parsed.blurIntensity === 'number') currentBlurIntensity = parsed.blurIntensity;
         }
     } catch (e) {}
+
+    if (!sameColor(currentPrimary, DEFAULT_PALETTE.primary) && currentPresetId === 'default') {
+        currentPresetId = 'custom';
+    }
 
     // ─── 4. CSS VARIABLE APPLICATION (ZERO FLICKER) ──────────────────────────
 
@@ -678,8 +691,8 @@
             && sameColor(currentPrimaryEnd, DEFAULT_PALETTE.end)
             && sameColor(currentAccent, DEFAULT_PALETTE.accent)
             && sameColor(currentHighlight, DEFAULT_PALETTE.highlight)
-            && DEFAULT_CARD_SURFACES.some(v => sameColor(currentCardSurface, v))
-            && DEFAULT_APP_SURFACES.some(v => sameColor(currentAppSurface, v));
+            && (!currentCardSurface || DEFAULT_CARD_SURFACES.some(v => sameColor(currentCardSurface, v)))
+            && (!currentAppSurface || DEFAULT_APP_SURFACES.some(v => sameColor(currentAppSurface, v)));
     }
 
     function applyPalette(primaryHex, primaryEndHex, accentHex, highlightHex, paletteColors) {
@@ -706,11 +719,8 @@
         const effPrimaryEnd = ensureContrast(primaryEndHex || adjustBrightness(effPrimary, 0.85), safeCard);
         const effAccent = ensureContrast(accentHex || currentAccent, safeCard);
         const effHighlight = ensureContrast(highlightHex || currentHighlight, safeCard);
-        const readableText = readableTextAcross(safeSurface, safeCard);
-        const requestedMuted = ensureContrast(isLight ? '#475569' : '#A8A395', safeSurface);
-        const readableMuted = Math.min(contrastRatio(requestedMuted, safeSurface), contrastRatio(requestedMuted, safeCard)) >= 4.5
-            ? requestedMuted
-            : readableText;
+        const readableText = isLight ? '#0F172A' : '#ECE7D8';
+        const readableMuted = isLight ? '#475569' : '#A8A395';
         const safeRgb = hexToRgb(effPrimary);
         const end = effPrimaryEnd;
 
@@ -834,12 +844,15 @@
         } else {
             document.body?.classList.remove("has-custom-wallpaper");
             document.documentElement.style.removeProperty("--custom-wallpaper-bg");
-            if (isLight) {
+            if (isDefaultPalette()) {
+                document.documentElement.style.removeProperty('--card-bg');
+                document.documentElement.style.removeProperty('--card-bg-hover');
+            } else if (isLight) {
                 document.documentElement.style.setProperty('--card-bg', '#FFFFFF');
                 document.documentElement.style.setProperty('--card-bg-hover', '#F8FAFC');
             } else {
-                const cSurf = (currentCardSurface && !String(currentCardSurface).toLowerCase().startsWith('#c7'))
-                    ? currentCardSurface : 'rgba(23, 26, 20, 0.90)';
+                const cSurf = (currentCardSurface && !DEFAULT_CARD_SURFACES.some(v => sameColor(currentCardSurface, v)))
+                    ? currentCardSurface : '#171A14';
                 document.documentElement.style.setProperty('--card-bg', cSurf);
                 document.documentElement.style.setProperty('--card-bg-hover', adjustBrightness(cSurf, 1.15));
             }
@@ -932,7 +945,7 @@
     // data-theme changes (toggle button, another tab, or the saved theme being applied after this script).
     // A MutationObserver callback runs before the next paint, so no frame shows the old theme's colours.
     new MutationObserver(() => {
-        if (currentWallpaperType === 'preset' && currentPresetId) {
+        if (currentWallpaperType === 'preset' && currentPresetId && currentPresetId !== 'default' && currentPresetId !== 'custom') {
             const isLight = document.documentElement.getAttribute('data-theme') === 'light';
             const preset = STUDIO_PRESETS.find(x => x.id === currentPresetId);
             if (preset) {

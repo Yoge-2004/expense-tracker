@@ -29,7 +29,8 @@
                 var rawPalette = localStorage.getItem("app_custom_palette");
                 if (rawPalette) {
                     var p = JSON.parse(rawPalette);
-                    if (p && p.primary) {
+                    var isDefault = p && (p.presetId === 'default' || !p.presetId) && p.primary === '#C79A3E' && p.accent === '#A23E32' && p.highlight === '#4C7A78';
+                    if (p && p.primary && !isDefault) {
                         var root = document.documentElement;
                         root.style.setProperty("--primary", p.primary);
                         var hex = p.primary.replace('#', '');
