@@ -10,6 +10,7 @@ import com.example.expensetracker.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.security.RateLimited;
 import com.example.expensetracker.security.UserSecurity;
 import com.example.expensetracker.service.UserAppearanceService;
+import com.example.expensetracker.service.UserAvatarService;
 import com.example.expensetracker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,12 +22,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URI;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Locale;
@@ -52,14 +57,7 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
     private final UserAppearanceService userAppearanceService;
-
-    private java.nio.file.Path getAvatarDir() {
-        String dataDir = System.getenv("DATA_DIR");
-        if (dataDir != null && !dataDir.isBlank()) {
-            return java.nio.file.Path.of(dataDir, "avatars");
-        }
-        return java.nio.file.Path.of(System.getProperty("user.home"), ".expensetracker", "avatars");
-    }
+    private final UserAvatarService userAvatarService;
 
     // ─── GET /api/users/check-username ────────────────────────────────────────
 
@@ -427,67 +425,16 @@ public class UserController {
     @PostMapping(value = "/{userId}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> uploadAvatar(
             @PathVariable Long userId,
-            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+            @RequestParam("file") MultipartFile file) {
         log.info("Received request to upload avatar for userId={}", userId);
         userSecurity.validateUserAccess(userId);
 
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Avatar file must not be empty");
-        }
-        if (file.getSize() > 5 * 1024 * 1024) {
-            throw new IllegalArgumentException("Avatar file size must not exceed 5MB");
-        }
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
-            throw new IllegalArgumentException("Only image files (JPEG, PNG, WebP, GIF) are supported");
-        }
+        String avatarUrl = userAvatarService.storeAvatar(userId, file);
 
-        try {
-            java.nio.file.Path avatarDir = getAvatarDir();
-            java.nio.file.Files.createDirectories(avatarDir);
-
-            String ext = ".jpg";
-            String lower = contentType.toLowerCase(Locale.ROOT);
-            if (lower.contains("png")) ext = ".png";
-            else if (lower.contains("webp")) ext = ".webp";
-            else if (lower.contains("gif")) ext = ".gif";
-
-            // Remove any existing avatar files for this user
-            for (String oldExt : java.util.List.of(".jpg", ".png", ".webp", ".gif", ".img")) {
-                try {
-                    java.nio.file.Files.deleteIfExists(avatarDir.resolve("user_" + userId + oldExt));
-                } catch (Exception ex) {
-                    log.debug("Notice while removing old avatar extension {} for userId={}: {}", oldExt, userId, ex.getMessage());
-                }
-            }
-
-            byte[] rawBytes = file.getBytes();
-            byte[] compressedBytes = compressAvatarImage(rawBytes, contentType);
-            boolean isCompressed = compressedBytes != null && compressedBytes.length < rawBytes.length;
-            String savedContentType = isCompressed && !contentType.toLowerCase(Locale.ROOT).contains("png")
-                    ? "image/jpeg"
-                    : contentType;
-            if (isCompressed && "image/jpeg".equals(savedContentType)) {
-                ext = ".jpg";
-            }
-
-            java.nio.file.Path targetFile = avatarDir.resolve("user_" + userId + ext);
-            java.nio.file.Files.write(targetFile, isCompressed ? compressedBytes : rawBytes);
-
-            java.nio.file.Path metaFile = avatarDir.resolve("user_" + userId + ".meta");
-            java.nio.file.Files.writeString(metaFile, savedContentType);
-
-            String avatarUrl = "/api/users/" + userId + "/avatar?v=" + System.currentTimeMillis();
-            userService.updateProfilePicture(userId, avatarUrl);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("profilePictureUrl", avatarUrl);
-            response.put("message", "Profile picture updated successfully");
-            return ResponseEntity.ok(response);
-        } catch (java.io.IOException e) {
-            log.error("Failed to store avatar file for userId={}: {}", userId, e.getMessage(), e);
-            throw new RuntimeException("Could not store avatar image", e);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("profilePictureUrl", avatarUrl);
+        response.put("message", "Profile picture updated successfully");
+        return ResponseEntity.ok(response);
     }
 
     // ─── GET /api/users/{userId}/avatar ──────────────────────────────────────
@@ -498,141 +445,19 @@ public class UserController {
     )
     @GetMapping("/{userId}/avatar")
     public ResponseEntity<byte[]> getAvatar(@PathVariable Long userId) {
-        java.nio.file.Path avatarDir = getAvatarDir();
-
-        for (String ext : java.util.List.of(".jpg", ".png", ".webp", ".gif", ".img")) {
-            java.nio.file.Path file = avatarDir.resolve("user_" + userId + ext);
-            if (java.nio.file.Files.exists(file)) {
-                try {
-                    byte[] data = java.nio.file.Files.readAllBytes(file);
-                    java.nio.file.Path metaFile = avatarDir.resolve("user_" + userId + ".meta");
-                    String contentType = "image/jpeg";
-                    if (java.nio.file.Files.exists(metaFile)) {
-                        contentType = java.nio.file.Files.readString(metaFile).trim();
-                    } else if (ext.equals(".png")) {
-                        contentType = "image/png";
-                    } else if (ext.equals(".webp")) {
-                        contentType = "image/webp";
-                    } else if (ext.equals(".gif")) {
-                        contentType = "image/gif";
+        return userAvatarService.getAvatar(userId)
+                .map(avatar -> {
+                    if (avatar.isRedirect()) {
+                        return ResponseEntity.status(HttpStatus.FOUND)
+                                .location(URI.create(avatar.redirectUrl()))
+                                .<byte[]>build();
                     }
                     return ResponseEntity.ok()
-                            .contentType(MediaType.parseMediaType(contentType))
-                            .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
-                            .body(data);
-                } catch (java.io.IOException ex) {
-                    log.warn("Could not read avatar file {} for userId={}: {}", file, userId, ex.getMessage());
-                }
-            }
-        }
-
-        User user = userService.findById(userId).orElse(null);
-        if (user != null && user.getProfilePictureUrl() != null && !user.getProfilePictureUrl().isBlank()
-                && !user.getProfilePictureUrl().contains("/avatar")) {
-            String profileUrl = user.getProfilePictureUrl().trim();
-            // Mitigate Open Redirect / SSRF: only allow HTTP redirects to trusted avatar/OAuth CDNs
-            boolean isSafeExternal = profileUrl.startsWith("https://lh3.googleusercontent.com/")
-                    || profileUrl.startsWith("https://avatars.githubusercontent.com/")
-                    || profileUrl.startsWith("https://secure.gravatar.com/")
-                    || profileUrl.startsWith("https://www.gravatar.com/");
-            if (isSafeExternal) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
-                        .location(java.net.URI.create(profileUrl))
-                        .build();
-            }
-            log.warn("Blocked untrusted external avatar redirect for userId={}: {}", userId, profileUrl);
-        }
-
-        return ResponseEntity.notFound().build();
-    }
-
-    /**
-     * Compresses and resizes raw avatar bytes to a max dimension of 256x256 using bilinear
-     * filtering and JPEG 0.82 compression (or PNG if transparency is present).
-     * Shrinks 5MB photos down to ~15KB - 35KB before storage and database synchronization.
-     */
-    private byte[] compressAvatarImage(byte[] rawBytes, String contentType) {
-        if (rawBytes == null || rawBytes.length == 0) return rawBytes;
-        try {
-            java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(rawBytes);
-            java.awt.image.BufferedImage original = javax.imageio.ImageIO.read(bais);
-            if (original == null) {
-                return rawBytes;
-            }
-
-            int origWidth = original.getWidth();
-            int origHeight = original.getHeight();
-            int maxDim = 256;
-            int targetWidth = origWidth;
-            int targetHeight = origHeight;
-
-            if (origWidth > maxDim || origHeight > maxDim) {
-                if (origWidth > origHeight) {
-                    targetWidth = maxDim;
-                    targetHeight = Math.max(1, (int) Math.round((double) origHeight * maxDim / origWidth));
-                } else {
-                    targetHeight = maxDim;
-                    targetWidth = Math.max(1, (int) Math.round((double) origWidth * maxDim / origHeight));
-                }
-            }
-
-            boolean isPng = contentType != null && contentType.toLowerCase(Locale.ROOT).contains("png");
-            boolean hasAlpha = original.getColorModel().hasAlpha();
-
-            int imageType = (hasAlpha && isPng)
-                    ? java.awt.image.BufferedImage.TYPE_INT_ARGB
-                    : java.awt.image.BufferedImage.TYPE_INT_RGB;
-            java.awt.image.BufferedImage resized = new java.awt.image.BufferedImage(targetWidth, targetHeight, imageType);
-
-            java.awt.Graphics2D g2d = resized.createGraphics();
-            try {
-                g2d.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                g2d.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
-                g2d.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-                if (imageType == java.awt.image.BufferedImage.TYPE_INT_RGB) {
-                    g2d.setColor(java.awt.Color.WHITE);
-                    g2d.fillRect(0, 0, targetWidth, targetHeight);
-                }
-                g2d.drawImage(original, 0, 0, targetWidth, targetHeight, null);
-            } finally {
-                g2d.dispose();
-            }
-
-            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-            if (hasAlpha && isPng) {
-                javax.imageio.ImageIO.write(resized, "png", baos);
-            } else {
-                java.util.Iterator<javax.imageio.ImageWriter> writers = javax.imageio.ImageIO.getImageWritersByFormatName("jpg");
-                if (writers.hasNext()) {
-                    javax.imageio.ImageWriter writer = writers.next();
-                    try (javax.imageio.stream.ImageOutputStream ios = javax.imageio.ImageIO.createImageOutputStream(baos)) {
-                        writer.setOutput(ios);
-                        javax.imageio.ImageWriteParam param = writer.getDefaultWriteParam();
-                        if (param.canWriteCompressed()) {
-                            param.setCompressionMode(javax.imageio.ImageWriteParam.MODE_EXPLICIT);
-                            param.setCompressionQuality(0.82f);
-                        }
-                        writer.write(null, new javax.imageio.IIOImage(resized, null, null), param);
-                    } finally {
-                        writer.dispose();
-                    }
-                } else {
-                    javax.imageio.ImageIO.write(resized, "jpg", baos);
-                }
-            }
-
-            byte[] compressed = baos.toByteArray();
-            if (compressed.length > 0 && compressed.length < rawBytes.length) {
-                log.info("Compressed avatar image for storage: {} bytes -> {} bytes ({}% reduction)",
-                        rawBytes.length, compressed.length,
-                        Math.round((1.0 - (double) compressed.length / rawBytes.length) * 100));
-                return compressed;
-            }
-            return rawBytes;
-        } catch (Exception e) {
-            log.warn("Avatar image compression failed, preserving original: {}", e.getMessage());
-            return rawBytes;
-        }
+                            .contentType(MediaType.parseMediaType(avatar.contentType()))
+                            .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                            .body(avatar.data());
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     // ─── DELETE /api/users/{userId}/avatar ───────────────────────────────────
@@ -646,15 +471,7 @@ public class UserController {
         log.info("Received request to delete avatar for userId={}", userId);
         userSecurity.validateUserAccess(userId);
 
-        java.nio.file.Path avatarDir = getAvatarDir();
-        for (String ext : java.util.List.of(".jpg", ".png", ".webp", ".gif", ".img", ".meta")) {
-            try {
-                java.nio.file.Files.deleteIfExists(avatarDir.resolve("user_" + userId + ext));
-            } catch (Exception ex) {
-                    log.debug("Notice while removing old avatar extension {} for userId={}: {}", ext, userId, ex.getMessage());
-                }
-        }
-        userService.updateProfilePicture(userId, null);
+        userAvatarService.deleteAvatar(userId);
         return ResponseEntity.noContent().build();
     }
 }

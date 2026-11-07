@@ -18,6 +18,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
+import com.example.expensetracker.service.report.ExecutiveExcelReportGenerator;
+import com.example.expensetracker.service.report.ExecutivePdfReportGenerator;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -44,6 +47,8 @@ class RangeReportControllerTest {
     @Mock BudgetRepository budgets;
     @Mock UserService users;
     @Mock UserSecurity security;
+    @Spy ExecutiveExcelReportGenerator excelReportGenerator = new ExecutiveExcelReportGenerator();
+    @Spy ExecutivePdfReportGenerator pdfReportGenerator = new ExecutivePdfReportGenerator();
     @InjectMocks RangeReportController controller;
 
     @Test

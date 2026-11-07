@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -36,7 +36,7 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   icon,
   iconPosition = 'left',
 }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [scaleAnim] = useState(() => new Animated.Value(1));
   const reducedMotion = useReducedMotion();
   const { themeColors: c } = usePreferences();
   const isDisabled = disabled || loading;

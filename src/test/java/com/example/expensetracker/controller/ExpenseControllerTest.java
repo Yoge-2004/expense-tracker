@@ -1,23 +1,17 @@
 package com.example.expensetracker.controller;
 
-import com.example.expensetracker.model.Budget;
+import com.example.expensetracker.dto.BudgetDto;
+import com.example.expensetracker.dto.BudgetStatusDto;
+import com.example.expensetracker.dto.ExpenseDto;
 import com.example.expensetracker.model.Category;
 import com.example.expensetracker.model.Expense;
-import com.example.expensetracker.model.Income;
-import com.example.expensetracker.model.RecurringExpense;
 import com.example.expensetracker.model.User;
-import com.example.expensetracker.repository.BudgetRepository;
 import com.example.expensetracker.repository.CategoryRepository;
-import com.example.expensetracker.repository.ExpenseRepository;
-import com.example.expensetracker.repository.RecurringExpenseRepository;
 import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.JwtAuthenticationFilter;
 import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.security.UserSecurity;
-import com.example.expensetracker.service.ExpenseService;
-import com.example.expensetracker.service.ExportService;
-import com.example.expensetracker.service.ImportService;
-import com.example.expensetracker.service.UserService;
+import com.example.expensetracker.service.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,13 +25,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.*;
@@ -61,10 +51,8 @@ class ExpenseControllerTest {
     @MockitoBean ExpenseService expenseService;
     @MockitoBean UserService userService;
     @MockitoBean CategoryRepository categoryRepository;
-    @MockitoBean BudgetRepository budgetRepository;
-    @MockitoBean RecurringExpenseRepository recurringExpenseRepository;
-    @MockitoBean ExpenseRepository expenseRepository;
-    @MockitoBean com.example.expensetracker.repository.IncomeRepository incomeRepository;
+    @MockitoBean BudgetService budgetService;
+    @MockitoBean RecurringExpenseService recurringExpenseService;
     @MockitoBean ExportService exportService;
     @MockitoBean ImportService importService;
     @MockitoBean UserSecurity userSecurity;
@@ -98,72 +86,66 @@ class ExpenseControllerTest {
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(42))
-                .andExpect(jsonPath("$.amount").value(199.99))
-                .andExpect(jsonPath("$.description").value("Lunch"))
-                .andExpect(jsonPath("$.expenseDate").value("2026-09-01"))
-                .andExpect(jsonPath("$.categoryId").value(1))
-                .andExpect(jsonPath("$.categoryName").value("Food"));
+                .andExpect(jsonPath("$.categoryName").value("Food"))
+                .andExpect(jsonPath("$.amount").value(199.99));
 
         verify(userSecurity).validateUserAccess(7L);
         verify(userService).findById(7L);
-        verify(expenseService).createExpense(argThat(e ->
-                new BigDecimal("199.99").compareTo(e.getAmount()) == 0
-                        && "Lunch".equals(e.getDescription())
-                        && LocalDate.of(2026, 9, 1).equals(e.getExpenseDate())
-                        && e.getCategory() != null
-                        && Long.valueOf(1L).equals(e.getCategory().getId())), same(user));
+        verify(expenseService).createExpense(argThat(entity ->
+                new BigDecimal("199.99").compareTo(entity.getAmount()) == 0
+                        && "Lunch".equals(entity.getDescription())
+                        && LocalDate.of(2026, 9, 1).equals(entity.getExpenseDate())
+                        && entity.getCategory() != null
+                        && Long.valueOf(1L).equals(entity.getCategory().getId())
+                        && !entity.isRecurring()), same(user));
     }
 
     @Test
-    void createExpenseRejectsInvalidPayloadBeforeAccessOrService() throws Exception {
+    void createExpenseRejectsInvalidPayloadBeforeCallingService() throws Exception {
         mockMvc.perform(post("/api/expenses/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"amount":0,"description":"Invalid","expenseDate":null,"categoryId":null}
+                                {"amount":-10,"description":"Bad","expenseDate":"2026-09-01","categoryId":1}
                                 """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400));
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("amount")));
 
         verifyNoInteractions(userSecurity, userService, expenseService);
     }
 
     @Test
-    void createExpenseReturnsBadRequestWhenUserDoesNotExist() throws Exception {
-        when(userService.findById(7L)).thenReturn(Optional.empty());
-
-        mockMvc.perform(post("/api/expenses/user/7")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"amount":100,"description":"Lunch","expenseDate":"2026-09-01","categoryId":1}
-                                """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("User not found"));
-
-        verify(userSecurity).validateUserAccess(7L);
-        verify(expenseService, never()).createExpense(any(), any());
-    }
-
-    @Test
-    void getExpensesReturnsMappedUserExpenses() throws Exception {
-        Expense first = expense(10L, new BigDecimal("120.00"), "Groceries", LocalDate.of(2026, 9, 2), food);
-        Expense second = expense(11L, new BigDecimal("50.00"), "Bus", LocalDate.of(2026, 9, 3), null);
+    void getExpensesReturnsEmptyListWhenNoExpensesExist() throws Exception {
         when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(expenseService.getUserExpenses(user)).thenReturn(List.of(first, second));
+        when(expenseService.getUserExpenses(user)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/expenses/user/7"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(10))
-                .andExpect(jsonPath("$[0].categoryName").value("Food"))
-                .andExpect(jsonPath("$[1].id").value(11))
-                .andExpect(jsonPath("$[1].categoryId").doesNotExist());
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
 
         verify(userSecurity).validateUserAccess(7L);
+        verify(userService).findById(7L);
         verify(expenseService).getUserExpenses(user);
     }
 
     @Test
-    void updateExpenseLoadsCategoryAndDelegatesUpdate() throws Exception {
-        Expense updated = expense(42L, new BigDecimal("225.00"), "Lunch + dessert", LocalDate.of(2026, 9, 1), food);
+    void getExpensesMapsEntitiesSafelyWhenCategoryIsNull() throws Exception {
+        Expense expenseWithoutCategory = expense(11L, new BigDecimal("12.50"), "Vending machine",
+                LocalDate.of(2026, 9, 3), null);
+        when(userService.findById(7L)).thenReturn(Optional.of(user));
+        when(expenseService.getUserExpenses(user)).thenReturn(List.of(expenseWithoutCategory));
+
+        mockMvc.perform(get("/api/expenses/user/7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(11))
+                .andExpect(jsonPath("$[0].categoryName").value("Uncategorized"))
+                .andExpect(jsonPath("$[0].categoryId").doesNotExist());
+    }
+
+    @Test
+    void updateExpenseAppliesUpdatedFieldsAndReturnsUpdatedDto() throws Exception {
+        Expense updated = expense(42L, new BigDecimal("225.00"), "Lunch + dessert",
+                LocalDate.of(2026, 9, 1), food);
         when(userService.findById(7L)).thenReturn(Optional.of(user));
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(food));
         when(expenseService.updateExpense(eq(42L), any(Expense.class), same(user))).thenReturn(updated);
@@ -176,78 +158,49 @@ class ExpenseControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(42))
-                .andExpect(jsonPath("$.amount").value(225.00))
-                .andExpect(jsonPath("$.categoryName").value("Food"));
+                .andExpect(jsonPath("$.amount").value(225.0))
+                .andExpect(jsonPath("$.description").value("Lunch + dessert"));
 
         verify(userSecurity).validateUserAccess(7L);
-        verify(categoryRepository).findById(1L);
-        verify(expenseService).updateExpense(eq(42L), argThat(e ->
-                new BigDecimal("225.00").compareTo(e.getAmount()) == 0
-                        && "Lunch + dessert".equals(e.getDescription())
-                        && food.equals(e.getCategory())), same(user));
+        verify(expenseService).updateExpense(eq(42L), argThat(entity ->
+                new BigDecimal("225.00").compareTo(entity.getAmount()) == 0
+                        && "Lunch + dessert".equals(entity.getDescription())
+                        && food.equals(entity.getCategory())), same(user));
     }
 
     @Test
-    void updateExpenseRejectsUnknownCategoryBeforeServiceCall() throws Exception {
-        when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
+    void updateExpenseRejectsForeignCategoryBeforeCallingService() throws Exception {
+        User someoneElse = new User();
+        someoneElse.setId(99L);
+        Category foreignCategory = Category.builder().id(9L).name("Private").user(someoneElse).build();
 
-        // FIXED: previously expected 500 ("Unexpected error occurred") because the controller
-        // threw RuntimeException. Now the controller throws IllegalArgumentException("Category
-        // not found") which GlobalExceptionHandler maps to 400 BAD_REQUEST. This is the correct
-        // REST semantic — a missing category is a client error, not a server error.
+        when(userService.findById(7L)).thenReturn(Optional.of(user));
+        when(categoryRepository.findById(9L)).thenReturn(Optional.of(foreignCategory));
+
         mockMvc.perform(put("/api/expenses/42/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"amount":225.00,"description":"Lunch","expenseDate":"2026-09-01","categoryId":999}
+                                {"categoryId":9}
                                 """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Category not found"));
+                .andExpect(status().isForbidden());
 
+        verify(userSecurity).validateUserAccess(7L);
         verify(expenseService, never()).updateExpense(anyLong(), any(Expense.class), any(User.class));
     }
 
     @Test
-    void deleteExpenseValidatesAccessAndReturnsNoContent() throws Exception {
+    void deleteExpenseValidatesAccessAndDelegates() throws Exception {
         when(userService.findById(7L)).thenReturn(Optional.of(user));
 
         mockMvc.perform(delete("/api/expenses/42/user/7"))
-                .andExpect(status().isNoContent())
-                .andExpect(content().string(""));
+                .andExpect(status().isNoContent());
 
         verify(userSecurity).validateUserAccess(7L);
         verify(userService).findById(7L);
         verify(expenseService).deleteExpense(42L, user);
     }
 
-    @Test
-    void setBudgetCreatesOrUpdatesBudgetWithPeriodRules() throws Exception {
-        Budget existing = new Budget();
-        existing.setId(3L);
-        when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(food));
-        when(budgetRepository.findByUserAndCategoryId(user, 1L)).thenReturn(Optional.of(existing));
-
-        mockMvc.perform(post("/api/expenses/budget/user/7")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"categoryId":1,"limitAmount":3000,"period":"CUSTOM",
-                                 "intervalDays":14,"startDate":"2026-09-01","endDate":"2026-09-15"}
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Budget set successfully"));
-
-        verify(userSecurity).validateUserAccess(7L);
-        verify(budgetRepository).save(argThat(b ->
-                b == existing
-                        && sameUser(user, b.getUser())
-                        && food.equals(b.getCategory())
-                        && new BigDecimal("3000").compareTo(b.getLimitAmount()) == 0
-                        && "CUSTOM".equals(b.getPeriod())
-                        && Integer.valueOf(14).equals(b.getIntervalDays())
-                        && LocalDate.of(2026, 9, 1).equals(b.getStartDate())
-                        && LocalDate.of(2026, 9, 15).equals(b.getEndDate())));
-    }
+    // ─── Budget Endpoints ───────────────────────────────────────────────
 
     @Test
     void setBudgetRejectsNonPositiveLimitWithoutDatabaseLookup() throws Exception {
@@ -260,70 +213,60 @@ class ExpenseControllerTest {
                 .andExpect(jsonPath("$.error").value("Budget limit must be a positive number"));
 
         verify(userSecurity).validateUserAccess(7L);
-        verifyNoInteractions(userService, categoryRepository, budgetRepository);
+        verifyNoInteractions(budgetService);
     }
 
     @Test
-    void deleteBudgetByIdValidatesTheActualBudgetOwner() throws Exception {
-        Budget budget = new Budget();
-        budget.setId(9L);
-        budget.setUser(user);
-        when(budgetRepository.findById(9L)).thenReturn(Optional.of(budget));
+    void setBudgetDelegatesToBudgetService() throws Exception {
+        mockMvc.perform(post("/api/expenses/budget/user/7")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"categoryId":1,"limitAmount":500,"period":"MONTHLY"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Budget set successfully"));
 
+        verify(userSecurity).validateUserAccess(7L);
+        verify(budgetService).setBudget(eq(7L), any(BudgetDto.class));
+    }
+
+    @Test
+    void deleteBudgetByIdDelegatesToBudgetService() throws Exception {
         mockMvc.perform(delete("/api/expenses/budget/9"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Budget limit deleted successfully"));
 
-        verify(userSecurity).validateUserAccess(7L);
-        verify(budgetRepository).delete(budget);
+        verify(budgetService).deleteBudgetById(9L);
     }
 
     @Test
-    void deleteBudgetByIdMissingBudgetReturns404() throws Exception {
-        // FIXED: previously a missing budget returned 200 OK (silent no-op), which allowed
-        // authenticated users to enumerate which budget IDs existed (403 vs 200). Now we
-        // throw NoSuchElementException -> 404 NOT_FOUND, matching REST conventions.
-        when(budgetRepository.findById(404L)).thenReturn(Optional.empty());
+    void deleteBudgetByIdPropagatesNoSuchElementException() throws Exception {
+        doThrow(new NoSuchElementException("Budget not found with id=404"))
+                .when(budgetService).deleteBudgetById(404L);
 
         mockMvc.perform(delete("/api/expenses/budget/404"))
                 .andExpect(status().isNotFound());
 
-        verifyNoInteractions(userSecurity);
-        verify(budgetRepository, never()).delete(any(Budget.class));
+        verify(budgetService).deleteBudgetById(404L);
     }
 
     @Test
-    void deleteBudgetByCategoryVerifiesUserAndRepositoryScope() throws Exception {
-        when(userService.findById(7L)).thenReturn(Optional.of(user));
-
+    void deleteBudgetByCategoryDelegatesToBudgetService() throws Exception {
         mockMvc.perform(delete("/api/expenses/budget/user/7/category/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Budget limit deleted successfully"));
 
         verify(userSecurity).validateUserAccess(7L);
-        verify(userService).findById(7L);
-        verify(budgetRepository).deleteByUserAndCategoryId(user, 1L);
+        verify(budgetService).deleteBudgetByCategory(7L, 1L);
     }
 
     @Test
-    void getBudgetStatusCalculatesSpentAmountAndPercentage() throws Exception {
-        Budget budget = new Budget();
-        budget.setId(3L);
-        budget.setUser(user);
-        budget.setCategory(food);
-        budget.setLimitAmount(new BigDecimal("1000"));
-        budget.setPeriod("MONTHLY");
-
-        Expense a = expense(1L, new BigDecimal("250"), "A", LocalDate.of(2026, 9, 2), food);
-        Expense b = expense(2L, new BigDecimal("100"), "B", LocalDate.of(2026, 9, 4), food);
-        Category otherCategory = new Category();
-        otherCategory.setId(2L);
-        Expense other = expense(3L, new BigDecimal("900"), "Other", LocalDate.of(2026, 9, 4), otherCategory);
-
-        when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(budgetRepository.findByUser(user)).thenReturn(List.of(budget));
-        when(expenseRepository.findByUserAndExpenseDateBetween(eq(user), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(List.of(a, b, other));
+    void getBudgetStatusDelegatesToBudgetService() throws Exception {
+        BudgetStatusDto statusDto = new BudgetStatusDto(
+                3L, 1L, "Food", new BigDecimal("1000"), new BigDecimal("350"),
+                35.0, "MONTHLY", null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)
+        );
+        when(budgetService.getBudgetStatus(7L)).thenReturn(List.of(statusDto));
 
         mockMvc.perform(get("/api/expenses/budget/status/user/7"))
                 .andExpect(status().isOk())
@@ -333,89 +276,15 @@ class ExpenseControllerTest {
                 .andExpect(jsonPath("$[0].spent").value(350))
                 .andExpect(jsonPath("$[0].percentage").value(35.0))
                 .andExpect(jsonPath("$[0].period").value("MONTHLY"));
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(budgetService).getBudgetStatus(7L);
     }
+
+    // ─── Recurring Endpoints ────────────────────────────────────────────
 
     @Test
-    void getBudgetStatusSubtractsMoneyHandedBackForThatCategory() throws Exception {
-        Budget budget = new Budget();
-        budget.setId(3L);
-        budget.setUser(user);
-        budget.setCategory(food);
-        budget.setLimitAmount(new BigDecimal("1000"));
-        budget.setPeriod("MONTHLY");
-
-        Expense a = expense(1L, new BigDecimal("250"), "A", LocalDate.of(2026, 9, 2), food);
-        Expense b = expense(2L, new BigDecimal("100"), "B", LocalDate.of(2026, 9, 4), food);
-
-        // A friend paid back 100 of a Food bill: it reduces the Food budget's spend...
-        Income foodRefund = refund("100", food.getId());
-        // ...while money returned for another category does not.
-        Income otherRefund = refund("50", 99L);
-        // And plain income is never subtracted.
-        Income salary = new Income();
-        salary.setAmount(new BigDecimal("5000"));
-        salary.setSource("Salary");
-        salary.setIncomeDate(LocalDate.now());
-
-        when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(budgetRepository.findByUser(user)).thenReturn(List.of(budget));
-        when(expenseRepository.findByUserAndExpenseDateBetween(eq(user), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(List.of(a, b));
-        when(incomeRepository.findByUserAndIncomeDateBetween(eq(user), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(List.of(foodRefund, otherRefund, salary));
-
-        mockMvc.perform(get("/api/expenses/budget/status/user/7"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].spent").value(250))
-                .andExpect(jsonPath("$[0].percentage").value(25.0));
-    }
-
-    private Income refund(String amount, Long categoryId) {
-        Income income = new Income();
-        income.setAmount(new BigDecimal(amount));
-        income.setSource("Dinner split");
-        income.setKind("REIMBURSEMENT");
-        income.setReimbursedCategoryId(categoryId);
-        income.setIncomeDate(LocalDate.now());
-        return income;
-    }
-
-    @Test
-    void getBudgetStatusSupportsCustomPeriod() throws Exception {
-        Budget budget = new Budget();
-        budget.setId(4L);
-        budget.setUser(user);
-        budget.setCategory(food);
-        budget.setLimitAmount(new BigDecimal("500"));
-        budget.setPeriod("CUSTOM");
-        budget.setStartDate(LocalDate.of(2026, 9, 1));
-        budget.setEndDate(LocalDate.of(2026, 9, 10));
-
-        when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(budgetRepository.findByUser(user)).thenReturn(List.of(budget));
-        when(expenseRepository.findByUserAndExpenseDateBetween(eq(user),
-                eq(LocalDate.of(2026, 9, 1)), eq(LocalDate.of(2026, 9, 10))))
-                .thenReturn(List.of(expense(5L, new BigDecimal("125"), "A", LocalDate.of(2026, 9, 3), food)));
-
-        mockMvc.perform(get("/api/expenses/budget/status/user/7"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].spent").value(125))
-                .andExpect(jsonPath("$[0].percentage").value(25.0))
-                .andExpect(jsonPath("$[0].startDate").value("2026-09-01"))
-                .andExpect(jsonPath("$[0].endDate").value("2026-09-10"));
-    }
-
-    @Test
-    void addRecurringCreatesScheduleAndFirstExpense() throws Exception {
-        when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(food));
-        when(recurringExpenseRepository.save(any(RecurringExpense.class)))
-                .thenAnswer(invocation -> {
-                    RecurringExpense rec = invocation.getArgument(0);
-                    rec.setId(8L);
-                    return rec;
-                });
-
+    void addRecurringDelegatesToRecurringExpenseService() throws Exception {
         mockMvc.perform(post("/api/expenses/recurring/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -425,25 +294,14 @@ class ExpenseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Recurring Expense Setup Successfully"));
 
-        verify(recurringExpenseRepository).save(argThat(rec ->
-                new BigDecimal("649").compareTo(rec.getAmount()) == 0
-                        && "Netflix".equals(rec.getDescription())
-                        && "MONTHLY".equals(rec.getFrequency())
-                        && LocalDate.of(2026, 10, 1).equals(rec.getNextDueDate())
-                        && rec.getIntervalDays() == null
-                        && food.equals(rec.getCategory())
-                        && user.equals(rec.getUser())));
-        verify(expenseService).createExpense(argThat(first ->
-                new BigDecimal("649").compareTo(first.getAmount()) == 0
-                        && "Netflix".equals(first.getDescription())
-                        && LocalDate.of(2026, 9, 1).equals(first.getExpenseDate())
-                        && food.equals(first.getCategory())), same(user));
+        verify(userSecurity).validateUserAccess(7L);
+        verify(recurringExpenseService).createRecurringExpense(eq(7L), any(ExpenseDto.class));
     }
 
     @Test
-    void addRecurringRejectsInvalidCustomIntervalBeforeSaving() throws Exception {
-        when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(food));
+    void addRecurringPropagatesBadRequest() throws Exception {
+        doThrow(new IllegalArgumentException("Custom frequency requires a positive interval in days"))
+                .when(recurringExpenseService).createRecurringExpense(eq(7L), any(ExpenseDto.class));
 
         mockMvc.perform(post("/api/expenses/recurring/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -454,33 +312,27 @@ class ExpenseControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Custom frequency requires a positive interval in days"));
 
-        verify(recurringExpenseRepository, never()).save(any(RecurringExpense.class));
-        verify(expenseService, never()).createExpense(any(Expense.class), any(User.class));
+        verify(userSecurity).validateUserAccess(7L);
     }
 
     @Test
-    void getUserSubscriptionsMapsCategoryAndNullCategorySafely() throws Exception {
-        RecurringExpense first = recurring(3L, new BigDecimal("649"), "Netflix",
-                LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
-        RecurringExpense second = recurring(4L, new BigDecimal("119"), "Spotify",
-                LocalDate.of(2026, 10, 5), "MONTHLY", null, user);
-        when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(recurringExpenseRepository.findByUser(user)).thenReturn(List.of(first, second));
+    void getUserSubscriptionsDelegatesToRecurringExpenseService() throws Exception {
+        Map<String, Object> sub1 = Map.of("id", 3L, "description", "Netflix", "categoryName", "Food");
+        Map<String, Object> sub2 = Map.of("id", 4L, "description", "Spotify", "categoryName", "Uncategorized");
+        when(recurringExpenseService.getUserSubscriptions(7L)).thenReturn(List.of(sub1, sub2));
 
         mockMvc.perform(get("/api/expenses/recurring/user/7"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(3))
                 .andExpect(jsonPath("$[0].categoryName").value("Food"))
-                .andExpect(jsonPath("$[1].categoryName").value("Uncategorized"))
-                .andExpect(jsonPath("$[1].categoryId").doesNotExist());
+                .andExpect(jsonPath("$[1].categoryName").value("Uncategorized"));
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(recurringExpenseService).getUserSubscriptions(7L);
     }
 
     @Test
-    void updateSubscriptionOnlyChangesFieldsThatArePresentAndValidatesOwner() throws Exception {
-        RecurringExpense rec = recurring(9L, new BigDecimal("649"), "Netflix",
-                LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
-        when(recurringExpenseRepository.findById(9L)).thenReturn(Optional.of(rec));
-
+    void updateSubscriptionDelegatesToRecurringExpenseService() throws Exception {
         mockMvc.perform(put("/api/expenses/recurring/9/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -490,65 +342,20 @@ class ExpenseControllerTest {
                 .andExpect(jsonPath("$.message").value("Subscription updated successfully"));
 
         verify(userSecurity).validateUserAccess(7L);
-        verify(recurringExpenseRepository).save(argThat(updated ->
-                new BigDecimal("799").compareTo(updated.getAmount()) == 0
-                        && "Netflix 4K".equals(updated.getDescription())
-                        && LocalDate.of(2026, 11, 1).equals(updated.getNextDueDate())
-                        && "MONTHLY".equals(updated.getFrequency())));
+        verify(recurringExpenseService).updateSubscription(eq(9L), anyMap());
     }
 
     @Test
-    void updateSubscriptionChangesCategoryAndValidatesOwnership() throws Exception {
-        RecurringExpense rec = recurring(9L, new BigDecimal("649"), "Netflix",
-                LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
-        Category utilities = Category.builder().id(2L).name("Utilities").user(user).build();
-        when(recurringExpenseRepository.findById(9L)).thenReturn(Optional.of(rec));
-        when(categoryRepository.findById(2L)).thenReturn(Optional.of(utilities));
-
-        mockMvc.perform(put("/api/expenses/recurring/9/user/7")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"categoryId\":2}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Subscription updated successfully"));
-
-        verify(recurringExpenseRepository).save(argThat(updated ->
-                updated.getCategory() != null && Long.valueOf(2L).equals(updated.getCategory().getId())));
-    }
-
-    @Test
-    void updateSubscriptionRejectsInvalidCustomInterval() throws Exception {
-        RecurringExpense rec = recurring(9L, new BigDecimal("649"), "Netflix",
-                LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
-        when(recurringExpenseRepository.findById(9L)).thenReturn(Optional.of(rec));
-
-        mockMvc.perform(put("/api/expenses/recurring/9")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"frequency":"CUSTOM","intervalDays":0}
-                                """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Custom frequency requires a positive interval in days"));
-
-        verify(recurringExpenseRepository, never()).save(any(RecurringExpense.class));
-    }
-
-    @Test
-    void deleteSubscriptionValidatesExistingOwnerAndDeletesEntity() throws Exception {
-        // FIXED: previously called deleteById(recId) which (a) didn't validate ownership for
-        // missing IDs (returned 200 OK with no error) and (b) threw EmptyResultDataAccessException
-        // -> 500 if the ID didn't exist. Now we findById + validateUserAccess + delete(entity),
-        // which gives correct 400 BAD_REQUEST for missing IDs and 403 for ownership mismatch.
-        RecurringExpense rec = recurring(12L, new BigDecimal("119"), "Spotify",
-                LocalDate.of(2026, 10, 5), "MONTHLY", food, user);
-        when(recurringExpenseRepository.findById(12L)).thenReturn(Optional.of(rec));
-
+    void deleteSubscriptionDelegatesToRecurringExpenseService() throws Exception {
         mockMvc.perform(delete("/api/expenses/recurring/12/user/7"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Subscription cancelled successfully"));
 
         verify(userSecurity).validateUserAccess(7L);
-        verify(recurringExpenseRepository).delete(rec);
+        verify(recurringExpenseService).deleteSubscription(12L);
     }
+
+    // ─── Export & Import Endpoints ──────────────────────────────────────
 
     @Test
     void exportCsvReturnsAttachmentAndDelegates() throws Exception {
@@ -559,9 +366,6 @@ class ExpenseControllerTest {
         mockMvc.perform(get("/api/expenses/user/7/export/csv"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", "attachment; filename=\"expenses.csv\""))
-                // FIXED: use contentTypeCompatibleWith so the assertion is charset-agnostic.
-                // The controller now correctly sends "text/csv;charset=UTF-8" (per RFC 4180,
-                // without charset the default is ISO-8859-1 which corrupts non-ASCII text).
                 .andExpect(content().contentTypeCompatibleWith("text/csv"))
                 .andExpect(content().bytes(csv));
 
@@ -675,23 +479,5 @@ class ExpenseControllerTest {
         expense.setExpenseDate(date);
         expense.setCategory(category);
         return expense;
-    }
-
-    private static RecurringExpense recurring(Long id, BigDecimal amount, String description,
-                                               LocalDate nextDueDate, String frequency,
-                                               Category category, User user) {
-        RecurringExpense recurring = new RecurringExpense();
-        recurring.setId(id);
-        recurring.setAmount(amount);
-        recurring.setDescription(description);
-        recurring.setNextDueDate(nextDueDate);
-        recurring.setFrequency(frequency);
-        recurring.setCategory(category);
-        recurring.setUser(user);
-        return recurring;
-    }
-
-    private static boolean sameUser(User expected, User actual) {
-        return expected == actual;
     }
 }

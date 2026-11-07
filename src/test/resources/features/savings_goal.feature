@@ -32,6 +32,23 @@ Feature: Savings Goal Management
     And the savings goal should have current amount 550.00
     And the savings goal status should be "COMPLETED"
 
+  Scenario: Deposit with non-positive amount fails
+    Given I have a savings goal named "Car Fund" with target amount 5000.00 and current amount 100.00
+    When I deposit -50.00 towards my savings goal
+    Then the response status should be 400
+
+  Scenario: User cannot deposit to another user's savings goal via IDOR tampering
+    Given another user "othergoaluser@test.com" has a savings goal named "Other Person Goal" with target 1000.00
+    When I try to deposit 100.00 to that foreign savings goal
+    Then the response status should be 400
+    And the response message should contain "Savings goal does not belong to this user"
+
+  Scenario: User cannot delete another user's savings goal via IDOR tampering
+    Given another user "othergoaluser@test.com" has a savings goal named "Other Person Goal" with target 1000.00
+    When I try to delete that foreign savings goal
+    Then the response status should be 400
+    And the response message should contain "Savings goal does not belong to this user"
+
   Scenario: Delete a savings goal
     Given I have a savings goal named "Old Goal" with target amount 500.00 and current amount 0.00
     When I delete that savings goal

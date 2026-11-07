@@ -17,6 +17,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Step definitions for the expense management feature.
@@ -33,7 +34,6 @@ public class ExpenseSteps {
 
     @Given("I am logged in as user {string} with password {string}")
     public void loggedInAs(String email, String password) throws Exception {
-        // Register the user (ignore 400 if already exists from a prior scenario)
         Map<String, Object> regBody = new LinkedHashMap<>();
         regBody.put("name", "Test User");
         regBody.put("username", "testuser_" + System.currentTimeMillis());
@@ -41,12 +41,16 @@ public class ExpenseSteps {
         regBody.put("password", password);
         regBody.put("currency", "INR");
 
-        try {
-            mockMvc.perform(post("/api/auth/register")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(regBody)))
-                    .andReturn();
-        } catch (Exception ignored) { }
+        MvcResult regResult = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(regBody)))
+                .andReturn();
+
+        if (regResult.getResponse().getStatus() != 201 && regResult.getResponse().getStatus() != 400) {
+            throw new IllegalStateException("Registration failed in step: status="
+                    + regResult.getResponse().getStatus() + " body="
+                    + regResult.getResponse().getContentAsString());
+        }
 
         // Log in to get a JWT token
         Map<String, Object> loginBody = new LinkedHashMap<>();
@@ -58,8 +62,6 @@ public class ExpenseSteps {
                         .content(objectMapper.writeValueAsString(loginBody)))
                 .andReturn();
 
-        // Guard against login failure — if the token is missing, subsequent steps will fail
-        // with a clear message rather than an NPE.
         if (result.getResponse().getStatus() != 200) {
             throw new IllegalStateException("Login failed in Background step: status="
                     + result.getResponse().getStatus() + " body="
@@ -85,7 +87,6 @@ public class ExpenseSteps {
                         .content(objectMapper.writeValueAsString(body)))
                 .andReturn();
 
-        // CategoryController returns 201 CREATED on success, 409 CONFLICT if duplicate.
         int status = result.getResponse().getStatus();
         if (status == 201) {
             JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
@@ -124,7 +125,6 @@ public class ExpenseSteps {
                 .andReturn();
 
         ctx.lastResponse = result;
-        // ExpenseController returns 201 CREATED on success
         if (result.getResponse().getStatus() == 201) {
             JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
             ctx.expenseId = json.has("id") ? json.get("id").asLong() : null;
@@ -213,7 +213,6 @@ public class ExpenseSteps {
 
     @Then("the expense should no longer exist")
     public void verifyExpenseDeleted() throws Exception {
-        // Attempt to fetch the deleted expense's list and confirm it's not there.
         MvcResult result = mockMvc.perform(get("/api/expenses/user/" + ctx.userId)
                         .header("Authorization", "Bearer " + ctx.authToken))
                 .andReturn();
@@ -225,24 +224,118 @@ public class ExpenseSteps {
         }
     }
 
-    @Given("another user has an expense with id {int}")
-    public void anotherUserHasExpense(int expenseId) {
-        // No-op: just record the ID. The next step will try to update it and expect 403.
-        ctx.expenseId = (long) expenseId;
+    @Given("another user {string} has an expense with amount {double} and description {string}")
+    public void anotherUserHasExpense(String otherEmail, double amount, String description) throws Exception {
+        String currentUserToken = ctx.authToken;
+        Long currentUserId = ctx.userId;
+
+        // Register other user
+        Map<String, Object> regBody = Map.of(
+                "name", "Other Person",
+                "username", "other_" + System.currentTimeMillis(),
+                "email", otherEmail,
+                "password", "OtherPass123!",
+                "currency", "INR"
+        );
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(regBody)))
+                .andExpect(status().isCreated());
+
+        // Login as other user
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("email", otherEmail, "password", "OtherPass123!"))))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode loginJson = objectMapper.readTree(loginResult.getResponse().getContentAsString());
+        String otherToken = loginJson.get("token").asText();
+        Long otherUserId = loginJson.get("userId").asLong();
+
+        // Other user creates category
+        MvcResult catResult = mockMvc.perform(post("/api/categories/user/" + otherUserId)
+                .header("Authorization", "Bearer " + otherToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("name", "Other Category"))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long otherCatId = objectMapper.readTree(catResult.getResponse().getContentAsString()).get("id").asLong();
+
+        // Other user creates expense
+        Map<String, Object> expBody = Map.of(
+                "amount", BigDecimal.valueOf(amount),
+                "description", description,
+                "expenseDate", "2026-09-10",
+                "categoryId", otherCatId
+        );
+        MvcResult expResult = mockMvc.perform(post("/api/expenses/user/" + otherUserId)
+                .header("Authorization", "Bearer " + otherToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(expBody)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long otherExpenseId = objectMapper.readTree(expResult.getResponse().getContentAsString()).get("id").asLong();
+
+        // Store foreign IDs and restore test user's active session
+        ctx.foreignUserId = otherUserId;
+        ctx.foreignExpenseId = otherExpenseId;
+        ctx.foreignCategoryId = otherCatId;
+        ctx.authToken = currentUserToken;
+        ctx.userId = currentUserId;
     }
 
-    @When("I try to update expense {int}")
-    public void tryUpdateForeignExpense(int expenseId) throws Exception {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("amount", BigDecimal.valueOf(999));
-        body.put("description", "Hijack attempt");
-        body.put("expenseDate", "2026-09-10");
-        body.put("categoryId", 1);
+    @When("I try to update that foreign expense")
+    public void tryUpdateForeignExpense() throws Exception {
+        assertNotNull(ctx.foreignExpenseId, "No foreign expense present to test IDOR update");
+        Map<String, Object> body = Map.of(
+                "amount", BigDecimal.valueOf(999.00),
+                "description", "Tampered Description",
+                "expenseDate", "2026-09-10"
+        );
 
-        MvcResult result = mockMvc.perform(put("/api/expenses/" + expenseId + "/user/" + ctx.userId)
+        MvcResult result = mockMvc.perform(put("/api/expenses/" + ctx.foreignExpenseId + "/user/" + ctx.userId)
                         .header("Authorization", "Bearer " + ctx.authToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
+                .andReturn();
+        ctx.lastResponse = result;
+    }
+
+    @When("I try to delete that foreign expense")
+    public void tryDeleteForeignExpense() throws Exception {
+        assertNotNull(ctx.foreignExpenseId, "No foreign expense present to test IDOR deletion");
+        MvcResult result = mockMvc.perform(delete("/api/expenses/" + ctx.foreignExpenseId + "/user/" + ctx.userId)
+                        .header("Authorization", "Bearer " + ctx.authToken))
+                .andReturn();
+        ctx.lastResponse = result;
+    }
+
+    @When("I try to update that foreign expense using their user id")
+    public void tryUpdateForeignExpenseDirect() throws Exception {
+        assertNotNull(ctx.foreignExpenseId, "No foreign expense present");
+        assertNotNull(ctx.foreignUserId, "No foreign user ID present");
+        Map<String, Object> body = Map.of(
+                "amount", BigDecimal.valueOf(999.00),
+                "description", "Direct Tampering",
+                "expenseDate", "2026-09-10"
+        );
+
+        MvcResult result = mockMvc.perform(put("/api/expenses/" + ctx.foreignExpenseId + "/user/" + ctx.foreignUserId)
+                        .header("Authorization", "Bearer " + ctx.authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andReturn();
+        ctx.lastResponse = result;
+    }
+
+    @When("I try to delete that foreign expense using their user id")
+    public void tryDeleteForeignExpenseDirect() throws Exception {
+        assertNotNull(ctx.foreignExpenseId, "No foreign expense present");
+        assertNotNull(ctx.foreignUserId, "No foreign user ID present");
+
+        MvcResult result = mockMvc.perform(delete("/api/expenses/" + ctx.foreignExpenseId + "/user/" + ctx.foreignUserId)
+                        .header("Authorization", "Bearer " + ctx.authToken))
                 .andReturn();
         ctx.lastResponse = result;
     }

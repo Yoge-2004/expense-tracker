@@ -23,7 +23,7 @@ Feature: Expense Management
     Given I have 3 expenses
     When I request all expenses for my user
     Then the response status should be 200
-    And the response should contain at least 3 expenses
+    And the response should contain 3 expenses
 
   Scenario: Update an existing expense
     Given I have an expense with amount 100.00 and description "Old description"
@@ -38,10 +38,27 @@ Feature: Expense Management
     Then the response status should be 204
     And the expense should no longer exist
 
-  Scenario: Cannot update another user's expense
-    Given another user has an expense with id 999
-    When I try to update expense 999
+  Scenario: Cannot update another user's expense via IDOR tampering
+    Given another user "victim@test.com" has an expense with amount 250.00 and description "Confidential"
+    When I try to update that foreign expense
+    Then the response status should be 403
+    And the response message should contain "Expense does not belong to this user"
+
+  Scenario: Cannot delete another user's expense via IDOR tampering
+    Given another user "victim@test.com" has an expense with amount 250.00 and description "Confidential"
+    When I try to delete that foreign expense
     Then the response status should be 400
+    And the response message should contain "Expense does not belong to this user"
+
+  Scenario: Direct cross-tenant access to another user's expense is rejected with 403 Forbidden
+    Given another user "victim@test.com" has an expense with amount 250.00 and description "Confidential"
+    When I try to update that foreign expense using their user id
+    Then the response status should be 403
+
+  Scenario: Direct cross-tenant deletion of another user's expense is rejected with 403 Forbidden
+    Given another user "victim@test.com" has an expense with amount 250.00 and description "Confidential"
+    When I try to delete that foreign expense using their user id
+    Then the response status should be 403
 
   Scenario: Setting a budget for a category
     Given the category "Entertainment" exists for my user

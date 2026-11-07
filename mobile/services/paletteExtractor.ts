@@ -335,9 +335,7 @@ export function quantizePixels(
   const hueBins = Array.from({ length: HUE_SECTORS }, () => ({
     rSum: 0, gSum: 0, bSum: 0, wSum: 0, count: 0, hSum: 0, sSum: 0, lSum: 0
   }));
-  let neutralCount = 0;
-
-  const totalPixels = Math.floor(data.length / 4);
+    const totalPixels = Math.floor(data.length / 4);
   const step = Math.max(1, Math.floor(totalPixels / 3000)) * 4;
 
   for (let i = 0; i < data.length; i += step) {
@@ -346,7 +344,6 @@ export function quantizePixels(
 
     const hsl = rgbToHsl(r, g, b);
     if (hsl.l < 0.08 || hsl.l > 0.94 || hsl.s < 0.10) {
-      neutralCount++;
       continue;
     }
 
@@ -533,7 +530,6 @@ export async function extractPaletteFromImageUri(
 
     const bytes = decodeBase64ToUint8(base64);
     // Dynamic require so bundle size remains ultra-compact
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const jpeg = require('jpeg-js');
     const rawImage = jpeg.decode(bytes, { useTArray: true, maxMemoryUsageInMB: 64 });
 

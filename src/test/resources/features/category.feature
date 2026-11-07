@@ -45,3 +45,9 @@ Feature: Category Management
     And I have an expense of 45.50 under category "Groceries Custom"
     When I delete that category
     Then the response status should be 409
+
+  Scenario: User cannot delete another user's personal category via IDOR tampering
+    Given another user "othercatuser@test.com" has a category named "Private Category"
+    When I try to delete that foreign category
+    Then the response status should be 400
+    And the response message should contain "Category not found"

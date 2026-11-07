@@ -194,4 +194,13 @@ public class CategorySteps {
         JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
         ctx.expenseId = json.get("id").asLong();
     }
+
+    @When("I try to delete that foreign category")
+    public void tryDeleteForeignCategory() throws Exception {
+        assertNotNull(ctx.foreignCategoryId, "No foreign category present");
+        MvcResult result = mockMvc.perform(delete("/api/categories/" + ctx.foreignCategoryId + "/user/" + ctx.userId)
+                        .header("Authorization", "Bearer " + ctx.authToken))
+                .andReturn();
+        ctx.lastResponse = result;
+    }
 }

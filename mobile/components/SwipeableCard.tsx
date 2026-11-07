@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Animated,
   PanResponder,
@@ -34,12 +34,11 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
   editColor,
   deleteColor,
 }) => {
-  const {theme, themeColors} = useAuth();
+  const { theme, themeColors } = useAuth();
   const c = themeColors || Colors[theme];
   const isLight = theme === 'light';
 
-  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const isSwiping = useRef(false);
+  const [pan] = useState(() => new Animated.ValueXY({ x: 0, y: 0 }));
 
   const resolvedEditBg = editColor || c.primary;
   const resolvedEditColor = c.onPrimary;
@@ -47,47 +46,41 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
   const resolvedDeleteColor = '#FFFFFF';
   const troughBg = c.surfaceHover;
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, g) => {
-        return Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5;
-      },
-      onPanResponderGrant: () => {
-        isSwiping.current = true;
-      },
-      onPanResponderMove: (_, g) => {
-        const minX = onDelete ? -110 : 0;
-        const maxX = onEdit ? 110 : 0;
-        const clampedX = Math.max(minX, Math.min(maxX, g.dx));
-        pan.setValue({ x: clampedX, y: 0 });
-      },
-      onPanResponderRelease: (_, g) => {
-        if (onDelete && g.dx < -70) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-          Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 50, useNativeDriver: true }).start(() => {
-            isSwiping.current = false;
-            onDelete();
-          });
-        } else if (onEdit && g.dx > 70) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-          Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 50, useNativeDriver: true }).start(() => {
-            isSwiping.current = false;
-            onEdit();
-          });
-        } else {
-          Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 60, useNativeDriver: true }).start(() => {
-            isSwiping.current = false;
-          });
-        }
-      },
-      onPanResponderTerminate: () => {
-        Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 60, useNativeDriver: true }).start(() => {
-          isSwiping.current = false;
-        });
-      },
-    })
-  ).current;
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, g) => {
+          return Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5;
+        },
+        onPanResponderGrant: () => {},
+        onPanResponderMove: (_, g) => {
+          const minX = onDelete ? -110 : 0;
+          const maxX = onEdit ? 110 : 0;
+          const clampedX = Math.max(minX, Math.min(maxX, g.dx));
+          pan.setValue({ x: clampedX, y: 0 });
+        },
+        onPanResponderRelease: (_, g) => {
+          if (onDelete && g.dx < -70) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+            Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 50, useNativeDriver: true }).start(() => {
+              onDelete();
+            });
+          } else if (onEdit && g.dx > 70) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 50, useNativeDriver: true }).start(() => {
+              onEdit();
+            });
+          } else {
+            Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 60, useNativeDriver: true }).start();
+          }
+        },
+        onPanResponderTerminate: () => {
+          Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 60, useNativeDriver: true }).start();
+        },
+      }),
+    [onDelete, onEdit, pan]
+  );
 
   const bgOpacity = pan.x.interpolate({
     inputRange: [-50, -10, 0, 10, 50],
@@ -147,49 +140,39 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
 const styles = StyleSheet.create({
   wrapper: {
     position: 'relative',
-    borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 10,
+    borderRadius: 16,
+    marginBottom: 8,
   },
   background: {
     ...StyleSheet.absoluteFill,
-    borderRadius: 16,
-    borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 16,
   },
   actionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 9,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.16,
-    shadowRadius: 3,
-    elevation: 2,
   },
   actionRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 9,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.16,
-    shadowRadius: 3,
-    elevation: 2,
+    marginLeft: 'auto',
   },
   actionText: {
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
 });

@@ -4,6 +4,7 @@ import com.example.expensetracker.dto.MonthlyReportDto;
 import com.example.expensetracker.exception.EmailDeliveryException;
 import com.example.expensetracker.model.*;
 import com.example.expensetracker.repository.*;
+import com.example.expensetracker.service.report.MonthlyHtmlReportGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -66,7 +67,8 @@ class MonthlyReportServiceImplTest {
                 savingsGoalRepository,
                 budgetRepository,
                 reportLogRepository,
-                mailSenderProvider
+                mailSenderProvider,
+                new MonthlyHtmlReportGenerator()
         );
 
         testUser = new User();

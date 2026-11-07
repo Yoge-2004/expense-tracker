@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Animated, ViewStyle, StyleProp } from 'react-native';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 
@@ -21,9 +21,9 @@ export const StaggeredView: React.FC<StaggeredViewProps> = ({
 }) => {
   const reducedMotion = useReducedMotion();
   const initialTranslate = getInitialTranslate(direction);
-  const fadeAnim = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;
-  const translateAnim = useRef(new Animated.Value(reducedMotion ? 0 : initialTranslate)).current;
-  const scaleAnim = useRef(new Animated.Value(reducedMotion || !scale ? 1 : 0.94)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(reducedMotion ? 1 : 0));
+  const [translateAnim] = useState(() => new Animated.Value(reducedMotion ? 0 : initialTranslate));
+  const [scaleAnim] = useState(() => new Animated.Value(reducedMotion || !scale ? 1 : 0.94));
 
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -72,10 +72,15 @@ export const StaggeredView: React.FC<StaggeredViewProps> = ({
 
 function getInitialTranslate(direction: 'up' | 'down' | 'left' | 'right'): number {
   switch (direction) {
-    case 'up': return 24;
-    case 'down': return -24;
-    case 'left': return 24;
-    case 'right': return -24;
-    default: return 24;
+    case 'up':
+      return 24;
+    case 'down':
+      return -24;
+    case 'left':
+      return 24;
+    case 'right':
+      return -24;
+    default:
+      return 24;
   }
 }

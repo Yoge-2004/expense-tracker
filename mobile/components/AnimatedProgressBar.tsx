@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Animated, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useAuth } from '../context/AuthContext';
@@ -21,7 +21,7 @@ export const AnimatedProgressBar: React.FC<AnimatedProgressBarProps> = ({
 }) => {
   const { theme, themeColors } = useAuth();
   const c = themeColors || Colors[theme];
-  const animatedWidth = useRef(new Animated.Value(0)).current;
+  const [animatedWidth] = useState(() => new Animated.Value(0));
   const reducedMotion = useReducedMotion();
   const numericProgress = Number(progress);
   const clampedProgress = Number.isFinite(numericProgress) ? Math.min(Math.max(numericProgress, 0), 100) : 0;

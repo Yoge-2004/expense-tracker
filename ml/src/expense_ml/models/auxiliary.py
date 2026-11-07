@@ -227,7 +227,7 @@ class SpendingForecastModel:
         if len(daily) < holdout_days + 35:
             raise ValueError("Spending forecast needs at least 63 daily observations.")
         work = daily.copy()
-        work["dow"] = work.index.dayofweek
+        work["dow"] = work.index.day_of_week
         work["day"] = work.index.day
         work["month"] = work.index.month
         work["lag_1"] = work["amount"].shift(1)
@@ -269,7 +269,7 @@ class SpendingForecastModel:
             roll_7 = float(amounts.iloc[-7:].mean())
             roll_28 = float(amounts.iloc[-28:].mean())
             row = pd.DataFrame([{
-                "dow": next_date.dayofweek,
+                "dow": next_date.day_of_week,
                 "day": next_date.day,
                 "month": next_date.month,
                 "lag_1": lag_1,

@@ -46,13 +46,13 @@
         <cucumber.version>8.0.4</cucumber.version>
         <rest-assured.version>6.3.0</rest-assured.version>
         <groovy.version>6.0.0</groovy.version>
-        <playwright.version>1.64.0</playwright.version>
         <sonar-maven-plugin.version>5.8.0.7211</sonar-maven-plugin.version>
         <sonar.projectKey>expense-tracker</sonar.projectKey>
         <sonar.projectName>Expense Tracker System</sonar.projectName>
         <logback.version>1.6.6</logback.version>
         <json-smart.version>2.6.1</json-smart.version>
         <asm.version>9.11.1</asm.version>
+        <org-json.version>20250107</org-json.version>
     </properties>
 
     <dependencies>
@@ -84,6 +84,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
         <!-- JWT Authentication -->
@@ -178,6 +182,12 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>${org-json.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
@@ -242,13 +252,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Testing: Modern Browser Automation (Microsoft Playwright) -->
-        <dependency>
-            <groupId>com.microsoft.playwright</groupId>
-            <artifactId>playwright</artifactId>
-            <version>${playwright.version}</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>

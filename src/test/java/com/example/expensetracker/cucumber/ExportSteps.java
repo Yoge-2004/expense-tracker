@@ -1,35 +1,81 @@
 package com.example.expensetracker.cucumber;
 
 import com.example.expensetracker.cucumber.CucumberSpringConfig.TestContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Step definitions for the financial report export feature.
  *
  * <p>These steps exercise the CSV, Excel, and PDF export endpoints and verify the
- * response content type, content disposition header, and basic payload structure.</p>
+ * response content type, content disposition header, and actual transaction contents.</p>
  */
 @SuppressWarnings("unused")
 public class ExportSteps {
 
     @Autowired private MockMvc mockMvc;
+    @Autowired private ObjectMapper objectMapper;
     @Autowired private TestContext ctx;
 
     @Given("I have expenses and incomes recorded")
-    public void haveExpensesAndIncomes() {
-        // The background step "I am logged in" already created a user. We rely on
-        // DataInitializer or the test's own data. For a robust test, we just ensure
-        // the user exists — the export endpoints handle empty data gracefully.
-        assertNotNull(ctx.userId, "Must be logged in before exporting");
-        assertNotNull(ctx.authToken, "Must have an auth token before exporting");
+    public void haveExpensesAndIncomes() throws Exception {
+        haveRecordedExpensesAndIncomes();
+    }
+
+    @Given("I have recorded expenses and incomes for export")
+    public void haveRecordedExpensesAndIncomes() throws Exception {
+        assertNotNull(ctx.userId, "Must be logged in before recording export data");
+        assertNotNull(ctx.authToken, "Must have an auth token before recording export data");
+
+        // 1. Create a category
+        Map<String, Object> catBody = Map.of("name", "Office Supplies");
+        MvcResult catRes = mockMvc.perform(post("/api/categories/user/" + ctx.userId)
+                        .header("Authorization", "Bearer " + ctx.authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(catBody)))
+                .andReturn();
+        Long catId = objectMapper.readTree(catRes.getResponse().getContentAsString()).get("id").asLong();
+
+        // 2. Create an expense under this category
+        Map<String, Object> expBody = Map.of(
+                "amount", BigDecimal.valueOf(1200.00),
+                "description", "Office Laptop",
+                "expenseDate", "2026-09-01",
+                "categoryId", catId
+        );
+        mockMvc.perform(post("/api/expenses/user/" + ctx.userId)
+                        .header("Authorization", "Bearer " + ctx.authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(expBody)))
+                .andExpect(status().isCreated());
+
+        // 3. Create an income
+        Map<String, Object> incBody = Map.of(
+                "amount", BigDecimal.valueOf(3500.00),
+                "source", "Consulting Retainer",
+                "description", "Retainer for September",
+                "incomeDate", "2026-09-02",
+                "isRecurring", false
+        );
+        mockMvc.perform(post("/api/incomes/user/" + ctx.userId)
+                        .header("Authorization", "Bearer " + ctx.authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(incBody)))
+                .andExpect(status().isCreated());
     }
 
     @When("I export expenses to CSV")
@@ -90,22 +136,23 @@ public class ExportSteps {
 
     // ─── Verification steps ───────────────────────────────────────────────────
 
-    @Then("the content type should be text\\/csv")
-    public void verifyContentTypeCsv() {
+    @Then("the content type should be {string}")
+    public void verifyContentType(String expected) {
         assertNotNull(ctx.lastResponse, "No response captured");
         String contentType = ctx.lastResponse.getResponse().getContentType();
         assertNotNull(contentType, "Content-Type header is null");
-        assertTrue(contentType.contains("text/csv"),
-                "Expected text/csv but was: " + contentType);
+        assertTrue(contentType.contains(expected),
+                "Expected " + expected + " but was: " + contentType);
     }
 
-    @Then("the content type should be application\\/pdf")
+    @Then("^the content type should be text/csv$")
+    public void verifyContentTypeCsv() {
+        verifyContentType("text/csv");
+    }
+
+    @Then("^the content type should be application/pdf$")
     public void verifyContentTypePdf() {
-        assertNotNull(ctx.lastResponse, "No response captured");
-        String contentType = ctx.lastResponse.getResponse().getContentType();
-        assertNotNull(contentType, "Content-Type header is null");
-        assertTrue(contentType.contains("application/pdf"),
-                "Expected application/pdf but was: " + contentType);
+        verifyContentType("application/pdf");
     }
 
     @Then("the content type should be an Excel spreadsheet")
@@ -123,8 +170,7 @@ public class ExportSteps {
         assertNotNull(ctx.lastResponse, "No response captured");
         String cd = ctx.lastResponse.getResponse().getHeader("Content-Disposition");
         assertNotNull(cd, "Content-Disposition header is null");
-        assertEquals(expected, cd,
-                "Content-Disposition mismatch");
+        assertEquals(expected, cd, "Content-Disposition mismatch");
     }
 
     @Then("the CSV should contain a header row with {string}")
@@ -134,6 +180,22 @@ public class ExportSteps {
         String firstLine = csv.split("\n", 2)[0].trim();
         assertEquals(expectedHeader, firstLine,
                 "CSV header row mismatch. Full CSV:\n" + csv.substring(0, Math.min(csv.length(), 500)));
+    }
+
+    @Then("the CSV body should contain an expense with description {string} and amount {string}")
+    public void verifyCsvExpenseContent(String description, String amount) {
+        assertNotNull(ctx.lastResponseBody, "No response body captured");
+        String csv = new String(ctx.lastResponseBody, java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue(csv.contains(description), "CSV missing description '" + description + "'. Full CSV:\n" + csv);
+        assertTrue(csv.contains(amount), "CSV missing amount '" + amount + "'. Full CSV:\n" + csv);
+    }
+
+    @Then("the CSV body should contain an income with source {string} and amount {string}")
+    public void verifyCsvIncomeContent(String source, String amount) {
+        assertNotNull(ctx.lastResponseBody, "No response body captured");
+        String csv = new String(ctx.lastResponseBody, java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue(csv.contains(source), "CSV missing source '" + source + "'. Full CSV:\n" + csv);
+        assertTrue(csv.contains(amount), "CSV missing amount '" + amount + "'. Full CSV:\n" + csv);
     }
 
     @Then("the PDF should start with {string}")
@@ -148,9 +210,16 @@ public class ExportSteps {
         }
     }
 
+    @Then("the PDF file should be larger than {int} bytes")
+    public void verifyPdfMinSize(int minBytes) {
+        assertNotNull(ctx.lastResponseBody);
+        assertTrue(ctx.lastResponseBody.length > minBytes,
+                "PDF file is only " + ctx.lastResponseBody.length + " bytes, expected > " + minBytes);
+    }
+
     @Then("the Excel file should be larger than {int} bytes")
     public void verifyExcelMinSize(int minBytes) {
-        assertNotNull(ctx.lastResponseBody, "No response body captured");
+        assertNotNull(ctx.lastResponseBody);
         assertTrue(ctx.lastResponseBody.length > minBytes,
                 "Excel file is only " + ctx.lastResponseBody.length + " bytes, expected > " + minBytes);
     }

@@ -74,7 +74,7 @@ def configure_huggingface_auth() -> bool:
         from kaggle_secrets import UserSecretsClient
 
         token = UserSecretsClient().get_secret("HF_TOKEN")
-    except Exception:
+    except Exception:  # noqa: BLE001
         return False
 
     if token:
@@ -100,7 +100,7 @@ def _prepared_data_needs_refresh(prepared: Path) -> bool:
         if unexpected:
             print("Prepared data contains stale/non-canonical labels; forcing dataset refresh:", sorted(unexpected)[:25])
             return True
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         print(f"Prepared-data validation failed ({type(exc).__name__}); forcing dataset refresh.")
         return True
     return False

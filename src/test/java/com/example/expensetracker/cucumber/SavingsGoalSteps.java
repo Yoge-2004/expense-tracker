@@ -18,6 +18,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class SavingsGoalSteps {
 
@@ -132,5 +133,79 @@ public class SavingsGoalSteps {
         for (JsonNode item : arr) {
             assertNotEquals(ctx.goalId, item.get("id").asLong(), "Deleted savings goal was still found in user list");
         }
+    }
+
+    @Given("another user {string} has a savings goal named {string} with target {double}")
+    public void anotherUserHasSavingsGoal(String otherEmail, String goalName, double target) throws Exception {
+        String currentToken = ctx.authToken;
+        Long currentUserId = ctx.userId;
+
+        // Register victim
+        Map<String, Object> regBody = Map.of(
+                "name", "Goal Victim",
+                "username", "gvictim_" + System.currentTimeMillis(),
+                "email", otherEmail,
+                "password", "VictimPass123!",
+                "currency", "INR"
+        );
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(regBody)))
+                .andExpect(status().isCreated());
+
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("email", otherEmail, "password", "VictimPass123!"))))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode loginJson = objectMapper.readTree(loginResult.getResponse().getContentAsString());
+        String otherToken = loginJson.get("token").asText();
+        Long otherUserId = loginJson.get("userId").asLong();
+
+        Map<String, Object> body = Map.of(
+                "name", goalName,
+                "targetAmount", BigDecimal.valueOf(target),
+                "currentAmount", BigDecimal.ZERO,
+                "targetDate", LocalDate.now().plusMonths(6).toString(),
+                "status", "ACTIVE",
+                "isRecurring", false
+        );
+
+        MvcResult res = mockMvc.perform(post("/api/savings/goals/user/" + otherUserId)
+                        .header("Authorization", "Bearer " + otherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        Long foreignId = objectMapper.readTree(res.getResponse().getContentAsString()).get("id").asLong();
+
+        ctx.foreignUserId = otherUserId;
+        ctx.foreignGoalId = foreignId;
+        ctx.authToken = currentToken;
+        ctx.userId = currentUserId;
+    }
+
+    @When("I try to deposit {double} to that foreign savings goal")
+    public void tryDepositForeignGoal(double amount) throws Exception {
+        assertNotNull(ctx.foreignGoalId, "No foreign goal present");
+        Map<String, Object> body = Map.of("amount", BigDecimal.valueOf(amount));
+
+        MvcResult res = mockMvc.perform(post("/api/savings/goals/" + ctx.foreignGoalId + "/deposit/user/" + ctx.userId)
+                        .header("Authorization", "Bearer " + ctx.authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andReturn();
+        ctx.lastResponse = res;
+    }
+
+    @When("I try to delete that foreign savings goal")
+    public void tryDeleteForeignGoal() throws Exception {
+        assertNotNull(ctx.foreignGoalId, "No foreign goal present");
+        MvcResult res = mockMvc.perform(delete("/api/savings/goals/" + ctx.foreignGoalId + "/user/" + ctx.userId)
+                        .header("Authorization", "Bearer " + ctx.authToken))
+                .andReturn();
+        ctx.lastResponse = res;
     }
 }

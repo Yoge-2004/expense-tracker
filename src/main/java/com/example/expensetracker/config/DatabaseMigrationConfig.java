@@ -90,13 +90,6 @@ public class DatabaseMigrationConfig {
             }
 
             try {
-                //noinspection SqlNoDataSourceInspection
-                stmt.execute("UPDATE users SET role = 'ROLE_SUPER_ADMIN' WHERE (email ILIKE '%yogeshwaran%' OR email ILIKE '%admin%') AND (role IS NULL OR role = 'ROLE_USER')");
-            } catch (Exception ignored) {
-                // Ignored for databases where email format differs
-            }
-
-            try {
                 // Migrate legacy is_admin boolean column if it was present in restored older snapshots
                 //noinspection SqlNoDataSourceInspection
                 stmt.execute("UPDATE users SET role = 'ROLE_SUPER_ADMIN' WHERE is_admin = TRUE AND (role IS NULL OR role = 'ROLE_USER')");

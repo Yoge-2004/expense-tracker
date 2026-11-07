@@ -32,8 +32,22 @@ Feature: Category Budget and Spending Limit Management
     And I record an expense of 150.00 under category "Dining Out" on today's date
     When I request the budget status for my user
     Then the response status should be 200
-    And the budget for category "Dining Out" should have spent at least 150.00
-    And the budget for category "Dining Out" should have percentage utilization of at least 30.0
+    And the budget for category "Dining Out" should have spent 150.00
+    And the budget for category "Dining Out" should have percentage utilization of 30.0
+
+  Scenario: Track budget overrun when spending exceeds the established limit
+    Given I have a category named "Shopping Spree"
+    And I have a budget of 200.00 for category "Shopping Spree" with period "MONTHLY"
+    And I record an expense of 250.00 under category "Shopping Spree" on today's date
+    When I request the budget status for my user
+    Then the response status should be 200
+    And the budget for category "Shopping Spree" should have spent 250.00
+    And the budget for category "Shopping Spree" should have percentage utilization of 125.0
+
+  Scenario: User cannot attach a budget to another user's private category
+    Given another user "victim@test.com" has a category named "Confidential Cat"
+    When I try to set a budget of 500.00 on that foreign category
+    Then the response status should be 403
 
   Scenario: Delete category budget limit
     Given I have a category named "Travel Budget"

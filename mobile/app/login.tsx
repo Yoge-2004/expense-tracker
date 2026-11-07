@@ -8,7 +8,7 @@
  * - Full iOS and Android safe area adaptation.
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -19,8 +19,7 @@ import {
   ScrollView,
   Animated,
 } from 'react-native';
-import { ThemedTextInput as TextInput } from '../components/ThemedText';
-import { ThemedText as Text } from '../components/ThemedText';
+import { ThemedTextInput as TextInput, ThemedText as Text } from '../components/ThemedText';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { exportAllDeviceCopies, listDeviceUserIds } from '../services/ledgerVault';
@@ -66,10 +65,10 @@ export default function LoginScreen() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(40)).current;
-  const scaleAnim = useRef(new Animated.Value(0.94)).current;
-  const heroSlide = useRef(new Animated.Value(30)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+  const [slideAnim] = useState(() => new Animated.Value(40));
+  const [scaleAnim] = useState(() => new Animated.Value(0.94));
+  const [heroSlide] = useState(() => new Animated.Value(30));
 
   useEffect(() => {
     Animated.parallel([
@@ -78,7 +77,7 @@ export default function LoginScreen() {
       Animated.spring(scaleAnim, { toValue: 1, friction: 7, tension: 50, useNativeDriver: true }),
       Animated.timing(heroSlide, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [fadeAnim, heroSlide, scaleAnim, slideAnim]);
 
     const handleBiometricSignIn = async () => {
     setIsBioLoading(true);

@@ -25,7 +25,7 @@ Feature: Income and Cash Flow Management
     Given I have 2 income records
     When I request all incomes for my user
     Then the response status should be 200
-    And the response should contain at least 2 incomes
+    And the response should contain 2 incomes
 
   Scenario: Update an existing income record
     Given I have an income with amount 1200.00 and source "Freelance Old"
@@ -40,8 +40,20 @@ Feature: Income and Cash Flow Management
     Then the response status should be 204
     And the income should no longer exist
 
+  Scenario: Cannot update another user's income record via IDOR tampering
+    Given another user "otherincomeuser@test.com" has an income record with amount 8000.00 and source "Executive Bonus"
+    When I try to update that foreign income
+    Then the response status should be 400
+    And the response message should contain "Income does not belong to this user"
+
+  Scenario: Cannot delete another user's income record via IDOR tampering
+    Given another user "otherincomeuser@test.com" has an income record with amount 8000.00 and source "Executive Bonus"
+    When I try to delete that foreign income
+    Then the response status should be 400
+    And the response message should contain "Income does not belong to this user"
+
   Scenario: Retrieve monthly cash flow summary
     Given I have an income with amount 4000.00 and source "Primary Job"
     When I request the monthly cash flow summary for year 2026 and month 9
     Then the response status should be 200
-    And the cash flow total income should be at least 4000.00
+    And the cash flow total income should be 4000.00

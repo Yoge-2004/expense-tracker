@@ -17,11 +17,8 @@ import {
   View,
   TouchableOpacity,
   Switch,
-  Modal,
-  FlatList,
   ActivityIndicator,
   useWindowDimensions,
-  KeyboardAvoidingView,
   Platform,
   Image,
 } from 'react-native';
@@ -50,6 +47,10 @@ import { HelpGuideModal } from '../../components/HelpGuideModal';
 import { AboutModal } from '../../components/AboutModal';
 import { ThemeStudioModal } from '../../components/ThemeStudioModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
+import { CurrencySelectorModal } from '../../components/profile/CurrencySelectorModal';
+import { SecurityPinModal } from '../../components/profile/SecurityPinModal';
+import { AvatarEditModal } from '../../components/profile/AvatarEditModal';
+import { DeleteAccountModal } from '../../components/profile/DeleteAccountModal';
 import { checkForAppUpdate, AppReleaseInfo, DISPLAY_VERSION } from '../../services/appUpdate';
 import {
   enableSmartReminders,
@@ -95,7 +96,6 @@ export default function ProfileScreen() {
   const [nickname, setNickname] = useState(userName || '');
   const [isEditing, setIsEditing] = useState(false);
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
-  const [currencySearch, setCurrencySearch] = useState('');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -105,7 +105,6 @@ export default function ProfileScreen() {
 
   // Profile Avatar Modal State
   const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [avatarUrlInput, setAvatarUrlInput] = useState(profilePicture || '');
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
 
   const [updateInfo, setUpdateInfo] = useState<AppReleaseInfo | null>(null);
@@ -382,9 +381,6 @@ export default function ProfileScreen() {
   // Security PIN setup state
   const [showPinModal, setShowPinModal] = useState(false);
   const [hasSecurityPin, setHasSecurityPin] = useState(false);
-  const [newPin, setNewPin] = useState('');
-  const [confirmPin, setConfirmPin] = useState('');
-  const [isSavingPin, setIsSavingPin] = useState(false);
   const [accountEmail, setAccountEmail] = useState('');
   /** A fingerprint-protected copy of the PIN is saved on this phone for this account. */
   const [fingerprintResetEnabled, setFingerprintResetEnabled] = useState(false);
@@ -411,31 +407,19 @@ export default function ProfileScreen() {
     setEnableFingerprintOnSave(false);
   };
 
-  const handleSavePin = async () => {
-    if (!/^[0-9]{6}$/.test(newPin.trim())) {
-      showAlert('Invalid PIN', 'PIN must be exactly 6 numeric digits.', undefined, 'warning');
-      return;
-    }
-    if (newPin.trim() !== confirmPin.trim()) {
-      showAlert('Mismatch', 'PIN entries do not match.', undefined, 'warning');
-      return;
-    }
-    setIsSavingPin(true);
+  const handleSavePin = async (pin: string) => {
     try {
       await apiRequest(`/users/${userId}/security-pin`, {
         method: 'PUT',
-        body: JSON.stringify({ securityPin: newPin.trim() }),
+        body: JSON.stringify({ securityPin: pin }),
       });
-      const savedPin = newPin.trim();
       setHasSecurityPin(true);
       setShowPinModal(false);
-      setNewPin('');
-      setConfirmPin('');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
       let fingerprintNote = '';
       if ((fingerprintResetEnabled || enableFingerprintOnSave) && accountEmail) {
-        const stored = await savePinForFingerprint(accountEmail, savedPin);
+        const stored = await savePinForFingerprint(accountEmail, pin);
         setFingerprintResetEnabled(stored);
         fingerprintNote = stored
           ? ' Your fingerprint can now fill it in when you reset your password.'
@@ -451,14 +435,12 @@ export default function ProfileScreen() {
     } catch (e: any) {
       const msg = e instanceof ApiError ? e.message : 'Could not save Security PIN.';
       showAlert('Save Failed', msg, undefined, 'error');
-    } finally {
-      setIsSavingPin(false);
+      throw e;
     }
   };
 
     // Avatar Management
   const handleOpenAvatarModal = () => {
-    setAvatarUrlInput(profilePicture || "");
     setShowAvatarModal(true);
   };
 
@@ -511,8 +493,7 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleSaveAvatar = async () => {
-    const cleanUrl = avatarUrlInput.trim();
+  const handleSaveAvatar = async (cleanUrl: string) => {
     if (cleanUrl && !/^https?:\/\//i.test(cleanUrl)) {
       showAlert(
         "Invalid URL",
@@ -561,7 +542,6 @@ export default function ProfileScreen() {
         await updateUserProfile({ profilePictureUrl: "" });
       }
       await refreshUserProfile();
-      setAvatarUrlInput("");
       setShowAvatarModal(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert(
@@ -580,8 +560,6 @@ export default function ProfileScreen() {
 
   // Delete account typed confirmation state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
-  const [deletePassword, setDeletePassword] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const currItem = WORLD_CURRENCIES.find((item) => item.code === currency);
@@ -612,23 +590,17 @@ export default function ProfileScreen() {
   /**
    * Executes permanent account deletion once confirmation text matches "DELETE".
    */
-  const handleExecuteDeleteAccount = async () => {
-    if (deleteConfirmText.trim() !== 'DELETE' || !deletePassword.trim()) {
-      return;
-    }
+  const handleExecuteDeleteAccount = async (password: string) => {
     setIsDeletingAccount(true);
     try {
       await apiRequest(`/users/${userId}`, {
         method: 'DELETE',
-        body: JSON.stringify({ password: deletePassword.trim() }),
+        body: JSON.stringify({ password }),
         skipAuthRedirect: true,
       } as any);
       setShowDeleteModal(false);
-      setDeleteConfirmText('');
-      setDeletePassword('');
       await logout();
     } catch (err: any) {
-      setDeletePassword('');
       const msg = err instanceof ApiError ? err.message : 'Could not delete account.';
       showAlert('Deletion Error', msg, undefined, 'error');
     } finally {
@@ -636,12 +608,6 @@ export default function ProfileScreen() {
     }
   };
 
-  const filteredCurrencies = WORLD_CURRENCIES.filter(
-    (item) =>
-      item.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
-      item.name.toLowerCase().includes(currencySearch.toLowerCase()) ||
-      item.symbol.includes(currencySearch)
-  );
 
   return (
     <View style={[styles.screenWrapper, { backgroundColor: c.bg }]}>
@@ -1214,7 +1180,6 @@ export default function ProfileScreen() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => {
-                setDeleteConfirmText('');
                 setShowDeleteModal(true);
               }}
               style={styles.menuRow}
@@ -1234,450 +1199,53 @@ export default function ProfileScreen() {
         <View style={{ height: 40 }} />
       </ThemedScrollView>
 
-      {/* Profile Picture Customization Modal */}
-      <Modal
+      {/* Profile Avatar Modal */}
+      <AvatarEditModal
         visible={showAvatarModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowAvatarModal(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ width: '100%', maxWidth: 420 }}
-          >
-            <View style={[styles.pinModalCard, { backgroundColor: c.card, borderColor: c.border }]}>
-              <View style={styles.pinHeaderRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Ionicons name="image-outline" size={20} color={c.primary} />
-                  <Text style={[styles.pinModalTitle, { color: c.text }]}>Profile Picture</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setShowAvatarModal(false)}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  style={[styles.pinCloseBtn, { backgroundColor: c.inputBg }]}
-                >
-                  <Ionicons name="close" size={18} color={c.text} />
-                </TouchableOpacity>
-              </View>
-
-              <Text style={[styles.pinModalDesc, { color: c.textMuted }]}>
-                Update your profile picture by browsing your device files or entering a web image URL.
-              </Text>
-
-              {/* Preview */}
-              <View style={{ alignItems: 'center', marginVertical: 12 }}>
-                <View
-                  style={[
-                    styles.bigAvatar,
-                    {
-                      width: 80,
-                      height: 80,
-                      borderRadius: 40,
-                      backgroundColor: c.primary,
-                      borderColor: c.primary + '60',
-                    },
-                  ]}
-                >
-                  {resolveAvatarUrl(avatarUrlInput.trim() || profilePicture) ? (
-                    <Image
-                      source={{ uri: resolveAvatarUrl(avatarUrlInput.trim() || profilePicture)! }}
-                      style={[styles.bigAvatarImg, { borderRadius: 40 }]}
-                    />
-                  ) : (
-                    <Text style={[styles.avatarLetter, { fontSize: 32, color: c.onPrimary }]}>
-                      {(userName || 'U').charAt(0).toUpperCase()}
-                    </Text>
-                  )}
-                </View>
-              </View>
-
-              {/* Local File Browser Button */}
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handlePickLocalAvatar}
-                disabled={isSavingAvatar}
-                style={[
-                  styles.savePinBtn,
-                  {
-                    backgroundColor: c.primary,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    marginBottom: 16,
-                    opacity: isSavingAvatar ? 0.7 : 1,
-                  },
-                ]}
-              >
-                {isSavingAvatar ? (
-                  <ActivityIndicator size="small" color={c.onPrimary} />
-                ) : (
-                  <>
-                    <Ionicons name="images-outline" size={18} color={c.onPrimary} />
-                    <Text style={[styles.savePinBtnText, { color: c.onPrimary }]}>
-                      Browse Files & Photos
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                <View style={{ flex: 1, height: 1, backgroundColor: c.border }} />
-                <Text style={{ fontSize: 11, fontWeight: '700', color: c.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  Or paste image URL
-                </Text>
-                <View style={{ flex: 1, height: 1, backgroundColor: c.border }} />
-              </View>
-
-              <View style={styles.pinFieldWrap}>
-                <Text style={[styles.pinFieldLabel, { color: c.textMuted }]}>IMAGE URL</Text>
-                <TextInput
-                  style={[
-                    styles.pinTextInput,
-                    {
-                      backgroundColor: c.inputBg,
-                      borderColor: c.border,
-                      color: c.text,
-                      fontSize: 13,
-                    },
-                  ]}
-                  placeholder="https://example.com/avatar.jpg"
-                  placeholderTextColor={c.textMuted}
-                  value={avatarUrlInput}
-                  onChangeText={setAvatarUrlInput}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleSaveAvatar}
-                disabled={isSavingAvatar}
-                style={[
-                  styles.savePinBtn,
-                  { backgroundColor: c.inputBg, borderColor: c.border, borderWidth: 1, opacity: isSavingAvatar ? 0.7 : 1 },
-                ]}
-              >
-                <Text style={[styles.savePinBtnText, { color: c.text }]}>
-                  Save URL
-                </Text>
-              </TouchableOpacity>
-
-              {profilePicture ? (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={handleClearAvatar}
-                  disabled={isSavingAvatar}
-                  style={[
-                    styles.savePinBtn,
-                    {
-                      backgroundColor: 'transparent',
-                      borderWidth: 1,
-                      borderColor: c.accent,
-                      marginTop: 8,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.savePinBtnText, { color: c.accent }]}>
-                    Remove Current Avatar
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      </Modal>
+        colors={c}
+        userName={userName}
+        profilePicture={profilePicture}
+        isSaving={isSavingAvatar}
+        onClose={() => setShowAvatarModal(false)}
+        onPickLocalAvatar={handlePickLocalAvatar}
+        onSaveAvatarUrl={handleSaveAvatar}
+        onClearAvatar={handleClearAvatar}
+      />
 
       {/* Currency Picker Modal */}
-      <Modal
+      <CurrencySelectorModal
         visible={showCurrencyModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowCurrencyModal(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.currModalContent, { backgroundColor: c.card, borderColor: c.border }]}>
-            <View style={styles.currModalHeader}>
-              <Text style={[styles.currModalTitle, { color: c.text }]}>
-                Select Currency ({WORLD_CURRENCIES.length})
-              </Text>
-              <TouchableOpacity onPress={() => setShowCurrencyModal(false)}>
-                <Ionicons name="close-circle" size={24} color={c.textMuted} />
-              </TouchableOpacity>
-            </View>
-            <View
-              style={[
-                styles.currSearchBox,
-                { backgroundColor: c.inputBg, borderColor: c.border },
-              ]}
-            >
-              <Ionicons name="search" size={16} color={c.textMuted} style={{ marginRight: 8 }} />
-              <TextInput
-                style={[styles.currSearchInput, { color: c.text }]}
-                placeholder="Search by code, symbol, or country..."
-                placeholderTextColor={c.textMuted}
-                value={currencySearch}
-                onChangeText={setCurrencySearch}
-              />
-              {currencySearch.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => setCurrencySearch('')}
-                  onPressIn={() => setCurrencySearch('')}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  accessibilityLabel="Clear search"
-                  accessibilityRole="button"
-                >
-                  <Ionicons name="close-circle" size={16} color={c.textMuted} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <FlatList
-              keyboardShouldPersistTaps="handled"
-              data={filteredCurrencies}
-              keyExtractor={(item) => item.code}
-              renderItem={({ item }) => {
-                const isSelected = item.code === currency;
-                return (
-                  <TouchableOpacity
-                    style={[
-                      styles.currItemRow,
-                      { borderBottomColor: c.border },
-                      isSelected && { backgroundColor: c.primary + '18' },
-                    ]}
-                    onPress={async () => {
-                      try {
-                        await updateCurrency(item.code);
-                        setShowCurrencyModal(false);
-                        Haptics.selectionAsync().catch(() => {});
-                      } catch (e: any) {
-                        const msg =
-                          e instanceof ApiError ? e.message : 'Could not update your currency.';
-                        showAlert('Currency Update Failed', msg, undefined, 'error');
-                      }
-                    }}
-                  >
-                    <View style={styles.currItemLeft}>
-                      <Text style={styles.currFlag}>{item.flag}</Text>
-                      <View>
-                        <Text style={[styles.currCodeText, { color: c.text }]}>{item.code}</Text>
-                        <Text style={[styles.currNameText, { color: c.textMuted }]}>
-                          {item.name}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.currItemRight}>
-                      <Text
-                        style={[
-                          styles.currSymbolText,
-                          { color: isSelected ? c.primary : c.textMuted },
-                        ]}
-                      >
-                        {item.symbol}
-                      </Text>
-                      {isSelected && (
-                        <Ionicons name="checkmark-circle" size={20} color={c.primary} />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
+        currency={currency}
+        colors={c}
+        onClose={() => setShowCurrencyModal(false)}
+        onSelectCurrency={async (code) => {
+          try {
+            await updateCurrency(code);
+            setShowCurrencyModal(false);
+          } catch (e: any) {
+            const msg = e instanceof ApiError ? e.message : 'Could not update your currency.';
+            showAlert('Currency Update Failed', msg, undefined, 'error');
+          }
+        }}
+      />
 
       {/* Security PIN Setup Modal */}
-      <Modal
+      <SecurityPinModal
         visible={showPinModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={closePinModal}
-      >
-        <View style={styles.modalBackdrop}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ width: '100%', maxWidth: 420 }}
-          >
-            <View style={[styles.pinModalCard, { backgroundColor: c.card, borderColor: c.border }]}>
-              <View style={styles.pinHeaderRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Ionicons name="shield-checkmark" size={20} color={c.primary} />
-                  <Text style={[styles.pinModalTitle, { color: c.text }]}>Security PIN Setup</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={closePinModal}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  style={[styles.pinCloseBtn, { backgroundColor: c.inputBg }]}
-                >
-                  <Ionicons name="close" size={18} color={c.text} />
-                </TouchableOpacity>
-              </View>
-
-              <Text style={[styles.pinModalDesc, { color: c.textMuted }]}>
-                Configure a 6-digit numeric PIN for instant zero-email account recovery. You can reset your password anytime even if email OTP is unavailable.
-              </Text>
-
-              {/* New PIN Input Field */}
-              <View style={styles.pinFieldWrap}>
-                <Text style={[styles.pinFieldLabel, { color: c.textMuted }]}>NEW 6-DIGIT PIN</Text>
-                <TextInput
-                  style={[
-                    styles.pinTextInput,
-                    {
-                      backgroundColor: c.inputBg,
-                      borderColor: c.border,
-                      color: c.text,
-                      letterSpacing: newPin.length > 0 ? 4 : 0,
-                    },
-                  ]}
-                  placeholder="Enter 6-digit PIN"
-                  placeholderTextColor={c.textMuted}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  secureTextEntry
-                  value={newPin}
-                  onChangeText={setNewPin}
-                />
-              </View>
-
-              {/* Confirm PIN Input Field */}
-              <View style={styles.pinFieldWrap}>
-                <Text style={[styles.pinFieldLabel, { color: c.textMuted }]}>CONFIRM 6-DIGIT PIN</Text>
-                <TextInput
-                  style={[
-                    styles.pinTextInput,
-                    {
-                      backgroundColor: c.inputBg,
-                      borderColor: c.border,
-                      color: c.text,
-                      letterSpacing: confirmPin.length > 0 ? 4 : 0,
-                    },
-                  ]}
-                  placeholder="Confirm 6-digit PIN"
-                  placeholderTextColor={c.textMuted}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  secureTextEntry
-                  value={confirmPin}
-                  onChangeText={setConfirmPin}
-                />
-              </View>
-
-              {/* Save Button */}
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleSavePin}
-                disabled={isSavingPin}
-                style={[
-                  styles.savePinBtn,
-                  { backgroundColor: c.primary, opacity: isSavingPin ? 0.7 : 1 },
-                ]}
-              >
-                {isSavingPin ? (
-                  <ActivityIndicator size="small" color={c.onPrimary} />
-                ) : (
-                  <Text style={[styles.savePinBtnText, { color: c.onPrimary }]}>
-                    Save Security PIN
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      </Modal>
+        colors={c}
+        onClose={closePinModal}
+        onSavePin={handleSavePin}
+        showAlert={showAlert}
+      />
 
       {/* Delete Account Modal */}
-      <Modal
+      <DeleteAccountModal
         visible={showDeleteModal}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => {
-          setShowDeleteModal(false);
-          setDeleteConfirmText('');
-          setDeletePassword('');
-        }}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.deleteModalCard, { backgroundColor: c.card, borderColor: c.border }]}>
-            <View style={[styles.deleteIconBox, { backgroundColor: c.accent + '20' }]}>
-              <Ionicons name="warning" size={32} color={c.accent} />
-            </View>
-            <Text style={[styles.deleteModalTitle, { color: c.text }]}>Permanently Delete Account?</Text>
-            <Text style={[styles.deleteModalDesc, { color: c.textMuted }]}>
-              This action cannot be undone. All your expenses, budgets, recurring subscriptions, and categories will be permanently erased.
-            </Text>
-            <Text style={[styles.deleteConfirmLabel, { color: c.text }]}>
-              Enter your current account password:
-            </Text>
-            <TextInput
-              style={[
-                styles.deleteInput,
-                { backgroundColor: c.inputBg, borderColor: c.border, color: c.text, marginBottom: 12 },
-              ]}
-              placeholder="Current Password"
-              placeholderTextColor={c.textMuted}
-              secureTextEntry={true}
-              value={deletePassword}
-              onChangeText={setDeletePassword}
-            />
-            <Text style={[styles.deleteConfirmLabel, { color: c.text }]}>
-              To confirm, type <Text style={{ color: c.accent, fontWeight: '900' }}>DELETE</Text> below:
-            </Text>
-            <TextInput
-              style={[
-                styles.deleteInput,
-                { backgroundColor: c.inputBg, borderColor: c.border, color: c.text },
-              ]}
-              placeholder="Type DELETE"
-              placeholderTextColor={c.textMuted}
-              autoCapitalize="characters"
-              value={deleteConfirmText}
-              onChangeText={setDeleteConfirmText}
-            />
-            <View style={styles.deleteBtnRow}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => {
-                  setShowDeleteModal(false);
-                  setDeleteConfirmText('');
-                  setDeletePassword('');
-                }}
-                style={[styles.cancelBtn, { borderColor: c.border }]}
-              >
-                <Text style={[styles.cancelBtnText, { color: c.text }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                disabled={
-                  deleteConfirmText.trim() !== 'DELETE' || !deletePassword.trim() || isDeletingAccount
-                }
-                onPress={handleExecuteDeleteAccount}
-                style={[
-                  styles.confirmDeleteBtn,
-                  {
-                    backgroundColor:
-                      deleteConfirmText.trim() === 'DELETE' && deletePassword.trim().length > 0
-                        ? c.accent
-                        : c.inputBg,
-                    opacity:
-                      deleteConfirmText.trim() === 'DELETE' && deletePassword.trim().length > 0
-                        ? 1
-                        : 0.45,
-                  },
-                ]}
-              >
-                {isDeletingAccount ? (
-                  <ActivityIndicator size="small" color={c.onDanger} />
-                ) : (
-                  <Text style={[styles.confirmDeleteBtnText, { color: c.onDanger }]}>Delete Account</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        colors={c}
+        isDeleting={isDeletingAccount}
+        onClose={() => setShowDeleteModal(false)}
+        onDeleteAccount={handleExecuteDeleteAccount}
+      />
 
       <MonthlyReportModal visible={showReportModal} onClose={() => setShowReportModal(false)} />
       <ManageCategoriesModal
@@ -1782,142 +1350,6 @@ const styles = StyleSheet.create({
   menuCurrencySymbol: { fontSize: 16, fontWeight: '800' },
   menuRowTitle: { fontSize: 14, fontWeight: '700' },
   menuRowSub: { fontSize: 11.5, marginTop: 2 },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  currModalContent: { width: '100%', maxHeight: '75%', borderRadius: 24, borderWidth: 1, padding: 16 },
-  currModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  currModalTitle: { fontSize: 17, fontWeight: '800' },
-  currSearchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    marginBottom: 12,
-  },
-  currSearchInput: { flex: 1, fontSize: 13, height: '100%' },
-  currItemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderBottomWidth: 0.5,
-    borderRadius: 10,
-  },
-  currItemLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  currFlag: { fontSize: 22 },
-  currCodeText: { fontSize: 14, fontWeight: '800' },
-  currNameText: { fontSize: 11.5 },
-  currItemRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  currSymbolText: { fontSize: 16, fontWeight: '700' },
-  deleteModalCard: { width: '100%', borderRadius: 24, borderWidth: 1, padding: 24, alignItems: 'center' },
-  deleteIconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  deleteModalTitle: { fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 8 },
-  deleteModalDesc: { fontSize: 13, textAlign: 'center', lineHeight: 18, marginBottom: 16 },
-  deleteConfirmLabel: { fontSize: 13, marginBottom: 8, textAlign: 'center' },
-  deleteInput: {
-    width: '100%',
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    textAlign: 'center',
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 2,
-    marginBottom: 18,
-  },
-  deleteBtnRow: { flexDirection: 'row', gap: 10, width: '100%' },
-  cancelBtn: { flex: 1, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  cancelBtnText: { fontSize: 14, fontWeight: '700' },
-  confirmDeleteBtn: { flex: 1.2, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  confirmDeleteBtnText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
-  pinModalCard: {
-    width: '100%',
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 22,
-    alignItems: 'stretch',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  pinHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 10,
-  },
-  pinModalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  pinCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pinModalDesc: {
-    fontSize: 12.5,
-    lineHeight: 18,
-    marginBottom: 18,
-  },
-  pinFieldWrap: {
-    width: '100%',
-    marginBottom: 14,
-  },
-  pinFieldLabel: {
-    fontSize: 11.5,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-    marginBottom: 6,
-  },
-  pinTextInput: {
-    width: '100%',
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    textAlign: 'left',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  savePinBtn: {
-    width: '100%',
-    height: 46,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  savePinBtnText: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
   updateBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,

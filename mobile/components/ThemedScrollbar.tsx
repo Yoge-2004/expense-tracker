@@ -145,7 +145,7 @@ export function useThemedScrollbar(options: UseThemedScrollbarOptions = {}) {
   const thumbColor = options.thumbColor || c.scrollThumb;
   const inset = options.inset ?? 8;
 
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const [scrollY] = useState(() => new Animated.Value(0));
   const [contentHeight, setContentHeight] = useState(0);
   const [viewHeight, setViewHeight] = useState(0);
 
@@ -229,7 +229,7 @@ export const ThemedScrollView = React.forwardRef<React.ElementRef<typeof ScrollV
     const resolvedTrack = trackColor || c.scrollTrack;
     const resolvedThumb = thumbColor || c.scrollThumb;
 
-    const scrollY = useRef(new Animated.Value(0)).current;
+    const [scrollY] = useState(() => new Animated.Value(0));
     const [contentHeight, setContentHeight] = useState(0);
     const [viewHeight, setViewHeight] = useState(0);
 

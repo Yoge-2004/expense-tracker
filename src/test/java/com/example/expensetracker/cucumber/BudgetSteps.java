@@ -18,6 +18,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class BudgetSteps {
 
@@ -25,10 +26,25 @@ public class BudgetSteps {
     @Autowired private ObjectMapper objectMapper;
     @Autowired private TestContext ctx;
 
+    private Long resolveCategoryId(String categoryName) throws Exception {
+        MvcResult listResult = mockMvc.perform(get("/api/categories/user/" + ctx.userId)
+                        .header("Authorization", "Bearer " + ctx.authToken))
+                .andReturn();
+        JsonNode cats = objectMapper.readTree(listResult.getResponse().getContentAsString());
+        for (JsonNode cat : cats) {
+            if (categoryName.equalsIgnoreCase(cat.get("name").asText())) {
+                return cat.get("id").asLong();
+            }
+        }
+        return ctx.categoryId;
+    }
+
+
     @When("I set a budget of {double} for category {string} with period {string}")
     public void setBudget(double limit, String categoryName, String period) throws Exception {
+        Long catId = resolveCategoryId(categoryName);
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("categoryId", ctx.categoryId);
+        body.put("categoryId", catId);
         body.put("limitAmount", BigDecimal.valueOf(limit));
         body.put("period", period);
 
@@ -82,11 +98,12 @@ public class BudgetSteps {
 
     @Given("I record an expense of {double} under category {string} on today's date")
     public void recordExpenseToday(double amount, String categoryName) throws Exception {
+        Long catId = resolveCategoryId(categoryName);
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("amount", BigDecimal.valueOf(amount));
         body.put("description", "Budget test expense");
         body.put("expenseDate", LocalDate.now().toString());
-        body.put("categoryId", ctx.categoryId);
+        body.put("categoryId", catId);
 
         MvcResult res = mockMvc.perform(post("/api/expenses/user/" + ctx.userId)
                         .header("Authorization", "Bearer " + ctx.authToken)
@@ -96,6 +113,34 @@ public class BudgetSteps {
 
         assertEquals(201, res.getResponse().getStatus(),
                 "Failed to record expense: " + res.getResponse().getContentAsString());
+    }
+
+    @Then("the budget for category {string} should have spent {double}")
+    public void verifyBudgetSpentExact(String categoryName, double expectedSpent) throws Exception {
+        JsonNode json = objectMapper.readTree(ctx.lastResponseBody);
+        assertTrue(json.isArray());
+        for (JsonNode item : json) {
+            if (categoryName.equalsIgnoreCase(item.get("categoryName").asText())) {
+                double spent = item.get("spent").asDouble();
+                assertEquals(expectedSpent, spent, 0.01, "Expected spent = " + expectedSpent + ", got: " + spent);
+                return;
+            }
+        }
+        fail("Category '" + categoryName + "' not found in budget status: " + json);
+    }
+
+    @Then("the budget for category {string} should have percentage utilization of {double}")
+    public void verifyBudgetPercentageExact(String categoryName, double expectedPct) throws Exception {
+        JsonNode json = objectMapper.readTree(ctx.lastResponseBody);
+        assertTrue(json.isArray());
+        for (JsonNode item : json) {
+            if (categoryName.equalsIgnoreCase(item.get("categoryName").asText())) {
+                double pct = item.get("percentage").asDouble();
+                assertEquals(expectedPct, pct, 0.01, "Expected percentage = " + expectedPct + ", got: " + pct);
+                return;
+            }
+        }
+        fail("Category '" + categoryName + "' not found in budget status: " + json);
     }
 
     @Then("the budget for category {string} should have spent at least {double}")
@@ -177,5 +222,66 @@ public class BudgetSteps {
             }
         }
         fail("Category '" + categoryName + "' not found in budget status: " + json);
+    }
+
+    @Given("another user {string} has a category named {string}")
+    public void anotherUserHasCategory(String otherEmail, String catName) throws Exception {
+        String currentToken = ctx.authToken;
+        Long currentUserId = ctx.userId;
+
+        // Register victim
+        Map<String, Object> regBody = Map.of(
+                "name", "Budget Victim",
+                "username", "bvictim_" + System.currentTimeMillis(),
+                "email", otherEmail,
+                "password", "VictimPass123!",
+                "currency", "INR"
+        );
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(regBody)))
+                .andExpect(status().isCreated());
+
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("email", otherEmail, "password", "VictimPass123!"))))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode loginJson = objectMapper.readTree(loginResult.getResponse().getContentAsString());
+        String otherToken = loginJson.get("token").asText();
+        Long otherUserId = loginJson.get("userId").asLong();
+
+        MvcResult catResult = mockMvc.perform(post("/api/categories/user/" + otherUserId)
+                .header("Authorization", "Bearer " + otherToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("name", catName))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long otherCatId = objectMapper.readTree(catResult.getResponse().getContentAsString()).get("id").asLong();
+
+        ctx.foreignUserId = otherUserId;
+        ctx.foreignCategoryId = otherCatId;
+        ctx.authToken = currentToken;
+        ctx.userId = currentUserId;
+    }
+
+    @When("I try to set a budget of {double} on that foreign category")
+    public void trySetBudgetOnForeignCategory(double limit) throws Exception {
+        assertNotNull(ctx.foreignCategoryId, "No foreign category present");
+        Map<String, Object> body = Map.of(
+                "categoryId", ctx.foreignCategoryId,
+                "limitAmount", BigDecimal.valueOf(limit),
+                "period", "MONTHLY"
+        );
+
+        MvcResult res = mockMvc.perform(post("/api/expenses/budget/user/" + ctx.userId)
+                        .header("Authorization", "Bearer " + ctx.authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andReturn();
+
+        ctx.lastResponse = res;
+        ctx.lastResponseBody = res.getResponse().getContentAsByteArray();
     }
 }

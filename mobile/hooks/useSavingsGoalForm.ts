@@ -58,6 +58,7 @@ export function useSavingsGoalForm({
       if (initialParams.frequency !== undefined) setGoalFrequency(initialParams.frequency);
       if (initialParams.intervalDays !== undefined) setGoalIntervalDays(initialParams.intervalDays);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     initialParams?.name,
     initialParams?.targetAmount,
@@ -80,7 +81,16 @@ export function useSavingsGoalForm({
     setGoalRecurringAmount('');
     setGoalFrequency('MONTHLY');
     setGoalIntervalDays('30');
-  }, []);
+  }, [
+    setGoalName,
+    setGoalTargetAmount,
+    setGoalInitialAmount,
+    setGoalTargetDate,
+    setGoalIsRecurring,
+    setGoalRecurringAmount,
+    setGoalFrequency,
+    setGoalIntervalDays,
+  ]);
 
   const handleSaveSavingsGoal = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});

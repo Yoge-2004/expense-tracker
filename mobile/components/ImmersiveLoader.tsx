@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -38,11 +38,11 @@ export const ImmersiveLoader: React.FC<ImmersiveLoaderProps> = ({
   const c = customColors || prefs?.themeColors || Colors[theme];
   const reducedMotion = useReducedMotion();
 
-  const spinOuter = useRef(new Animated.Value(0)).current;
-  const spinInner = useRef(new Animated.Value(0)).current;
-  const pulseCore = useRef(new Animated.Value(1)).current;
-  const auraScale = useRef(new Animated.Value(0.9)).current;
-  const shimmerTrack = useRef(new Animated.Value(-60)).current;
+  const [spinOuter] = useState(() => new Animated.Value(0));
+  const [spinInner] = useState(() => new Animated.Value(0));
+  const [pulseCore] = useState(() => new Animated.Value(1));
+  const [auraScale] = useState(() => new Animated.Value(0.9));
+  const [shimmerTrack] = useState(() => new Animated.Value(-60));
 
   useEffect(() => {
     if (reducedMotion) return;
@@ -129,7 +129,7 @@ export const ImmersiveLoader: React.FC<ImmersiveLoaderProps> = ({
       pulseAnim.stop();
       shimmerAnim.stop();
     };
-  }, [reducedMotion]);
+  }, [auraScale, pulseCore, reducedMotion, shimmerTrack, spinInner, spinOuter]);
 
   const outerRotate = spinOuter.interpolate({
     inputRange: [0, 1],

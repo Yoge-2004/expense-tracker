@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Animated, Pressable, ViewStyle, StyleProp } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useReducedMotion } from '../hooks/useReducedMotion';
@@ -22,7 +22,7 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
   disabled = false,
   enableHaptics = true,
 }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [scaleAnim] = useState(() => new Animated.Value(1));
   const reducedMotion = useReducedMotion();
 
   useEffect(() => {

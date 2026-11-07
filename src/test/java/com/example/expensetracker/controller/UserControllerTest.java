@@ -6,21 +6,26 @@ import com.example.expensetracker.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.UserSecurity;
-import com.example.expensetracker.service.UserService;
 import com.example.expensetracker.service.UserAppearanceService;
+import com.example.expensetracker.service.UserAvatarService;
+import com.example.expensetracker.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -33,6 +38,7 @@ class UserControllerTest {
 
     @MockitoBean UserService userService;
     @MockitoBean UserAppearanceService userAppearanceService;
+    @MockitoBean UserAvatarService userAvatarService;
     @MockitoBean UserRepository userRepository;
     @MockitoBean UserSecurity userSecurity;
     @MockitoBean PasswordEncoder passwordEncoder;
@@ -334,42 +340,70 @@ class UserControllerTest {
         verify(userSecurity).validateUserAccess(7L);
         verify(userService, never()).updateCurrency(anyLong(), anyString());
     }
+
     @Test
-    void uploadAvatarCompressesAndUpdatesProfilePicture() throws Exception {
-        java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(500, 500, java.awt.image.BufferedImage.TYPE_INT_RGB);
-        java.awt.Graphics2D g = img.createGraphics();
-        g.setColor(java.awt.Color.BLUE);
-        g.fillRect(0, 0, 500, 500);
-        g.dispose();
-
-        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-        javax.imageio.ImageIO.write(img, "png", baos);
-        byte[] imageBytes = baos.toByteArray();
-
+    void uploadAvatarDelegatesToAvatarService() throws Exception {
         org.springframework.mock.web.MockMultipartFile mockFile =
                 new org.springframework.mock.web.MockMultipartFile(
                         "file",
                         "avatar.png",
                         "image/png",
-                        imageBytes
+                        new byte[]{1, 2, 3}
                 );
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/users/7/avatar")
-                        .file(mockFile))
+        when(userAvatarService.storeAvatar(eq(7L), any())).thenReturn("/api/users/7/avatar?v=12345");
+
+        mockMvc.perform(multipart("/api/users/7/avatar").file(mockFile))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.profilePictureUrl").value(org.hamcrest.Matchers.startsWith("/api/users/7/avatar?v=")))
+                .andExpect(jsonPath("$.profilePictureUrl").value("/api/users/7/avatar?v=12345"))
                 .andExpect(jsonPath("$.message").value("Profile picture updated successfully"));
 
         verify(userSecurity).validateUserAccess(7L);
-        verify(userService).updateProfilePicture(eq(7L), anyString());
+        verify(userAvatarService).storeAvatar(eq(7L), any());
     }
 
     @Test
-    void deleteAvatarResetsProfilePicture() throws Exception {
+    void getAvatarReturnsBinaryWhenPresent() throws Exception {
+        when(userAvatarService.getAvatar(7L))
+                .thenReturn(Optional.of(new UserAvatarService.AvatarContent(new byte[]{1, 2, 3}, "image/png", null)));
+
+        mockMvc.perform(get("/api/users/7/avatar"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_PNG_VALUE))
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "public, max-age=3600"))
+                .andExpect(content().bytes(new byte[]{1, 2, 3}));
+
+        verify(userAvatarService).getAvatar(7L);
+    }
+
+    @Test
+    void getAvatarRedirectsWhenExternalUrlPresent() throws Exception {
+        when(userAvatarService.getAvatar(7L))
+                .thenReturn(Optional.of(new UserAvatarService.AvatarContent(null, null, "https://lh3.googleusercontent.com/avatar.jpg")));
+
+        mockMvc.perform(get("/api/users/7/avatar"))
+                .andExpect(status().isFound())
+                .andExpect(header().string(HttpHeaders.LOCATION, "https://lh3.googleusercontent.com/avatar.jpg"));
+
+        verify(userAvatarService).getAvatar(7L);
+    }
+
+    @Test
+    void getAvatarReturnsNotFoundWhenAbsent() throws Exception {
+        when(userAvatarService.getAvatar(7L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/users/7/avatar"))
+                .andExpect(status().isNotFound());
+
+        verify(userAvatarService).getAvatar(7L);
+    }
+
+    @Test
+    void deleteAvatarDelegatesToAvatarService() throws Exception {
         mockMvc.perform(delete("/api/users/7/avatar"))
                 .andExpect(status().isNoContent());
 
         verify(userSecurity).validateUserAccess(7L);
-        verify(userService).updateProfilePicture(7L, null);
+        verify(userAvatarService).deleteAvatar(7L);
     }
 }

@@ -84,7 +84,7 @@ export const FloatingCalculator: React.FC = () => {
   // Dragging State
   const defaultRight = 20;
   const defaultBottom = insets.bottom + 84; // Above tab bar
-  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const [pan] = useState(() => new Animated.ValueXY({ x: 0, y: 0 }));
   const currentPos = useRef({ x: 0, y: 0 });
   const isDragging = useRef(false);
 
@@ -114,54 +114,56 @@ export const FloatingCalculator: React.FC = () => {
         }
       })
       .catch(() => {});
-  }, [windowWidth, windowHeight, insets.top]);
+  }, [windowWidth, windowHeight, insets.top, pan]);
 
-  const panResponder = useRef(
+  // PanResponder handlers only access currentPos/isDragging during gesture events (outside of render)
+  // eslint-disable-next-line react-hooks/refs
+  const [panResponder] = useState(() =>
     PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gesture) => {
-        return Math.abs(gesture.dx) > 5 || Math.abs(gesture.dy) > 5;
-      },
-      onPanResponderGrant: () => {
-        isDragging.current = true;
-        pan.setOffset({
-          x: currentPos.current.x,
-          y: currentPos.current.y,
-        });
-        pan.setValue({ x: 0, y: 0 });
-      },
-      onPanResponderMove: (_, gesture) => {
-        pan.setValue({ x: gesture.dx, y: gesture.dy });
-      },
-      onPanResponderRelease: (_, gesture) => {
-        pan.flattenOffset();
-        isDragging.current = false;
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, gesture) => {
+          return Math.abs(gesture.dx) > 5 || Math.abs(gesture.dy) > 5;
+        },
+        onPanResponderGrant: () => {
+          isDragging.current = true;
+          pan.setOffset({
+            x: currentPos.current.x,
+            y: currentPos.current.y,
+          });
+          pan.setValue({ x: 0, y: 0 });
+        },
+        onPanResponderMove: (_, gesture) => {
+          pan.setValue({ x: gesture.dx, y: gesture.dy });
+        },
+        onPanResponderRelease: (_, gesture) => {
+          pan.flattenOffset();
+          isDragging.current = false;
 
-        // Calculate clamped position
-        const maxX = 0;
-        const minX = -(windowWidth - BUTTON_SIZE - 24);
-        const maxY = 0;
-        const minY = -(windowHeight - BUTTON_SIZE - insets.top - 70);
+          // Calculate clamped position
+          const maxX = 0;
+          const minX = -(windowWidth - BUTTON_SIZE - 24);
+          const maxY = 0;
+          const minY = -(windowHeight - BUTTON_SIZE - insets.top - 70);
 
-        let finalX = currentPos.current.x + gesture.dx;
-        let finalY = currentPos.current.y + gesture.dy;
+          let finalX = currentPos.current.x + gesture.dx;
+          let finalY = currentPos.current.y + gesture.dy;
 
-        finalX = Math.max(minX, Math.min(maxX, finalX));
-        finalY = Math.max(minY, Math.min(maxY, finalY));
+          finalX = Math.max(minX, Math.min(maxX, finalX));
+          finalY = Math.max(minY, Math.min(maxY, finalY));
 
-        currentPos.current = { x: finalX, y: finalY };
+          currentPos.current = { x: finalX, y: finalY };
 
-        Animated.spring(pan, {
-          toValue: { x: finalX, y: finalY },
-          useNativeDriver: false,
-          bounciness: 4,
-          speed: 16,
-        }).start();
+          Animated.spring(pan, {
+            toValue: { x: finalX, y: finalY },
+            useNativeDriver: false,
+            bounciness: 4,
+            speed: 16,
+          }).start();
 
-        AsyncStorage.setItem(STORAGE_CALC_POS, JSON.stringify({ x: finalX, y: finalY })).catch(() => {});
-      },
-    })
-  ).current;
+          AsyncStorage.setItem(STORAGE_CALC_POS, JSON.stringify({ x: finalX, y: finalY })).catch(() => {});
+        },
+      })
+  );
 
   // Key Handlers
   const handleDigit = useCallback(

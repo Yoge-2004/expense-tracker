@@ -1,111 +1,80 @@
 /**
  * @file InsightCards.tsx
  * @description Advanced financial intelligence and algorithmic spend analytics component.
- * Calculates 8 metrics with interactive filter tabs and a modal recommendation sheet:
- * 1. Burn Velocity & Month-End Outflow Forecast
- * 2. Discretionary Load & Potential Savings
- * 3. Weekend Surge vs Weekday Spending Habits
- * 4. Budget Governance & Financial Health Index (0-100%)
- * 5. Budget Burnout Early Warning Watch (Depletion days)
- * 6. Transaction Frequency & Average Ticket Size
- * 7. Peak Single Outflow Alert
- * 8. Fixed Recurring Overhead Ratio
+ * Features hierarchical card presentation (Top AI Alert Banners, Categorized Intelligence Segments,
+ * and Hero Visualizations) backed by real machine learning models without synthetic data fabrication.
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { apiRequest } from '../services/api';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
   TouchableOpacity,
-  ScrollView,
-  Modal,
 } from 'react-native';
-import Svg, { Circle, Line, Path } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { ThemedText as Text } from './ThemedText';
 import { useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/theme';
 import { getCurrencySymbol } from '../services/currency';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { apiRequest } from '../services/api';
 import { effectiveMonth, earnedTotal, netSpent, monthKey, kindOf } from '../utils/moneyFlow';
+import {
+  ExpenseItem,
+  BudgetStatus,
+  IncomeItem,
+  SavingsGoalItem,
+  DetailedInsightModalData,
+  MlForecastData,
+  MlForecastStatus,
+  MlAnomalyData,
+  BurnoutCandidate,
+  InsightCardsProps,
+} from './insights/types';
+import { InsightDetailModal } from './insights/InsightDetailModal';
+import { InsightAlertBanner } from './insights/InsightAlertBanner';
+import { AiForecastCard } from './insights/AiForecastCard';
+import { CashFlowPulseCard } from './insights/CashFlowPulseCard';
+import { InsightCard } from './insights/InsightCard';
 
-export interface ExpenseItem {
-  id: number;
-  description: string;
-  amount: number;
-  expenseDate: string;
-  categoryId: number;
-  categoryName: string;
-  isRecurring?: boolean;
-  recurring?: boolean;
-}
-
-export interface BudgetStatus {
-  budgetId?: number;
-  categoryId: number;
-  categoryName: string;
-  limit: number;
-  spent: number;
-  percentage: number;
-  period?: string;
-}
-
-export interface IncomeItem {
-  id: number;
-  source: string;
-  amount: number;
-  incomeDate: string;
-  description?: string;
-  isRecurring?: boolean;
-  recurring?: boolean;
-  kind?: string | null;
-  countsTowardMonth?: string | null;
-}
-
-export interface SavingsGoalItem {
-  id: number;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  targetDate?: string;
-}
-
-interface InsightCardsProps {
-  /** Array of expense transactions. */
-  expenses: ExpenseItem[];
-  /** Array of budget limits with spent amounts. */
-  budgets: BudgetStatus[];
-  /** Inflow transaction collection. */
-  incomes?: IncomeItem[];
-  /** Savings milestones and targets. */
-  savingsGoals?: SavingsGoalItem[];
-}
-
-interface DetailedInsightModalData {
-  title: string;
-  icon: any;
-  color: string;
-  headline: string;
-  metrics: { label: string; value: string }[];
-  advice: string;
-}
+export type {
+  ExpenseItem,
+  BudgetStatus,
+  IncomeItem,
+  SavingsGoalItem,
+  InsightCardsProps,
+};
 
 const ESSENTIAL_CATEGORIES = [
   'groceries',
+  'grocery',
+  'supermarket',
   'utilities',
+  'utility',
+  'electricity',
+  'water',
   'health',
   'medical',
+  'doctor',
+  'pharmacy',
   'transport',
+  'transportation',
+  'fuel',
+  'petrol',
   'bills',
   'rent',
+  'housing',
   'education',
+  'school',
+  'tuition',
 ];
 
 const EMPTY_EXPENSES: ExpenseItem[] = [];
 const EMPTY_BUDGETS: BudgetStatus[] = [];
 const EMPTY_INCOMES: IncomeItem[] = [];
 const EMPTY_GOALS: SavingsGoalItem[] = [];
+
+type InsightTab = 'ai' | 'wealth' | 'habits' | 'all';
 
 /**
  * Intelligent Financial Analytics component.
@@ -116,110 +85,166 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
   incomes = EMPTY_INCOMES,
   savingsGoals = EMPTY_GOALS,
 }) => {
-  const {theme, currency, isStealthMode, themeColors} = useAuth();
+  const { theme, currency, isStealthMode, themeColors } = useAuth();
   const c = themeColors || Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
-  const [activeTab, setActiveTab] = useState<'all' | 'habits' | 'forecasts'>('all');
+  const [activeTab, setActiveTab] = useState<InsightTab>('ai');
   const [selectedInsight, setSelectedInsight] = useState<DetailedInsightModalData | null>(null);
 
-  const [mlForecast, setMlForecast] = useState<{
-    total: number;
-    days: number;
-    points: { date: string; amount: number }[];
-  } | null>(null);
-  const forecastChart = useMemo(() => {
-    if (!mlForecast?.points.length) return null;
-    const width = 160;
-    const baseline = 42;
-    const amounts = mlForecast.points.map((point) => point.amount);
-    const min = Math.min(...amounts);
-    const max = Math.max(...amounts);
-    const span = max - min || Math.max(max, 1);
-    const coords = mlForecast.points.map((point, index) => ({
-      x: mlForecast.points.length === 1 ? width / 2 : 6 + (index / (mlForecast.points.length - 1)) * (width - 12),
-      y: baseline - ((point.amount - min) / span) * 28,
-    }));
-    const line = coords.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' ');
-    const area = `${line} L ${coords[coords.length - 1].x.toFixed(1)} ${baseline} L ${coords[0].x.toFixed(1)} ${baseline} Z`;
-    return { coords, line, area };
-  }, [mlForecast]);
-  const [mlAnomaly, setMlAnomaly] = useState<{ count: number; topOutlier?: { desc: string; amount: number; score: number } } | null>(null);
+  const [mlForecast, setMlForecast] = useState<MlForecastData | null>(null);
+  const [mlForecastStatus, setMlForecastStatus] = useState<MlForecastStatus>({
+    isCalibrated: false,
+    daysRecorded: 0,
+    requiredDays: 28,
+  });
+  const [mlAnomaly, setMlAnomaly] = useState<MlAnomalyData | null>(null);
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 1. Machine Learning Integration (Forecast & Anomaly Scoring)
+  // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     let active = true;
-    async function loadMlInsights() {
-      if (!expenses || expenses.length === 0) return;
 
-      // 1. Forecast (Model 5)
+    async function loadMlInsights() {
+      if (!expenses || expenses.length === 0) {
+        if (active) {
+          setMlForecast(null);
+          setMlForecastStatus({ isCalibrated: false, daysRecorded: 0, requiredDays: 28 });
+          setMlAnomaly(null);
+        }
+        return;
+      }
+
+      // ── Model 5: Spending Forecast ──────────────────────────────────────────
+      // Zero-fabrication: evaluate calendar span of actual transactions
       try {
         const dailyMap: Record<string, number> = {};
         expenses.forEach((e) => {
           if (e.expenseDate) {
-            const d = e.expenseDate.split("T")[0];
+            const d = e.expenseDate.split('T')[0];
             dailyMap[d] = (dailyMap[d] || 0) + (Number(e.amount) || 0);
           }
         });
 
-        let history = Object.keys(dailyMap).sort().map((d) => ({ date: d, amount: dailyMap[d] }));
-        if (history.length < 28) {
-          const nowTs = Date.now();
-          history = [];
-          for (let i = 30; i >= 1; i--) {
-            const d = new Date(nowTs - i * 86400000).toISOString().split("T")[0];
-            history.push({
-              date: d,
-              amount: dailyMap[d] !== undefined ? dailyMap[d] : (20 + (i % 6) * 5),
-            });
+        const activeDates = Object.keys(dailyMap).sort();
+        if (activeDates.length === 0) {
+          if (active) {
+            setMlForecast(null);
+            setMlForecastStatus({ isCalibrated: false, daysRecorded: 0, requiredDays: 28 });
           }
-        }
+        } else {
+          const minDate = new Date(activeDates[0]);
+          const maxDate = new Date(activeDates[activeDates.length - 1]);
+          const daySpan = Math.max(
+            1,
+            Math.round((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+          );
 
-        const fRes = await apiRequest("/ml/forecast/spending", {
-          method: "POST",
-          body: JSON.stringify({ history, horizon_days: 7 }),
-        });
+          if (daySpan < 28) {
+            // Under 28 days of history: honest state without synthetic fabrication
+            if (active) {
+              setMlForecast(null);
+              setMlForecastStatus({
+                isCalibrated: false,
+                daysRecorded: Math.min(daySpan, 28),
+                requiredDays: 28,
+              });
+            }
+          } else {
+            // >= 28 calendar days: construct real daily timeline (zero-spend on non-active days)
+            const history: { date: string; amount: number }[] = [];
+            const startTs = minDate.getTime();
+            const endTs = maxDate.getTime();
+            for (let ts = startTs; ts <= endTs; ts += 86400000) {
+              const dStr = new Date(ts).toISOString().split('T')[0];
+              history.push({
+                date: dStr,
+                amount: dailyMap[dStr] !== undefined ? dailyMap[dStr] : 0,
+              });
+            }
 
-        if (active && fRes && Array.isArray(fRes.forecast)) {
-          const points = fRes.forecast
-            .map((point: any) => ({
-              date: String(point.date || ''),
-              amount: Number(point.predicted_amount),
-            }))
-            .filter((point: { date: string; amount: number }) => point.date && Number.isFinite(point.amount));
-          if (points.length) {
-            const sum = points.reduce((acc: number, point: { amount: number }) => acc + point.amount, 0);
-            setMlForecast({
-              total: sum,
-              days: Number(fRes.horizon_days) || points.length || 7,
-              points,
+            const fRes = await apiRequest('/ml/forecast/spending', {
+              method: 'POST',
+              body: JSON.stringify({ history, horizon_days: 7 }),
             });
+
+            if (active && fRes && Array.isArray(fRes.forecast)) {
+              const points = fRes.forecast
+                .map((point: any) => ({
+                  date: String(point.date || ''),
+                  amount: Number(point.predicted_amount),
+                }))
+                .filter((point: { date: string; amount: number }) => point.date && Number.isFinite(point.amount));
+
+              if (points.length) {
+                const sum = points.reduce((acc: number, point: { amount: number }) => acc + point.amount, 0);
+                setMlForecast({
+                  total: sum,
+                  days: Number(fRes.horizon_days) || points.length || 7,
+                  points,
+                });
+                setMlForecastStatus({
+                  isCalibrated: true,
+                  daysRecorded: daySpan,
+                  requiredDays: 28,
+                });
+              }
+            }
           }
         }
       } catch (err) {
         console.debug('[InsightCards] ML forecast endpoint unavailable:', err);
       }
 
-      // 2. Anomaly scoring (Model 4)
+      // ── Model 4: Isolation Forest Anomaly Scoring ───────────────────────────
+      // Provide true temporal features: amount, hour, day_of_week
       try {
-        const txs = expenses.slice(0, 50).map((e) => ({
-          id: e.id,
-          amount: Number(e.amount) || 0,
-          category: e.categoryName || "general",
-          description: e.description || "",
-          date: e.expenseDate || "",
-        }));
+        const txs = expenses.slice(0, 50).map((e) => {
+          let dow = 0;
+          let hour = 12;
+          if (e.expenseDate) {
+            const dObj = new Date(e.expenseDate);
+            if (!Number.isNaN(dObj.getTime())) {
+              dow = dObj.getDay();
+              if (e.expenseDate.includes('T')) {
+                hour = dObj.getHours();
+              }
+            }
+          }
+          return {
+            id: e.id,
+            amount: Math.max(0, Number(e.amount) || 0),
+            day_of_week: dow,
+            hour,
+            category: e.categoryName || 'general',
+            description: e.description || 'Expense',
+            date: e.expenseDate || '',
+          };
+        });
 
-        const aRes = await apiRequest("/ml/anomalies/score", {
-          method: "POST",
+        const aRes = await apiRequest('/ml/anomalies/score', {
+          method: 'POST',
           body: JSON.stringify({ transactions: txs }),
         });
 
         if (active && aRes && Array.isArray(aRes.results)) {
           const anoms = aRes.results.filter((r: any) => r.is_anomaly === true);
-          const top = anoms.sort((a: any, b: any) => (a.anomaly_score || 0) - (b.anomaly_score || 0))[0];
+          const sortedAnoms = anoms
+            .sort((a: any, b: any) => (a.anomaly_score || 0) - (b.anomaly_score || 0))
+            .map((a: any) => ({
+              id: a.id,
+              desc: a.description || 'Irregular Outflow',
+              amount: Number(a.amount) || 0,
+              score: Number(a.anomaly_score) || 0,
+              date: a.date,
+              category: a.category,
+            }));
+          const top = sortedAnoms[0];
           setMlAnomaly({
             count: aRes.total_anomalies ?? anoms.length,
-            topOutlier: top ? { desc: top.description || "Outlier", amount: top.amount, score: top.anomaly_score } : undefined,
+            topOutlier: top,
+            allOutliers: sortedAnoms,
           });
         }
       } catch (err) {
@@ -228,7 +253,9 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
     }
 
     loadMlInsights();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [expenses]);
 
   const safeExpenses = expenses || EMPTY_EXPENSES;
@@ -236,250 +263,212 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
   const safeIncomes = incomes || EMPTY_INCOMES;
   const safeGoals = savingsGoals || EMPTY_GOALS;
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const currentDay = Math.max(now.getDate(), 1);
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const daysRemaining = Math.max(0, daysInMonth - currentDay);
   const thisMonthKey = monthKey(now);
 
-  const formatAmt = (n: number) => {
+  const formatAmt = useCallback((n: number) => {
     if (isStealthMode) return `${currSym}••••••`;
     const val = Number.isNaN(n) ? 0 : Math.round(n);
     return `${currSym}${val.toLocaleString('en-IN')}`;
-  };
+  }, [currSym, isStealthMode]);
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 2. Financial Metrics Synthesis
+  // ─────────────────────────────────────────────────────────────────────────────
   const metrics = useMemo(() => {
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 1. Burn Velocity & Projections
-  // ─────────────────────────────────────────────────────────────────────────────
-  const currentMonthExpenses = safeExpenses.filter((e) => {
-    if (!e.expenseDate) return false;
-    return monthKey(e.expenseDate) === thisMonthKey;
-  });
+    // Current month spend
+    const currentMonthExpenses = safeExpenses.filter((e) => {
+      if (!e.expenseDate) return false;
+      return monthKey(e.expenseDate) === thisMonthKey;
+    });
 
-  const currentMonthIncomes = safeIncomes.filter((i) => {
-    return effectiveMonth(i) === thisMonthKey;
-  });
+    const currentMonthIncomes = safeIncomes.filter((i) => {
+      return effectiveMonth(i) === thisMonthKey;
+    });
 
-  const currentMonthSpent = netSpent(currentMonthExpenses, currentMonthIncomes);
-  const dailyBurn = currentMonthSpent / currentDay;
-  const projectedSpent = dailyBurn * daysInMonth;
+    const currentMonthSpent = netSpent(currentMonthExpenses, currentMonthIncomes);
+    const dailyBurn = currentMonthSpent / currentDay;
+    const projectedSpent = dailyBurn * daysInMonth;
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 2. Discretionary vs Essentials
-  // ─────────────────────────────────────────────────────────────────────────────
-  let essentialSpent = 0;
-  let discretionarySpent = 0;
+    // Discretionary vs Essentials
+    let essentialSpent = 0;
+    let discretionarySpent = 0;
+    currentMonthExpenses.forEach((e) => {
+      const amt = Math.max(0, Number(e.amount || 0));
+      const cat = (e.categoryName || '').toLowerCase();
+      if (ESSENTIAL_CATEGORIES.some((k) => cat.includes(k))) {
+        essentialSpent += amt;
+      } else {
+        discretionarySpent += amt;
+      }
+    });
 
-  currentMonthExpenses.forEach((e) => {
-    const amt = Math.max(0, Number(e.amount || 0));
-    const cat = (e.categoryName || '').toLowerCase();
-    if (ESSENTIAL_CATEGORIES.some((k) => cat.includes(k))) {
-      essentialSpent += amt;
-    } else {
-      discretionarySpent += amt;
+    const discretionaryPct =
+      currentMonthSpent > 0 ? Math.round((discretionarySpent / currentMonthSpent) * 100) : 0;
+    const potentialSavings = discretionarySpent * 0.15;
+
+    // Weekend vs Weekday Surge
+    let weekendSpent = 0;
+    let weekdaySpent = 0;
+    currentMonthExpenses.forEach((e) => {
+      if (!e.expenseDate) return;
+      const parts = e.expenseDate.split('T')[0].split('-');
+      let day = -1;
+      if (parts.length === 3) {
+        const y = Number.parseInt(parts[0], 10);
+        const m = Number.parseInt(parts[1], 10) - 1;
+        const d = Number.parseInt(parts[2], 10);
+        if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(d)) {
+          day = new Date(y, m, d).getDay();
+        }
+      }
+      if (day === -1) {
+        day = new Date(e.expenseDate).getDay();
+      }
+      const amt = Math.max(0, Number(e.amount || 0));
+      if (day === 0 || day === 6) {
+        weekendSpent += amt;
+      } else if (day >= 1 && day <= 5) {
+        weekdaySpent += amt;
+      }
+    });
+
+    let weekendDaysCount = 0;
+    let weekdayDaysCount = 0;
+    for (let d = 1; d <= currentDay; d++) {
+      const dow = new Date(now.getFullYear(), now.getMonth(), d).getDay();
+      if (dow === 0 || dow === 6) weekendDaysCount++;
+      else weekdayDaysCount++;
     }
-  });
 
-  const discretionaryPct =
-    currentMonthSpent > 0 ? Math.round((discretionarySpent / currentMonthSpent) * 100) : 0;
-  const potentialSavings = discretionarySpent * 0.15; // 15% reduction potential
+    const avgWeekendTx = weekendDaysCount > 0 ? weekendSpent / weekendDaysCount : 0;
+    const avgWeekdayTx = weekdayDaysCount > 0 ? weekdaySpent / weekdayDaysCount : 0;
+    const weekendMultiplier =
+      avgWeekdayTx > 0 ? (avgWeekendTx / avgWeekdayTx).toFixed(1) : '1.0';
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 3. Weekend vs Weekday Surge
-  // ─────────────────────────────────────────────────────────────────────────────
-  let weekendSpent = 0;
-  let weekdaySpent = 0;
+    // Budget Governance Score (0 - 100%)
+    let governanceScore = 100;
+    let breachedBudgetsCount = 0;
+    let warningBudgetsCount = 0;
+    if (safeBudgets.length > 0) {
+      safeBudgets.forEach((b) => {
+        const limit = Math.max(1, Number(b.limit || 0));
+        const spent = Math.max(0, Number(b.spent || 0));
+        const pct = (spent / limit) * 100;
+        if (pct >= 100) {
+          breachedBudgetsCount++;
+          governanceScore -= 25;
+        } else if (pct >= 80) {
+          warningBudgetsCount++;
+          governanceScore -= 10;
+        }
+      });
+      governanceScore = Math.max(0, Math.min(100, governanceScore));
+    } else {
+      governanceScore = 85;
+    }
 
-  currentMonthExpenses.forEach((e) => {
-    if (!e.expenseDate) return;
-    const parts = e.expenseDate.split('T')[0].split('-');
-    let day = -1;
-    if (parts.length === 3) {
-      const y = Number.parseInt(parts[0], 10);
-      const m = Number.parseInt(parts[1], 10) - 1;
-      const d = Number.parseInt(parts[2], 10);
-      if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(d)) {
-        day = new Date(y, m, d).getDay();
+    // Category Depletion Early Warning
+    let earliestBurnout: BurnoutCandidate | null = null;
+    const monthCatSpentById = new Map<number, number>();
+    const monthCatSpentByName = new Map<string, number>();
+    for (let i = 0; i < currentMonthExpenses.length; i++) {
+      const e = currentMonthExpenses[i];
+      const amt = Math.max(0, Number(e.amount || 0));
+      if (e.categoryId) {
+        monthCatSpentById.set(e.categoryId, (monthCatSpentById.get(e.categoryId) || 0) + amt);
+      }
+      if (e.categoryName) {
+        const lower = e.categoryName.toLowerCase();
+        monthCatSpentByName.set(lower, (monthCatSpentByName.get(lower) || 0) + amt);
       }
     }
-    if (day === -1) {
-      day = new Date(e.expenseDate).getDay();
-    }
-    const amt = Math.max(0, Number(e.amount || 0));
-    if (day === 0 || day === 6) {
-      weekendSpent += amt;
-    } else if (day >= 1 && day <= 5) {
-      weekdaySpent += amt;
-    }
-  });
 
-  // Days *elapsed* this month, split by weekday/weekend — not a count of
-  // transactions. The previous version incremented these once per matching
-  // expense, so a day with several small purchases inflated the day count
-  // and "Daily Average" silently became an average transaction size
-  // instead, which could show either side of the multiplier as higher or
-  // lower than the user's actual per-day spending depending on how many
-  // transactions landed on each kind of day.
-  let weekendDaysCount = 0;
-  let weekdayDaysCount = 0;
-  for (let d = 1; d <= currentDay; d++) {
-    const dow = new Date(now.getFullYear(), now.getMonth(), d).getDay();
-    if (dow === 0 || dow === 6) weekendDaysCount++;
-    else weekdayDaysCount++;
-  }
-
-  const avgWeekendTx = weekendDaysCount > 0 ? weekendSpent / weekendDaysCount : 0;
-  const avgWeekdayTx = weekdayDaysCount > 0 ? weekdaySpent / weekdayDaysCount : 0;
-  const weekendMultiplier =
-    avgWeekdayTx > 0 ? (avgWeekendTx / avgWeekdayTx).toFixed(1) : '1.0';
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 4. Budget Governance Score (0 - 100%)
-  // ─────────────────────────────────────────────────────────────────────────────
-  let governanceScore = 100;
-  let breachedBudgetsCount = 0;
-  let warningBudgetsCount = 0;
-
-  if (safeBudgets.length > 0) {
     safeBudgets.forEach((b) => {
       const limit = Math.max(1, Number(b.limit || 0));
       const spent = Math.max(0, Number(b.spent || 0));
-      const pct = (spent / limit) * 100;
-      if (pct >= 100) {
-        breachedBudgetsCount++;
-        governanceScore -= 25;
-      } else if (pct >= 80) {
-        warningBudgetsCount++;
-        governanceScore -= 10;
+      const remaining = limit - spent;
+      const catSpent = (b.categoryId ? monthCatSpentById.get(b.categoryId) : undefined)
+        ?? (b.categoryName ? monthCatSpentByName.get(b.categoryName.toLowerCase()) : undefined)
+        ?? 0;
+      const dailyRate = catSpent / currentDay;
+
+      if (remaining > 0 && dailyRate > 0) {
+        const daysToExhaust = Math.round(remaining / dailyRate);
+        if (!earliestBurnout || daysToExhaust < earliestBurnout.daysRemainingUntilDepletion) {
+          earliestBurnout = {
+            categoryName: b.categoryName,
+            spent,
+            limit,
+            daysRemainingUntilDepletion: daysToExhaust,
+            dailyCategoryRate: dailyRate,
+          };
+        }
       }
     });
-    governanceScore = Math.max(0, Math.min(100, governanceScore));
-  } else {
-    governanceScore = 85; // Baseline when no budgets are defined
-  }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 5. Category Burnout Watch (First category to breach limit)
-  // ─────────────────────────────────────────────────────────────────────────────
-  interface BurnoutCandidate {
-    categoryName: string;
-    spent: number;
-    limit: number;
-    daysRemainingUntilDepletion: number;
-    dailyCategoryRate: number;
-  }
+    // Transaction Cadence & Ticket Size
+    const txCount = currentMonthExpenses.length;
+    const avgTicketSize = txCount > 0 ? currentMonthSpent / txCount : 0;
+    const txPerDay = (txCount / currentDay).toFixed(1);
 
-  let earliestBurnout: BurnoutCandidate | null = null;
-
-  // Pre-aggregate monthly category spending for O(1) budget lookup
-  const monthCatSpentById = new Map<number, number>();
-  const monthCatSpentByName = new Map<string, number>();
-  for (let i = 0; i < currentMonthExpenses.length; i++) {
-    const e = currentMonthExpenses[i];
-    const amt = Math.max(0, Number(e.amount || 0));
-    if (e.categoryId) {
-      monthCatSpentById.set(e.categoryId, (monthCatSpentById.get(e.categoryId) || 0) + amt);
-    }
-    if (e.categoryName) {
-      const lower = e.categoryName.toLowerCase();
-      monthCatSpentByName.set(lower, (monthCatSpentByName.get(lower) || 0) + amt);
-    }
-  }
-
-  safeBudgets.forEach((b) => {
-    const limit = Math.max(1, Number(b.limit || 0));
-    const spent = Math.max(0, Number(b.spent || 0));
-    const remaining = limit - spent;
-    const catSpent = (b.categoryId ? monthCatSpentById.get(b.categoryId) : undefined)
-      ?? (b.categoryName ? monthCatSpentByName.get(b.categoryName.toLowerCase()) : undefined)
-      ?? 0;
-    const dailyRate = catSpent / currentDay;
-
-    if (remaining > 0 && dailyRate > 0) {
-      const daysToExhaust = Math.round(remaining / dailyRate);
-      if (!earliestBurnout || daysToExhaust < earliestBurnout.daysRemainingUntilDepletion) {
-        earliestBurnout = {
-          categoryName: b.categoryName,
-          spent,
-          limit,
-          daysRemainingUntilDepletion: daysToExhaust,
-          dailyCategoryRate: dailyRate,
-        };
+    // Peak Expense Outlier
+    let peakExpense: ExpenseItem | null = null;
+    currentMonthExpenses.forEach((e) => {
+      const amt = Number(e.amount || 0);
+      if (!peakExpense || amt > Number(peakExpense.amount || 0)) {
+        peakExpense = e;
       }
-    }
-  });
+    });
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 6. Frequency & Average Ticket Size
-  // ─────────────────────────────────────────────────────────────────────────────
-  const txCount = currentMonthExpenses.length;
-  const avgTicketSize = txCount > 0 ? currentMonthSpent / txCount : 0;
-  const txPerDay = (txCount / currentDay).toFixed(1);
+    // Subscriptions Overhead
+    const recurringTotal = currentMonthExpenses
+      .filter((e) => e.isRecurring || e.recurring || (e as any).frequency)
+      .reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
+    const recurringRatio =
+      currentMonthSpent > 0 ? Math.round((recurringTotal / currentMonthSpent) * 100) : 0;
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 7. Peak Single Expense Outlier
-  // ─────────────────────────────────────────────────────────────────────────────
-  let peakExpense: ExpenseItem | null = null;
-  currentMonthExpenses.forEach((e) => {
-    const amt = Number(e.amount || 0);
-    if (!peakExpense || amt > Number(peakExpense.amount || 0)) {
-      peakExpense = e;
-    }
-  });
+    // Cross-Domain Cash Flow & Savings Rate
+    const totalMonthlyInflow = earnedTotal(currentMonthIncomes);
+    const activeInflow = totalMonthlyInflow;
+    const netCashFlow = activeInflow - currentMonthSpent;
+    const savingsRate = activeInflow > 0 ? Math.round((netCashFlow / activeInflow) * 100) : 0;
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 8. Recurring Subscriptions Overhead Ratio
-  // ─────────────────────────────────────────────────────────────────────────────
-  const recurringTotal = currentMonthExpenses
-    .filter((e) => e.isRecurring || e.recurring || (e as any).frequency)
-    .reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
-  const recurringRatio =
-    currentMonthSpent > 0 ? Math.round((recurringTotal / currentMonthSpent) * 100) : 0;
+    // Savings Goals Funding Velocity
+    const totalGoalsTarget = safeGoals.reduce((s, g) => s + Math.max(0, Number(g.targetAmount || 0)), 0);
+    const totalGoalsCurrent = safeGoals.reduce((s, g) => s + Math.max(0, Number(g.currentAmount || 0)), 0);
+    const totalGoalsRemaining = Math.max(0, totalGoalsTarget - totalGoalsCurrent);
+    const goalsFundingPct = totalGoalsTarget > 0 ? Math.round((totalGoalsCurrent / totalGoalsTarget) * 100) : 0;
+    const monthsToFundGoals = (netCashFlow > 0 && totalGoalsRemaining > 0)
+      ? Math.max(1, Math.ceil(totalGoalsRemaining / netCashFlow))
+      : null;
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 9. CROSS-DOMAIN SYNTHESIS: Incomes ↔ Expenses (Net Cash Flow & Savings Rate)
-  // ─────────────────────────────────────────────────────────────────────────────
-  const totalMonthlyInflow = earnedTotal(currentMonthIncomes);
-  const activeInflow = totalMonthlyInflow;
-  const netCashFlow = activeInflow - currentMonthSpent;
-  const savingsRate = activeInflow > 0 ? Math.round((netCashFlow / activeInflow) * 100) : 0;
+    // Recurring Commitment Drag (Autonomy Index)
+    const recurringChitTotal = safeGoals
+      .filter((g: any) => g.isRecurring || (g.recurringAmount != null && Number(g.recurringAmount) > 0))
+      .reduce((s: number, g: any) => s + Math.max(0, Number(g.recurringAmount || 0)), 0);
+    const totalCommittedOverhead = recurringTotal + recurringChitTotal;
+    const commitmentAutonomyRatio = activeInflow > 0 ? Math.round((totalCommittedOverhead / activeInflow) * 100) : 0;
 
-  // 10. CROSS-DOMAIN SYNTHESIS: Savings Goals Funding Velocity
-  // ─────────────────────────────────────────────────────────────────────────────
-  const safeGoals = savingsGoals || [];
-  const totalGoalsTarget = safeGoals.reduce((s, g) => s + Math.max(0, Number(g.targetAmount || 0)), 0);
-  const totalGoalsCurrent = safeGoals.reduce((s, g) => s + Math.max(0, Number(g.currentAmount || 0)), 0);
-  const totalGoalsRemaining = Math.max(0, totalGoalsTarget - totalGoalsCurrent);
-  const goalsFundingPct = totalGoalsTarget > 0 ? Math.round((totalGoalsCurrent / totalGoalsTarget) * 100) : 0;
-  const monthsToFundGoals = (netCashFlow > 0 && totalGoalsRemaining > 0)
-    ? Math.max(1, Math.ceil(totalGoalsRemaining / netCashFlow))
-    : null;
+    // Income Stream Composition & Salary Coverage
+    const salaryInflow = currentMonthIncomes
+      .filter((i) => kindOf(i) === 'SALARY' || /salary/i.test(i.source || ''))
+      .reduce((s, i) => s + Math.max(0, Number(i.amount || 0)), 0);
+    const otherInflow = Math.max(0, activeInflow - salaryInflow);
+    const salarySharePct = activeInflow > 0 ? Math.round((salaryInflow / activeInflow) * 100) : 0;
+    const salaryCoverageRatio = currentMonthSpent > 0
+      ? Math.round((salaryInflow / currentMonthSpent) * 100)
+      : (salaryInflow > 0 ? 100 : 0);
 
-  // 11. CROSS-DOMAIN SYNTHESIS: Recurring Commitment Drag (Autonomy Index)
-  const recurringChitTotal = safeGoals
-    .filter((g: any) => g.isRecurring || (g.recurringAmount != null && Number(g.recurringAmount) > 0))
-    .reduce((s: number, g: any) => s + Math.max(0, Number(g.recurringAmount || 0)), 0);
-  const totalCommittedOverhead = recurringTotal + recurringChitTotal;
-  const commitmentAutonomyRatio = activeInflow > 0 ? Math.round((totalCommittedOverhead / activeInflow) * 100) : 0;
-
-  // 12. CROSS-DOMAIN SYNTHESIS: Income Stream Composition & Salary Coverage
-  const salaryInflow = currentMonthIncomes
-    .filter((i) => kindOf(i) === 'SALARY' || /salary/i.test(i.source || ''))
-    .reduce((s, i) => s + Math.max(0, Number(i.amount || 0)), 0);
-  const otherInflow = Math.max(0, activeInflow - salaryInflow);
-  const salarySharePct = activeInflow > 0 ? Math.round((salaryInflow / activeInflow) * 100) : 0;
-  const salaryCoverageRatio = currentMonthSpent > 0
-    ? Math.round((salaryInflow / currentMonthSpent) * 100)
-    : (salaryInflow > 0 ? 100 : 0);
-
-  // 13. CROSS-DOMAIN SYNTHESIS: Emergency Savings Runway
-  const allTimeSpent = safeExpenses.reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
-  const monthlyBurnBaseline = currentMonthSpent > 0 ? currentMonthSpent : allTimeSpent;
-  const emergencyRunwayMonths = (monthlyBurnBaseline > 0 && totalGoalsCurrent > 0)
-    ? (totalGoalsCurrent / monthlyBurnBaseline).toFixed(1)
-    : '0';
-
+    // Emergency Savings Runway
+    const allTimeSpent = safeExpenses.reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
+    const monthlyBurnBaseline = currentMonthSpent > 0 ? currentMonthSpent : allTimeSpent;
+    const emergencyRunwayMonths = (monthlyBurnBaseline > 0 && totalGoalsCurrent > 0)
+      ? (totalGoalsCurrent / monthlyBurnBaseline).toFixed(1)
+      : '0';
 
     return {
       currentMonthSpent,
@@ -504,7 +493,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
       peak: peakExpense as ExpenseItem | null,
       recurringTotal,
       recurringRatio,
-        activeInflow,
+      activeInflow,
       netCashFlow,
       savingsRate,
       totalGoalsTarget,
@@ -521,7 +510,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
       salaryCoverageRatio,
       emergencyRunwayMonths,
     };
-  }, [safeExpenses, safeBudgets, safeIncomes, safeGoals, currentDay, daysInMonth, thisMonthKey]);
+  }, [safeExpenses, safeBudgets, safeIncomes, safeGoals, currentDay, daysInMonth, thisMonthKey, now]);
 
   const {
     currentMonthSpent,
@@ -543,7 +532,6 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
     txPerDay,
     peak,
     recurringTotal,
-    recurringRatio,
     activeInflow,
     netCashFlow,
     savingsRate,
@@ -567,33 +555,404 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
     setSelectedInsight(data);
   };
 
+  const handleTabChange = (tab: InsightTab) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setActiveTab(tab);
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Modal Trigger Handlers for Specific Insights
+  // ─────────────────────────────────────────────────────────────────────────────
+  const openForecastDetail = () => {
+    if (mlForecastStatus.isCalibrated && mlForecast) {
+      openDetail({
+        title: 'ML Forward Spending Forecast',
+        icon: 'trending-up-outline',
+        color: c.primary,
+        headline: `Time-series machine learning model projects ${formatAmt(mlForecast.total)} in spend over the next ${mlForecast.days} days.`,
+        metrics: [
+          { label: 'Projected 7-Day Outflow', value: formatAmt(mlForecast.total) },
+          { label: 'Forecast Horizon', value: `${mlForecast.days} Days` },
+          { label: 'Expected Daily Pace', value: `${formatAmt(mlForecast.total / mlForecast.days)}/day` },
+          { label: 'Model Engine', value: 'HistGradientBoosting Time-Series' },
+        ],
+        advice:
+          'Time-series projections capture your seasonal pace. Compare this projection against your remaining monthly budget to avoid overspending before month end.',
+      });
+    } else {
+      openDetail({
+        title: 'ML Spending Calibration',
+        icon: 'hourglass-outline',
+        color: c.primary,
+        headline: `AI model requires 28 days of transaction history (${mlForecastStatus.daysRecorded} / 28 recorded).`,
+        metrics: [
+          { label: 'Days Recorded', value: `${mlForecastStatus.daysRecorded} Days` },
+          { label: 'Required for Calibration', value: '28 Days' },
+          { label: 'Zero-Fabrication Status', value: 'Active' },
+          { label: 'Current Pace Baseline', value: `${formatAmt(dailyBurn)}/day` },
+        ],
+        advice:
+          'To ensure absolute financial truth, the AI engine never fabricates synthetic data. Continue logging daily expenses to unlock multi-day predictive trajectories.',
+      });
+    }
+  };
+
+  const openAnomalyDetail = () => {
+    const isFlagged = mlAnomaly && mlAnomaly.count > 0;
+    openDetail({
+      title: 'ML Isolation Forest Anomaly Scanner',
+      icon: isFlagged ? 'warning-outline' : 'shield-checkmark-outline',
+      color: isFlagged ? c.danger : c.success,
+      headline: isFlagged
+        ? `Isolation Forest flagged ${mlAnomaly.count} transaction(s) deviating from your typical amount, hour, and day cadence.`
+        : 'Isolation Forest analyzed your recent transactions across amounts, hours, and days. All transactions fall within expected variance.',
+      metrics: [
+        { label: 'Flagged Anomalies', value: `${mlAnomaly?.count || 0}` },
+        { label: 'Top Outlier', value: mlAnomaly?.topOutlier?.desc || 'None' },
+        { label: 'Outlier Amount', value: mlAnomaly?.topOutlier ? formatAmt(mlAnomaly.topOutlier.amount) : 'N/A' },
+        { label: 'Model Algorithm', value: 'Isolation Forest (Unsupervised)' },
+      ],
+      advice: isFlagged
+        ? 'Audit flagged transactions for irregular merchant charges, accidental double billings, or unexpected fee changes.'
+        : 'Your spending conforms neatly to your behavioral baseline. No anomalous spikes detected.',
+    });
+  };
+
+  const openBurnVelocityDetail = () => {
+    openDetail({
+      title: 'Burn Velocity & Forecast',
+      icon: 'speedometer-outline',
+      color: c.primary,
+      headline: `Your projected month-end outflow is ${formatAmt(projectedSpent)}.`,
+      metrics: [
+        { label: 'Current Outflow', value: formatAmt(currentMonthSpent) },
+        { label: 'Daily Outflow Rate', value: `${formatAmt(dailyBurn)}/day` },
+        { label: 'Days Remaining in Month', value: `${daysRemaining} days` },
+        { label: 'Projected Total', value: formatAmt(projectedSpent) },
+      ],
+      advice:
+        dailyBurn > 0
+          ? `To reduce your month-end projection by 10%, target an average daily spend of ${formatAmt(dailyBurn * 0.9)}.`
+          : 'Maintain regular tracking to refine projection accuracy.',
+    });
+  };
+
+  const openBurnoutDetail = () => {
+    if (!burnout) return;
+    openDetail({
+      title: 'Budget Burnout Early Warning',
+      icon: 'flame-outline',
+      color: c.accent,
+      headline: `"${burnout.categoryName}" is on pace to deplete its budget in ${burnout.daysRemainingUntilDepletion} days.`,
+      metrics: [
+        { label: 'At Risk Category', value: burnout.categoryName },
+        { label: 'Category Outflow Rate', value: `${formatAmt(burnout.dailyCategoryRate)}/day` },
+        { label: 'Remaining Budget', value: formatAmt(burnout.limit - burnout.spent) },
+        { label: 'Estimated Depletion In', value: `${burnout.daysRemainingUntilDepletion} days` },
+      ],
+      advice:
+        'At your current velocity, this category will breach its cap before the month ends. Slow down daily transactions in this category to stay under budget.',
+    });
+  };
+
+  const openCashFlowDetail = () => {
+    openDetail({
+      title: 'Monthly Cash Flow Pulse',
+      icon: 'swap-horizontal-outline',
+      color: netCashFlow >= 0 ? c.success : c.danger,
+      headline:
+        activeInflow > 0
+          ? `Monthly Inflow is ${formatAmt(activeInflow)} against ${formatAmt(currentMonthSpent)} total outflow (${netCashFlow >= 0 ? '+' : ''}${formatAmt(netCashFlow)} net balance).`
+          : `Monthly outflow is ${formatAmt(currentMonthSpent)}. Record your monthly income streams to track your savings rate.`,
+      metrics: [
+        { label: 'Total Inflows', value: `+${formatAmt(activeInflow)}` },
+        { label: 'Total Outflows', value: `-${formatAmt(currentMonthSpent)}` },
+        { label: 'Net Cash Flow', value: `${netCashFlow >= 0 ? '+' : ''}${formatAmt(netCashFlow)}` },
+        { label: 'Savings Rate', value: activeInflow > 0 ? `${savingsRate}%` : 'N/A' },
+      ],
+      advice:
+        activeInflow <= 0
+          ? 'Log your salary or income entries to calculate your net cash flow and savings rate.'
+          : netCashFlow < 0
+          ? 'Spending is currently exceeding income this month. Curtail discretionary expenses to restore positive cash flow.'
+          : savingsRate >= 20
+          ? 'Outstanding! You are retaining over 20% of your earnings, building strong liquidity.'
+          : 'Positive cash flow! Aim to increase your retention rate to 20% or higher.',
+    });
+  };
+
+  const openTriDomainDetail = () => {
+    openDetail({
+      title: 'Tri-Domain Wealth Interaction',
+      icon: 'pie-chart-outline',
+      color: '#3B82F6',
+      headline:
+        activeInflow > 0
+          ? `Wealth allocation: ${Math.round((currentMonthSpent / (activeInflow || 1)) * 100)}% to expenses, with ${formatAmt(totalGoalsCurrent)} protected in chits & savings.`
+          : 'Track income, expenses, and savings goals to visualize your tri-domain wealth loop.',
+      metrics: [
+        { label: 'Earned Inflow', value: formatAmt(activeInflow) },
+        { label: 'Outflow Drain', value: formatAmt(currentMonthSpent) },
+        { label: 'Stored in Chits & Goals', value: formatAmt(totalGoalsCurrent) },
+        { label: 'Net Available Liquidity', value: `${netCashFlow >= 0 ? '+' : ''}${formatAmt(netCashFlow)}` },
+      ],
+      advice:
+        activeInflow <= 0
+          ? 'Log consistent inflows to unlock 50/30/20 wealth allocation metrics.'
+          : netCashFlow < 0
+          ? 'Outflow is depleting your liquidity. Pause discretionary spending to safeguard your chit and savings contributions.'
+          : 'Healthy wealth loop: Cash flows smoothly from revenue into protected savings and essential living.',
+    });
+  };
+
+  const openEmergencyRunwayDetail = () => {
+    openDetail({
+      title: 'Emergency Savings Runway',
+      icon: 'shield-checkmark-outline',
+      color: Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning,
+      headline:
+        totalGoalsCurrent > 0
+          ? `Current accumulated reserves (${formatAmt(totalGoalsCurrent)}) can sustain your living expenses for ${emergencyRunwayMonths} months without any new income.`
+          : 'Configure savings goals or reserves to calculate your emergency runway.',
+      metrics: [
+        { label: 'Accumulated Reserves', value: formatAmt(totalGoalsCurrent) },
+        { label: 'Monthly Burn Rate', value: formatAmt(currentMonthSpent) },
+        { label: 'Emergency Runway', value: `${emergencyRunwayMonths} Months` },
+        { label: 'Target 6-Mo Reserve', value: formatAmt(currentMonthSpent * 6) },
+      ],
+      advice:
+        totalGoalsCurrent <= 0
+          ? 'Build a dedicated emergency fund goal covering at least 3 to 6 months of expenses for financial resilience.'
+          : Number(emergencyRunwayMonths) >= 6
+          ? 'Institutional Gold Standard! You have over 6 months of living expenses safely banked.'
+          : Number(emergencyRunwayMonths) >= 3
+          ? 'Healthy safety cushion! Maintain this baseline while directing surplus cash flow toward investments.'
+          : 'Runway is below the recommended 3 months. Prioritize building reserves before increasing discretionary spending.',
+    });
+  };
+
+  const openGoalVelocityDetail = () => {
+    openDetail({
+      title: 'Goal Funding Velocity',
+      icon: 'flag-outline',
+      color: c.warning,
+      headline:
+        monthsToFundGoals
+          ? `At current monthly surplus (+${formatAmt(netCashFlow)}/mo), remaining goals will be fully funded in ~${monthsToFundGoals} month${monthsToFundGoals === 1 ? '' : 's'}.`
+          : `${goalsFundingPct}% of total savings milestone target achieved (${formatAmt(totalGoalsCurrent)} of ${formatAmt(totalGoalsTarget)}).`,
+      metrics: [
+        { label: 'Milestones Target', value: formatAmt(totalGoalsTarget) },
+        { label: 'Current Accumulation', value: formatAmt(totalGoalsCurrent) },
+        { label: 'Remaining Capital Needed', value: formatAmt(totalGoalsRemaining) },
+        { label: 'Estimated Completion', value: monthsToFundGoals ? `~${monthsToFundGoals} Months` : 'N/A' },
+      ],
+      advice:
+        monthsToFundGoals
+          ? 'Maintaining your current surplus pace guarantees timely realization of target milestones without straining operational liquidity.'
+          : netCashFlow <= 0
+          ? 'Achieving positive monthly cash flow is required to accurately model goal milestone completion timelines.'
+          : 'All savings targets are currently fully funded! Time to set new financial horizons.',
+    });
+  };
+
+  const openSalaryCoverageDetail = () => {
+    openDetail({
+      title: 'Income Streams & Salary Coverage',
+      icon: 'cash-outline',
+      color: salaryCoverageRatio >= 100 ? c.success : c.warning,
+      headline:
+        activeInflow > 0
+          ? `Base salary provides ${salarySharePct}% of total inflows (${formatAmt(salaryInflow)}), covering ${salaryCoverageRatio}% of your monthly living expenses.`
+          : 'Log salary and secondary income streams to model income stability and coverage ratios.',
+      metrics: [
+        { label: 'Base Salary', value: formatAmt(salaryInflow) },
+        { label: 'Other Inflows', value: formatAmt(otherInflow) },
+        { label: 'Monthly Expenses', value: formatAmt(currentMonthSpent) },
+        { label: 'Salary Coverage Ratio', value: `${salaryCoverageRatio}%` },
+      ],
+      advice:
+        activeInflow <= 0
+          ? 'Log your salary and secondary earnings to analyze your income stability and safety margins.'
+          : salaryCoverageRatio >= 100
+          ? 'Excellent! Your base salary alone covers 100% of all monthly expenses, allowing bonus/other income to go straight to savings.'
+          : 'Your monthly expenses currently exceed base salary. You depend on irregular or secondary inflows to balance the budget.',
+    });
+  };
+
+  const openDiscretionaryDetail = () => {
+    openDetail({
+      title: 'Discretionary Load & Savings',
+      icon: 'wallet-outline',
+      color: c.teal,
+      headline: `${discretionaryPct}% of your spend was allocated to non-essential lifestyle categories.`,
+      metrics: [
+        { label: 'Essential Spend', value: formatAmt(essentialSpent) },
+        { label: 'Discretionary Spend', value: formatAmt(discretionarySpent) },
+        { label: 'Discretionary Ratio', value: `${discretionaryPct}%` },
+        { label: 'Potential 15% Cut', value: formatAmt(potentialSavings) },
+      ],
+      advice: `Trimming just 15% from non-essential spending could retain ${formatAmt(potentialSavings)} in monthly savings.`,
+    });
+  };
+
+  const openWeekendDetail = () => {
+    openDetail({
+      title: 'Weekend vs Weekday Spend',
+      icon: 'calendar-outline',
+      color: c.accent,
+      headline: `Weekend spending averages ${weekendMultiplier}x higher per day than weekdays.`,
+      metrics: [
+        { label: 'Weekend Daily Average', value: formatAmt(avgWeekendTx) },
+        { label: 'Weekday Daily Average', value: formatAmt(avgWeekdayTx) },
+        { label: 'Weekend Multiplier', value: `${weekendMultiplier}x` },
+      ],
+      advice:
+        Number(weekendMultiplier) > 1.5
+          ? 'Weekend activities drive significant cash outflow. Pre-allocating weekend allowances can help stabilize your balance.'
+          : 'Your weekend spending is well-balanced with weekday habits.',
+    });
+  };
+
+  const openGovernanceDetail = () => {
+    openDetail({
+      title: 'Budget Health Score',
+      icon: 'shield-checkmark-outline',
+      color: governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.danger,
+      headline: `Financial Governance Index: ${governanceScore}/100`,
+      metrics: [
+        { label: 'Overall Health Index', value: `${governanceScore}%` },
+        { label: 'Breached Category Caps', value: `${breachedBudgetsCount}` },
+        { label: 'Warning Caps (≥80%)', value: `${warningBudgetsCount}` },
+        { label: 'Total Monitored Categories', value: `${safeBudgets.length}` },
+      ],
+      advice:
+        breachedBudgetsCount > 0
+          ? `You have ${breachedBudgetsCount} category limit(s) exceeded. Review spending under breached caps immediately.`
+          : 'All budgets are within healthy operational thresholds.',
+    });
+  };
+
+  const openCommitmentDragDetail = () => {
+    openDetail({
+      title: 'Commitment Autonomy Drag',
+      icon: 'lock-closed-outline',
+      color: commitmentAutonomyRatio > 50 ? c.danger : c.highlight,
+      headline:
+        activeInflow > 0
+          ? `Fixed recurring commitments (subscriptions + chits/RDs) lock up ${commitmentAutonomyRatio}% of your monthly inflow (${formatAmt(totalCommittedOverhead)}/mo).`
+          : `You have ${formatAmt(totalCommittedOverhead)}/mo committed to recurring subscriptions and chit/RD installments.`,
+      metrics: [
+        { label: 'Subscriptions Burn', value: `${formatAmt(recurringTotal)}/mo` },
+        { label: 'Chits & RD Installments', value: `${formatAmt(recurringChitTotal)}/mo` },
+        { label: 'Total Committed Run-rate', value: `${formatAmt(totalCommittedOverhead)}/mo` },
+        { label: 'Income Autonomy Drag', value: `${commitmentAutonomyRatio}%` },
+      ],
+      advice:
+        commitmentAutonomyRatio > 50
+          ? 'Caution: Over 50% of your earnings is committed before discretionary spending begins. Audit non-essential subscriptions.'
+          : 'Excellent: Your recurring commitments leave ample flexibility for discretionary choices and emergency buffers.',
+    });
+  };
+
+  const openTicketCadenceDetail = () => {
+    openDetail({
+      title: 'Average Ticket & Velocity',
+      icon: 'pricetag-outline',
+      color: c.primary,
+      headline: `You average ${formatAmt(avgTicketSize)} per transaction across ${txCount} orders.`,
+      metrics: [
+        { label: 'Average Ticket Size', value: formatAmt(avgTicketSize) },
+        { label: 'Monthly Transactions', value: `${txCount} txs` },
+        { label: 'Purchase Cadence', value: `${txPerDay} txs/day` },
+      ],
+      advice: 'Consolidating smaller purchases into planned shopping intervals helps reduce impulse spend.',
+    });
+  };
+
+  const openPeakOutflowDetail = () => {
+    if (!peak) return;
+    openDetail({
+      title: 'Peak Expense Outlier',
+      icon: 'trending-up-outline',
+      color: c.warning,
+      headline: `Largest single outflow this month: ${formatAmt(peak.amount)} (${peak.description}).`,
+      metrics: [
+        { label: 'Peak Amount', value: formatAmt(peak.amount) },
+        { label: 'Category', value: peak.categoryName || 'General' },
+        { label: 'Date', value: peak.expenseDate || '-' },
+        {
+          label: 'Share of Monthly Spend',
+          value:
+            currentMonthSpent > 0
+              ? `${Math.round((Number(peak.amount || 0) / currentMonthSpent) * 100)}%`
+              : '0%',
+        },
+      ],
+      advice:
+        'Large isolated expenses disproportionately impact monthly runway. Plan and set sinking funds for upcoming big purchases.',
+    });
+  };
+
   return (
     <View style={styles.container}>
-      {/* Scope Filter Tabs */}
+      {/* 1. TOP TIER: Actionable Priority AI Alert Banner */}
+      <InsightAlertBanner
+        anomaly={mlAnomaly}
+        burnout={burnout}
+        formatAmt={formatAmt}
+        onPressAnomaly={openAnomalyDetail}
+        onPressBurnout={openBurnoutDetail}
+        colors={c}
+      />
+
+      {/* 2. CATEGORY SEGMENTS FILTER BAR */}
       <View style={[styles.filterBar, { backgroundColor: c.card, borderColor: c.border }]}>
         <TouchableOpacity
-          onPress={() => setActiveTab('all')}
+          onPress={() => handleTabChange('ai')}
           style={[
             styles.filterTab,
-            activeTab === 'all' && { backgroundColor: c.primary },
+            activeTab === 'ai' && { backgroundColor: c.primary },
           ]}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'ai' }}
         >
           <Text
             style={[
               styles.filterTabText,
-              { color: activeTab === 'all' ? (c.onPrimary) : c.textMuted },
+              { color: activeTab === 'ai' ? c.onPrimary : c.textMuted },
             ]}
           >
-            All Insights
+            AI Intelligence
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => setActiveTab('habits')}
+          onPress={() => handleTabChange('wealth')}
           style={[
             styles.filterTab,
-            activeTab === 'habits' && { backgroundColor: c.accent },
+            activeTab === 'wealth' && { backgroundColor: c.accent },
           ]}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'wealth' }}
+        >
+          <Text
+            style={[
+              styles.filterTabText,
+              { color: activeTab === 'wealth' ? '#FFFFFF' : c.textMuted },
+            ]}
+          >
+            Wealth & Flow
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => handleTabChange('habits')}
+          style={[
+            styles.filterTab,
+            activeTab === 'habits' && { backgroundColor: c.teal },
+          ]}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'habits' }}
         >
           <Text
             style={[
@@ -601,875 +960,301 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
               { color: activeTab === 'habits' ? '#FFFFFF' : c.textMuted },
             ]}
           >
-            Habits & Savings
+            Habits & Load
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => setActiveTab('forecasts')}
+          onPress={() => handleTabChange('all')}
           style={[
             styles.filterTab,
-            activeTab === 'forecasts' && { backgroundColor: c.highlight },
+            activeTab === 'all' && { backgroundColor: c.highlight },
           ]}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'all' }}
         >
           <Text
             style={[
               styles.filterTabText,
-              { color: activeTab === 'forecasts' ? '#FFFFFF' : c.textMuted },
+              { color: activeTab === 'all' ? '#FFFFFF' : c.textMuted },
             ]}
           >
-            Alerts & Forecast
+            All Insights
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Cards Grid */}
-      <View style={styles.grid}>
-        {/* ML MODEL 5: Spending Forecast Card */}
-        {(activeTab === "all" || activeTab === "forecasts") && mlForecast && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: "ML Forward Spending Forecast",
-                icon: "trending-up-outline",
-                color: c.primary,
-                headline: `Machine learning time-series model projects ${formatAmt(mlForecast.total)} in spend over the next ${mlForecast.days} days.`,
-                metrics: [
-                  { label: "Projected Outflow", value: formatAmt(mlForecast.total) },
-                  { label: "Forecast Horizon", value: `${mlForecast.days} Days` },
-                  { label: "Expected Daily Rate", value: formatAmt(mlForecast.total / mlForecast.days) },
-                  { label: "Model Architecture", value: "Time-Series ARIMA / HW" },
-                ],
-                advice: "Dynamic time-series projection generated from your spending velocity by the backend ML service.",
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: c.primary + '26' }]}>
-                <Ionicons name="trending-up-outline" size={18} color={c.primary} />
-              </View>
-              <Text style={[styles.cardTag, { color: c.primary }]}>ML Forecast</Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>ML Spend Forecast</Text>
-            <Text style={[styles.cardPrimaryVal, { color: c.primary }]}>
-              {formatAmt(mlForecast.total)}
-            </Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Next {mlForecast.days} days projected outflow
-            </Text>
-            {forecastChart && (
-              <View style={styles.forecastChartWrap} accessibilityLabel={`Daily spend forecast for ${mlForecast.days} days`}>
-                <Svg width="100%" height={48} viewBox="0 0 160 48" preserveAspectRatio="none">
-                  <Line x1={0} y1={42} x2={160} y2={42} stroke={c.border} strokeWidth={1} />
-                  <Path d={forecastChart.area} fill={c.primary} fillOpacity={0.14} />
-                  <Path d={forecastChart.line} fill="none" stroke={c.primary} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-                  {forecastChart.coords.map((point, index) => (
-                    <Circle key={`${mlForecast.points[index].date}-${index}`} cx={point.x} cy={point.y} r={2.4} fill={c.primary} />
-                  ))}
-                </Svg>
-                <View style={styles.forecastAxisLabels}>
-                  <Text style={[styles.cardSubText, { color: c.textMuted }]}>{mlForecast.points[0]?.date.slice(5)}</Text>
-                  <Text style={[styles.cardSubText, { color: c.textMuted }]}>{mlForecast.points[mlForecast.points.length - 1]?.date.slice(5)}</Text>
-                </View>
+      {/* 3. STRUCTURED INTELLIGENCE CARDS */}
+      <View style={styles.cardsContent}>
+        {/* ── SEGMENT A: AI INTELLIGENCE ────────────────────────────────────── */}
+        {(activeTab === 'ai' || activeTab === 'all') && (
+          <View style={styles.sectionWrap}>
+            {activeTab === 'all' && (
+              <View style={styles.sectionHeaderRow}>
+                <Ionicons name="hardware-chip-outline" size={16} color={c.primary} />
+                <Text style={[styles.sectionHeading, { color: c.text }]}>AI Financial Intelligence</Text>
               </View>
             )}
-          </TouchableOpacity>
-        )}
 
-        {/* ML MODEL 4: Anomaly & Outlier Watch Card */}
-        {(activeTab === "all" || activeTab === "forecasts") && mlAnomaly && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: "ML Anomaly Detection",
-                icon: mlAnomaly.count > 0 ? "warning-outline" : "shield-checkmark-outline",
-                color: mlAnomaly.count > 0 ? c.danger : c.success,
-                headline: mlAnomaly.count > 0
-                  ? `Isolation Forest flagged ${mlAnomaly.count} transaction(s) with unusual spending amounts or category deviations.`
-                  : "Isolation Forest scanned recent transactions. All transactions fall within normal patterns.",
-                metrics: [
-                  { label: "Flagged Anomalies", value: `${mlAnomaly.count}` },
-                  { label: "Outlier Description", value: mlAnomaly.topOutlier?.desc || "None" },
-                  { label: "Outlier Amount", value: mlAnomaly.topOutlier ? formatAmt(mlAnomaly.topOutlier.amount) : "N/A" },
-                  { label: "Model Engine", value: "Isolation Forest" },
-                ],
-                advice: mlAnomaly.count > 0
-                  ? "Audit flagged transactions for irregular merchant charges or duplicate billings."
-                  : "Your spending patterns conform neatly to your behavioral baseline.",
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: (mlAnomaly.count > 0 ? c.danger : c.success) + "18" }]}>
-                <Ionicons name={mlAnomaly.count > 0 ? "warning-outline" : "shield-checkmark-outline"} size={18} color={mlAnomaly.count > 0 ? c.danger : c.success} />
-              </View>
-              <Text style={[styles.cardTag, { color: mlAnomaly.count > 0 ? c.danger : c.success }]}>
-                {mlAnomaly.count > 0 ? "Outlier Watch" : "Verified Normal"}
-              </Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>ML Anomaly Scorer</Text>
-            <Text style={[styles.cardPrimaryVal, { color: mlAnomaly.count > 0 ? c.danger : c.success }]}>
-              {mlAnomaly.count > 0 ? `${mlAnomaly.count} Flagged` : "0 Anomalies"}
-            </Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              {mlAnomaly.count > 0 ? (mlAnomaly.topOutlier?.desc || "Outlier detected") : "Spending behavior is nominal"}
-            </Text>
-          </TouchableOpacity>
-        )}
-        {/* CROSS-DOMAIN CARD: Monthly Inflows vs Outflows Summary Pulse */}
-        {(activeTab === "all" || activeTab === "habits" || activeTab === "forecasts") && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: "Monthly Cash Flow Summary",
-                icon: "swap-horizontal-outline",
-                color: netCashFlow >= 0 ? c.success : c.danger,
-                headline:
-                  activeInflow > 0
-                    ? `Monthly Inflow is ${formatAmt(activeInflow)} against ${formatAmt(currentMonthSpent)} total outflow (${netCashFlow >= 0 ? "+" : ""}${formatAmt(netCashFlow)} net balance).`
-                    : `Monthly outflow is ${formatAmt(currentMonthSpent)}. Record your monthly income streams to track your savings rate.`,
-                metrics: [
-                  { label: "Total Inflows", value: `+${formatAmt(activeInflow)}` },
-                  { label: "Total Outflows", value: `-${formatAmt(currentMonthSpent)}` },
-                  { label: "Net Cash Flow", value: `${netCashFlow >= 0 ? "+" : ""}${formatAmt(netCashFlow)}` },
-                  { label: "Savings Rate", value: activeInflow > 0 ? `${savingsRate}%` : "N/A" },
-                ],
-                advice:
-                  activeInflow <= 0
-                    ? "Log your salary or income entries to calculate your net cash flow and savings rate."
-                    : netCashFlow < 0
-                    ? "Spending is currently exceeding income this month. Curtail discretionary expenses to restore positive cash flow."
-                    : savingsRate >= 20
-                    ? "Outstanding! You are retaining over 20% of your earnings, building strong liquidity."
-                    : "Positive cash flow! Aim to increase your retention rate to 20% or higher.",
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: (netCashFlow >= 0 ? c.success : c.danger) + "18" }]}>
-                <Ionicons name="swap-horizontal-outline" size={18} color={netCashFlow >= 0 ? c.success : c.danger} />
-              </View>
-              <Text style={[styles.cardTag, { color: netCashFlow >= 0 ? c.success : c.danger }]}>
-                {netCashFlow >= 0 ? "Surplus" : "Deficit"}
-              </Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Monthly Cash Flow</Text>
-            <Text style={[styles.cardPrimaryVal, { color: netCashFlow >= 0 ? c.success : c.danger }]}>
-              {netCashFlow >= 0 ? "+" : ""}{formatAmt(netCashFlow)}
-            </Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              In: {formatAmt(activeInflow)} · Out: {formatAmt(currentMonthSpent)}
-            </Text>
-          </TouchableOpacity>
-        )}
+            {/* Hero AI Spend Forecast */}
+            <AiForecastCard
+              forecast={mlForecast}
+              status={mlForecastStatus}
+              formatAmt={formatAmt}
+              onPress={openForecastDetail}
+              colors={c}
+            />
 
-        {/* CROSS-DOMAIN CARD: Tri-Domain Wealth Interaction Flow */}
-        {(activeTab === 'all' || activeTab === 'forecasts' || activeTab === 'habits') && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Tri-Domain Wealth Interaction',
-                icon: 'pie-chart-outline',
-                color: '#3B82F6',
-                headline:
-                  activeInflow > 0
-                    ? `Wealth allocation: ${Math.round((currentMonthSpent / (activeInflow || 1)) * 100)}% to expenses, with ${formatAmt(totalGoalsCurrent)} protected in chits & savings.`
-                    : 'Track income, expenses, and savings goals to visualize your tri-domain wealth loop.',
-                metrics: [
-                  { label: 'Earned Inflow', value: formatAmt(activeInflow) },
-                  { label: 'Outflow Drain', value: formatAmt(currentMonthSpent) },
-                  { label: 'Stored in Chits & Goals', value: formatAmt(totalGoalsCurrent) },
-                  { label: 'Net Available Liquidity', value: `${netCashFlow >= 0 ? '+' : ''}${formatAmt(netCashFlow)}` },
-                ],
-                advice:
-                  activeInflow <= 0
-                    ? 'Log consistent inflows to unlock 50/30/20 wealth allocation metrics.'
-                    : netCashFlow < 0
-                    ? 'Outflow is depleting your liquidity. Pause discretionary spending to safeguard your chit and savings contributions.'
-                    : 'Healthy wealth loop: Cash flows smoothly from revenue into protected savings and essential living.',
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: '#3B82F618' }]}>
-                <Ionicons name="pie-chart-outline" size={18} color={c.highlight} />
-              </View>
-              <Text style={[styles.cardTag, { color: '#3B82F6' }]}>Wealth Loop</Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Tri-Domain Flow</Text>
-            <Text style={[styles.cardPrimaryVal, { color: '#3B82F6' }]}>
-              {activeInflow > 0
-                ? (savingsRate >= 0 ? `${savingsRate}% saved` : `${Math.abs(savingsRate)}% deficit`)
-                : (currentMonthSpent > 0 ? `-${formatAmt(currentMonthSpent)}` : 'Balanced')}
-            </Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Chits/Goals: <Text style={{ color: '#3B82F6', fontWeight: '700' }}>{formatAmt(totalGoalsCurrent)}</Text>
-            </Text>
-          </TouchableOpacity>
-        )}
+            <View style={styles.grid}>
+              {/* ML Anomaly Scanner Card */}
+              <InsightCard
+                title="ML Anomaly Scanner"
+                tag={mlAnomaly && mlAnomaly.count > 0 ? 'Outlier Watch' : 'Verified'}
+                icon={mlAnomaly && mlAnomaly.count > 0 ? 'warning-outline' : 'shield-checkmark-outline'}
+                iconColor={mlAnomaly && mlAnomaly.count > 0 ? c.danger : c.success}
+                primaryVal={mlAnomaly && mlAnomaly.count > 0 ? `${mlAnomaly.count} Flagged` : '0 Outliers'}
+                primaryValColor={mlAnomaly && mlAnomaly.count > 0 ? c.danger : c.success}
+                subText={
+                  mlAnomaly && mlAnomaly.count > 0
+                    ? (mlAnomaly.topOutlier?.desc || 'Anomaly detected')
+                    : 'Temporal patterns nominal'
+                }
+                onPress={openAnomalyDetail}
+                colors={c}
+              />
 
-        {/* CROSS-DOMAIN CARD: Recurring Commitment Drag (Autonomy) */}
-        {(activeTab === 'all' || activeTab === 'habits' || activeTab === 'forecasts') && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Commitment Autonomy Drag',
-                icon: 'lock-closed-outline',
-                color: commitmentAutonomyRatio > 50 ? c.danger : c.highlight,
-                headline:
-                  activeInflow > 0
-                    ? `Fixed recurring commitments (subscriptions + chits/RDs) lock up ${commitmentAutonomyRatio}% of your monthly inflow (${formatAmt(totalCommittedOverhead)}/mo).`
-                    : `You have ${formatAmt(totalCommittedOverhead)}/mo committed to recurring subscriptions and chit/RD installments.`,
-                metrics: [
-                  { label: 'Subscriptions Burn', value: `${formatAmt(recurringTotal)}/mo` },
-                  { label: 'Chits & RD Installments', value: `${formatAmt(recurringChitTotal)}/mo` },
-                  { label: 'Total Committed Run-rate', value: `${formatAmt(totalCommittedOverhead)}/mo` },
-                  { label: 'Income Autonomy Drag', value: `${commitmentAutonomyRatio}%` },
-                ],
-                advice:
-                  commitmentAutonomyRatio > 50
-                    ? 'Caution: Over 50% of your earnings is committed before discretionary spending begins. Audit non-essential subscriptions.'
-                    : 'Excellent: Your recurring commitments leave ample flexibility for discretionary choices and emergency buffers.',
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: (commitmentAutonomyRatio > 50 ? c.danger : c.highlight) + '18' }]}>
-                <Ionicons name="lock-closed-outline" size={18} color={commitmentAutonomyRatio > 50 ? c.danger : c.highlight} />
-              </View>
-              <Text style={[styles.cardTag, { color: commitmentAutonomyRatio > 50 ? c.danger : c.highlight }]}>Autonomy</Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Commitment Drag</Text>
-            <Text style={[styles.cardPrimaryVal, { color: commitmentAutonomyRatio > 50 ? c.danger : c.highlight }]}>
-              {commitmentAutonomyRatio}%
-            </Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Locked: <Text style={{ color: commitmentAutonomyRatio > 50 ? c.danger : c.highlight, fontWeight: '700' }}>{formatAmt(totalCommittedOverhead)}</Text>/mo
-            </Text>
-          </TouchableOpacity>
-        )}
+              {/* Month-End Burn Velocity */}
+              <InsightCard
+                title="Burn Velocity"
+                tag="Forecast"
+                icon="speedometer-outline"
+                iconColor={c.primary}
+                primaryVal={`${formatAmt(dailyBurn)}/d`}
+                subText={`Est. Month: ${formatAmt(projectedSpent)}`}
+                onPress={openBurnVelocityDetail}
+                colors={c}
+              />
 
-        {/* CROSS-DOMAIN CARD: Income Stream Composition & Salary Coverage */}
-        {(activeTab === 'all' || activeTab === 'forecasts' || activeTab === 'habits') && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Income Streams & Salary Coverage',
-                icon: 'cash-outline',
-                color: salaryCoverageRatio >= 100 ? c.success : c.warning,
-                headline:
-                  activeInflow > 0
-                    ? `Base salary provides ${salarySharePct}% of total inflows (${formatAmt(salaryInflow)}), covering ${salaryCoverageRatio}% of your monthly living expenses.`
-                    : 'Log salary and secondary income streams to model income stability and coverage ratios.',
-                metrics: [
-                  { label: 'Base Salary', value: formatAmt(salaryInflow) },
-                  { label: 'Other Inflows', value: formatAmt(otherInflow) },
-                  { label: 'Monthly Expenses', value: formatAmt(currentMonthSpent) },
-                  { label: 'Salary Coverage Ratio', value: `${salaryCoverageRatio}%` },
-                ],
-                advice:
-                  activeInflow <= 0
-                    ? 'Log your salary and secondary earnings to analyze your income stability and safety margins.'
-                    : salaryCoverageRatio >= 100
-                    ? 'Excellent! Your base salary alone covers 100% of all monthly expenses, allowing bonus/other income to go straight to savings.'
-                    : 'Your monthly expenses currently exceed base salary. You depend on irregular or secondary inflows to balance the budget.',
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: (salaryCoverageRatio >= 100 ? c.success : c.warning) + '18' }]}>
-                <Ionicons name="cash-outline" size={18} color={salaryCoverageRatio >= 100 ? c.success : c.warning} />
-              </View>
-              <Text style={[styles.cardTag, { color: salaryCoverageRatio >= 100 ? c.success : c.warning }]}>Income Intel</Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Salary Coverage</Text>
-            <Text style={[styles.cardPrimaryVal, { color: salaryCoverageRatio >= 100 ? c.success : c.warning }]}>
-              {activeInflow > 0 ? `${salaryCoverageRatio}%` : 'N/A'}
-            </Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Salary: {formatAmt(salaryInflow)} · Other: {formatAmt(otherInflow)}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* CROSS-DOMAIN CARD: Emergency Savings Runway */}
-        {(activeTab === 'all' || activeTab === 'forecasts') && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Emergency Savings Runway',
-                icon: 'shield-checkmark-outline',
-                color: Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning,
-                headline:
-                  totalGoalsCurrent > 0
-                    ? `Current accumulated reserves (${formatAmt(totalGoalsCurrent)}) can sustain your living expenses for ${emergencyRunwayMonths} months without any new income.`
-                    : 'Configure savings goals or reserves to calculate your emergency runway.',
-                metrics: [
-                  { label: 'Accumulated Reserves', value: formatAmt(totalGoalsCurrent) },
-                  { label: 'Monthly Burn Rate', value: formatAmt(currentMonthSpent) },
-                  { label: 'Emergency Runway', value: `${emergencyRunwayMonths} Months` },
-                  { label: 'Target 6-Mo Reserve', value: formatAmt(currentMonthSpent * 6) },
-                ],
-                advice:
-                  totalGoalsCurrent <= 0
-                    ? 'Build a dedicated emergency fund goal covering at least 3 to 6 months of expenses for financial resilience.'
-                    : Number(emergencyRunwayMonths) >= 6
-                    ? 'Institutional Gold Standard! You have over 6 months of living expenses safely banked.'
-                    : Number(emergencyRunwayMonths) >= 3
-                    ? 'Healthy safety cushion! Maintain this baseline while directing surplus cash flow toward investments.'
-                    : 'Runway is below the recommended 3 months. Prioritize building reserves before increasing discretionary spending.',
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: (Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning) + '18' }]}>
-                <Ionicons name="shield-checkmark-outline" size={18} color={Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning} />
-              </View>
-              <Text style={[styles.cardTag, { color: Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning }]}>Resilience</Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Emergency Runway</Text>
-            <Text style={[styles.cardPrimaryVal, { color: Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning }]}>
-              {emergencyRunwayMonths} Mo
-            </Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Reserves: <Text style={{ color: c.text, fontWeight: '700' }}>{formatAmt(totalGoalsCurrent)}</Text>
-            </Text>
-          </TouchableOpacity>
-        )}
-        {/* CROSS-DOMAIN CARD: Net Cash Flow & Savings Rate */}
-        {(activeTab === 'all' || activeTab === 'forecasts' || activeTab === 'habits') && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Cash Flow & Savings Rate',
-                icon: 'trending-up-outline',
-                color: netCashFlow >= 0 ? c.success : c.danger,
-                headline:
-                  activeInflow > 0
-                    ? `Retaining ${savingsRate}% of total revenue with a net ${netCashFlow >= 0 ? 'surplus' : 'deficit'} of ${netCashFlow >= 0 ? '+' : ''}${formatAmt(netCashFlow)}.`
-                    : 'Log income sources in Cash Inflow to activate real-time net cash flow synthesis.',
-                metrics: [
-                  { label: 'Active Monthly Inflow', value: formatAmt(activeInflow) },
-                  { label: 'Active Monthly Outflow', value: formatAmt(currentMonthSpent) },
-                  { label: 'Net Cash Surplus', value: `${netCashFlow >= 0 ? '+' : ''}${formatAmt(netCashFlow)}` },
-                  { label: 'Savings Retention Rate', value: `${savingsRate}%` },
-                ],
-                advice:
-                  activeInflow <= 0
-                    ? 'Recording revenue streams unlocks savings retention tracking, investment projections, and emergency runway calculations.'
-                    : savingsRate >= 20
-                    ? 'Your savings rate exceeds the 20% institutional benchmark for accelerated wealth accumulation and financial independence.'
-                    : netCashFlow >= 0
-                    ? 'Your cash flow is positive, but retaining under 20% limits wealth compounding. Reduce discretionary expenses to reach optimal savings.'
-                    : 'Spending exceeds income this month. Review high-variance categories to eliminate cash drain.',
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: (netCashFlow >= 0 ? c.success : c.danger) + '18' }]}>
-                <Ionicons name="trending-up-outline" size={18} color={netCashFlow >= 0 ? c.success : c.danger} />
-              </View>
-              <Text style={[styles.cardTag, { color: netCashFlow >= 0 ? c.success : c.danger }]}>Cash Flow</Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Savings Retention</Text>
-            <Text style={[styles.cardPrimaryVal, { color: netCashFlow >= 0 ? c.success : c.danger }]}>
-              {activeInflow > 0 ? `${savingsRate}%` : 'N/A'}
-            </Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Net: <Text style={{ color: netCashFlow >= 0 ? c.success : c.danger, fontWeight: '700' }}>
-                {netCashFlow >= 0 ? `+${formatAmt(netCashFlow)}` : `-${formatAmt(Math.abs(netCashFlow))}`}
-              </Text>
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* CROSS-DOMAIN CARD: Savings Milestones Runway */}
-        {(activeTab === 'all' || activeTab === 'forecasts') && safeGoals.length > 0 && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Goal Funding Velocity',
-                icon: 'flag-outline',
-                color: c.warning,
-                headline:
-                  monthsToFundGoals
-                    ? `At current monthly surplus (+${formatAmt(netCashFlow)}/mo), remaining goals will be fully funded in ~${monthsToFundGoals} month${monthsToFundGoals === 1 ? '' : 's'}.`
-                    : `${goalsFundingPct}% of total savings milestone target achieved (${formatAmt(totalGoalsCurrent)} of ${formatAmt(totalGoalsTarget)}).`,
-                metrics: [
-                  { label: 'Milestones Target', value: formatAmt(totalGoalsTarget) },
-                  { label: 'Current Accumulation', value: formatAmt(totalGoalsCurrent) },
-                  { label: 'Remaining Capital Needed', value: formatAmt(totalGoalsRemaining) },
-                  { label: 'Estimated Completion', value: monthsToFundGoals ? `~${monthsToFundGoals} Months` : 'N/A' },
-                ],
-                advice:
-                  monthsToFundGoals
-                    ? 'Maintaining your current surplus pace guarantees timely realization of target milestones without straining operational liquidity.'
-                    : netCashFlow <= 0
-                    ? 'Achieving positive monthly cash flow is required to accurately model goal milestone completion timelines.'
-                    : 'All savings targets are currently fully funded! Time to set new financial horizons.',
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: c.warning + '18' }]}>
-                <Ionicons name="flag-outline" size={18} color={c.warning} />
-              </View>
-              <Text style={[styles.cardTag, { color: c.warning }]}>Milestones</Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Goal Velocity</Text>
-            <Text style={[styles.cardPrimaryVal, { color: c.warning }]}>
-              {monthsToFundGoals ? `~${monthsToFundGoals} mo` : `${goalsFundingPct}%`}
-            </Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Saved: <Text style={{ color: c.warning, fontWeight: '700' }}>{goalsFundingPct}%</Text> of goals
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* CARD 1: Burn Velocity & Projection */}
-        {(activeTab === 'all' || activeTab === 'forecasts') && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Burn Velocity & Forecast',
-                icon: 'speedometer-outline',
-                color: c.primary,
-                headline: `Your projected month-end outflow is ${formatAmt(projectedSpent)}.`,
-                metrics: [
-                  { label: 'Current Outflow', value: formatAmt(currentMonthSpent) },
-                  { label: 'Daily Outflow Rate', value: `${formatAmt(dailyBurn)}/day` },
-                  { label: 'Days Remaining in Month', value: `${daysRemaining} days` },
-                  { label: 'Projected Total', value: formatAmt(projectedSpent) },
-                ],
-                advice:
-                  dailyBurn > 0
-                    ? `To reduce your month-end projection by 10%, target an average daily spend of ${formatAmt(dailyBurn * 0.9)}.`
-                    : 'Maintain regular tracking to refine projection accuracy.',
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: c.primary + '18' }]}>
-                <Ionicons name="speedometer-outline" size={18} color={c.primary} />
-              </View>
-              <Text style={[styles.cardTag, { color: c.primary }]}>Forecast</Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Burn Velocity</Text>
-            <Text style={[styles.cardPrimaryVal, { color: c.text }]}>{formatAmt(dailyBurn)}/day</Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Est. Month Total: <Text style={{ color: c.primary, fontWeight: '700' }}>{formatAmt(projectedSpent)}</Text>
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* CARD 2: Discretionary Load & Savings */}
-        {(activeTab === 'all' || activeTab === 'habits') && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Discretionary Load & Savings',
-                icon: 'wallet-outline',
-                color: c.teal,
-                headline: `${discretionaryPct}% of your spend was allocated to non-essential lifestyle categories.`,
-                metrics: [
-                  { label: 'Essential Spend', value: formatAmt(essentialSpent) },
-                  { label: 'Discretionary Spend', value: formatAmt(discretionarySpent) },
-                  { label: 'Discretionary Ratio', value: `${discretionaryPct}%` },
-                  { label: 'Potential 15% Cut', value: formatAmt(potentialSavings) },
-                ],
-                advice: `Trimming just 15% from non-essential spending could retain ${formatAmt(potentialSavings)} in monthly savings.`,
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: c.teal + '18' }]}>
-                <Ionicons name="wallet-outline" size={18} color={c.teal} />
-              </View>
-              <Text style={[styles.cardTag, { color: c.teal }]}>Savings</Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Discretionary Load</Text>
-            <Text style={[styles.cardPrimaryVal, { color: c.text }]}>{discretionaryPct}%</Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Trim 15% to save: <Text style={{ color: c.teal, fontWeight: '700' }}>+{formatAmt(potentialSavings)}</Text>
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* CARD 3: Weekend Multiplier */}
-        {(activeTab === 'all' || activeTab === 'habits') && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Weekend vs Weekday Spend',
-                icon: 'calendar-outline',
-                color: c.accent,
-                headline: `Weekend spending averages ${weekendMultiplier}x higher per day than weekdays.`,
-                metrics: [
-                  { label: 'Weekend Daily Average', value: formatAmt(avgWeekendTx) },
-                  { label: 'Weekday Daily Average', value: formatAmt(avgWeekdayTx) },
-                  { label: 'Weekend Multiplier', value: `${weekendMultiplier}x` },
-                ],
-                advice:
-                  Number(weekendMultiplier) > 1.5
-                    ? 'Weekend activities drive significant cash outflow. Pre-allocating weekend allowances can help stabilize your balance.'
-                    : 'Your weekend spending is well-balanced with weekday habits.',
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: c.accent + '18' }]}>
-                <Ionicons name="calendar-outline" size={18} color={c.accent} />
-              </View>
-              <Text style={[styles.cardTag, { color: c.accent }]}>Habits</Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Weekend Multiplier</Text>
-            <Text style={[styles.cardPrimaryVal, { color: c.text }]}>{weekendMultiplier}x</Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Avg Weekend: <Text style={{ color: c.accent, fontWeight: '700' }}>{formatAmt(avgWeekendTx)}/day</Text>
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* CARD 4: Budget Governance Score */}
-        {(activeTab === 'all' || activeTab === 'forecasts') && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Budget Health Score',
-                icon: 'shield-checkmark-outline',
-                color: governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.danger,
-                headline: `Financial Governance Index: ${governanceScore}/100`,
-                metrics: [
-                  { label: 'Overall Health Index', value: `${governanceScore}%` },
-                  { label: 'Breached Category Caps', value: `${breachedBudgetsCount}` },
-                  { label: 'Warning Caps (≥80%)', value: `${warningBudgetsCount}` },
-                  { label: 'Total Monitored Categories', value: `${safeBudgets.length}` },
-                ],
-                advice:
-                  breachedBudgetsCount > 0
-                    ? `You have ${breachedBudgetsCount} category limit(s) exceeded. Review spending under breached caps immediately.`
-                    : 'All budgets are within healthy operational thresholds.',
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View
-                style={[
-                  styles.iconBox,
-                  {
-                    backgroundColor:
-                      (governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.danger) + '18',
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="shield-checkmark-outline"
-                  size={18}
-                  color={governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.danger}
+              {/* Budget Cap Depletion Watch (if any budget exists) */}
+              {burnout && (
+                <InsightCard
+                  title="Cap Depletion"
+                  tag="Early Warning"
+                  icon="flame-outline"
+                  iconColor={c.accent}
+                  primaryVal={`${burnout.daysRemainingUntilDepletion}d left`}
+                  primaryValColor={c.accent}
+                  subText={`${burnout.categoryName} at risk`}
+                  onPress={openBurnoutDetail}
+                  colors={c}
                 />
-              </View>
-              <Text
-                style={[
-                  styles.cardTag,
-                  {
-                    color: governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.danger,
-                  },
-                ]}
-              >
-                Health
-              </Text>
+              )}
             </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Budget Governance</Text>
-            <Text
-              style={[
-                styles.cardPrimaryVal,
-                {
-                    color: safeExpenses.length === 0 && safeBudgets.length === 0 ? c.textMuted : (governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.danger),
-                },
-              ]}
-            >
-              {safeExpenses.length === 0 && safeBudgets.length === 0 ? '--%' : `${governanceScore}%`}
-            </Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              {safeExpenses.length === 0 && safeBudgets.length === 0
-                ? 'No data available'
-                : breachedBudgetsCount > 0
-                ? `${breachedBudgetsCount} limits breached`
-                : warningBudgetsCount > 0
-                ? `${warningBudgetsCount} near limit`
-                : '100% on track'}
-            </Text>
-          </TouchableOpacity>
+          </View>
         )}
 
-        {/* CARD 5: Category Depletion Early Warning */}
-        {(activeTab === 'all' || activeTab === 'forecasts') && burnout && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Burnout Early Warning',
-                icon: 'flame-outline',
-                color: c.accent,
-                headline: `"${burnout.categoryName}" is on pace to deplete its budget in ${burnout.daysRemainingUntilDepletion} days.`,
-                metrics: [
-                  { label: 'At Risk Category', value: burnout.categoryName },
-                  { label: 'Category Outflow Rate', value: `${formatAmt(burnout.dailyCategoryRate)}/day` },
-                  { label: 'Remaining Budget', value: formatAmt(burnout.limit - burnout.spent) },
-                  { label: 'Estimated Depletion In', value: `${burnout.daysRemainingUntilDepletion} days` },
-                ],
-                advice: `At your current velocity, this category will breach its cap before the month ends. Slow down daily transactions in this category to stay under budget.`,
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: c.accent + '18' }]}>
-                <Ionicons name="flame-outline" size={18} color={c.accent} />
+        {/* ── SEGMENT B: CASH FLOW & WEALTH ─────────────────────────────────── */}
+        {(activeTab === 'wealth' || activeTab === 'all') && (
+          <View style={styles.sectionWrap}>
+            {activeTab === 'all' && (
+              <View style={styles.sectionHeaderRow}>
+                <Ionicons name="pie-chart-outline" size={16} color={c.accent} />
+                <Text style={[styles.sectionHeading, { color: c.text }]}>Cash Flow & Wealth Autonomy</Text>
               </View>
-              <Text style={[styles.cardTag, { color: c.accent }]}>Early Warning</Text>
+            )}
+
+            {/* Hero Cash Flow Pulse Card */}
+            <CashFlowPulseCard
+              activeInflow={activeInflow}
+              currentMonthSpent={currentMonthSpent}
+              netCashFlow={netCashFlow}
+              savingsRate={savingsRate}
+              formatAmt={formatAmt}
+              onPress={openCashFlowDetail}
+              colors={c}
+            />
+
+            <View style={styles.grid}>
+              {/* Tri-Domain Flow Card */}
+              <InsightCard
+                title="Tri-Domain Flow"
+                tag="Wealth Loop"
+                icon="pie-chart-outline"
+                iconColor="#3B82F6"
+                primaryVal={
+                  activeInflow > 0
+                    ? (savingsRate >= 0 ? `${savingsRate}% saved` : `${Math.abs(savingsRate)}% deficit`)
+                    : (currentMonthSpent > 0 ? `-${formatAmt(currentMonthSpent)}` : 'Balanced')
+                }
+                primaryValColor="#3B82F6"
+                subText={`Chits/Goals: ${formatAmt(totalGoalsCurrent)}`}
+                onPress={openTriDomainDetail}
+                colors={c}
+              />
+
+              {/* Emergency Runway Card */}
+              <InsightCard
+                title="Emergency Runway"
+                tag="Resilience"
+                icon="shield-checkmark-outline"
+                iconColor={Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning}
+                primaryVal={`${emergencyRunwayMonths} Mo`}
+                primaryValColor={Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning}
+                subText={`Reserves: ${formatAmt(totalGoalsCurrent)}`}
+                onPress={openEmergencyRunwayDetail}
+                colors={c}
+              />
+
+              {/* Goal Velocity Card (if goals exist) */}
+              {safeGoals.length > 0 && (
+                <InsightCard
+                  title="Goal Velocity"
+                  tag="Milestones"
+                  icon="flag-outline"
+                  iconColor={c.warning}
+                  primaryVal={monthsToFundGoals ? `~${monthsToFundGoals} mo` : `${goalsFundingPct}%`}
+                  primaryValColor={c.warning}
+                  subText={`Saved: ${goalsFundingPct}% of target`}
+                  onPress={openGoalVelocityDetail}
+                  colors={c}
+                />
+              )}
+
+              {/* Salary Living Coverage */}
+              <InsightCard
+                title="Salary Coverage"
+                tag="Income Intel"
+                icon="cash-outline"
+                iconColor={salaryCoverageRatio >= 100 ? c.success : c.warning}
+                primaryVal={activeInflow > 0 ? `${salaryCoverageRatio}%` : 'N/A'}
+                primaryValColor={salaryCoverageRatio >= 100 ? c.success : c.warning}
+                subText={`Salary: ${formatAmt(salaryInflow)}`}
+                onPress={openSalaryCoverageDetail}
+                colors={c}
+              />
             </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Cap Depletion</Text>
-            <Text style={[styles.cardPrimaryVal, { color: c.accent }]}>
-              {burnout.daysRemainingUntilDepletion}d left
-            </Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]} numberOfLines={1}>
-              {burnout.categoryName} cap at risk
-            </Text>
-          </TouchableOpacity>
+          </View>
         )}
 
-        {/* CARD 6: Average Ticket Size & Velocity */}
-        {(activeTab === 'all' || activeTab === 'habits') && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Average Ticket & Velocity',
-                icon: 'pricetag-outline',
-                color: c.primary,
-                headline: `You average ${formatAmt(avgTicketSize)} per transaction across ${txCount} orders.`,
-                metrics: [
-                  { label: 'Average Ticket Size', value: formatAmt(avgTicketSize) },
-                  { label: 'Monthly Transactions', value: `${txCount} txs` },
-                  { label: 'Purchase Cadence', value: `${txPerDay} txs/day` },
-                ],
-                advice:
-                  'Consolidating smaller purchases into planned shopping intervals helps reduce impulse spend.',
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: c.primary + '18' }]}>
-                <Ionicons name="pricetag-outline" size={18} color={c.primary} />
+        {/* ── SEGMENT C: SPENDING HABITS & LIFESTYLE LOAD ────────────────────── */}
+        {(activeTab === 'habits' || activeTab === 'all') && (
+          <View style={styles.sectionWrap}>
+            {activeTab === 'all' && (
+              <View style={styles.sectionHeaderRow}>
+                <Ionicons name="bar-chart-outline" size={16} color={c.teal} />
+                <Text style={[styles.sectionHeading, { color: c.text }]}>Behavioral Habits & Load</Text>
               </View>
-              <Text style={[styles.cardTag, { color: c.primary }]}>Velocity</Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Avg Ticket Size</Text>
-            <Text style={[styles.cardPrimaryVal, { color: c.text }]}>{formatAmt(avgTicketSize)}</Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              {txPerDay} transactions/day
-            </Text>
-          </TouchableOpacity>
-        )}
+            )}
 
-        {/* CARD 7: Peak Outlier Transaction */}
-        {(activeTab === 'all' || activeTab === 'forecasts') && peak && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Peak Expense Outlier',
-                icon: 'trending-up-outline',
-                color: c.warning,
-                headline: `Largest single outflow this month: ${formatAmt(peak.amount)} (${peak.description}).`,
-                metrics: [
-                  { label: 'Peak Amount', value: formatAmt(peak.amount) },
-                  { label: 'Category', value: peak.categoryName || 'General' },
-                  { label: 'Date', value: peak.expenseDate || '-' },
-                  {
-                    label: 'Share of Monthly Spend',
-                    value:
-                      currentMonthSpent > 0
-                        ? `${Math.round((Number(peak.amount || 0) / currentMonthSpent) * 100)}%`
-                        : '0%',
-                  },
-                ],
-                advice:
-                  'Large isolated expenses disproportionately impact monthly runway. Plan and set sinking funds for upcoming big purchases.',
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: c.warning + '18' }]}>
-                <Ionicons name="trending-up-outline" size={18} color={c.warning} />
-              </View>
-              <Text style={[styles.cardTag, { color: c.warning }]}>Outlier</Text>
-            </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Peak Outflow</Text>
-            <Text style={[styles.cardPrimaryVal, { color: c.warning }]}>
-              {formatAmt(peak.amount)}
-            </Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]} numberOfLines={1}>
-              {peak.description || 'Transaction'}
-            </Text>
-          </TouchableOpacity>
-        )}
+            <View style={styles.grid}>
+              {/* Discretionary Load & Potential Savings */}
+              <InsightCard
+                title="Discretionary Load"
+                tag="Savings"
+                icon="wallet-outline"
+                iconColor={c.teal}
+                primaryVal={`${discretionaryPct}%`}
+                primaryValColor={c.text}
+                subText={`Trim 15% save: +${formatAmt(potentialSavings)}`}
+                onPress={openDiscretionaryDetail}
+                colors={c}
+              />
 
-        {/* CARD 8: Recurring Subscriptions Overhead */}
-        {(activeTab === 'all' || activeTab === 'habits') && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() =>
-              openDetail({
-                title: 'Recurring Fixed Load',
-                icon: 'repeat-outline',
-                color: c.teal,
-                headline: `Fixed subscriptions account for ${recurringRatio}% (${formatAmt(recurringTotal)}) of your monthly spend.`,
-                metrics: [
-                  { label: 'Total Recurring Load', value: formatAmt(recurringTotal) },
-                  { label: 'Overhead Percentage', value: `${recurringRatio}%` },
-                  { label: 'Discretionary Cashflow Left', value: formatAmt(currentMonthSpent - recurringTotal) },
-                ],
-                advice:
-                  recurringRatio > 30
-                    ? 'Recurring commitments exceed 30% of total outflow. Review and audit dormant memberships in Subscriptions.'
-                    : 'Fixed subscription load is kept low and manageable.',
-              })
-            }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: c.teal + '18' }]}>
-                <Ionicons name="repeat-outline" size={18} color={c.teal} />
-              </View>
-              <Text style={[styles.cardTag, { color: c.teal }]}>Fixed Load</Text>
+              {/* Weekend Multiplier Card */}
+              <InsightCard
+                title="Weekend Multiplier"
+                tag="Habits"
+                icon="calendar-outline"
+                iconColor={c.accent}
+                primaryVal={`${weekendMultiplier}x`}
+                primaryValColor={c.text}
+                subText={`Avg Wknd: ${formatAmt(avgWeekendTx)}/d`}
+                onPress={openWeekendDetail}
+                colors={c}
+              />
+
+              {/* Budget Governance Health Score */}
+              <InsightCard
+                title="Budget Health"
+                tag="Governance"
+                icon="shield-checkmark-outline"
+                iconColor={governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.danger}
+                primaryVal={safeExpenses.length === 0 && safeBudgets.length === 0 ? '--%' : `${governanceScore}%`}
+                primaryValColor={
+                  safeExpenses.length === 0 && safeBudgets.length === 0
+                    ? c.textMuted
+                    : governanceScore >= 80
+                    ? c.success
+                    : governanceScore >= 60
+                    ? c.warning
+                    : c.danger
+                }
+                subText={
+                  breachedBudgetsCount > 0
+                    ? `${breachedBudgetsCount} caps breached`
+                    : warningBudgetsCount > 0
+                    ? `${warningBudgetsCount} near limit`
+                    : '100% on track'
+                }
+                onPress={openGovernanceDetail}
+                colors={c}
+              />
+
+              {/* Commitment Autonomy Drag */}
+              <InsightCard
+                title="Commitment Drag"
+                tag="Autonomy"
+                icon="lock-closed-outline"
+                iconColor={commitmentAutonomyRatio > 50 ? c.danger : c.highlight}
+                primaryVal={`${commitmentAutonomyRatio}%`}
+                primaryValColor={commitmentAutonomyRatio > 50 ? c.danger : c.highlight}
+                subText={`Locked: ${formatAmt(totalCommittedOverhead)}/mo`}
+                onPress={openCommitmentDragDetail}
+                colors={c}
+              />
+
+              {/* Average Ticket Size & Velocity */}
+              <InsightCard
+                title="Avg Ticket Size"
+                tag="Velocity"
+                icon="pricetag-outline"
+                iconColor={c.primary}
+                primaryVal={formatAmt(avgTicketSize)}
+                subText={`${txPerDay} txs/day`}
+                onPress={openTicketCadenceDetail}
+                colors={c}
+              />
+
+              {/* Peak Outflow Outlier (if transactions exist) */}
+              {peak && (
+                <InsightCard
+                  title="Peak Outflow"
+                  tag="Outlier"
+                  icon="trending-up-outline"
+                  iconColor={c.warning}
+                  primaryVal={formatAmt(peak.amount)}
+                  primaryValColor={c.warning}
+                  subText={peak.description || 'Transaction'}
+                  onPress={openPeakOutflowDetail}
+                  colors={c}
+                />
+              )}
             </View>
-            <Text style={[styles.cardTitle, { color: c.text }]}>Subscriptions Load</Text>
-            <Text style={[styles.cardPrimaryVal, { color: c.text }]}>{recurringRatio}%</Text>
-            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              {formatAmt(recurringTotal)} monthly commitment
-            </Text>
-          </TouchableOpacity>
+          </View>
         )}
       </View>
 
-      {/* DETAIL MODAL SHEET */}
-      {selectedInsight && (
-        <Modal
-          visible={!!selectedInsight}
-          animationType="slide"
-          transparent
-          onRequestClose={() => setSelectedInsight(null)}
-        >
-          <View style={styles.modalBackdrop}>
-            <View style={[styles.modalContent, { backgroundColor: c.surface, borderColor: c.border }]}>
-              <View style={styles.modalHeader}>
-                <View style={styles.modalHeaderTitleRow}>
-                  <View
-                    style={[
-                      styles.iconBox,
-                      { backgroundColor: selectedInsight.color + '20', width: 38, height: 38 },
-                    ]}
-                  >
-                    <Ionicons
-                      name={selectedInsight.icon}
-                      size={20}
-                      color={selectedInsight.color}
-                    />
-                  </View>
-                  <Text style={[styles.modalTitle, { color: c.text }]}>
-                    {selectedInsight.title}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setSelectedInsight(null)}
-                  style={[styles.closeModalBtn, { backgroundColor: c.inputBg }]}
-                >
-                  <Ionicons name="close" size={18} color={c.text} />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
-                <Text style={[styles.modalHeadline, { color: c.text }]}>
-                  {selectedInsight.headline}
-                </Text>
-
-                {/* Metrics Breakdown */}
-                <View style={[styles.metricsTable, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                  {selectedInsight.metrics.map((m, idx) => (
-                    <View
-                      key={idx}
-                      style={[
-                        styles.metricRow,
-                        idx !== selectedInsight.metrics.length - 1 && {
-                          borderBottomWidth: 1,
-                          borderBottomColor: c.border,
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.metricLabel, { color: c.textMuted }]}>{m.label}</Text>
-                      <Text style={[styles.metricValue, { color: c.text }]}>{m.value}</Text>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Strategic Financial Recommendation */}
-                <View
-                  style={[
-                    styles.adviceBox,
-                    {
-                      backgroundColor: selectedInsight.color + '15',
-                      borderColor: selectedInsight.color + '35',
-                    },
-                  ]}
-                >
-                  <View style={styles.adviceTitleRow}>
-                    <Ionicons name="bulb-outline" size={16} color={selectedInsight.color} />
-                    <Text style={[styles.adviceTitle, { color: selectedInsight.color }]}>
-                      Strategic Financial Recommendation
-                    </Text>
-                  </View>
-                  <Text style={[styles.adviceBody, { color: c.text }]}>
-                    {selectedInsight.advice}
-                  </Text>
-                </View>
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
-      )}
+      {/* 4. DETAIL MODAL SHEET */}
+      <InsightDetailModal
+        insight={selectedInsight}
+        onClose={() => setSelectedInsight(null)}
+        colors={c}
+      />
     </View>
   );
 });
+
+InsightCards.displayName = 'InsightCards';
 
 const styles = StyleSheet.create({
   container: {
@@ -1491,155 +1276,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   filterTabText: {
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.2,
+  },
+  cardsContent: {
+    gap: 16,
+  },
+  sectionWrap: {
+    gap: 12,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 2,
+    marginTop: 4,
+  },
+  sectionHeading: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
-  card: {
-    width: '48%',
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardTag: {
-    fontSize: 10,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  cardTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  cardPrimaryVal: {
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: -0.5,
-    marginBottom: 4,
-  },
-  cardSubText: {
-    fontSize: 10.5,
-  },
-  forecastChartWrap: {
-    width: '100%',
-    marginTop: 8,
-  },
-  forecastAxisLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 1,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    padding: 24,
-    maxHeight: '75%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalHeaderTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  closeModalBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalScroll: {
-    marginBottom: 10,
-  },
-  modalHeadline: {
-    fontSize: 15,
-    fontWeight: '700',
-    lineHeight: 22,
-    marginBottom: 18,
-  },
-  metricsTable: {
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginBottom: 18,
-  },
-  metricRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  metricLabel: {
-    fontSize: 12.5,
-    fontWeight: '600',
-  },
-  metricValue: {
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  adviceBox: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    gap: 6,
-  },
-  adviceTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  adviceTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  adviceBody: {
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: '500',
-  },
 });
-
-InsightCards.displayName = 'InsightCards';
