@@ -1740,6 +1740,61 @@ reconcileStatementInput?.addEventListener("change", async (e) => {
     }
 });
 
+// --- Consolidated Header Action Dropdowns & Clue Bar Dismissal ---
+const importDropdownTrigger = document.getElementById("importDropdownTrigger");
+const importDropdownWrap = importDropdownTrigger?.closest(".header-dropdown-menu-wrap");
+const exportDropdownTrigger = document.getElementById("exportDropdownTrigger");
+const exportDropdownWrap = exportDropdownTrigger?.closest(".header-dropdown-menu-wrap");
+
+function closeAllActionDropdowns() {
+    importDropdownWrap?.classList.remove("open");
+    importDropdownTrigger?.setAttribute("aria-expanded", "false");
+    exportDropdownWrap?.classList.remove("open");
+    exportDropdownTrigger?.setAttribute("aria-expanded", "false");
+}
+
+importDropdownTrigger?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = importDropdownWrap?.classList.contains("open");
+    closeAllActionDropdowns();
+    if (!isOpen) {
+        importDropdownWrap?.classList.add("open");
+        importDropdownTrigger.setAttribute("aria-expanded", "true");
+    }
+});
+
+exportDropdownTrigger?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = exportDropdownWrap?.classList.contains("open");
+    closeAllActionDropdowns();
+    if (!isOpen) {
+        exportDropdownWrap?.classList.add("open");
+        exportDropdownTrigger.setAttribute("aria-expanded", "true");
+    }
+});
+
+document.addEventListener("click", (e) => {
+    if (!importDropdownWrap?.contains(e.target) && !exportDropdownWrap?.contains(e.target)) {
+        closeAllActionDropdowns();
+    }
+});
+
+document.querySelectorAll(".header-dropdown-content button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        closeAllActionDropdowns();
+    });
+});
+
+const ledgerGestureHintBar = document.getElementById("ledgerGestureHintBar");
+const dismissGestureHintBtn = document.getElementById("dismissGestureHintBtn");
+if (localStorage.getItem("hide_ledger_hints") === "true" && ledgerGestureHintBar) {
+    ledgerGestureHintBar.style.display = "none";
+}
+dismissGestureHintBtn?.addEventListener("click", () => {
+    localStorage.setItem("hide_ledger_hints", "true");
+    if (ledgerGestureHintBar) ledgerGestureHintBar.style.display = "none";
+});
+
 // --- 7. SUBSCRIPTION MANAGER (View, Edit, Delete) ---
 
 // Open Modal

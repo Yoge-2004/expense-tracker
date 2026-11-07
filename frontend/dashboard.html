@@ -649,32 +649,86 @@
                 <div class="list-header-actions" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
                     <input type="file" id="importFileInput" accept=".csv,.json,.xlsx,.xls" style="display:none" aria-label="Import expenses file">
                     <input type="file" id="reconcileStatementInput" accept=".csv,.xlsx,.xls" style="display:none" aria-label="Reconcile bank statement file">
-                    <button id="reconcileStatementBtn" class="btn-icon btn-text-icon" title="Reconcile Bank Statement: Auto-detect &amp; record all missed debits and credits from your bank (.csv/.xlsx)" style="gap:6px; border:1px solid rgba(212,175,55,0.45); color:#D4AF37; background:rgba(212,175,55,0.08); font-weight:600;">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                        <span>Reconcile Bank Statement</span>
-                    </button>
                     <input type="file" id="importIncomeFileInput" accept=".csv,.json,.xlsx,.xls" style="display:none" aria-label="Import incomes file">
-                    <button id="importBtn" class="btn-icon btn-text-icon" title="Import transactions from .csv, .json, or .xlsx file" style="gap:6px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        Import <span style="opacity:0.65; font-weight:400; font-size:0.85em;">(.csv/.xlsx)</span>
-                    </button>
-                    <button id="importIncomeBtn" class="btn-icon btn-text-icon" title="Import Incomes from .csv, .json, or .xlsx file" style="gap:6px; display:none;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        Import Incomes
-                    </button>
-                    <button id="exportExcelBtn" class="btn-icon btn-text-icon" title="Export Expenses Excel Workbook (.xlsx)" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> <span>Excel</span></button>
-                    <button id="exportIncomeExcelBtn" class="btn-icon btn-text-icon" title="Export Incomes Excel Workbook (.xlsx)" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4); display:none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> <span>Incomes Excel</span></button>
-                    <button id="exportReportExcelBtn" class="btn-icon btn-text-icon" title="Export Executive Financial Report (Excel Workbook)" style="font-weight:700; color:#10B981; border:1px solid rgba(16,185,129,0.4);"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> <span>Executive Report</span></button>
-                    <button id="exportReportPdfBtn" class="btn-icon btn-text-icon" title="Export Complete Executive Financial Statement (PDF)" style="font-weight:700; color:#3B82F6; border:1px solid rgba(59,130,246,0.4);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> <span>Statement</span></button>
-                    <button id="exportCsvBtn" class="btn-icon btn-text-icon" title="Export Expenses CSV">CSV</button>
-                    <button id="exportIncomeCsvBtn" class="btn-icon btn-text-icon" title="Export Incomes CSV" style="display:none;">Income CSV</button>
-                    <button id="exportJsonBtn" class="btn-icon btn-text-icon" title="Export Expenses JSON">JSON</button>
-                    <button id="exportIncomeJsonBtn" class="btn-icon btn-text-icon" title="Export Incomes JSON" style="display:none;">Income JSON</button>
-                    <button id="exportPdfBtn" class="btn-icon btn-text-icon" title="Export Expenses PDF Report">PDF</button>
-                    <button id="exportIncomePdfBtn" class="btn-icon btn-text-icon" title="Export Incomes PDF Report" style="display:none;">Income PDF</button>
+
+                    <!-- Import & Reconcile Consolidated Dropdown -->
+                    <div class="header-dropdown-menu-wrap">
+                        <button type="button" id="importDropdownTrigger" class="btn-icon btn-text-icon dropdown-trigger-btn" aria-haspopup="true" aria-expanded="false" title="Import data or reconcile bank statements">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            <span>Import &amp; Reconcile</span>
+                            <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                        </button>
+                        <div class="header-dropdown-content" id="importDropdownMenu" role="menu">
+                            <button type="button" id="reconcileStatementBtn" class="dropdown-menu-item" role="menuitem" title="Reconcile Bank Statement: Auto-detect &amp; record all missed debits and credits from your bank (.csv/.xlsx)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#D4AF37; flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                <div>
+                                    <div class="dropdown-item-title">Reconcile Bank Statement</div>
+                                    <div class="dropdown-item-desc">Match debits &amp; credits from .csv/.xlsx</div>
+                                </div>
+                            </button>
+                            <div class="dropdown-menu-divider"></div>
+                            <button type="button" id="importBtn" class="dropdown-menu-item" role="menuitem" title="Import transactions from .csv, .json, or .xlsx file">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--primary); flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                <div>
+                                    <div class="dropdown-item-title">Import Outflows (Expenses)</div>
+                                    <div class="dropdown-item-desc">Import records from .csv, .xlsx, or .json</div>
+                                </div>
+                            </button>
+                            <button type="button" id="importIncomeBtn" class="dropdown-menu-item" role="menuitem" title="Import Incomes from .csv, .json, or .xlsx file">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--metric-inflow, #10B981); flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                <div>
+                                    <div class="dropdown-item-title">Import Inflows (Incomes)</div>
+                                    <div class="dropdown-item-desc">Import paychecks and revenue streams</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Export Consolidated Dropdown -->
+                    <div class="header-dropdown-menu-wrap">
+                        <button type="button" id="exportDropdownTrigger" class="btn-icon btn-text-icon dropdown-trigger-btn" aria-haspopup="true" aria-expanded="false" title="Export ledger records and executive financial reports">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span>Export Data</span>
+                            <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                        </button>
+                        <div class="header-dropdown-content" id="exportDropdownMenu" role="menu" style="min-width:280px;">
+                            <div class="dropdown-menu-group-label">Executive Reports</div>
+                            <button type="button" id="exportReportExcelBtn" class="dropdown-menu-item" role="menuitem" title="Export Executive Financial Report (Excel Workbook)">
+                                <svg class="menu-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#10B981; flex-shrink:0;"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                                <div>
+                                    <div class="dropdown-item-title">Financial Report (Excel)</div>
+                                    <div class="dropdown-item-desc">Multi-sheet summary workbook</div>
+                                </div>
+                            </button>
+                            <button type="button" id="exportReportPdfBtn" class="dropdown-menu-item" role="menuitem" title="Export Complete Executive Financial Statement (PDF)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#3B82F6; flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                <div>
+                                    <div class="dropdown-item-title">Executive Statement (PDF)</div>
+                                    <div class="dropdown-item-desc">Formal printable statement</div>
+                                </div>
+                            </button>
+                            <div class="dropdown-menu-divider"></div>
+                            <div class="dropdown-menu-group-label">Outflow Records (Expenses)</div>
+                            <div class="dropdown-menu-grid">
+                                <button type="button" id="exportExcelBtn" class="dropdown-menu-chip" role="menuitem" title="Export Expenses Excel Workbook (.xlsx)">Excel</button>
+                                <button type="button" id="exportCsvBtn" class="dropdown-menu-chip" role="menuitem" title="Export Expenses CSV">CSV</button>
+                                <button type="button" id="exportJsonBtn" class="dropdown-menu-chip" role="menuitem" title="Export Expenses JSON">JSON</button>
+                                <button type="button" id="exportPdfBtn" class="dropdown-menu-chip" role="menuitem" title="Export Expenses PDF Report">PDF</button>
+                            </div>
+                            <div class="dropdown-menu-divider"></div>
+                            <div class="dropdown-menu-group-label">Inflow Records (Incomes)</div>
+                            <div class="dropdown-menu-grid">
+                                <button type="button" id="exportIncomeExcelBtn" class="dropdown-menu-chip" role="menuitem" title="Export Incomes Excel Workbook (.xlsx)">Excel</button>
+                                <button type="button" id="exportIncomeCsvBtn" class="dropdown-menu-chip" role="menuitem" title="Export Incomes CSV">CSV</button>
+                                <button type="button" id="exportIncomeJsonBtn" class="dropdown-menu-chip" role="menuitem" title="Export Incomes JSON">JSON</button>
+                                <button type="button" id="exportIncomePdfBtn" class="dropdown-menu-chip" role="menuitem" title="Export Incomes PDF Report">PDF</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Controls -->
                     <button id="toggleFiltersBtn" class="btn-icon btn-text-icon" title="Filter Outflows (Expenses, Categories, Dates)" aria-label="Show advanced filters">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                         </svg>
                         <span>Outflow Filters</span>
@@ -686,15 +740,17 @@
                         </svg>
                         <span>Inflow Filters</span>
                     </button>
-                    <button type="button" id="addIncomeTableBtn" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" title="Record Income Stream" style="background:var(--metric-inflow, #10B981); border-color:var(--metric-inflow, #10B981); color:#fff;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+
+                    <!-- Primary Actions -->
+                    <button type="button" id="addIncomeTableBtn" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" title="Record Income Stream" style="background:var(--metric-inflow, #10B981); border-color:var(--metric-inflow, #10B981); color:#fff; font-weight:600;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                         <span>Inflow</span>
                     </button>
-                    <button type="button" id="addExpenseTableBtn" class="btn-primary btn-small" onclick="openNewExpenseModal()" title="Record Expense">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <button type="button" id="addExpenseTableBtn" class="btn-primary btn-small" onclick="openNewExpenseModal()" title="Record Expense" style="font-weight:600;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
@@ -720,7 +776,7 @@
             </div>
 
             <!-- Gesture & Keyboard Quick Clue Bar -->
-            <div class="ledger-gesture-hint-bar" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:7px 14px; margin: 0 0 14px; border-radius:10px; background:var(--input-bg, rgba(255,255,255,0.03)); border:1px solid var(--border); font-size:11.5px; color:var(--text-muted);">
+            <div class="ledger-gesture-hint-bar" id="ledgerGestureHintBar" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:7px 14px; margin: 0 0 14px; border-radius:10px; background:var(--input-bg, rgba(255,255,255,0.03)); border:1px solid var(--border); font-size:11.5px; color:var(--text-muted);">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span style="color:var(--primary); font-weight:700; display:inline-flex; align-items:center; gap:4px;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8L22 12L18 16"/><path d="M6 8L2 12L6 16"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
@@ -733,6 +789,7 @@
                     <span><kbd style="padding:1px 5px; font-size:10px; background:rgba(255,255,255,0.08); border:1px solid var(--border); border-radius:4px;">Ctrl+K</kbd> Palette</span>
                     <span><kbd style="padding:1px 5px; font-size:10px; background:rgba(255,255,255,0.08); border:1px solid var(--border); border-radius:4px;">Alt+S</kbd> Stealth</span>
                     <span><kbd style="padding:1px 5px; font-size:10px; background:rgba(255,255,255,0.08); border:1px solid var(--border); border-radius:4px;">Alt+C</kbd> Calc</span>
+                    <button type="button" id="dismissGestureHintBtn" aria-label="Dismiss shortcut hints" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px; line-height:1; padding:2px 6px; border-radius:4px; margin-left:4px; opacity:0.7;" title="Dismiss hint">&times;</button>
                 </div>
             </div>
 

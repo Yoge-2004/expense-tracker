@@ -141,8 +141,8 @@ export const dashboardStyles = StyleSheet.create({
   bellBtnWrapper: {
     position: 'relative',
     overflow: 'visible',
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
   },
   bellBadge: {
     position: 'absolute',
@@ -161,15 +161,15 @@ export const dashboardStyles = StyleSheet.create({
   },
   bellBadgeText: {
     color: '#FFFFFF',
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: '800',
     lineHeight: 12,
     textAlign: 'center',
     includeFontPadding: false,
   },
   topActionBtn: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     borderWidth: 1.5,
     justifyContent: 'center',
@@ -177,7 +177,7 @@ export const dashboardStyles = StyleSheet.create({
     overflow: 'visible',
   },
   cashFlowCard: {
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     padding: 16,
     marginBottom: 14,
@@ -225,15 +225,15 @@ export const dashboardStyles = StyleSheet.create({
     height: 28,
   },
   cashFlowLabel: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.4,
     marginBottom: 2,
   },
   cashFlowAmount: {
-    fontSize: 15,
-    fontWeight: "900",
+    fontSize: 17,
+    fontWeight: "800",
   },
   cashFlowHorizontalDivider: {
     width: '100%',
@@ -299,7 +299,7 @@ export const dashboardStyles = StyleSheet.create({
     marginBottom: 8,
   },
   goalName: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: "800",
     flex: 1,
     marginRight: 6,
@@ -328,7 +328,7 @@ export const dashboardStyles = StyleSheet.create({
     fontWeight: "600",
   },
   goalDate: {
-    fontSize: 10.5,
+    fontSize: 11,
   },
   matrixGrid: {
     flexDirection: 'row',
@@ -372,7 +372,7 @@ export const dashboardStyles = StyleSheet.create({
     marginBottom: 2,
   },
   matrixSub: {
-    fontSize: 10.5,
+    fontSize: 11,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -391,7 +391,7 @@ export const dashboardStyles = StyleSheet.create({
     marginTop: 1,
   },
   ledgerContainer: {
-    borderRadius: 22,
+    borderRadius: 16,
     borderWidth: 1,
     padding: 16,
     marginTop: 10,
@@ -513,7 +513,7 @@ export const dashboardStyles = StyleSheet.create({
     marginBottom: 12,
   },
   advancedLabel: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -531,7 +531,7 @@ export const dashboardStyles = StyleSheet.create({
     borderWidth: 1,
   },
   sortChipText: {
-    fontSize: 11.5,
+    fontSize: 12,
   },
   scrollableLedgerBox: {
     height: 380,
@@ -636,7 +636,7 @@ export const dashboardStyles = StyleSheet.create({
     flex: 1,
   },
   txDesc: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 2,
   },
@@ -646,14 +646,14 @@ export const dashboardStyles = StyleSheet.create({
     gap: 4,
   },
   txCatName: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '700',
   },
   txDot: {
     fontSize: 8,
   },
   txDate: {
-    fontSize: 10.5,
+    fontSize: 11,
   },
   recurringBadge: {
     flexDirection: 'row',
@@ -672,7 +672,7 @@ export const dashboardStyles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   txAmount: {
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: "900",
     letterSpacing: -0.3,
   },
