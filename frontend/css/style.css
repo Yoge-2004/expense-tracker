@@ -6272,8 +6272,10 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block; visibility: v
     padding: 12px 18px;
     margin: 12px 0 18px 0;
     border-radius: 12px;
-    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.14) 0%, rgba(var(--primary-rgb), 0.04) 100%);
-    border: 1px solid rgba(var(--primary-rgb), 0.35);
+    background: rgba(23, 26, 20, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(var(--primary-rgb), 0.40);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     animation: fadeInBanner 0.3s ease-out both;
 }
@@ -6330,9 +6332,9 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block; visibility: v
 }
 
 .notif-banner-text span {
-    font-size: 12px;
-    color: var(--text-muted);
-    line-height: 1.4;
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.88);
+    line-height: 1.45;
 }
 
 .notif-banner-actions {
@@ -6359,13 +6361,13 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block; visibility: v
 .notif-dismiss-btn {
     width: auto !important;
     min-width: max-content !important;
-    padding: 7px 12px;
-    font-size: 12px;
+    padding: 8px 14px;
+    font-size: 12.5px;
     font-weight: 600;
     border-radius: 8px;
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: #FFFFFF;
     white-space: nowrap !important;
     cursor: pointer;
     flex-shrink: 0 !important;
@@ -16482,6 +16484,15 @@ body.stealth-mode .insight-card:hover div[style*="font-size:18px"] {
 
 
 /* CUSTOM WALLPAPER & FROSTED GLASS SUPPORT */
+body.has-custom-wallpaper,
+[data-theme="light"] body.has-custom-wallpaper {
+    background-image: var(--custom-wallpaper-bg) !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-attachment: fixed !important;
+    background-repeat: no-repeat !important;
+}
+
 body.has-custom-wallpaper .hero-bg,
 body.has-custom-wallpaper .auth-hero-bg,
 [data-theme="light"] body.has-custom-wallpaper .hero-bg,
@@ -16489,6 +16500,7 @@ body.has-custom-wallpaper .auth-hero-bg,
     background-image: var(--custom-wallpaper-bg) !important;
     background-size: cover !important;
     background-position: center !important;
+    background-attachment: fixed !important;
     background-repeat: no-repeat !important;
     opacity: 1 !important;
     z-index: 0 !important;
@@ -16519,6 +16531,9 @@ body.has-custom-wallpaper :is(
     .powerbi-slicers-container,
     .bi-slicers-panel,
     .bi-slicer-card,
+    .bi-slicers-filter-container,
+    .bi-slicers-ribbon,
+    .notification-permission-banner,
     .ai-assistant-container,
     .ai-intelligence-panel,
     .money-flow,
@@ -16552,6 +16567,9 @@ body.has-custom-wallpaper :is(
     .powerbi-slicers-container,
     .bi-slicers-panel,
     .bi-slicer-card,
+    .bi-slicers-filter-container,
+    .bi-slicers-ribbon,
+    .notification-permission-banner,
     .ai-assistant-container,
     .ai-intelligence-panel,
     .money-flow,

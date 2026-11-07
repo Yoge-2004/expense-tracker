@@ -370,6 +370,15 @@ body.stealth-mode .insight-card:hover div[style*="font-size:18px"] {
 
 
 /* CUSTOM WALLPAPER & FROSTED GLASS SUPPORT */
+body.has-custom-wallpaper,
+[data-theme="light"] body.has-custom-wallpaper {
+    background-image: var(--custom-wallpaper-bg) !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-attachment: fixed !important;
+    background-repeat: no-repeat !important;
+}
+
 body.has-custom-wallpaper .hero-bg,
 body.has-custom-wallpaper .auth-hero-bg,
 [data-theme="light"] body.has-custom-wallpaper .hero-bg,
@@ -377,6 +386,7 @@ body.has-custom-wallpaper .auth-hero-bg,
     background-image: var(--custom-wallpaper-bg) !important;
     background-size: cover !important;
     background-position: center !important;
+    background-attachment: fixed !important;
     background-repeat: no-repeat !important;
     opacity: 1 !important;
     z-index: 0 !important;
@@ -407,6 +417,9 @@ body.has-custom-wallpaper :is(
     .powerbi-slicers-container,
     .bi-slicers-panel,
     .bi-slicer-card,
+    .bi-slicers-filter-container,
+    .bi-slicers-ribbon,
+    .notification-permission-banner,
     .ai-assistant-container,
     .ai-intelligence-panel,
     .money-flow,
@@ -440,6 +453,9 @@ body.has-custom-wallpaper :is(
     .powerbi-slicers-container,
     .bi-slicers-panel,
     .bi-slicer-card,
+    .bi-slicers-filter-container,
+    .bi-slicers-ribbon,
+    .notification-permission-banner,
     .ai-assistant-container,
     .ai-intelligence-panel,
     .money-flow,

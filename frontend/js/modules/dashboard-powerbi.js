@@ -28,161 +28,14 @@
         return `${year}-${month}-${day}`;
     }
 
-    // 1. INJECT SLICERS RIBBON DOM
+    // 1. INITIALIZE SLICERS RIBBON CONTROLS
     function ensureSlicersRibbon() {
-        if (document.getElementById("powerBiSlicersRibbon")) return;
+        if (initialized) return;
+        const ribbon = document.getElementById("powerBiSlicersRibbon");
+        if (!ribbon) return;
 
-        const targetSection = document.getElementById("unifiedLedgerCard") || document.querySelector(".unified-ledger-card") || document.querySelector(".recent-transactions") || document.querySelector(".grid-4-metrics");
-        if (!targetSection) return;
-
-        const ribbon = document.createElement("section");
-        ribbon.id = "powerBiSlicersRibbon";
-        ribbon.className = "bi-slicers-ribbon animate-cascade delay-1";
-        ribbon.setAttribute("aria-label", "PowerBI Executive Slicers and Cross-Filters");
-
-        ribbon.innerHTML = `
-            <!-- External Slicers Header - Positioned Above & Outside the Filter Container -->
-            <div class="bi-slicers-top bi-slicers-external-top">
-                <div class="bi-slicers-heading">
-                    <span class="bi-badge">
-                        <span class="bi-badge-dot"></span>
-                        PowerBI Executive Slicers
-                    </span>
-                    <h3 class="bi-slicers-title">Dimensional Analytics &amp; Cross-Filtering</h3>
-                </div>
-                <div class="bi-slicers-actions">
-                    <div id="biCrossFilterContainer" class="hidden"></div>
-                    <button type="button" class="bi-action-btn" id="biWhatIfBtn" title="Interactive What-If Scenario Simulator">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                        <span>What-If Simulator</span>
-                    </button>
-                    <button type="button" class="bi-action-btn" id="biAnomalyBtn" title="Filter Statistical Surges (> 2σ)">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        <span id="biAnomalyBtnText">Anomalies</span>
-                    </button>
-                    <button type="button" class="bi-action-btn" id="biDecompBtn" title="Explain Period Variance (Waterfall Decomposition)">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        <span>Explain Variance</span>
-                    </button>
-                    <button type="button" class="bi-reset-slicers-btn" id="biResetSlicersBtn" title="Reset all slicers and active cross-filters">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                        <span>Reset</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Dedicated Slicers Filter Container Housing the 3 Interactive Filters -->
-            <div class="bi-slicers-filter-container" id="biSlicersFilterContainer">
-                <div class="bi-slicers-row">
-                    <!-- Horizon Slicer -->
-                    <div class="bi-slicer-group" id="biHorizonSlicer" role="group" aria-label="Time Horizon Slicer">
-                        <span class="bi-slicer-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="bi-slicer-icon"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Horizon</span>
-                        <div class="bi-slicer-pills-wrap">
-                            <button type="button" class="bi-slicer-pill active" data-horizon="all">All Time</button>
-                            <button type="button" class="bi-slicer-pill" data-horizon="mtd">This Month</button>
-                            <button type="button" class="bi-slicer-pill" data-horizon="last30">Last 30 Days</button>
-                            <button type="button" class="bi-slicer-pill" data-horizon="qtd">This Quarter</button>
-                            <button type="button" class="bi-slicer-pill" data-horizon="ytd">Year to Date</button>
-                            <button type="button" class="bi-slicer-pill" data-horizon="last7">Last 7 Days</button>
-                        </div>
-                    </div>
-
-                    <!-- Commitment Slicer -->
-                    <div class="bi-slicer-group" id="biCommitmentSlicer" role="group" aria-label="Commitment Type Slicer">
-                        <span class="bi-slicer-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="bi-slicer-icon"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Commitment</span>
-                        <div class="bi-slicer-pills-wrap">
-                            <button type="button" class="bi-slicer-pill active" data-commitment="all">All Types</button>
-                            <button type="button" class="bi-slicer-pill" data-commitment="onetime">One-Time</button>
-                            <button type="button" class="bi-slicer-pill" data-commitment="recurring">Subscriptions</button>
-                        </div>
-                    </div>
-
-                    <!-- Cashflow Direction Slicer -->
-                    <div class="bi-slicer-group" id="biStreamSlicer" role="group" aria-label="Cashflow Stream Slicer">
-                        <span class="bi-slicer-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="bi-slicer-icon"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Cash Flow</span>
-                        <div class="bi-slicer-pills-wrap">
-                            <button type="button" class="bi-slicer-pill active" data-stream="all">All Cash</button>
-                            <button type="button" class="bi-slicer-pill" data-stream="expenses">Outflow Only</button>
-                            <button type="button" class="bi-slicer-pill" data-stream="incomes">Inflow Only</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- What-If Scenario Simulator Drawer -->
-            <div class="bi-whatif-drawer" id="biWhatIfDrawer">
-                <div class="bi-whatif-header">
-                    <h4 class="bi-whatif-title">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                        Interactive Financial Sensitivity &amp; What-If Parameters
-                    </h4>
-                    <button type="button" class="bi-reset-slicers-btn" id="biResetWhatIfBtn">Reset Sliders</button>
-                </div>
-                <div class="bi-whatif-sliders-grid">
-                    <div class="bi-slider-control">
-                        <div class="bi-slider-label-row">
-                            <span>Discretionary Spend Reduction</span>
-                            <span class="bi-slider-val" id="valSpendCut">0%</span>
-                        </div>
-                        <input type="range" class="bi-range-input" id="sliderSpendCut" min="-30" max="30" value="0" step="5">
-                    </div>
-                    <div class="bi-slider-control">
-                        <div class="bi-slider-label-row">
-                            <span>Operating Inflow Shock</span>
-                            <span class="bi-slider-val" id="valRevShock">0%</span>
-                        </div>
-                        <input type="range" class="bi-range-input" id="sliderRevShock" min="-20" max="30" value="0" step="5">
-                    </div>
-                    <div class="bi-slider-control">
-                        <div class="bi-slider-label-row">
-                            <span>Inflation / Fixed Cost Delta</span>
-                            <span class="bi-slider-val" id="valInflation">0%</span>
-                        </div>
-                        <input type="range" class="bi-range-input" id="sliderInflation" min="0" max="15" value="0" step="1">
-                    </div>
-                </div>
-                <div class="bi-whatif-results-grid">
-                    <div class="bi-whatif-kpi-card">
-                        <span class="bi-whatif-kpi-lbl">Simulated Net Flow</span>
-                        <span class="bi-whatif-kpi-val" id="simNetFlow">$0</span>
-                    </div>
-                    <div class="bi-whatif-kpi-card">
-                        <span class="bi-whatif-kpi-lbl">Monthly Retained Delta</span>
-                        <span class="bi-whatif-kpi-val" id="simDeltaFlow">±$0</span>
-                    </div>
-                    <div class="bi-whatif-kpi-card">
-                        <span class="bi-whatif-kpi-lbl">Emergency Reserves Runway</span>
-                        <span class="bi-whatif-kpi-val" id="simRunway">0.0 Mo</span>
-                    </div>
-                    <div class="bi-whatif-kpi-card">
-                        <span class="bi-whatif-kpi-lbl">50/30/20 Health Score</span>
-                        <span class="bi-whatif-kpi-val" id="simHealthScore">75 / 100</span>
-                    </div>
-                </div>
-            </div>
-            </div>
-        `;
-
-        targetSection.parentNode.insertBefore(ribbon, targetSection);
-
-        // Inject Variance Decomposition Modal if not present
-        if (!document.getElementById("biDecompModal")) {
-            const modal = document.createElement("div");
-            modal.id = "biDecompModal";
-            modal.className = "bi-decomp-modal";
-            modal.innerHTML = `
-                <div class="bi-decomp-box">
-                    <div class="bi-decomp-top">
-                        <h3 class="bi-decomp-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="bi-decomp-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Variance Decomposition &amp; Cost Driver Tree</h3>
-                        <button type="button" class="bi-crossfilter-close" id="biCloseDecompBtn">&times;</button>
-                    </div>
-                    <p class="bi-decomp-desc">
-                        Decomposes period-over-period spend variance across categories to isolate primary cost drivers.
-                    </p>
-                    <div class="bi-decomp-waterfall" id="biWaterfallContainer"></div>
-                </div>
-            `;
-            document.body.appendChild(modal);
+        const modal = document.getElementById("biDecompModal");
+        if (modal) {
             document.getElementById("biCloseDecompBtn")?.addEventListener("click", () => modal.classList.remove("open"));
             modal.addEventListener("click", (e) => {
                 if (e.target === modal) modal.classList.remove("open");
@@ -191,6 +44,7 @@
 
         wireSlicerControls();
         wireWhatIfControls();
+        initialized = true;
     }
 
     // 2. WIRE SLICER CONTROLS

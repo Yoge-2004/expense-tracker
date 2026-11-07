@@ -915,13 +915,30 @@
         if (!bgs.length) return;
 
         const isLight = document.documentElement.getAttribute("data-theme") === "light";
-        if (type === "custom" && uri) {
+        const hasWallpaper = Boolean(uri && type !== 'none');
+
+        if (hasWallpaper) {
             document.body?.classList.add("has-custom-wallpaper");
-            document.documentElement.style.setProperty('--card-bg', isLight ? 'rgba(255, 255, 255, 0.76)' : 'rgba(23, 26, 20, 0.74)');
-            document.documentElement.style.setProperty('--card-bg-hover', isLight ? 'rgba(255, 255, 255, 0.86)' : 'rgba(32, 36, 28, 0.84)');
+            document.documentElement.style.setProperty('--card-bg', isLight ? 'rgba(255, 255, 255, 0.78)' : 'rgba(23, 26, 20, 0.82)');
+            document.documentElement.style.setProperty('--card-bg-hover', isLight ? 'rgba(255, 255, 255, 0.90)' : 'rgba(32, 36, 28, 0.90)');
+            const tint = isLight ? "255, 255, 255" : "0, 0, 0";
+            const bgRule = uri.startsWith('linear-gradient') || uri.startsWith('radial-gradient')
+                ? uri
+                : `linear-gradient(rgba(${tint}, ${opacity}), rgba(${tint}, ${opacity})), url("${uri}")`;
+            document.documentElement.style.setProperty("--custom-wallpaper-bg", bgRule);
+            document.body?.style.setProperty("background-image", bgRule, "important");
+            document.body?.style.setProperty("background-size", "cover", "important");
+            document.body?.style.setProperty("background-position", "center", "important");
+            document.body?.style.setProperty("background-attachment", "fixed", "important");
+            document.body?.style.setProperty("background-repeat", "no-repeat", "important");
         } else {
             document.body?.classList.remove("has-custom-wallpaper");
             document.documentElement.style.removeProperty("--custom-wallpaper-bg");
+            document.body?.style.removeProperty("background-image");
+            document.body?.style.removeProperty("background-size");
+            document.body?.style.removeProperty("background-position");
+            document.body?.style.removeProperty("background-attachment");
+            document.body?.style.removeProperty("background-repeat");
             if (isDefaultPalette()) {
                 document.documentElement.style.removeProperty('--card-bg');
                 document.documentElement.style.removeProperty('--card-bg-hover');
@@ -940,16 +957,17 @@
             if (type === 'none') {
                 heroBg.style.backgroundImage = 'none';
                 heroBg.style.filter = 'none';
-            } else if (type === "custom" && uri) {
+            } else if (hasWallpaper) {
                 const tint = isLight ? "255, 255, 255" : "0, 0, 0";
-                const bgRule = `linear-gradient(rgba(${tint}, ${opacity}), rgba(${tint}, ${opacity})), url("${uri}")`;
+                const bgRule = uri.startsWith('linear-gradient') || uri.startsWith('radial-gradient')
+                    ? uri
+                    : `linear-gradient(rgba(${tint}, ${opacity}), rgba(${tint}, ${opacity})), url("${uri}")`;
                 heroBg.style.setProperty("background-image", bgRule, "important");
                 heroBg.style.setProperty("background-size", "cover", "important");
                 heroBg.style.setProperty("background-position", "center", "important");
                 heroBg.style.setProperty("background-repeat", "no-repeat", "important");
                 heroBg.style.setProperty("opacity", "1", "important");
                 heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : "none";
-                document.documentElement.style.setProperty("--custom-wallpaper-bg", bgRule);
             } else {
                 // Preset / default ambient gradients constructed from current theme colors
                 const pRgb = hexToRgb(currentPrimary);
