@@ -8,10 +8,11 @@ import com.example.expensetracker.repository.IncomeRepository;
 import com.example.expensetracker.repository.PlatformDailyMetricsRepository;
 import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.service.AdminMetricsService;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,8 +52,8 @@ public class AdminMetricsServiceImpl implements AdminMetricsService {
     @org.springframework.context.annotation.Lazy
     private AdminMetricsService self;
 
-    @PostConstruct
-    public void init() {
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
         log.info("Initializing AdminMetricsService with initial pre-aggregation rollup");
         try {
             if (self != null) {

@@ -661,7 +661,7 @@
         } else {
             const selectedCat = activeCrossFilter.value;
             dataset.backgroundColor = chart.data.labels.map((lbl, idx) => {
-                const orig = dataset._origBg[idx] || '#C79A3E';
+                const orig = dataset._origBg[idx] || (getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#C79A3E');
                 return lbl === selectedCat ? orig : hexOrRgbToDim(orig, 0.20);
             });
         }
@@ -684,7 +684,7 @@
 
     // 5. SVG MICRO-SPARKLINES & VARIANCE METRICS
     function renderSparklines(expenses, incomes) {
-        renderCardSparkline("metricCardOutflow", expenses, "expenseDate", "#EF4444", "#C79A3E");
+        renderCardSparkline("metricCardOutflow", expenses, "expenseDate", "#EF4444", "#EF4444");
         renderCardSparkline("metricCardInflow", incomes, "incomeDate", "#10B981", "#34D399");
         renderNetFlowSparkline("metricCardNetflow", expenses, incomes);
         renderPacingGauge(expenses);
@@ -1053,6 +1053,9 @@
 
         if (chartState.trendChart) chartState.trendChart.destroy();
 
+        const themePrimary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#C79A3E';
+        const themePrimaryRgb = getComputedStyle(document.documentElement).getPropertyValue('--primary-rgb').trim() || '199, 154, 62';
+
         chartState.trendChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -1061,8 +1064,9 @@
                     {
                         label: 'Cumulative Actual Spend',
                         data: dailyCum,
-                        borderColor: '#C79A3E',
-                        backgroundColor: 'rgba(199, 154, 62, 0.15)',
+                        borderColor: themePrimary,
+                        backgroundColor: `rgba(${themePrimaryRgb}, 0.15)`,
+                        fill: true,
                         fill: true,
                         tension: 0.3,
                         borderWidth: 3,

@@ -331,17 +331,101 @@
         return '#' + a.map((value, index) => Math.round(value + (b[index] - value) * amount).toString(16).padStart(2, '0')).join('');
     }
 
+    function rgbToHsl(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0, s = 0;
+        const l = (max + min) / 2;
+        if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h *= 60;
+        }
+        return { h: (h + 360) % 360, s, l };
+    }
+
+    function hslToRgb(h, s, l) {
+        h = ((h % 360) + 360) % 360;
+        const c = (1 - Math.abs(2 * l - 1)) * s;
+        const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+        const m = l - c / 2;
+        let r1 = 0, g1 = 0, b1 = 0;
+        if (h >= 0 && h < 60) { r1 = c; g1 = x; b1 = 0; }
+        else if (h >= 60 && h < 120) { r1 = x; g1 = c; b1 = 0; }
+        else if (h >= 120 && h < 180) { r1 = 0; g1 = c; b1 = x; }
+        else if (h >= 180 && h < 240) { r1 = 0; g1 = x; b1 = c; }
+        else if (h >= 240 && h < 300) { r1 = x; g1 = 0; b1 = c; }
+        else { r1 = c; g1 = 0; b1 = x; }
+        return {
+            r: Math.round((r1 + m) * 255),
+            g: Math.round((g1 + m) * 255),
+            b: Math.round((b1 + m) * 255)
+        };
+    }
+
+    function hslToHex(h, s, l) {
+        const { r, g, b } = hslToRgb(h, s, l);
+        return '#' + [r, g, b].map(x => Math.max(0, Math.min(255, x)).toString(16).padStart(2, '0')).join('');
+    }
+
+    function hueDistance(h1, h2) {
+        const diff = Math.abs(h1 - h2) % 360;
+        return diff > 180 ? 360 - diff : diff;
+    }
+
+    function sameColor(a, b) {
+        return String(a || '').replace(/\s+/g, '').toLowerCase() === String(b || '').replace(/\s+/g, '').toLowerCase();
+    }
+
     // ─── 3. STATE ─────────────────────────────────────────────────────────────
+
+    const DEFAULT_PALETTE = { primary: '#C79A3E', end: '#A97F2E', accent: '#A23E32', highlight: '#4C7A78' };
+    const DEFAULT_CARD_SURFACES = ['#171a14', 'rgba(23, 26, 20, 0.88)'];
+    const DEFAULT_APP_SURFACES = ['#10120e', '#171a14'];
+    const paletteVarNames = new Set();
+
+    function setPaletteVar(name, value) {
+        paletteVarNames.add(name);
+        document.documentElement.style.setProperty(name, value);
+    }
+
+    function clearPaletteVars() {
+        const root = document.documentElement;
+        paletteVarNames.forEach(name => root.style.removeProperty(name));
+        paletteVarNames.clear();
+        for (let i = 1; i <= 8; i++) {
+            root.style.removeProperty('--palette-' + i);
+            root.style.removeProperty('--palette-' + i + '-rgb');
+            root.style.removeProperty('--palette-' + i + '-glow');
+        }
+    }
+
+    /** True while nothing has been changed from the shipped look, so the stylesheet should rule. */
+    function isDefaultPalette() {
+        return (currentPresetId === 'default' || !currentPresetId)
+            && currentWallpaperType === 'preset'
+            && sameColor(currentPrimary, DEFAULT_PALETTE.primary)
+            && sameColor(currentPrimaryEnd, DEFAULT_PALETTE.end)
+            && sameColor(currentAccent, DEFAULT_PALETTE.accent)
+            && sameColor(currentHighlight, DEFAULT_PALETTE.highlight)
+            && (!currentCardSurface || DEFAULT_CARD_SURFACES.some(v => sameColor(currentCardSurface, v)))
+            && (!currentAppSurface || DEFAULT_APP_SURFACES.some(v => sameColor(currentAppSurface, v)));
+    }
 
     let currentFontChoice = localStorage.getItem('app_font_choice') || 'grotesk';
     let currentCustomFontFamily = localStorage.getItem('app_custom_font_family') || null;
     let currentCustomFontData = localStorage.getItem('app_custom_font_data') || null;
     let currentPresetId = 'default';
 
-    let currentPrimary = '#C79A3E';
-    let currentPrimaryEnd = '#A97F2E';
-    let currentAccent = '#A23E32';
-    let currentHighlight = '#4C7A78';
+    let currentPrimary = DEFAULT_PALETTE.primary;
+    let currentPrimaryEnd = DEFAULT_PALETTE.end;
+    let currentAccent = DEFAULT_PALETTE.accent;
+    let currentHighlight = DEFAULT_PALETTE.highlight;
     let currentCardSurface = '#171A14';
     let currentAppSurface = '#10120E';
 
@@ -388,118 +472,162 @@
         sampleCtx.drawImage(canvas, 0, 0, sample.width, sample.height);
         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         const pixels = sampleCtx.getImageData(0, 0, sample.width, sample.height);
-        const buckets = new Map();
-        const totalPixels = Math.floor(pixels.data.length / 4);
-        const step = Math.max(1, Math.floor(totalPixels / 2500)) * 4;
 
-        for (let i = 0; i < pixels.data.length; i += step) {
+        // Multi-Hue Spectrum Clustering across 16 angular sectors in HSL space
+        const HUE_SECTORS = 16;
+        const sectorWidth = 360 / HUE_SECTORS;
+        const hueBins = Array.from({ length: HUE_SECTORS }, () => ({
+            rSum: 0, gSum: 0, bSum: 0, wSum: 0, count: 0, hSum: 0, sSum: 0, lSum: 0
+        }));
+
+        let neutralRSum = 0, neutralGSum = 0, neutralBSum = 0, neutralWSum = 0, neutralCount = 0;
+
+        for (let i = 0; i < pixels.data.length; i += 4) {
             const r = pixels.data[i], g = pixels.data[i + 1], b = pixels.data[i + 2], a = pixels.data[i + 3];
             if (a < 128) continue;
 
-            const max = Math.max(r, g, b), min = Math.min(r, g, b);
-            const sat = max - min;
-            const satRatio = max > 0 ? sat / max : 0;
-            const lum = (r * 299 + g * 587 + b * 114) / 255000;
-            const isExtreme = lum < 0.08 || (lum > 0.96 && satRatio < 0.12) || satRatio < 0.06;
+            const hsl = rgbToHsl(r, g, b);
+            // Extreme luminance or near-zero saturation pixels count toward neutral base
+            if (hsl.s < 0.12 || hsl.l < 0.08 || hsl.l > 0.94) {
+                neutralRSum += r;
+                neutralGSum += g;
+                neutralBSum += b;
+                neutralWSum += 1;
+                neutralCount++;
+                continue;
+            }
 
-            const qR = Math.floor(r / 16);
-            const qG = Math.floor(g / 16);
-            const qB = Math.floor(b / 16);
-            const key = (qR << 8) | (qG << 4) | qB;
+            // Chromatic pixel: determine hue sector with 11.25 deg offset so sector 0 centers around pure Red (0 deg)
+            const sectorIdx = Math.floor(((hsl.h + sectorWidth / 2) % 360) / sectorWidth) % HUE_SECTORS;
+            // Vibrant, well-lit colors receive higher weighting for executive readability
+            const vibrancyWeight = 1.0 + Math.pow(hsl.s, 1.2) * 2.5 + (1.0 - Math.abs(hsl.l - 0.5) * 1.4) * 1.5;
 
-            const existing = buckets.get(key) || { r: 0, g: 0, b: 0, count: 0, score: 0 };
-            existing.r += r;
-            existing.g += g;
-            existing.b += b;
-            existing.count++;
-            existing.score += isExtreme ? 0.2 : (1 + Math.pow(satRatio, 1.4) * 3.5);
-            buckets.set(key, existing);
+            const bin = hueBins[sectorIdx];
+            bin.rSum += r * vibrancyWeight;
+            bin.gSum += g * vibrancyWeight;
+            bin.bSum += b * vibrancyWeight;
+            bin.hSum += hsl.h * vibrancyWeight;
+            bin.sSum += hsl.s * vibrancyWeight;
+            bin.lSum += hsl.l * vibrancyWeight;
+            bin.wSum += vibrancyWeight;
+            bin.count++;
         }
 
-        const sorted = Array.from(buckets.values()).sort((a, b) => b.score - a.score);
-        if (sorted.length === 0) {
-            throw new Error('This image contains no readable pixels. Try another image.');
+        // Build list of valid color clusters
+        const clusters = [];
+        for (let idx = 0; idx < HUE_SECTORS; idx++) {
+            const bin = hueBins[idx];
+            if (bin.count < 3 || bin.wSum <= 0) continue;
+            const avgR = Math.round(bin.rSum / bin.wSum);
+            const avgG = Math.round(bin.gSum / bin.wSum);
+            const avgB = Math.round(bin.bSum / bin.wSum);
+            const avgHsl = rgbToHsl(avgR, avgG, avgB);
+            const score = bin.wSum * Math.pow(avgHsl.s, 1.2) * (1.0 - Math.abs(avgHsl.l - 0.5) * 1.2);
+            clusters.push({
+                r: avgR,
+                g: avgG,
+                b: avgB,
+                h: avgHsl.h,
+                s: avgHsl.s,
+                l: avgHsl.l,
+                score,
+                count: bin.count
+            });
         }
 
-        let primaryBucket = sorted[0];
-        for (const bucket of sorted) {
-            const r = Math.round(bucket.r / bucket.count);
-            const g = Math.round(bucket.g / bucket.count);
-            const b = Math.round(bucket.b / bucket.count);
-            const max = Math.max(r, g, b), min = Math.min(r, g, b);
-            const satRatio = max > 0 ? (max - min) / max : 0;
-            const lum = (r * 299 + g * 587 + b * 114) / 255000;
-            if (satRatio >= 0.15 && lum >= 0.12 && lum <= 0.88) {
-                primaryBucket = bucket;
+        // Sort by prominence and vibrancy
+        clusters.sort((a, b) => b.score - a.score);
+
+        // Fallback for monochrome / black-and-white images
+        const defaultHue = 42; // Imperial Gold default
+        let primaryH = defaultHue, primaryS = 0.65, primaryL = 0.52;
+        let primaryHex = '#C79A3E';
+
+        if (clusters.length > 0) {
+            const top = clusters[0];
+            primaryH = top.h;
+            primaryS = Math.min(0.92, Math.max(0.48, top.s * 1.1));
+            primaryL = isLight ? Math.min(0.50, Math.max(0.38, top.l)) : Math.min(0.64, Math.max(0.48, top.l));
+            primaryHex = hslToHex(primaryH, primaryS, primaryL);
+        } else if (neutralCount > 0) {
+            const avgLum = (neutralRSum * 299 + neutralGSum * 587 + neutralBSum * 114) / (neutralCount * 255000);
+            primaryHex = avgLum > 0.5 ? '#2563EB' : '#D4AF37';
+            const hsl = rgbToHsl(...Object.values(hexToRgb(primaryHex)));
+            primaryH = hsl.h; primaryS = hsl.s; primaryL = hsl.l;
+        }
+
+        // Accent Selection: Guarantee distinct hue separation (at least 45 deg, ideally 60-180 deg)
+        let accentHex = null;
+        let accentH = (primaryH + 150) % 360;
+        let bestAccentCluster = null;
+        for (const cand of clusters) {
+            const dist = hueDistance(cand.h, primaryH);
+            if (dist >= 45) {
+                bestAccentCluster = cand;
                 break;
             }
         }
+        if (bestAccentCluster) {
+            accentH = bestAccentCluster.h;
+            const accS = Math.min(0.95, Math.max(0.52, bestAccentCluster.s * 1.15));
+            const accL = isLight ? Math.min(0.50, Math.max(0.36, bestAccentCluster.l)) : Math.min(0.66, Math.max(0.48, bestAccentCluster.l));
+            accentHex = hslToHex(accentH, accS, accL);
+        } else {
+            // Synthesize harmonious complementary/triadic accent
+            accentHex = hslToHex(accentH, Math.max(0.60, primaryS), isLight ? 0.44 : 0.58);
+        }
 
-        const primaryRgb = {
-            r: Math.round(primaryBucket.r / primaryBucket.count),
-            g: Math.round(primaryBucket.g / primaryBucket.count),
-            b: Math.round(primaryBucket.b / primaryBucket.count),
-        };
-
-        const colorDist = (a, b) => Math.sqrt(
-            Math.pow(a.r - b.r, 2) + Math.pow(a.g - b.g, 2) + Math.pow(a.b - b.b, 2)
-        );
-
-        let accentRgb = primaryRgb;
-        for (let i = 0; i < sorted.length; i++) {
-            const cand = {
-                r: Math.round(sorted[i].r / sorted[i].count),
-                g: Math.round(sorted[i].g / sorted[i].count),
-                b: Math.round(sorted[i].b / sorted[i].count),
-            };
-            if (colorDist(cand, primaryRgb) > 70) {
-                accentRgb = cand;
+        // Highlight Selection: Guarantee distinct hue separation from BOTH Primary and Accent (>= 32 deg)
+        let highlightHex = null;
+        let highlightH = (primaryH + 75) % 360;
+        let bestHighlightCluster = null;
+        for (const cand of clusters) {
+            const distP = hueDistance(cand.h, primaryH);
+            const distA = hueDistance(cand.h, accentH);
+            if (distP >= 32 && distA >= 32) {
+                bestHighlightCluster = cand;
                 break;
             }
         }
-        if (colorDist(primaryRgb, accentRgb) <= 70) {
-            const hexPrimary = '#' + [primaryRgb.r, primaryRgb.g, primaryRgb.b].map(x => x.toString(16).padStart(2, '0')).join('');
-            accentRgb = hexToRgb(colorVariant(hexPrimary, 150));
+        if (bestHighlightCluster) {
+            highlightH = bestHighlightCluster.h;
+            const hlS = Math.min(0.92, Math.max(0.48, bestHighlightCluster.s * 1.1));
+            const hlL = isLight ? Math.min(0.48, Math.max(0.35, bestHighlightCluster.l)) : Math.min(0.65, Math.max(0.48, bestHighlightCluster.l));
+            highlightHex = hslToHex(highlightH, hlS, hlL);
+        } else {
+            // Synthesize harmonious triad/tetrad highlight
+            highlightHex = hslToHex(highlightH, Math.max(0.55, primaryS), isLight ? 0.45 : 0.56);
         }
 
-        let highlightRgb = accentRgb;
-        for (let i = 0; i < sorted.length; i++) {
-            const cand = {
-                r: Math.round(sorted[i].r / sorted[i].count),
-                g: Math.round(sorted[i].g / sorted[i].count),
-                b: Math.round(sorted[i].b / sorted[i].count),
-            };
-            if (colorDist(cand, primaryRgb) > 55 && colorDist(cand, accentRgb) > 55) {
-                highlightRgb = cand;
-                break;
-            }
-        }
-        if (colorDist(primaryRgb, highlightRgb) <= 55 || colorDist(accentRgb, highlightRgb) <= 55) {
-            const hexPrimary = '#' + [primaryRgb.r, primaryRgb.g, primaryRgb.b].map(x => x.toString(16).padStart(2, '0')).join('');
-            highlightRgb = hexToRgb(colorVariant(hexPrimary, 60));
-        }
-
-        const toHex = (c) => '#' + [c.r, c.g, c.b].map(x => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, '0')).join('');
-        const primaryHex = toHex(primaryRgb);
-        const accentHex = toHex(accentRgb);
-        const highlightHex = toHex(highlightRgb);
-
+        // 8-Color Spectrum Extraction (--palette-1 to --palette-8)
+        // Ensure ALL 8 slots are distinct, diverse hues covering the spectrum
+        const extractedHues = [primaryH, accentH, highlightH];
         const colors = [primaryHex, accentHex, highlightHex];
-        for (const bucket of sorted) {
-            const cand = {
-                r: Math.round(bucket.r / bucket.count),
-                g: Math.round(bucket.g / bucket.count),
-                b: Math.round(bucket.b / bucket.count),
-            };
-            if (colors.every(hex => colorDist(hexToRgb(hex), cand) >= 34)) {
-                colors.push(toHex(cand));
+
+        for (const cand of clusters) {
+            if (colors.length >= 8) break;
+            const isDistinct = extractedHues.every(h => hueDistance(cand.h, h) >= 22);
+            if (isDistinct) {
+                extractedHues.push(cand.h);
+                const tunedS = Math.min(0.92, Math.max(0.50, cand.s * 1.1));
+                const tunedL = isLight ? Math.min(0.50, Math.max(0.36, cand.l)) : Math.min(0.66, Math.max(0.48, cand.l));
+                colors.push(hslToHex(cand.h, tunedS, tunedL));
             }
-            if (colors.length >= 8) break;
         }
-        for (const hueOffset of [45, 90, 135, 180, 225, 270, 315]) {
+
+        // If fewer than 8 distinct hue clusters in the wallpaper, supplement with harmonious color wheel chords
+        const wheelOffsets = [35, -35, 95, -95, 140, 210, 270, 315];
+        for (const offset of wheelOffsets) {
             if (colors.length >= 8) break;
-            const variant = colorVariant(primaryHex, hueOffset);
-            if (!colors.includes(variant)) colors.push(variant);
+            const chordH = (primaryH + offset + 360) % 360;
+            if (extractedHues.every(h => hueDistance(chordH, h) >= 20)) {
+                extractedHues.push(chordH);
+                colors.push(hslToHex(chordH, Math.max(0.58, primaryS), isLight ? 0.46 : 0.58));
+            }
+        }
+        while (colors.length < 8) {
+            const fallbackH = (primaryH + colors.length * 45) % 360;
+            colors.push(hslToHex(fallbackH, 0.65, isLight ? 0.46 : 0.58));
         }
 
         currentExtractedPalette = colors;
@@ -507,10 +635,8 @@
         currentPrimaryEnd = adjustBrightness(primaryHex, isLight ? 0.85 : 0.80);
         currentAccent = accentHex;
         currentHighlight = highlightHex;
-        currentCardSurface = isLight
-            ? `rgba(${Math.min(255, 248 + Math.floor(primaryRgb.r * 0.02))}, ${Math.min(255, 248 + Math.floor(primaryRgb.g * 0.02))}, ${Math.min(255, 252 + Math.floor(primaryRgb.b * 0.02))}, 0.94)`
-            : `rgba(${Math.max(16, 20 + Math.floor(primaryRgb.r * 0.05))}, ${Math.max(18, 22 + Math.floor(primaryRgb.g * 0.05))}, ${Math.max(22, 24 + Math.floor(primaryRgb.b * 0.05))}, 0.90)`;
-        currentAppSurface = isLight ? '#FFFFFF' : adjustBrightness(primaryHex, 0.12);
+        currentCardSurface = isLight ? '#FFFFFF' : '#171A14';
+        currentAppSurface = isLight ? '#F8F9FA' : '#10120E';
         currentWallpaperType = 'custom';
         currentWallpaperUri = canvas.toDataURL('image/jpeg', 0.88);
 
@@ -659,41 +785,7 @@
     // [data-theme="light"] / [data-theme="dark"] token blocks. So the studio must only own those
     // variables while the user has actually customised the palette, and must recompute them whenever
     // the theme changes (they depend on the theme at the moment they are computed).
-    const DEFAULT_PALETTE = { primary: '#C79A3E', end: '#A97F2E', accent: '#A23E32', highlight: '#4C7A78' };
-    const DEFAULT_CARD_SURFACES = ['#171a14', 'rgba(23, 26, 20, 0.88)'];
-    const DEFAULT_APP_SURFACES = ['#10120e', '#171a14'];
-    const paletteVarNames = new Set();
 
-    function setPaletteVar(name, value) {
-        paletteVarNames.add(name);
-        document.documentElement.style.setProperty(name, value);
-    }
-
-    function clearPaletteVars() {
-        const root = document.documentElement;
-        paletteVarNames.forEach(name => root.style.removeProperty(name));
-        paletteVarNames.clear();
-        for (let i = 1; i <= 8; i++) {
-            root.style.removeProperty('--palette-' + i);
-            root.style.removeProperty('--palette-' + i + '-rgb');
-        }
-    }
-
-    function sameColor(a, b) {
-        return String(a || '').replace(/\s+/g, '').toLowerCase() === String(b || '').replace(/\s+/g, '').toLowerCase();
-    }
-
-    /** True while nothing has been changed from the shipped look, so the stylesheet should rule. */
-    function isDefaultPalette() {
-        return (currentPresetId === 'default' || !currentPresetId)
-            && currentWallpaperType === 'preset'
-            && sameColor(currentPrimary, DEFAULT_PALETTE.primary)
-            && sameColor(currentPrimaryEnd, DEFAULT_PALETTE.end)
-            && sameColor(currentAccent, DEFAULT_PALETTE.accent)
-            && sameColor(currentHighlight, DEFAULT_PALETTE.highlight)
-            && (!currentCardSurface || DEFAULT_CARD_SURFACES.some(v => sameColor(currentCardSurface, v)))
-            && (!currentAppSurface || DEFAULT_APP_SURFACES.some(v => sameColor(currentAppSurface, v)));
-    }
 
     function applyPalette(primaryHex, primaryEndHex, accentHex, highlightHex, paletteColors) {
         const root = document.documentElement;
@@ -815,6 +907,7 @@
                 const rgb = hexToRgb(col);
                 setPaletteVar(`--palette-${idx + 1}`, col);
                 setPaletteVar(`--palette-${idx + 1}-rgb`, `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+                setPaletteVar(`--palette-${idx + 1}-glow`, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.20)`);
             }
         });
 

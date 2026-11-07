@@ -126,14 +126,14 @@
                 '--success', '--success-rgb', '--success-glow', '--success-gradient',
                 '--fill-subtle', '--fill-medium', '--fill-strong', '--fill-active', '--inset-bg', '--line-soft', '--on-success', '--on-warning', '--on-danger',
                 '--cursor-default', '--cursor-pointer', '--cursor-text', '--cursor-clicked',
-                '--palette-1', '--palette-1-rgb',
-                '--palette-2', '--palette-2-rgb',
-                '--palette-3', '--palette-3-rgb',
-                '--palette-4', '--palette-4-rgb',
-                '--palette-5', '--palette-5-rgb',
-                '--palette-6', '--palette-6-rgb',
-                '--palette-7', '--palette-7-rgb',
-                '--palette-8', '--palette-8-rgb'
+                '--palette-1', '--palette-1-rgb', '--palette-1-glow',
+                '--palette-2', '--palette-2-rgb', '--palette-2-glow',
+                '--palette-3', '--palette-3-rgb', '--palette-3-glow',
+                '--palette-4', '--palette-4-rgb', '--palette-4-glow',
+                '--palette-5', '--palette-5-rgb', '--palette-5-glow',
+                '--palette-6', '--palette-6-rgb', '--palette-6-glow',
+                '--palette-7', '--palette-7-rgb', '--palette-7-glow',
+                '--palette-8', '--palette-8-rgb', '--palette-8-glow'
             ];
 
             const isDefault = !pal || !pal.primary || (
@@ -234,6 +234,7 @@
                         root.style.setProperty(`--palette-${i + 1}`, col);
                         const cRgb = hexToRgb(col);
                         root.style.setProperty(`--palette-${i + 1}-rgb`, `${cRgb.r}, ${cRgb.g}, ${cRgb.b}`);
+                        root.style.setProperty(`--palette-${i + 1}-glow`, `rgba(${cRgb.r}, ${cRgb.g}, ${cRgb.b}, 0.20)`);
                     });
                 }
 
