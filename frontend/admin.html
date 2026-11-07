@@ -19,88 +19,7 @@
     <link rel="stylesheet" href="css/web-studio.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="theme-color" content="#10120E">
-    <script>
-        (function () {
-            try {
-                var savedTheme = localStorage.getItem("theme");
-                var theme = savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
-                document.documentElement.setAttribute("data-theme", theme);
-                var meta = document.querySelector('meta[name="theme-color"]');
-                if (meta) meta.setAttribute("content", theme === "light" ? "#F8F9FA" : "#10120E");
-
-                var rawPalette = localStorage.getItem("app_custom_palette");
-                if (rawPalette) {
-                    var p = JSON.parse(rawPalette);
-                    var isDefault = p && (p.presetId === 'default' || !p.presetId) && p.primary === '#C79A3E' && p.accent === '#A23E32' && p.highlight === '#4C7A78';
-                    if (p && p.primary && !isDefault) {
-                        var root = document.documentElement;
-                        root.style.setProperty("--primary", p.primary);
-                        var hex = p.primary.replace('#', '');
-                        if (hex.length === 6) {
-                            var r = parseInt(hex.substring(0, 2), 16);
-                            var g = parseInt(hex.substring(2, 4), 16);
-                            var b = parseInt(hex.substring(4, 6), 16);
-                            root.style.setProperty("--primary-rgb", r + ", " + g + ", " + b);
-                            root.style.setProperty("--primary-glow", "rgba(" + r + ", " + g + ", " + b + ", 0.22)");
-                            root.style.setProperty("--border-accent", "rgba(" + r + ", " + g + ", " + b + ", 0.55)");
-                            root.style.setProperty("--shadow-glow", "0 12px 35px -8px rgba(" + r + ", " + g + ", " + b + ", 0.3)");
-                        }
-                        if (p.primaryGradientEnd) {
-                            root.style.setProperty("--primary-gradient", "linear-gradient(135deg, " + p.primary + " 0%, " + p.primaryGradientEnd + " 100%)");
-                        }
-                        if (p.accent) {
-                            root.style.setProperty("--accent", p.accent);
-                            var ahex = p.accent.replace('#', '');
-                            if (ahex.length === 6) {
-                                var ar = parseInt(ahex.substring(0, 2), 16);
-                                var ag = parseInt(ahex.substring(2, 4), 16);
-                                var ab = parseInt(ahex.substring(4, 6), 16);
-                                root.style.setProperty("--accent-rgb", ar + ", " + ag + ", " + ab);
-                                root.style.setProperty("--accent-glow", "rgba(" + ar + ", " + ag + ", " + ab + ", 0.25)");
-                                root.style.setProperty("--accent-text", p.accent);
-                            }
-                        }
-                        if (p.highlight) {
-                            root.style.setProperty("--highlight", p.highlight);
-                            var hhex = p.highlight.replace('#', '');
-                            if (hhex.length === 6) {
-                                var hr = parseInt(hhex.substring(0, 2), 16);
-                                var hg = parseInt(hhex.substring(2, 4), 16);
-                                var hb = parseInt(hhex.substring(4, 6), 16);
-                                root.style.setProperty("--highlight-rgb", hr + ", " + hg + ", " + hb);
-                            }
-                        }
-                        var lum = (r * 299 + g * 587 + b * 114) / 1000;
-                        root.style.setProperty("--on-primary", lum > 145 ? "#0F172A" : "#FFFFFF");
-                        if (theme === "light") {
-                            root.style.setProperty("--card-bg", "#FFFFFF");
-                            root.style.setProperty("--card-bg-hover", "#F8FAFC");
-                            root.style.setProperty("--border", "rgba(" + r + ", " + g + ", " + b + ", 0.22)");
-                            root.style.setProperty("--border-subtle", "rgba(" + r + ", " + g + ", " + b + ", 0.12)");
-                        } else if (p.cardSurface) {
-                            var cs = (!p.cardSurface.startsWith("#c7") && !p.cardSurface.startsWith("#C7")) ? p.cardSurface : "rgba(23, 26, 20, 0.90)";
-                            root.style.setProperty("--card-bg", cs);
-                            root.style.setProperty("--border", "rgba(" + r + ", " + g + ", " + b + ", 0.25)");
-                        }
-                        if (Array.isArray(p.paletteColors)) {
-                            p.paletteColors.slice(0, 8).forEach(function (col, i) {
-                                root.style.setProperty("--palette-" + (i + 1), col);
-                                var ch = col.replace("#", "");
-                                if (ch.length === 6) {
-                                    var cr = parseInt(ch.substring(0, 2), 16);
-                                    var cg = parseInt(ch.substring(2, 4), 16);
-                                    var cb = parseInt(ch.substring(4, 6), 16);
-                                    root.style.setProperty("--palette-" + (i + 1) + "-rgb", cr + ", " + cg + ", " + cb);
-                                }
-                            });
-                        }
-                    }
-                }
-            } catch (error) {
-                document.documentElement.setAttribute("data-theme", "dark");
-            }
-        })();
-    </script>
+    <script src="js/theme-init.js"></script>
     <meta name="description" content="ExpenseTracker Pro Executive Admin Command Center. High-governance financial telemetry, live application logs, and multi-cloud database administration.">
     <meta name="robots" content="noindex, nofollow">
     <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22ExpenseTracker%20Pro%22%2C%22short_name%22%3A%22ExpenseTracker%22%2C%22description%22%3A%22Smart%2C%20privacy-first%20personal%20finance%20and%20expense%20intelligence%20platform.%22%2C%22start_url%22%3A%22index.html%22%2C%22scope%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%2310120E%22%2C%22theme_color%22%3A%22%2310120E%22%2C%22orientation%22%3A%22portrait-primary%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22assets%2Ficon-192.png%22%2C%22type%22%3A%22image%2Fpng%22%2C%22sizes%22%3A%22192x192%22%2C%22purpose%22%3A%22any%20maskable%22%7D%2C%7B%22src%22%3A%22assets%2Ficon-512.png%22%2C%22type%22%3A%22image%2Fpng%22%2C%22sizes%22%3A%22512x512%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%2C%22categories%22%3A%5B%22finance%22%2C%22productivity%22%2C%22utilities%22%5D%7D">
@@ -184,15 +103,15 @@
                                     </svg>
                                 </button>
                             </div>
-                            <div style="padding: 10px 14px; border-bottom: 1px solid var(--border);">
-                                <div style="font-size: 13px; font-weight: 700; color: var(--text-main);" id="sidebarOperatorName">Super Admin</div>
-                                <div style="font-size: 11px; color: var(--primary); font-family: var(--font-mono); margin-top: 2px;">Enterprise Governance Mode</div>
+                            <div class="admin-adm-18">
+                                <div class="admin-adm-19"  id="sidebarOperatorName">Super Admin</div>
+                                <div class="admin-adm-20">Enterprise Governance Mode</div>
                             </div>
                             <a href="dashboard.html">
                                 <svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
                                 <span>Return to Workspace</span>
                             </a>
-                            <a href="#" id="sidebarLogoutBtn" style="color: var(--accent-text);">
+                            <a class="admin-adm-21" href="#" id="sidebarLogoutBtn">
                                 <svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                                 <span>Sign Out</span>
                             </a>
@@ -203,17 +122,17 @@
         </header>
 
         <!-- SUB-HEADING BREADCRUMB / TAB TITLE & SYSTEM HEALTH STATUS -->
-        <div class="admin-tab-header animate-cascade delay-1" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:4px; margin-bottom:12px;">
+        <div class="admin-tab-header animate-cascade delay-1 admin-flex-between">
             <div>
-                <h2 id="topbarTitle" style="font-family:var(--font-display); font-size:24px; font-weight:600; color:var(--text-main); margin:0; letter-spacing:-0.5px;">Mission Control</h2>
-                <p id="topbarSubtitle" class="text-muted" style="font-size:13px; margin:2px 0 0;">Platform KPIs, live telemetry, and cash flow velocity</p>
+                <h2 class="admin-title-2" id="topbarTitle">Mission Control</h2>
+                <p id="topbarSubtitle" class="text-muted admin-adm-22">Platform KPIs, live telemetry, and cash flow velocity</p>
             </div>
-            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                <span id="heartbeatPill" class="status-badge badge-success" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; padding:4px 12px; font-weight:700;">
-                    <span class="pulse-dot" style="width:7px; height:7px; border-radius:50%; background:currentColor;"></span>
+            <div class="admin-flex-7">
+                <span id="heartbeatPill" class="status-badge badge-success admin-flex-badge-1">
+                    <span class="pulse-dot admin-table-3"></span>
                     <span id="heartbeatText">Telemetry Online</span>
                 </span>
-                <button id="quickPurgeCacheBtn" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:10px; font-size:12px; font-weight:600;" title="Purge pre-computed cache">
+                <button id="quickPurgeCacheBtn" class="btn-secondary admin-flex-btn-2" title="Purge pre-computed cache">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                     <span>Purge Cache</span>
                 </button>
@@ -233,7 +152,7 @@
                 <button type="button" class="stream-pill-btn admin-nav-item" data-tab="usersTab">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                     <span>User Intelligence</span>
-                    <span class="stream-badge-count" id="navUsersCount" style="font-size:11px; padding:2px 7px; border-radius:10px; background:rgba(var(--primary-rgb), 0.2); color:var(--primary);">0</span>
+                    <span class="stream-badge-count admin-badge-1" id="navUsersCount">0</span>
                 </button>
                 <button type="button" class="stream-pill-btn admin-nav-item" data-tab="logsTab">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
@@ -318,7 +237,7 @@
                         <span class="status-badge badge-warning">Zero-Tolerance</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value" id="metricLockedUsers" style="color:var(--danger-text);">--</span>
+                        <span class="metric-value admin-adm-23" id="metricLockedUsers">--</span>
                     </div>
                     <div class="metric-footer">
                         <span class="text-muted">Locked / rate-limited accounts</span>
@@ -327,24 +246,24 @@
             </section>
 
             <!-- ANALYTICS & SYSTEM TELEMETRY GRID -->
-            <section class="grid-analytics animate-cascade delay-3" style="margin-top:20px;">
+            <section class="grid-analytics animate-cascade delay-3 admin-adm-2">
                 <!-- Volume Trend Chart Card -->
                 <div class="card insight-card">
-                    <div class="section-heading" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <div class="section-heading admin-flex-between">
                         <div>
                             <span class="card-label">Flow Velocity</span>
                             <h3 class="section-title">30-Day Platform Financial Volume</h3>
                         </div>
                         <span class="section-meta">Pre-Aggregated Rollup</span>
                     </div>
-                    <div class="chart-wrapper" style="position:relative; height:320px; width:100%;">
+                    <div class="chart-wrapper admin-table-4">
                         <canvas id="adminFlowChart"></canvas>
                     </div>
                 </div>
 
                 <!-- Real-Time Full Resource Telemetry Card (RAM, CPU, Pool, Disk, Concurrency) -->
                 <div class="card trend-card">
-                    <div class="section-heading" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <div class="section-heading admin-flex-between">
                         <div>
                             <span class="card-label">Infrastructure Saturation</span>
                             <h3 class="section-title">Host & JVM Telemetry</h3>
@@ -352,73 +271,73 @@
                         <span class="status-badge badge-netflow" id="hudUptime">Uptime: --</span>
                     </div>
 
-                    <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div class="admin-flex-8">
                         <!-- Process & System CPU -->
                         <div class="admin-hud-item">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">CPU Utilization</span>
-                                <span style="font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--text-main);"><span id="hudCpuProcess">--%</span> app &bull; <span id="hudCpuSystem">--%</span> sys</span>
+                            <div class="admin-flex-between">
+                                <span class="admin-meter-label-caps">CPU Utilization</span>
+                                <span class="admin-meter-stat-text"><span id="hudCpuProcess">--%</span> app &bull; <span id="hudCpuSystem">--%</span> sys</span>
                             </div>
-                            <div class="admin-meter-track" style="height:7px; border-radius:99px; background:rgba(var(--ink-rgb), 0.08); overflow:hidden;">
-                                <div class="admin-meter-fill" id="hudCpuBar" style="width:0%; height:100%; border-radius:99px; background:linear-gradient(90deg, var(--metric-inflow), var(--primary)); transition:width 0.4s ease;"></div>
+                            <div class="admin-meter-track admin-meter-track-h7">
+                                <div class="admin-meter-fill admin-meter-fill-custom" id="hudCpuBar"></div>
                             </div>
                         </div>
 
                         <!-- System Physical RAM -->
                         <div class="admin-hud-item">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">System Physical RAM</span>
-                                <span style="font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--text-main);"><span id="hudRamUsed">--</span> / <span id="hudRamTotal">--</span> MB</span>
+                            <div class="admin-flex-between">
+                                <span class="admin-meter-label-caps">System Physical RAM</span>
+                                <span class="admin-meter-stat-text"><span id="hudRamUsed">--</span> / <span id="hudRamTotal">--</span> MB</span>
                             </div>
-                            <div class="admin-meter-track" style="height:7px; border-radius:99px; background:rgba(var(--ink-rgb), 0.08); overflow:hidden;">
-                                <div class="admin-meter-fill" id="hudRamBar" style="width:0%; height:100%; border-radius:99px; background:var(--primary); transition:width 0.4s ease;"></div>
+                            <div class="admin-meter-track admin-meter-track-h7">
+                                <div class="admin-meter-fill admin-meter-fill-custom" id="hudRamBar"></div>
                             </div>
                         </div>
 
                         <!-- JVM Heap Allocation -->
                         <div class="admin-hud-item">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">JVM Heap Allocation</span>
-                                <span style="font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--text-main);"><span id="hudHeapUsed">--</span> / <span id="hudHeapMax">--</span> MB</span>
+                            <div class="admin-flex-between">
+                                <span class="admin-meter-label-caps">JVM Heap Allocation</span>
+                                <span class="admin-meter-stat-text"><span id="hudHeapUsed">--</span> / <span id="hudHeapMax">--</span> MB</span>
                             </div>
-                            <div class="admin-meter-track" style="height:7px; border-radius:99px; background:rgba(var(--ink-rgb), 0.08); overflow:hidden;">
-                                <div class="admin-meter-fill" id="hudHeapBar" style="width:0%; height:100%; border-radius:99px; background:linear-gradient(90deg, #3B82F6, #60A5FA); transition:width 0.4s ease;"></div>
+                            <div class="admin-meter-track admin-meter-track-h7">
+                                <div class="admin-meter-fill admin-meter-fill-custom" id="hudHeapBar"></div>
                             </div>
                         </div>
 
                         <!-- Disk Storage Capacity -->
                         <div class="admin-hud-item">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Disk Space</span>
-                                <span style="font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--text-main);"><span id="hudDiskUsed">--</span> / <span id="hudDiskTotal">--</span> GB (<span id="hudDiskFree">--</span> GB free)</span>
+                            <div class="admin-flex-between">
+                                <span class="admin-meter-label-caps">Disk Space</span>
+                                <span class="admin-meter-stat-text"><span id="hudDiskUsed">--</span> / <span id="hudDiskTotal">--</span> GB (<span id="hudDiskFree">--</span> GB free)</span>
                             </div>
-                            <div class="admin-meter-track" style="height:7px; border-radius:99px; background:rgba(var(--ink-rgb), 0.08); overflow:hidden;">
-                                <div class="admin-meter-fill" id="hudDiskBar" style="width:0%; height:100%; border-radius:99px; background:var(--highlight, #4C7A78); transition:width 0.4s ease;"></div>
+                            <div class="admin-meter-track admin-meter-track-h7">
+                                <div class="admin-meter-fill admin-meter-fill-custom" id="hudDiskBar"></div>
                             </div>
                         </div>
 
                         <!-- HikariCP Pool Saturation -->
                         <div class="admin-hud-item">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">HikariCP Saturation</span>
-                                <span style="font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--text-main);"><span id="hudActiveConns">--</span> Active / <span id="hudTotalConns">--</span> Pool (<span id="hudMaxPool">--</span> max)</span>
+                            <div class="admin-flex-between">
+                                <span class="admin-meter-label-caps">HikariCP Saturation</span>
+                                <span class="admin-meter-stat-text"><span id="hudActiveConns">--</span> Active / <span id="hudTotalConns">--</span> Pool (<span id="hudMaxPool">--</span> max)</span>
                             </div>
-                            <div class="admin-meter-track" style="height:7px; border-radius:99px; background:rgba(var(--ink-rgb), 0.08); overflow:hidden;">
-                                <div class="admin-meter-fill" id="hudHikariBar" style="width:0%; height:100%; border-radius:99px; background:var(--metric-inflow); transition:width 0.4s ease;"></div>
+                            <div class="admin-meter-track admin-meter-track-h7">
+                                <div class="admin-meter-fill admin-meter-fill-custom" id="hudHikariBar"></div>
                             </div>
                         </div>
 
                         <!-- Engine details footer -->
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; padding-top:8px; border-top:1px solid var(--border);">
+                        <div class="admin-grid-1">
                             <div>
-                                <span style="font-size:11px; color:var(--text-muted); display:block;">Concurrency Mode</span>
-                                <strong style="font-size:12.5px; color:var(--text-main);" id="hudVirtualThreads">Virtual Threads</strong>
-                                <span style="font-size:10.5px; color:var(--text-muted); font-family:var(--font-mono); display:block;" id="hudThreadsDetail">-- live threads</span>
+                                <span class="admin-sub-text-xs">Concurrency Mode</span>
+                                <strong class="admin-adm-10"  id="hudVirtualThreads">Virtual Threads</strong>
+                                <span class="admin-adm-11"  id="hudThreadsDetail">-- live threads</span>
                             </div>
                             <div>
-                                <span style="font-size:11px; color:var(--text-muted); display:block;">Database Product</span>
-                                <strong style="font-size:12.5px; color:var(--text-main);" id="hudDbProduct">PostgreSQL</strong>
-                                <span style="font-size:10.5px; color:var(--text-muted); font-family:var(--font-mono); display:block;" id="hudOsName">Linux</span>
+                                <span class="admin-sub-text-xs">Database Product</span>
+                                <strong class="admin-adm-10"  id="hudDbProduct">PostgreSQL</strong>
+                                <span class="admin-adm-11"  id="hudOsName">Linux</span>
                             </div>
                         </div>
                     </div>
@@ -427,11 +346,11 @@
         </section>
 
         <!-- ── TAB 2: USER DIRECTORY & SECOPS ─────────────────────────── -->
-        <section id="usersTab" class="admin-content-view" role="tabpanel" style="display:none;">
+        <section id="usersTab" class="admin-content-view d-none" role="tabpanel">
             <div class="card animate-cascade delay-2">
                 <!-- Search & Filters Toolbar -->
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
-                    <div class="command-search-wrapper" style="flex:1; max-width:380px;">
+                <div class="admin-flex-between">
+                    <div class="command-search-wrapper admin-flex-table-1">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -439,8 +358,8 @@
                         <input type="text" id="userDirectorySearch" placeholder="Search by name, @handle, or email..." aria-label="Search user directory" class="command-search-input">
                     </div>
 
-                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <select id="userRoleFilterSelect" class="form-select" aria-label="Filter users by role" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer;">
+                    <div class="admin-flex-3">
+                        <select id="userRoleFilterSelect" class="form-select admin-input-2" aria-label="Filter users by role">
                             <option value="">All Privilege Levels</option>
                             <option value="ROLE_USER">Regular Users</option>
                             <option value="ROLE_SUPPORT">Support Staff</option>
@@ -448,12 +367,12 @@
                             <option value="ROLE_SUPER_ADMIN">Super Administrators</option>
                         </select>
 
-                        <button id="refreshUserTableBtn" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600;" title="Refresh Registry">
+                        <button id="refreshUserTableBtn" class="btn-secondary admin-flex-btn-1" title="Refresh Registry">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             <span>Refresh</span>
                         </button>
 
-                        <button id="openCreateUserModalBtn" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600;" title="Provision New Account">
+                        <button id="openCreateUserModalBtn" class="btn-primary admin-flex-btn-1" title="Provision New Account">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             <span>Provision User</span>
                         </button>
@@ -467,7 +386,7 @@
                     <span class="scroll-arrow">⇄</span>
                 </div>
                 <div class="table-wrapper admin-table-scroll-wrapper">
-                    <table class="data-table" style="width:100%; border-collapse:collapse;">
+                    <table class="data-table admin-table-collapse">
                         <thead>
                             <tr>
                                 <th>User ID</th>
@@ -477,32 +396,32 @@
                                 <th>Security State</th>
                                 <th>Expenses</th>
                                 <th>Registered</th>
-                                <th style="text-align:right;">Actions & Moderation</th>
+                                <th class="admin-table-5">Actions & Moderation</th>
                             </tr>
                         </thead>
                         <tbody id="userTableBody">
-                            <tr><td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted);">Loading user records…</td></tr>
+                            <tr><td class="admin-empty-cell-padded" colspan="8">Loading user records…</td></tr>
                         </tbody>
                     </table>
                 </div>
 
                 <!-- Pagination Footer -->
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:13px; color:var(--text-muted); margin-top:16px;">
+                <div class="admin-flex-between">
                     <span id="userPaginationLabel">Showing page 1</span>
-                    <div style="display:flex; gap:8px;">
-                        <button id="userPrevBtn" class="btn-secondary" style="padding:6px 14px; font-size:12px;" disabled>Previous</button>
-                        <button id="userNextBtn" class="btn-secondary" style="padding:6px 14px; font-size:12px;">Next</button>
+                    <div class="admin-flex-1">
+                        <button id="userPrevBtn" class="btn-secondary admin-btn-pill-sm" disabled>Previous</button>
+                        <button id="userNextBtn" class="btn-secondary admin-btn-pill-sm">Next</button>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- ── TAB 3: APPLICATION LOGS & OBSERVABILITY ────────────────── -->
-        <section id="logsTab" class="admin-content-view" role="tabpanel" style="display:none;">
+        <section id="logsTab" class="admin-content-view d-none" role="tabpanel">
             <div class="card animate-cascade delay-2">
                 <!-- Log Filters & Stream Toolbar -->
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-                    <div class="command-search-wrapper" style="flex:1; max-width:380px;">
+                <div class="admin-flex-between">
+                    <div class="command-search-wrapper admin-flex-table-1">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -510,8 +429,8 @@
                         <input type="text" id="logFilterSearch" placeholder="Filter logs by keyword, exception, logger..." aria-label="Filter system logs" class="command-search-input">
                     </div>
 
-                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <select id="logLevelSelect" class="form-select" aria-label="Filter logs by level" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer;">
+                    <div class="admin-flex-3">
+                        <select id="logLevelSelect" class="form-select admin-input-2" aria-label="Filter logs by level">
                             <option value="ALL" selected>All Levels</option>
                             <option value="ERROR">ERROR Only</option>
                             <option value="WARN">WARN & Above</option>
@@ -519,29 +438,29 @@
                             <option value="DEBUG">DEBUG Logs</option>
                         </select>
 
-                        <select id="logLinesSelect" class="form-select" aria-label="Maximum log lines to display" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer;">
+                        <select id="logLinesSelect" class="form-select admin-input-2" aria-label="Maximum log lines to display">
                             <option value="50">50 Lines</option>
                             <option value="150" selected>150 Lines</option>
                             <option value="300">300 Lines</option>
                             <option value="500">500 Lines</option>
                         </select>
 
-                        <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); cursor:pointer; user-select:none;">
-                            <input type="checkbox" id="logAutoScrollCheck" checked style="accent-color:var(--primary); cursor:pointer;" aria-label="Auto-scroll logs">
+                        <label class="admin-flex-input-1">
+                            <input class="admin-input-5" type="checkbox" id="logAutoScrollCheck" checked aria-label="Auto-scroll logs">
                             <span>Auto-Scroll</span>
                         </label>
 
-                        <button id="refreshLogsBtn" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600;" title="Fetch latest logs">
+                        <button id="refreshLogsBtn" class="btn-secondary admin-flex-btn-1" title="Fetch latest logs">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             <span>Refresh</span>
                         </button>
 
-                        <button id="copyLogsBtn" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600;" title="Copy logs to clipboard">
+                        <button id="copyLogsBtn" class="btn-secondary admin-flex-btn-1" title="Copy logs to clipboard">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                             <span>Copy</span>
                         </button>
 
-                        <button id="clearLogsViewBtn" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600;" title="Clear console view">
+                        <button id="clearLogsViewBtn" class="btn-secondary admin-flex-btn-1" title="Clear console view">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                             <span>Clear</span>
                         </button>
@@ -551,37 +470,37 @@
                 <!-- Terminal-Grade Viewport -->
                 <div class="logs-terminal-window">
                     <div class="logs-terminal-header">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="width:10px; height:10px; border-radius:50%; background:#EF4444; display:inline-block;"></span>
-                            <span style="width:10px; height:10px; border-radius:50%; background:#F59E0B; display:inline-block;"></span>
-                            <span style="width:10px; height:10px; border-radius:50%; background:#10B981; display:inline-block;"></span>
-                            <span style="font-size:11px; font-weight:700; color:var(--text-muted); margin-left:6px;">application.log &bull; In-Memory Kernel Ring Buffer</span>
+                        <div class="admin-flex-9">
+                            <span class="admin-table-6"></span>
+                            <span class="admin-table-7"></span>
+                            <span class="admin-table-8"></span>
+                            <span class="admin-adm-24">application.log &bull; In-Memory Kernel Ring Buffer</span>
                         </div>
-                        <span id="logEntriesCount" style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">0 events</span>
+                        <span class="admin-sub-text-xs" id="logEntriesCount">0 events</span>
                     </div>
                     <div id="logsTerminalViewport" class="logs-terminal-viewport">
-                        <div style="color:var(--text-muted); padding:20px; text-align:center;">Listening for application runtime events…</div>
+                        <div class="admin-adm-25">Listening for application runtime events…</div>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- ── TAB 4: ML & AI GOVERNANCE ──────────────────────────────── -->
-        <section id="mlTab" class="admin-content-view" role="tabpanel" style="display:none;">
+        <section id="mlTab" class="admin-content-view d-none" role="tabpanel">
             <!-- ML Production Models Matrix (All 5 Active Models) -->
-            <div class="section-heading" style="margin-bottom:14px;">
+            <div class="section-heading admin-adm-3">
                 <span class="card-label">Machine Learning Operations (MLOps)</span>
                 <h3 class="section-title">Production Model Fleet & Automation Status</h3>
             </div>
 
-            <section class="grid-4-metrics animate-cascade delay-2" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
+            <section class="grid-4-metrics animate-cascade delay-2 admin-grid-2">
                 <div class="metric-card metric-card-netflow">
                     <div class="metric-header">
                         <span class="card-label">1. Category Classifier</span>
                         <span class="status-badge badge-success">Production</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value" id="mlActiveModel" style="font-size:18px;">Dual-Gram TF-IDF</span>
+                        <span class="metric-value admin-adm-1" id="mlActiveModel">Dual-Gram TF-IDF</span>
                     </div>
                     <div class="metric-footer">
                         <span class="text-muted">99.8% precision · Rev: production</span>
@@ -594,7 +513,7 @@
                         <span class="status-badge badge-success">Production</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value" style="font-size:18px;">Vector Index (SBERT)</span>
+                        <span class="metric-value admin-adm-1">Vector Index (SBERT)</span>
                     </div>
                     <div class="metric-footer">
                         <span class="text-muted">Semantic entity matching · 5,400+ vectors</span>
@@ -607,7 +526,7 @@
                         <span class="status-badge badge-success">Production</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value" style="font-size:18px;">Cosine Vector Sim</span>
+                        <span class="metric-value admin-adm-1">Cosine Vector Sim</span>
                     </div>
                     <div class="metric-footer">
                         <span class="text-muted">Semantic threshold: 0.70</span>
@@ -620,7 +539,7 @@
                         <span class="status-badge badge-success">Production</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value" style="font-size:18px;">Isolation Forest</span>
+                        <span class="metric-value admin-adm-1">Isolation Forest</span>
                     </div>
                     <div class="metric-footer">
                         <span class="text-muted">Outlier contamination: 0.05</span>
@@ -633,7 +552,7 @@
                         <span class="status-badge badge-success">Production</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value" style="font-size:18px;">Time-Series Model</span>
+                        <span class="metric-value admin-adm-1">Time-Series Model</span>
                     </div>
                     <div class="metric-footer">
                         <span class="text-muted">Forward horizon: 7-30 days</span>
@@ -655,23 +574,23 @@
             </section>
 
             <!-- ── RETRAINING ENGINE & EXECUTION LOGS ────────────────────────────── -->
-            <div class="card" style="margin-top:20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+            <div class="card admin-adm-2">
+                <div class="admin-flex-between">
                     <div>
-                        <div class="section-heading" style="margin-bottom:4px;">
+                        <div class="section-heading admin-adm-26">
                             <span class="card-label">Continuous Learning & Auto-Retraining</span>
                             <h3 class="section-title">Automated Retraining Engine & Logs</h3>
                         </div>
-                        <p style="font-size:13px; color:var(--text-muted); margin:0;">
+                        <p class="admin-adm-27">
                             Unattended retraining job scheduled on Hugging Face (<code>0 2 * * *</code>). Automatically triggers when approved feedback reaches 500 samples.
                         </p>
                     </div>
-                    <div class="retrain-actions-wrapper" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; max-width:100%;">
-                        <button id="refreshRetrainLogsBtn" class="btn-secondary" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 14px; font-size:12px; border-radius:10px; white-space:nowrap; flex-shrink:0;">
+                    <div class="retrain-actions-wrapper admin-flex-table-2">
+                        <button id="refreshRetrainLogsBtn" class="btn-secondary admin-flex-btn-3">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             <span>Refresh Logs</span>
                         </button>
-                        <button id="triggerManualRetrainBtn" class="btn-primary" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 16px; font-size:12px; border-radius:10px; white-space:nowrap; flex-shrink:0; max-width:100%;">
+                        <button id="triggerManualRetrainBtn" class="btn-primary admin-flex-btn-4">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                             <span>Evaluate Retraining</span>
                         </button>
@@ -679,48 +598,48 @@
                 </div>
 
                 <!-- Retraining Metadata Badges -->
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:16px; background:var(--input-bg); padding:12px 14px; border-radius:10px; border:1px solid var(--border);">
+                <div class="admin-metrics-grid-auto">
                     <div>
-                        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Cron Schedule</span>
-                        <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-top:2px;">Daily @ 02:00 UTC (0 2 * * *)</div>
+                        <span class="admin-adm-4">Cron Schedule</span>
+                        <div class="admin-adm-12">Daily @ 02:00 UTC (0 2 * * *)</div>
                     </div>
                     <div>
-                        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Trigger Condition</span>
-                        <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-top:2px;">Threshold: 500 Approved Corrections</div>
+                        <span class="admin-adm-4">Trigger Condition</span>
+                        <div class="admin-adm-12">Threshold: 500 Approved Corrections</div>
                     </div>
                     <div>
-                        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Quality Gate</span>
-                        <div style="font-size:13px; font-weight:700; color:#10B981; margin-top:2px;">Macro F1 &ge; 0.85 &amp; Acc &ge; 0.90</div>
+                        <span class="admin-adm-4">Quality Gate</span>
+                        <div class="admin-adm-28">Macro F1 &ge; 0.85 &amp; Acc &ge; 0.90</div>
                     </div>
                     <div>
-                        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Model Repository</span>
-                        <div style="font-size:13px; font-weight:700; color:var(--primary); margin-top:2px;">hf://Yoge-2004/expense-intelligence-model</div>
+                        <span class="admin-adm-4">Model Repository</span>
+                        <div class="admin-adm-29">hf://Yoge-2004/expense-intelligence-model</div>
                     </div>
                 </div>
 
                 <!-- Retraining Runs History Table -->
-                <div style="margin-bottom:16px;">
-                    <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.5px;">Retraining Execution History</div>
+                <div class="admin-adm-30">
+                    <div class="admin-adm-31">Retraining Execution History</div>
                     <div class="table-scroll-hint-mobile">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>
                         <span>Swipe horizontally to view all columns</span>
                         <span class="scroll-arrow">⇄</span>
                     </div>
                     <div class="table-wrapper admin-table-scroll-wrapper">
-                        <table class="admin-table data-table" style="min-width:820px; width:100%; border-collapse:collapse; font-size:12px;">
+                        <table class="admin-table data-table admin-table-collapse">
                             <thead>
                                 <tr>
-                                    <th style="padding:10px 12px; text-align:left; white-space:nowrap; width:170px;">Run ID</th>
-                                    <th style="padding:10px 12px; text-align:left; white-space:nowrap; width:150px;">Timestamp</th>
-                                    <th style="padding:10px 12px; text-align:left; white-space:nowrap; width:170px;">Trigger</th>
-                                    <th style="padding:10px 12px; text-align:left; white-space:nowrap; width:200px;">Status</th>
-                                    <th style="padding:10px 12px; text-align:left; white-space:nowrap; width:140px;">Feedback Consumed</th>
-                                    <th style="padding:10px 12px; text-align:left; white-space:nowrap; min-width:240px;">Details / Metrics</th>
+                                    <th class="admin-table-1">Run ID</th>
+                                    <th class="admin-table-9">Timestamp</th>
+                                    <th class="admin-table-1">Trigger</th>
+                                    <th class="admin-table-10">Status</th>
+                                    <th class="admin-table-11">Feedback Consumed</th>
+                                    <th class="admin-table-12">Details / Metrics</th>
                                 </tr>
                             </thead>
                             <tbody id="retrainingRunsTbody">
                                 <tr>
-                                    <td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">Loading retraining runs…</td>
+                                    <td class="admin-table-2" colspan="6">Loading retraining runs…</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -729,121 +648,121 @@
 
                 <!-- Retraining Terminal Logs View -->
                 <div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Automation Execution Logs</span>
-                        <button id="copyRetrainLogsBtn" class="btn-secondary" style="padding:4px 10px; font-size:11px; border-radius:6px;">Copy Logs</button>
+                    <div class="admin-flex-between">
+                        <span class="admin-adm-32">Automation Execution Logs</span>
+                        <button id="copyRetrainLogsBtn" class="btn-secondary admin-btn-4">Copy Logs</button>
                     </div>
-                    <div id="retrainTerminalLogs" style="background:#0D1117; color:#E6EDF3; font-family:var(--font-mono, monospace); font-size:12px; line-height:1.6; padding:14px; border-radius:10px; border:1px solid #30363D; max-height:220px; overflow-y:auto; white-space:pre-wrap;">
+                    <div class="admin-adm-33" id="retrainTerminalLogs">
                         Listening for retraining automation logs…
                     </div>
                 </div>
             </div>
 
             <!-- Inference Sandbox & Feedback Moderation Grid -->
-            <div class="admin-grid-2col admin-ml-grid" style="display:grid; gap:20px; margin-top:20px;">
+            <div class="admin-grid-2col admin-ml-grid admin-grid-3">
                 <!-- Interactive Inference Sandbox -->
                 <div class="card">
-                    <div class="section-heading" style="margin-bottom:14px;">
+                    <div class="section-heading admin-adm-3">
                         <span class="card-label">Evaluation Environment</span>
                         <h3 class="section-title">Live Model Inference Sandbox</h3>
                     </div>
-                    <p style="font-size:13px; color:var(--text-muted); margin:0 0 16px;">
+                    <p class="admin-adm-6">
                         Test the active NLP classification pipeline in real-time. Verify category extraction confidence before production deployment.
                     </p>
 
-                    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
-                        <label for="sandboxTextInput" style="font-size:12px; font-weight:700; color:var(--text-muted);">Sample Transaction Description:</label>
-                        <input type="text" id="sandboxTextInput" class="command-search-input" style="width:100%; background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 14px;" placeholder="e.g. Starbucks cold brew & blueberry muffin">
+                    <div class="admin-flex-10">
+                        <label class="admin-adm-5" for="sandboxTextInput">Sample Transaction Description:</label>
+                        <input type="text" id="sandboxTextInput" class="command-search-input admin-input-3" placeholder="e.g. Starbucks cold brew & blueberry muffin">
                     </div>
 
-                    <button id="runSandboxInferenceBtn" class="btn-primary" style="display:inline-flex; align-items:center; gap:8px; margin-bottom:16px;">
+                    <button id="runSandboxInferenceBtn" class="btn-primary admin-flex-btn-5">
                         <span>Run Test Inference</span>
                     </button>
 
-                    <div id="sandboxOutputStage" style="display:none; padding:14px; border-radius:12px; background:var(--input-bg); border:1px solid var(--border-accent);">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <strong style="color:var(--primary); font-size:15px;" id="sandboxTopCategory">Food & Dining</strong>
-                            <span style="font-family:var(--font-mono); font-size:13px; color:var(--metric-inflow);" id="sandboxTopScore">98.5% confidence</span>
+                    <div class="admin-input-6" id="sandboxOutputStage">
+                        <div class="admin-flex-between">
+                            <strong class="admin-adm-34"  id="sandboxTopCategory">Food & Dining</strong>
+                            <span class="admin-adm-35"  id="sandboxTopScore">98.5% confidence</span>
                         </div>
-                        <div id="sandboxCandidateBars" style="display:flex; flex-direction:column; gap:8px;"></div>
+                        <div class="admin-flex-5" id="sandboxCandidateBars"></div>
                     </div>
                 </div>
 
                 <!-- Feedback Moderation Queue -->
                 <div class="card">
-                    <div class="section-heading" style="margin-bottom:14px;">
+                    <div class="section-heading admin-adm-3">
                         <span class="card-label">Human-in-the-Loop</span>
                         <h3 class="section-title">User Correction Queue</h3>
                     </div>
-                    <p style="font-size:13px; color:var(--text-muted); margin:0 0 16px;">
+                    <p class="admin-adm-6">
                         When users re-categorize an expense, their correction enters this governance review stage.
                     </p>
-                    <div id="feedbackQueueList" style="display:flex; flex-direction:column; gap:12px; max-height:420px; overflow-y:auto;">
-                        <div style="padding:24px; text-align:center; color:var(--text-muted);">Loading feedback queue…</div>
+                    <div class="admin-flex-11" id="feedbackQueueList">
+                        <div class="admin-adm-36">Loading feedback queue…</div>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- ── TAB 5: BROADCAST STUDIO ────────────────────────────────── -->
-        <section id="broadcastTab" class="admin-content-view" role="tabpanel" style="display:none;">
-            <div class="admin-grid-2col admin-broadcast-grid" style="display:grid; gap:24px; align-items:start;">
+        <section id="broadcastTab" class="admin-content-view d-none" role="tabpanel">
+            <div class="admin-grid-2col admin-broadcast-grid admin-grid-4">
                 <!-- Announcement Form -->
                 <div class="card">
-                    <div class="section-heading" style="margin-bottom:14px;">
+                    <div class="section-heading admin-adm-3">
                         <span class="card-label">Platform Communications</span>
                         <h3 class="section-title">Compose System Broadcast</h3>
                     </div>
-                    <p style="font-size:13px; color:var(--text-muted); margin:0 0 18px;">
+                    <p class="admin-adm-37">
                         Dispatches instant high-priority push alerts to registered mobile devices and drops persistent announcements into user inboxes.
                     </p>
 
-                    <div style="display:flex; flex-direction:column; gap:16px;">
-                        <div style="display:flex; flex-direction:column; gap:6px;">
-                            <label for="broadcastAudience" style="font-size:12px; font-weight:700; color:var(--text-muted);">Target Audience</label>
-                            <select id="broadcastAudience" class="form-select" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:10px 14px; font-size:13px; font-weight:600;">
+                    <div class="admin-flex-12">
+                        <div class="admin-flex-2">
+                            <label class="admin-adm-5" for="broadcastAudience">Target Audience</label>
+                            <select id="broadcastAudience" class="form-select admin-input-7">
                                 <option value="ALL">All Registered Users (Global Broadcast)</option>
                                 <option value="ACTIVE">Active Users Only</option>
                                 <option value="ADMINS">Administrators & Operators</option>
                             </select>
                         </div>
 
-                        <div style="display:flex; flex-direction:column; gap:6px;">
-                            <label for="broadcastTitle" style="font-size:12px; font-weight:700; color:var(--text-muted);">Announcement Headline</label>
-                            <input type="text" id="broadcastTitle" class="command-search-input" style="width:100%; background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 14px;" placeholder="e.g. Scheduled Infrastructure Maintenance Tonight">
+                        <div class="admin-flex-2">
+                            <label class="admin-adm-5" for="broadcastTitle">Announcement Headline</label>
+                            <input type="text" id="broadcastTitle" class="command-search-input admin-input-3" placeholder="e.g. Scheduled Infrastructure Maintenance Tonight">
                         </div>
 
-                        <div style="display:flex; flex-direction:column; gap:6px;">
-                            <label for="broadcastBody" style="font-size:12px; font-weight:700; color:var(--text-muted);">Message Body</label>
-                            <textarea id="broadcastBody" rows="4" class="command-search-input" style="width:100%; background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 14px; resize:vertical;" placeholder="Write a clear, concise notice for users…"></textarea>
+                        <div class="admin-flex-2">
+                            <label class="admin-adm-5" for="broadcastBody">Message Body</label>
+                            <textarea id="broadcastBody" rows="4" class="command-search-input admin-input-8" placeholder="Write a clear, concise notice for users…"></textarea>
                         </div>
 
-                        <div style="display:flex; flex-direction:column; gap:6px;">
-                            <label for="broadcastPin" style="font-size:12px; font-weight:700; color:var(--primary);">Operator Step-Up Security PIN</label>
-                            <input type="password" id="broadcastPin" maxlength="6" inputmode="numeric" class="command-search-input" style="width:100%; max-width:240px; background:var(--input-bg); border:1px solid var(--border-accent); border-radius:10px; padding:10px 14px; font-family:var(--font-mono); letter-spacing:0.3em;" placeholder="••••••">
+                        <div class="admin-flex-2">
+                            <label class="admin-adm-38" for="broadcastPin">Operator Step-Up Security PIN</label>
+                            <input type="password" id="broadcastPin" maxlength="6" inputmode="numeric" class="command-search-input admin-input-9" placeholder="••••••">
                         </div>
 
-                        <button id="sendBroadcastBtn" class="btn-primary" style="align-self:flex-start; margin-top:8px;">
+                        <button id="sendBroadcastBtn" class="btn-primary admin-flex-btn-6">
                             Dispatch Broadcast Announcement
                         </button>
                     </div>
                 </div>
 
                 <!-- Smartphone Live Preview -->
-                <div style="display:flex; flex-direction:column; align-items:center; gap:14px;">
-                    <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">Live Mobile Push Preview</span>
+                <div class="admin-flex-13">
+                    <span class="admin-meter-label-caps">Live Mobile Push Preview</span>
                     <div class="admin-phone-mockup">
                         <div class="admin-phone-notch"></div>
                         <div class="admin-phone-clock" id="phoneMockupClock">09:41</div>
 
                         <div class="admin-phone-banner">
                             <div class="admin-phone-banner-head">
-                                <span style="background:var(--primary); color:var(--on-primary); border-radius:4px; padding:1px 5px; font-weight:800; font-size:10px;">XP</span>
-                                <strong style="font-size:11px; color:var(--text-main);">EXPENSE TRACKER</strong>
-                                <span style="margin-left:auto; font-size:10px; color:var(--text-muted);">now</span>
+                                <span class="admin-adm-39">XP</span>
+                                <strong class="admin-adm-40">EXPENSE TRACKER</strong>
+                                <span class="admin-adm-41">now</span>
                             </div>
-                            <div class="admin-phone-banner-title" id="previewTitle" style="font-weight:700; font-size:12px; color:var(--text-main); margin-top:4px;">System Notice Headline</div>
-                            <div class="admin-phone-banner-body" id="previewBody" style="font-size:11px; color:var(--text-muted); margin-top:2px; line-height:1.4;">Announcement message text will update in real time as you compose.</div>
+                            <div class="admin-phone-banner-title admin-adm-42" id="previewTitle">System Notice Headline</div>
+                            <div class="admin-phone-banner-body admin-sub-text-xs" id="previewBody">Announcement message text will update in real time as you compose.</div>
                         </div>
                     </div>
                 </div>
@@ -851,16 +770,16 @@
         </section>
 
         <!-- ── TAB 6: RESILIENCE & OPS ────────────────────────────────── -->
-        <section id="resilienceTab" class="admin-content-view" role="tabpanel" style="display:none;">
+        <section id="resilienceTab" class="admin-content-view d-none" role="tabpanel">
             <!-- Top Metric Cards -->
-            <section class="grid-4-metrics animate-cascade delay-2" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+            <section class="grid-4-metrics animate-cascade delay-2 admin-grid-5">
                 <div class="metric-card metric-card-netflow">
                     <div class="metric-header">
                         <span class="card-label">Hugging Face Failover Status</span>
                         <span class="status-badge badge-success" id="hfSyncBadgePill">Standby</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value" id="hfStatusBadge" style="font-size:20px;">ONLINE & READY</span>
+                        <span class="metric-value admin-adm-13" id="hfStatusBadge">ONLINE & READY</span>
                     </div>
                     <div class="metric-footer">
                         <span class="text-muted" id="hfSpaceNameSub">Space: Yoge-2004/expense-tracker-backend</span>
@@ -873,7 +792,7 @@
                         <span class="status-badge badge-warning">AES-256-GCM</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value" style="font-size:20px;">Encrypted</span>
+                        <span class="metric-value admin-adm-13">Encrypted</span>
                     </div>
                     <div class="metric-footer">
                         <span class="text-muted">Client-side encrypted SQLite backup</span>
@@ -882,104 +801,104 @@
             </section>
 
             <!-- 3-Tier Multi-Cloud Database Topology Card -->
-            <div class="card" style="margin-top:20px;">
-                <div class="section-heading" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+            <div class="card admin-adm-2">
+                <div class="section-heading admin-flex-between">
                     <div>
                         <span class="card-label">Multi-Cloud Storage State</span>
                         <h3 class="section-title">3-Tier Distributed Database Cluster</h3>
                     </div>
-                    <button id="btnProbeTopology" class="btn-secondary" style="display:inline-flex; align-items:center; gap:8px; padding:8px 14px; font-size:12px; font-weight:600;">
+                    <button id="btnProbeTopology" class="btn-secondary admin-flex-btn-7">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                         <span>Probe Cluster Health & Latency</span>
                     </button>
                 </div>
-                <p style="font-size:13px; color:var(--text-muted); margin:0 0 16px;">
+                <p class="admin-adm-6">
                     Real-time operational topology tracking primary server engine, Neon serverless PostgreSQL, and Hugging Face failover spaces.
                 </p>
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;" id="databaseTopologyGrid">
+                <div class="admin-grid-6"  id="databaseTopologyGrid">
                     <!-- Tier 1: Local / Server Engine -->
-                    <div class="card" style="background:var(--input-bg); border:1px solid var(--border); padding:16px; border-radius:14px; position:relative;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <strong style="color:var(--text-main); font-size:14px;">1. Server Primary Database</strong>
+                    <div class="card admin-status-panel-box">
+                        <div class="admin-flex-between">
+                            <strong class="admin-adm-7">1. Server Primary Database</strong>
                             <span class="status-badge badge-netflow" id="dbServerStatus">PROBING...</span>
                         </div>
-                        <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
-                            <div style="display:flex; justify-content:space-between;">
+                        <div class="admin-flex-4">
+                            <div class="admin-flex-between">
                                 <span class="text-muted">Vendor & Engine:</span>
-                                <span style="font-family:var(--font-mono); color:var(--text-main);" id="dbServerVendor">--</span>
+                                <span class="admin-mono-main"  id="dbServerVendor">--</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between;">
+                            <div class="admin-flex-between">
                                 <span class="text-muted">Round-Trip Latency:</span>
-                                <span style="font-family:var(--font-mono); color:var(--metric-inflow); font-weight:700;" id="dbServerLatency">-- ms</span>
+                                <span class="admin-adm-8"  id="dbServerLatency">-- ms</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between;">
+                            <div class="admin-flex-between">
                                 <span class="text-muted">Hikari Connections:</span>
-                                <span style="font-family:var(--font-mono); color:var(--text-main);" id="dbServerConns">-- / -- pool</span>
+                                <span class="admin-mono-main"  id="dbServerConns">-- / -- pool</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between;">
+                            <div class="admin-flex-between">
                                 <span class="text-muted">Catalog Name:</span>
-                                <span style="font-family:var(--font-mono); color:var(--primary);" id="dbServerCatalog">--</span>
+                                <span class="admin-adm-9"  id="dbServerCatalog">--</span>
                             </div>
-                            <div style="padding-top:6px; border-top:1px solid var(--border); font-size:11px; color:var(--text-muted);" id="dbServerNotes">
+                            <div class="admin-sub-text-xs"  id="dbServerNotes">
                                 Primary high-throughput transactional engine
                             </div>
                         </div>
                     </div>
 
                     <!-- Tier 2: Neon Cloud PostgreSQL -->
-                    <div class="card" style="background:var(--input-bg); border:1px solid var(--border); padding:16px; border-radius:14px; position:relative;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <strong style="color:var(--text-main); font-size:14px;">2. Neon Cloud PostgreSQL</strong>
+                    <div class="card admin-status-panel-box">
+                        <div class="admin-flex-between">
+                            <strong class="admin-adm-7">2. Neon Cloud PostgreSQL</strong>
                             <span class="status-badge badge-netflow" id="dbNeonStatus">PROBING...</span>
                         </div>
-                        <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
-                            <div style="display:flex; justify-content:space-between;">
+                        <div class="admin-flex-4">
+                            <div class="admin-flex-between">
                                 <span class="text-muted">Cloud Architecture:</span>
-                                <span style="font-family:var(--font-mono); color:var(--text-main);" id="dbNeonVendor">--</span>
+                                <span class="admin-mono-main"  id="dbNeonVendor">--</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between;">
+                            <div class="admin-flex-between">
                                 <span class="text-muted">Cloud Ping Latency:</span>
-                                <span style="font-family:var(--font-mono); color:var(--metric-inflow); font-weight:700;" id="dbNeonLatency">-- ms</span>
+                                <span class="admin-adm-8"  id="dbNeonLatency">-- ms</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between;">
+                            <div class="admin-flex-between">
                                 <span class="text-muted">Dedicated Conns:</span>
-                                <span style="font-family:var(--font-mono); color:var(--text-main);" id="dbNeonConns">-- / -- active</span>
+                                <span class="admin-mono-main"  id="dbNeonConns">-- / -- active</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between;">
+                            <div class="admin-flex-between">
                                 <span class="text-muted">Database Scope:</span>
-                                <span style="font-family:var(--font-mono); color:var(--primary);" id="dbNeonCatalog">--</span>
+                                <span class="admin-adm-9"  id="dbNeonCatalog">--</span>
                             </div>
-                            <div style="padding-top:6px; border-top:1px solid var(--border); font-size:11px; color:var(--text-muted);" id="dbNeonNotes">
+                            <div class="admin-sub-text-xs"  id="dbNeonNotes">
                                 Cloud serverless tier configured for multi-zone durability and autoscaling
                             </div>
                         </div>
                     </div>
 
                     <!-- Tier 3: Hugging Face Spaces Failover -->
-                    <div class="card" style="background:var(--input-bg); border:1px solid var(--border); padding:16px; border-radius:14px; position:relative;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <strong style="color:var(--text-main); font-size:14px;">3. Hugging Face Spaces</strong>
+                    <div class="card admin-status-panel-box">
+                        <div class="admin-flex-between">
+                            <strong class="admin-adm-7">3. Hugging Face Spaces</strong>
                             <span class="status-badge badge-netflow" id="dbHfStatus">PROBING...</span>
                         </div>
-                        <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
-                            <div style="display:flex; justify-content:space-between;">
+                        <div class="admin-flex-4">
+                            <div class="admin-flex-between">
                                 <span class="text-muted">Storage Format:</span>
-                                <span style="font-family:var(--font-mono); color:var(--text-main);" id="dbHfVendor">--</span>
+                                <span class="admin-mono-main"  id="dbHfVendor">--</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between;">
+                            <div class="admin-flex-between">
                                 <span class="text-muted">Sync Round-Trip:</span>
-                                <span style="font-family:var(--font-mono); color:var(--metric-inflow); font-weight:700;" id="dbHfLatency">-- ms</span>
+                                <span class="admin-adm-8"  id="dbHfLatency">-- ms</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between;">
+                            <div class="admin-flex-between">
                                 <span class="text-muted">Failover Replica:</span>
-                                <span style="font-family:var(--font-mono); color:var(--text-main);" id="dbHfConns">--</span>
+                                <span class="admin-mono-main"  id="dbHfConns">--</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between;">
+                            <div class="admin-flex-between">
                                 <span class="text-muted">HF Repository:</span>
-                                <span style="font-family:var(--font-mono); color:var(--primary);" id="dbHfCatalog">--</span>
+                                <span class="admin-adm-9"  id="dbHfCatalog">--</span>
                             </div>
-                            <div style="padding-top:6px; border-top:1px solid var(--border); font-size:11px; color:var(--text-muted);" id="dbHfNotes">
+                            <div class="admin-sub-text-xs"  id="dbHfNotes">
                                 Secondary failover replica with AES-256-GCM snapshot sync
                             </div>
                         </div>
@@ -988,34 +907,34 @@
             </div>
 
             <!-- Encrypted Cloud Snapshot Failover Card -->
-            <div class="card" style="margin-top:20px;">
-                <div class="section-heading" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+            <div class="card admin-adm-2">
+                <div class="section-heading admin-flex-between">
                     <div>
                         <span class="card-label">Zero-Data-Loss Resilience</span>
                         <h3 class="section-title">Encrypted Cloud Snapshot Failover</h3>
                     </div>
-                    <button id="triggerFailoverSnapshotBtn" class="btn-primary" style="display:inline-flex; align-items:center; gap:8px;">
+                    <button id="triggerFailoverSnapshotBtn" class="btn-primary admin-flex-btn-8">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                         <span>Dispatch Failover Snapshot</span>
                     </button>
                 </div>
-                <p style="font-size:13px; color:var(--text-muted); margin:0 0 14px;">
+                <p class="admin-adm-43">
                     Performs an in-memory transactional snapshot of the current state, encrypts with the platform master key, and securely commits it to the secondary Hugging Face Space repository.
                 </p>
 
                 <!-- Console Stream -->
-                <div id="resilienceConsoleOutput" style="background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:16px; font-family:var(--font-mono); font-size:12px; color:var(--text-muted); min-height:140px; max-height:260px; overflow-y:auto; line-height:1.6;">
+                <div class="admin-input-10" id="resilienceConsoleOutput">
                     System ready. Click "Dispatch Failover Snapshot" to test cross-cloud replication.
                 </div>
             </div>
         </section>
 
         <!-- ── TAB 7: COMPLIANCE AUDIT TRAIL ──────────────────────────── -->
-        <section id="auditTab" class="admin-content-view" role="tabpanel" style="display:none;">
+        <section id="auditTab" class="admin-content-view d-none" role="tabpanel">
             <div class="card animate-cascade delay-2">
                 <!-- Audit Filter Toolbar -->
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
-                    <div class="command-search-wrapper" style="flex:1; max-width:380px;">
+                <div class="admin-flex-between">
+                    <div class="command-search-wrapper admin-flex-table-1">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -1023,12 +942,12 @@
                         <input type="text" id="auditLogSearch" placeholder="Filter by actor email, action, or resource..." aria-label="Filter audit logs" class="command-search-input">
                     </div>
 
-                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <button id="refreshAuditTableBtn" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600;">
+                    <div class="admin-flex-3">
+                        <button id="refreshAuditTableBtn" class="btn-secondary admin-flex-btn-1">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             <span>Refresh</span>
                         </button>
-                        <button id="exportAuditCsvBtn" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600;">
+                        <button id="exportAuditCsvBtn" class="btn-primary admin-flex-btn-1">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                             <span>Export CSV</span>
                         </button>
@@ -1042,7 +961,7 @@
                     <span class="scroll-arrow">⇄</span>
                 </div>
                 <div class="table-wrapper admin-table-scroll-wrapper">
-                    <table class="data-table" style="width:100%; border-collapse:collapse;">
+                    <table class="data-table admin-table-collapse">
                         <thead>
                             <tr>
                                 <th>Timestamp</th>
@@ -1055,24 +974,24 @@
                             </tr>
                         </thead>
                         <tbody id="auditTableBody">
-                            <tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">Loading audit trail…</td></tr>
+                            <tr><td class="admin-empty-cell-padded" colspan="7">Loading audit trail…</td></tr>
                         </tbody>
                     </table>
                 </div>
 
                 <!-- Pagination Footer -->
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:13px; color:var(--text-muted); margin-top:16px;">
+                <div class="admin-flex-between">
                     <span id="auditPaginationLabel">Showing page 1</span>
-                    <div style="display:flex; gap:8px;">
-                        <button id="auditPrevBtn" class="btn-secondary" style="padding:6px 14px; font-size:12px;" disabled>Previous</button>
-                        <button id="auditNextBtn" class="btn-secondary" style="padding:6px 14px; font-size:12px;">Next</button>
+                    <div class="admin-flex-1">
+                        <button id="auditPrevBtn" class="btn-secondary admin-btn-pill-sm" disabled>Previous</button>
+                        <button id="auditNextBtn" class="btn-secondary admin-btn-pill-sm">Next</button>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- ── TAB: PLATFORM DATABASE & USER FINANCIAL LEDGERS ──────── -->
-        <section id="databaseTab" class="admin-content-view" role="tabpanel" style="display:none;">
+        <section id="databaseTab" class="admin-content-view d-none" role="tabpanel">
             <div class="card animate-cascade delay-2">
                 <!-- Filters & Controls Toolbar -->
                 <div class="admin-db-toolbar">
@@ -1112,7 +1031,7 @@
                     <span class="scroll-arrow">⇄</span>
                 </div>
                 <div class="table-wrapper admin-table-scroll-wrapper">
-                    <table class="data-table" style="width:100%; border-collapse:collapse;">
+                    <table class="data-table admin-table-collapse">
                         <thead>
                             <tr>
                                 <th>Txn ID</th>
@@ -1125,17 +1044,17 @@
                             </tr>
                         </thead>
                         <tbody id="databaseTableBody">
-                            <tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">Querying platform database…</td></tr>
+                            <tr><td class="admin-empty-cell-padded" colspan="7">Querying platform database…</td></tr>
                         </tbody>
                     </table>
                 </div>
 
                 <!-- Pagination Footer -->
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:13px; color:var(--text-muted); margin-top:16px;">
+                <div class="admin-flex-between">
                     <span id="dbPaginationLabel">Showing page 1</span>
-                    <div style="display:flex; gap:8px;">
-                        <button id="dbPrevBtn" class="btn-secondary" style="padding:6px 14px; font-size:12px;" disabled>Previous</button>
-                        <button id="dbNextBtn" class="btn-secondary" style="padding:6px 14px; font-size:12px;">Next</button>
+                    <div class="admin-flex-1">
+                        <button id="dbPrevBtn" class="btn-secondary admin-btn-pill-sm" disabled>Previous</button>
+                        <button id="dbNextBtn" class="btn-secondary admin-btn-pill-sm">Next</button>
                     </div>
                 </div>
             </div>
@@ -1145,18 +1064,18 @@
     <!-- ── SLIDE-OVER USER INSPECTOR DRAWER ───────────────────────────── -->
     <div id="drawerOverlay" class="admin-drawer-overlay"></div>
     <aside id="userDrawer" class="admin-drawer">
-        <div class="admin-drawer-header" style="display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid var(--border);">
-            <span style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; color:var(--primary); font-weight:700;">Account Deep Inspector</span>
-            <button id="closeDrawerBtn" class="modal-close" style="background:none; border:none; color:var(--text-main); font-size:1.3rem; cursor:pointer;" aria-label="Close Inspector">✕</button>
+        <div class="admin-drawer-header admin-flex-between">
+            <span class="admin-adm-44">Account Deep Inspector</span>
+            <button id="closeDrawerBtn" class="modal-close admin-btn-5" aria-label="Close Inspector">✕</button>
         </div>
 
-        <div style="padding:24px; overflow-y:auto; height:calc(100% - 70px); display:flex; flex-direction:column; gap:20px;">
-            <div style="display:flex; align-items:center; gap:16px;">
-                <div id="drawerAvatar" class="avatar" style="width:52px; height:52px; font-size:20px; font-weight:700;">-</div>
+        <div class="admin-flex-14">
+            <div class="admin-flex-15">
+                <div id="drawerAvatar" class="avatar admin-table-13">-</div>
                 <div>
-                    <h3 id="drawerName" style="font-size:17px; margin:0; color:var(--text-main); font-weight:700;">--</h3>
-                    <p id="drawerEmail" style="font-size:13px; color:var(--text-muted); margin:2px 0 0;">--</p>
-                    <div style="display:flex; gap:6px; margin-top:6px;">
+                    <h3 class="admin-title-3" id="drawerName">--</h3>
+                    <p class="admin-adm-45" id="drawerEmail">--</p>
+                    <div class="admin-flex-16">
                         <span id="drawerRoleBadge" class="status-badge badge-netflow">ROLE_USER</span>
                         <span id="drawerStatusBadge" class="status-badge badge-success">Active</span>
                     </div>
@@ -1164,62 +1083,62 @@
             </div>
 
             <!-- Security & PIN Controls -->
-            <div class="card" style="padding:16px;">
-                <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:10px;">Security State & PIN Oversight</span>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+            <div class="card admin-card-1">
+                <span class="admin-adm-14">Security State & PIN Oversight</span>
+                <div class="admin-grid-7">
                     <div>
-                        <span style="font-size:11px; color:var(--text-muted);">Security PIN</span>
-                        <strong style="font-size:13px; color:var(--text-main); display:block;" id="drawerHasPin">Configured</strong>
+                        <span class="admin-sub-text-xs">Security PIN</span>
+                        <strong class="admin-adm-46"  id="drawerHasPin">Configured</strong>
                     </div>
                     <div>
-                        <span style="font-size:11px; color:var(--text-muted);">Failed PIN Attempts</span>
-                        <strong style="font-size:13px; color:var(--danger-text); display:block;" id="drawerFailedPin">0 / 5</strong>
+                        <span class="admin-sub-text-xs">Failed PIN Attempts</span>
+                        <strong class="admin-adm-47"  id="drawerFailedPin">0 / 5</strong>
                     </div>
                 </div>
-                <div style="display:flex; gap:8px;">
-                    <button id="drawerResetPinLockoutBtn" class="btn-secondary" style="flex:1; padding:7px 10px; font-size:12px;">
+                <div class="admin-flex-1">
+                    <button id="drawerResetPinLockoutBtn" class="btn-secondary admin-flex-btn-9">
                         Unlock PIN
                     </button>
-                    <button id="drawerToggleLockBtn" class="btn-danger" style="flex:1; padding:7px 10px; font-size:12px; background:var(--accent); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600;">
+                    <button id="drawerToggleLockBtn" class="btn-danger admin-flex-btn-10">
                         Lock Account
                     </button>
                 </div>
             </div>
 
             <!-- Financial Footprint -->
-            <div class="card" style="padding:16px;">
-                <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:10px;">Platform Financial Footprint</span>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="card admin-card-1">
+                <span class="admin-adm-14">Platform Financial Footprint</span>
+                <div class="admin-grid-8">
                     <div>
-                        <span style="font-size:11px; color:var(--text-muted);">Expenses Logged</span>
-                        <strong style="font-size:14px; color:var(--text-main); display:block;" id="drawerExpenseCount">0</strong>
+                        <span class="admin-sub-text-xs">Expenses Logged</span>
+                        <strong class="admin-adm-15"  id="drawerExpenseCount">0</strong>
                     </div>
                     <div>
-                        <span style="font-size:11px; color:var(--text-muted);">Total Outflow</span>
-                        <strong style="font-size:14px; color:var(--metric-outflow); display:block;" id="drawerExpenseSum">₹0.00</strong>
+                        <span class="admin-sub-text-xs">Total Outflow</span>
+                        <strong class="admin-adm-48"  id="drawerExpenseSum">₹0.00</strong>
                     </div>
                     <div>
-                        <span style="font-size:11px; color:var(--text-muted);">Incomes Logged</span>
-                        <strong style="font-size:14px; color:var(--text-main); display:block;" id="drawerIncomeCount">0</strong>
+                        <span class="admin-sub-text-xs">Incomes Logged</span>
+                        <strong class="admin-adm-15"  id="drawerIncomeCount">0</strong>
                     </div>
                     <div>
-                        <span style="font-size:11px; color:var(--text-muted);">Total Inflow</span>
-                        <strong style="font-size:14px; color:var(--metric-inflow); display:block;" id="drawerIncomeSum">₹0.00</strong>
+                        <span class="admin-sub-text-xs">Total Inflow</span>
+                        <strong class="admin-adm-49"  id="drawerIncomeSum">₹0.00</strong>
                     </div>
                 </div>
             </div>
 
             <!-- User Database Transactions Ledger -->
-            <div class="card" style="padding:16px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <span style="font-size:12px; font-weight:700; color:var(--primary); text-transform:uppercase;">User Transaction Ledger</span>
-                    <div style="display:flex; gap:6px;">
-                        <button id="drawerTabExpensesBtn" type="button" class="btn-secondary active" style="padding:4px 10px; font-size:11px;">Expenses</button>
-                        <button id="drawerTabIncomesBtn" type="button" class="btn-secondary" style="padding:4px 10px; font-size:11px;">Incomes</button>
+            <div class="card admin-card-1">
+                <div class="admin-flex-between">
+                    <span class="admin-adm-50">User Transaction Ledger</span>
+                    <div class="admin-flex-17">
+                        <button id="drawerTabExpensesBtn" type="button" class="btn-secondary active admin-btn-2">Expenses</button>
+                        <button id="drawerTabIncomesBtn" type="button" class="btn-secondary admin-btn-2">Incomes</button>
                     </div>
                 </div>
-                <div style="max-height:240px; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
-                    <table class="data-table" style="width:100%; font-size:11px; border-collapse:collapse;">
+                <div class="admin-adm-51">
+                    <table class="data-table admin-table-collapse">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -1229,31 +1148,31 @@
                             </tr>
                         </thead>
                         <tbody id="drawerLedgerTableBody">
-                            <tr><td colspan="4" style="text-align:center; padding:16px; color:var(--text-muted);">Loading user transactions…</td></tr>
+                            <tr><td class="admin-table-2" colspan="4">Loading user transactions…</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
             <!-- Privilege & Session Controls -->
-            <div class="card" id="drawerSuperAdminSection" style="padding:16px;">
-                <span style="font-size:12px; font-weight:700; color:var(--primary); text-transform:uppercase; display:block; margin-bottom:10px;">Privilege Tier & Session Controls</span>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <label for="drawerRoleSelect" style="font-size:12px; color:var(--text-muted);">Change Assigned Role:</label>
-                    <select id="drawerRoleSelect" class="form-select" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:600;">
+            <div class="card admin-card-1" id="drawerSuperAdminSection">
+                <span class="admin-adm-52">Privilege Tier & Session Controls</span>
+                <div class="admin-flex-5">
+                    <label class="admin-adm-53" for="drawerRoleSelect">Change Assigned Role:</label>
+                    <select id="drawerRoleSelect" class="form-select admin-input-11">
                         <option value="ROLE_USER">ROLE_USER (Standard)</option>
                         <option value="ROLE_SUPPORT">ROLE_SUPPORT (Support Staff)</option>
                         <option value="ROLE_ADMIN">ROLE_ADMIN (Platform Administrator)</option>
                         <option value="ROLE_SUPER_ADMIN">ROLE_SUPER_ADMIN (Super Administrator)</option>
                     </select>
-                    <button id="drawerApplyRoleBtn" class="btn-primary" style="margin-top:6px; font-size:12px; padding:8px 12px;">
+                    <button id="drawerApplyRoleBtn" class="btn-primary admin-btn-6">
                         Elevate / Update Role
                     </button>
                 </div>
-                <button id="drawerRevokeSessionsBtn" class="btn-secondary" style="margin-top:12px; width:100%; font-size:12px; padding:8px 12px;">
+                <button id="drawerRevokeSessionsBtn" class="btn-secondary admin-btn-7">
                     Invalidate Active JWT Sessions
                 </button>
-                <button id="drawerDeleteUserBtn" class="btn-danger" style="margin-top:12px; width:100%; font-size:12px; padding:8px 12px; background:rgba(239, 68, 68, 0.15); color:var(--danger, #EF4444); border:1px solid rgba(239, 68, 68, 0.3); border-radius:8px; cursor:pointer; font-weight:600;">
+                <button id="drawerDeleteUserBtn" class="btn-danger admin-btn-8">
                     Permanently Delete User Account
                 </button>
             </div>
@@ -1263,40 +1182,40 @@
     <!-- ── PROVISION USER MODAL ────────────────────────────────────────── -->
     <div id="createUserModal" class="modal-overlay">
         <div class="modal modal-card modal-wide">
-            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <div class="modal-header admin-flex-between">
                 <div>
-                    <h3 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700;">Provision Platform Account</h3>
-                    <p style="font-size:12px; color:var(--text-muted); margin:4px 0 0;">Create a new user with cryptographic credentials and privileges</p>
+                    <h3 class="admin-title-1">Provision Platform Account</h3>
+                    <p class="admin-adm-16">Create a new user with cryptographic credentials and privileges</p>
                 </div>
                 <button type="button" class="modal-close" id="closeCreateUserModalBtn" aria-label="Close modal">&times;</button>
             </div>
             <form id="createUserForm" autocomplete="off">
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:14px;">
+                <div class="admin-metrics-grid-auto">
                     <div>
-                        <label for="createUserName" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Full Name *</label>
-                        <input type="text" id="createUserName" class="command-search-input" required placeholder="e.g. Jane Doe" style="width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg);">
+                        <label class="admin-form-label-bold" for="createUserName">Full Name *</label>
+                        <input type="text" id="createUserName" class="command-search-input admin-input-card-bg" required placeholder="e.g. Jane Doe">
                     </div>
                     <div>
-                        <label for="createUserUsername" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Username (@handle) *</label>
-                        <input type="text" id="createUserUsername" class="command-search-input" required placeholder="e.g. janedoe" style="width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg);">
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:14px;">
-                    <div>
-                        <label for="createUserEmail" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Email Address *</label>
-                        <input type="email" id="createUserEmail" class="command-search-input" required placeholder="jane@example.com" style="width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg);">
-                    </div>
-                    <div>
-                        <label for="createUserPassword" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Initial Password *</label>
-                        <input type="password" id="createUserPassword" class="command-search-input" required placeholder="Minimum 6 characters" minlength="6" style="width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg);">
+                        <label class="admin-form-label-bold" for="createUserUsername">Username (@handle) *</label>
+                        <input type="text" id="createUserUsername" class="command-search-input admin-input-card-bg" required placeholder="e.g. janedoe">
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:14px;">
+                <div class="admin-metrics-grid-auto">
                     <div>
-                        <label for="createUserRole" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Privilege Tier *</label>
-                        <select id="createUserRole" class="form-select" style="width:100%; background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:10px 14px; font-size:13px; font-weight:600;">
+                        <label class="admin-form-label-bold" for="createUserEmail">Email Address *</label>
+                        <input type="email" id="createUserEmail" class="command-search-input admin-input-card-bg" required placeholder="jane@example.com">
+                    </div>
+                    <div>
+                        <label class="admin-form-label-bold" for="createUserPassword">Initial Password *</label>
+                        <input type="password" id="createUserPassword" class="command-search-input admin-input-card-bg" required placeholder="Minimum 6 characters" minlength="6">
+                    </div>
+                </div>
+
+                <div class="admin-metrics-grid-auto">
+                    <div>
+                        <label class="admin-form-label-bold" for="createUserRole">Privilege Tier *</label>
+                        <select id="createUserRole" class="form-select admin-input-1">
                             <option value="ROLE_USER" selected>ROLE_USER (Standard Consumer)</option>
                             <option value="ROLE_SUPPORT">ROLE_SUPPORT (Customer Support)</option>
                             <option value="ROLE_ADMIN">ROLE_ADMIN (Platform Administrator)</option>
@@ -1304,28 +1223,28 @@
                         </select>
                     </div>
                     <div>
-                        <label for="createUserStatus" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Account Status *</label>
-                        <select id="createUserStatus" class="form-select" style="width:100%; background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:10px 14px; font-size:13px; font-weight:600;">
+                        <label class="admin-form-label-bold" for="createUserStatus">Account Status *</label>
+                        <select id="createUserStatus" class="form-select admin-input-1">
                             <option value="ACTIVE" selected>Active / Unlocked</option>
                             <option value="LOCKED">Suspended / Locked</option>
                         </select>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:18px;">
+                <div class="admin-metrics-grid-auto">
                     <div>
-                        <label for="createUserPin" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">User Security PIN *</label>
-                        <input type="password" id="createUserPin" maxlength="6" inputmode="numeric" required placeholder="6-digit PIN" style="width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); font-family:var(--font-mono); letter-spacing:0.3em;">
+                        <label class="admin-form-label-bold" for="createUserPin">User Security PIN *</label>
+                        <input class="admin-input-card-bg" type="password" id="createUserPin" maxlength="6" inputmode="numeric" required placeholder="6-digit PIN">
                     </div>
                     <div>
-                        <label for="createUserAdminPin" style="font-size:12px; font-weight:700; color:var(--primary); display:block; margin-bottom:6px;">Your Step-Up Admin PIN *</label>
-                        <input type="password" id="createUserAdminPin" maxlength="6" inputmode="numeric" required placeholder="6-digit PIN" style="width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border-accent); background:var(--input-bg); font-family:var(--font-mono); letter-spacing:0.3em;">
+                        <label class="admin-adm-17" for="createUserAdminPin">Your Step-Up Admin PIN *</label>
+                        <input class="admin-input-4" type="password" id="createUserAdminPin" maxlength="6" inputmode="numeric" required placeholder="6-digit PIN">
                     </div>
                 </div>
 
-                <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px; margin-top:6px;">
-                    <button type="button" class="btn-secondary" id="cancelCreateUserBtn" style="padding:8px 16px; font-size:13px;">Cancel</button>
-                    <button type="submit" class="btn-primary" id="submitCreateUserBtn" style="padding:8px 20px; font-size:13px;">Provision User</button>
+                <div class="modal-footer admin-flex-6">
+                    <button type="button" class="btn-secondary admin-btn-1" id="cancelCreateUserBtn">Cancel</button>
+                    <button type="submit" class="btn-primary admin-btn-3" id="submitCreateUserBtn">Provision User</button>
                 </div>
             </form>
         </div>
@@ -1334,42 +1253,42 @@
     <!-- ── EDIT USER MODAL ────────────────────────────────────────────── -->
     <div id="editUserModal" class="modal-overlay">
         <div class="modal modal-card modal-wide">
-            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <div class="modal-header admin-flex-between">
                 <div>
-                    <h3 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700;">Edit User Account & Credentials</h3>
-                    <p style="font-size:12px; color:var(--text-muted); margin:4px 0 0;" id="editUserSubtitle">Updating record for #--</p>
+                    <h3 class="admin-title-1">Edit User Account & Credentials</h3>
+                    <p class="admin-adm-16"  id="editUserSubtitle">Updating record for #--</p>
                 </div>
                 <button type="button" class="modal-close" id="closeEditUserModalBtn" aria-label="Close modal">&times;</button>
             </div>
             <form id="editUserForm" autocomplete="off">
                 <input type="hidden" id="editUserId">
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:14px;">
+                <div class="admin-metrics-grid-auto">
                     <div>
-                        <label for="editUserName" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Full Name *</label>
-                        <input type="text" id="editUserName" class="command-search-input" required style="width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg);">
+                        <label class="admin-form-label-bold" for="editUserName">Full Name *</label>
+                        <input type="text" id="editUserName" class="command-search-input admin-input-card-bg" required>
                     </div>
                     <div>
-                        <label for="editUserUsername" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Username (@handle)</label>
-                        <input type="text" id="editUserUsername" class="command-search-input" disabled style="width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); opacity:0.7;">
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:14px;">
-                    <div>
-                        <label for="editUserEmail" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Email Address *</label>
-                        <input type="email" id="editUserEmail" class="command-search-input" required style="width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg);">
-                    </div>
-                    <div>
-                        <label for="editUserPassword" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Reset Password (Optional)</label>
-                        <input type="password" id="editUserPassword" class="command-search-input" placeholder="Leave empty to keep unchanged" minlength="6" style="width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg);">
+                        <label class="admin-form-label-bold" for="editUserUsername">Username (@handle)</label>
+                        <input type="text" id="editUserUsername" class="command-search-input admin-input-card-bg" disabled>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:14px;">
+                <div class="admin-metrics-grid-auto">
                     <div>
-                        <label for="editUserRole" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Privilege Tier</label>
-                        <select id="editUserRole" class="form-select" style="width:100%; background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:10px 14px; font-size:13px; font-weight:600;">
+                        <label class="admin-form-label-bold" for="editUserEmail">Email Address *</label>
+                        <input type="email" id="editUserEmail" class="command-search-input admin-input-card-bg" required>
+                    </div>
+                    <div>
+                        <label class="admin-form-label-bold" for="editUserPassword">Reset Password (Optional)</label>
+                        <input type="password" id="editUserPassword" class="command-search-input admin-input-card-bg" placeholder="Leave empty to keep unchanged" minlength="6">
+                    </div>
+                </div>
+
+                <div class="admin-metrics-grid-auto">
+                    <div>
+                        <label class="admin-form-label-bold" for="editUserRole">Privilege Tier</label>
+                        <select id="editUserRole" class="form-select admin-input-1">
                             <option value="ROLE_USER">ROLE_USER (Standard Consumer)</option>
                             <option value="ROLE_SUPPORT">ROLE_SUPPORT (Customer Support)</option>
                             <option value="ROLE_ADMIN">ROLE_ADMIN (Platform Administrator)</option>
@@ -1377,28 +1296,28 @@
                         </select>
                     </div>
                     <div>
-                        <label for="editUserStatus" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Account Status</label>
-                        <select id="editUserStatus" class="form-select" style="width:100%; background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:10px 14px; font-size:13px; font-weight:600;">
+                        <label class="admin-form-label-bold" for="editUserStatus">Account Status</label>
+                        <select id="editUserStatus" class="form-select admin-input-1">
                             <option value="ACTIVE">Active / Unlocked</option>
                             <option value="LOCKED">Suspended / Locked</option>
                         </select>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:18px;">
+                <div class="admin-metrics-grid-auto">
                     <div>
-                        <label for="editUserPin" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Reset User Security PIN (Optional)</label>
-                        <input type="password" id="editUserPin" maxlength="6" inputmode="numeric" placeholder="Leave empty to keep unchanged" style="width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); font-family:var(--font-mono); letter-spacing:0.3em;">
+                        <label class="admin-form-label-bold" for="editUserPin">Reset User Security PIN (Optional)</label>
+                        <input class="admin-input-card-bg" type="password" id="editUserPin" maxlength="6" inputmode="numeric" placeholder="Leave empty to keep unchanged">
                     </div>
                     <div>
-                        <label for="editUserAdminPin" style="font-size:12px; font-weight:700; color:var(--primary); display:block; margin-bottom:6px;">Your Step-Up Admin PIN *</label>
-                        <input type="password" id="editUserAdminPin" maxlength="6" inputmode="numeric" required placeholder="6-digit PIN" style="width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border-accent); background:var(--input-bg); font-family:var(--font-mono); letter-spacing:0.3em;">
+                        <label class="admin-adm-17" for="editUserAdminPin">Your Step-Up Admin PIN *</label>
+                        <input class="admin-input-4" type="password" id="editUserAdminPin" maxlength="6" inputmode="numeric" required placeholder="6-digit PIN">
                     </div>
                 </div>
 
-                <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px; margin-top:6px;">
-                    <button type="button" class="btn-secondary" id="cancelEditUserBtn" style="padding:8px 16px; font-size:13px;">Cancel</button>
-                    <button type="submit" class="btn-primary" id="submitEditUserBtn" style="padding:8px 20px; font-size:13px;">Save Changes</button>
+                <div class="modal-footer admin-flex-6">
+                    <button type="button" class="btn-secondary admin-btn-1" id="cancelEditUserBtn">Cancel</button>
+                    <button type="submit" class="btn-primary admin-btn-3" id="submitEditUserBtn">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -1406,22 +1325,22 @@
 
     <!-- ── STEP-UP VERIFICATION MODAL ─────────────────────────────────────── -->
     <div id="stepUpModal" class="modal-overlay">
-        <div class="modal modal-card" style="max-width:440px;">
+        <div class="modal modal-card admin-table-14">
             <div class="modal-header">
-                <h3 id="stepUpModalTitle" style="margin:0; font-size:18px; color:var(--text-main); font-weight:700;">Step-Up Security Verification</h3>
+                <h3 class="admin-title-1" id="stepUpModalTitle">Step-Up Security Verification</h3>
                 <button id="stepUpCancelBtn" class="modal-close" aria-label="Close modal">✕</button>
             </div>
-            <div class="modal-body" style="padding:16px 0;">
-                <p id="stepUpModalDesc" style="font-size:13px; color:var(--text-muted); margin:0 0 16px; line-height:1.5;">
+            <div class="modal-body admin-adm-54">
+                <p class="admin-adm-55" id="stepUpModalDesc">
                     This administrative operation requires your 6-digit Security PIN to verify non-repudiation.
                 </p>
-                <div style="display:flex; justify-content:center;">
-                    <input type="password" id="stepUpModalPinInput" maxlength="6" inputmode="numeric" aria-label="Step-up security PIN" class="command-search-input" style="width:200px; text-align:center; font-family:var(--font-mono); letter-spacing:0.4em; font-size:22px; padding:10px 14px; border:1px solid var(--border-accent); border-radius:12px; background:var(--input-bg);" placeholder="••••••">
+                <div class="admin-flex-18">
+                    <input type="password" id="stepUpModalPinInput" maxlength="6" inputmode="numeric" aria-label="Step-up security PIN" class="command-search-input admin-input-12" placeholder="••••••">
                 </div>
             </div>
-            <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-                <button id="stepUpCancelBtn2" class="btn-secondary" style="padding:8px 16px; font-size:13px;">Cancel</button>
-                <button id="stepUpConfirmBtn" class="btn-primary" style="padding:8px 18px; font-size:13px;">Verify & Execute</button>
+            <div class="modal-footer admin-flex-19">
+                <button id="stepUpCancelBtn2" class="btn-secondary admin-btn-1">Cancel</button>
+                <button id="stepUpConfirmBtn" class="btn-primary admin-btn-9">Verify & Execute</button>
             </div>
         </div>
     </div>

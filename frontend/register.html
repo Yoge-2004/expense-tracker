@@ -17,88 +17,7 @@
     <link rel="stylesheet" href="css/motion-extended.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10120E">
-    <script>
-        (function () {
-            try {
-                var savedTheme = localStorage.getItem("theme");
-                var theme = savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
-                document.documentElement.setAttribute("data-theme", theme);
-                var meta = document.querySelector('meta[name="theme-color"]');
-                if (meta) meta.setAttribute("content", theme === "light" ? "#F8F9FA" : "#10120E");
-
-                var rawPalette = localStorage.getItem("app_custom_palette");
-                if (rawPalette) {
-                    var p = JSON.parse(rawPalette);
-                    var isDefault = p && (p.presetId === 'default' || !p.presetId) && p.primary === '#C79A3E' && p.accent === '#A23E32' && p.highlight === '#4C7A78';
-                    if (p && p.primary && !isDefault) {
-                        var root = document.documentElement;
-                        root.style.setProperty("--primary", p.primary);
-                        var hex = p.primary.replace('#', '');
-                        if (hex.length === 6) {
-                            var r = parseInt(hex.substring(0, 2), 16);
-                            var g = parseInt(hex.substring(2, 4), 16);
-                            var b = parseInt(hex.substring(4, 6), 16);
-                            root.style.setProperty("--primary-rgb", r + ", " + g + ", " + b);
-                            root.style.setProperty("--primary-glow", "rgba(" + r + ", " + g + ", " + b + ", 0.22)");
-                            root.style.setProperty("--border-accent", "rgba(" + r + ", " + g + ", " + b + ", 0.55)");
-                            root.style.setProperty("--shadow-glow", "0 12px 35px -8px rgba(" + r + ", " + g + ", " + b + ", 0.3)");
-                        }
-                        if (p.primaryGradientEnd) {
-                            root.style.setProperty("--primary-gradient", "linear-gradient(135deg, " + p.primary + " 0%, " + p.primaryGradientEnd + " 100%)");
-                        }
-                        if (p.accent) {
-                            root.style.setProperty("--accent", p.accent);
-                            var ahex = p.accent.replace('#', '');
-                            if (ahex.length === 6) {
-                                var ar = parseInt(ahex.substring(0, 2), 16);
-                                var ag = parseInt(ahex.substring(2, 4), 16);
-                                var ab = parseInt(ahex.substring(4, 6), 16);
-                                root.style.setProperty("--accent-rgb", ar + ", " + ag + ", " + ab);
-                                root.style.setProperty("--accent-glow", "rgba(" + ar + ", " + ag + ", " + ab + ", 0.25)");
-                                root.style.setProperty("--accent-text", p.accent);
-                            }
-                        }
-                        if (p.highlight) {
-                            root.style.setProperty("--highlight", p.highlight);
-                            var hhex = p.highlight.replace('#', '');
-                            if (hhex.length === 6) {
-                                var hr = parseInt(hhex.substring(0, 2), 16);
-                                var hg = parseInt(hhex.substring(2, 4), 16);
-                                var hb = parseInt(hhex.substring(4, 6), 16);
-                                root.style.setProperty("--highlight-rgb", hr + ", " + hg + ", " + hb);
-                            }
-                        }
-                        var lum = (r * 299 + g * 587 + b * 114) / 1000;
-                        root.style.setProperty("--on-primary", lum > 145 ? "#0F172A" : "#FFFFFF");
-                        if (theme === "light") {
-                            root.style.setProperty("--card-bg", "#FFFFFF");
-                            root.style.setProperty("--card-bg-hover", "#F8FAFC");
-                            root.style.setProperty("--border", "rgba(" + r + ", " + g + ", " + b + ", 0.22)");
-                            root.style.setProperty("--border-subtle", "rgba(" + r + ", " + g + ", " + b + ", 0.12)");
-                        } else if (p.cardSurface) {
-                            var cs = (!p.cardSurface.startsWith("#c7") && !p.cardSurface.startsWith("#C7")) ? p.cardSurface : "rgba(23, 26, 20, 0.90)";
-                            root.style.setProperty("--card-bg", cs);
-                            root.style.setProperty("--border", "rgba(" + r + ", " + g + ", " + b + ", 0.25)");
-                        }
-                        if (Array.isArray(p.paletteColors)) {
-                            p.paletteColors.slice(0, 8).forEach(function (col, i) {
-                                root.style.setProperty("--palette-" + (i + 1), col);
-                                var ch = col.replace("#", "");
-                                if (ch.length === 6) {
-                                    var cr = parseInt(ch.substring(0, 2), 16);
-                                    var cg = parseInt(ch.substring(2, 4), 16);
-                                    var cb = parseInt(ch.substring(4, 6), 16);
-                                    root.style.setProperty("--palette-" + (i + 1) + "-rgb", cr + ", " + cg + ", " + cb);
-                                }
-                            });
-                        }
-                    }
-                }
-            } catch (error) {
-                document.documentElement.setAttribute("data-theme", "dark");
-            }
-        })();
-    </script>
+    <script src="js/theme-init.js"></script>
     <meta name="description" content="Create your free ExpenseTracker Pro account and take control of your finances today.">
     <meta name="robots" content="index, follow">
     <meta name="keywords" content="sign up expense tracker, register personal finance, create budget account, free money tracker">
@@ -141,7 +60,7 @@
         <section class="auth-hero">
             <div class="auth-hero-bg">
                 <div class="hero-orb hero-orb-1"></div>
-                <div class="hero-orb hero-orb-2" style="background: radial-gradient(circle, rgba(162, 62, 50,0.4) 0%, transparent 70%);"></div>
+                <div class="hero-orb hero-orb-2 hero-orb-2-alt"></div>
                 <div class="hero-orb hero-orb-3"></div>
                 <div class="hero-grid"></div>
             </div>
@@ -154,7 +73,7 @@
                         </div>
                         <span class="hero-brand-name">ExpenseTracker <span class="pro-badge">PRO</span></span>
                     </div>
-                    <div style="display:flex;align-items:center;gap:12px;">
+                    <div class="auth-top-actions-right">
                         <a href="index.html" class="hero-back-link">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
                             <span>Sign In</span>
@@ -171,7 +90,7 @@
                                 <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                                 <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                             </svg>
-                            <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                            <svg class="moon-icon theme-icon-hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                             </svg>
                         </button>
@@ -184,7 +103,7 @@
                 <!-- Perk grid with floating cards -->
                 <div class="perks-grid hero-float-cards">
                     <div class="perk-item float-card float-card-1">
-                        <div class="perk-icon float-card-icon" style="background: rgba(199, 154, 62,0.12);">
+                        <div class="perk-icon float-card-icon float-card-icon-gold-12">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C79A3E" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         </div>
                         <div>
@@ -193,7 +112,7 @@
                         </div>
                     </div>
                     <div class="perk-item float-card float-card-2">
-                        <div class="perk-icon float-card-icon" style="background: rgba(162, 62, 50,0.12);">
+                        <div class="perk-icon float-card-icon float-card-icon-red-12">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A23E32" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                         </div>
                         <div>
@@ -202,7 +121,7 @@
                         </div>
                     </div>
                     <div class="perk-item float-card float-card-3">
-                        <div class="perk-icon float-card-icon" style="background: rgba(76, 122, 120,0.12);">
+                        <div class="perk-icon float-card-icon float-card-icon-teal-12">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4C7A78" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
                         </div>
                         <div>
@@ -211,7 +130,7 @@
                         </div>
                     </div>
                     <div class="perk-item float-card float-card-4">
-                        <div class="perk-icon float-card-icon" style="background: rgba(251,191,36,0.12);">
+                        <div class="perk-icon float-card-icon float-card-icon-amber-12">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9932E" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
                         </div>
                         <div>
@@ -227,7 +146,7 @@
                     <div class="hero-visual-card">
                         <div class="hero-visual-header">
                             <div class="hero-visual-title-wrap">
-                                <div class="hero-visual-icon" style="background: rgba(var(--primary-rgb), 0.12); color: var(--primary);">
+                                <div class="hero-visual-icon">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                                 </div>
                                 <div>
@@ -236,7 +155,7 @@
                                 </div>
                             </div>
                             <div class="hero-visual-status-pill">
-                                <span class="live-dot" style="background:var(--primary); box-shadow: 0 0 8px var(--primary);"></span>
+                                <span class="live-dot live-dot-primary"></span>
                                 Free Forever
                             </div>
                         </div>
@@ -300,7 +219,7 @@
                             "Setup took less than 45 seconds. The real-time spending telemetry and automated leak detection helped our household save over $3,200 this quarter."
                         </p>
                         <div class="hero-quote-author">
-                            <div class="hero-author-avatar" style="background: var(--primary-gradient);">MK</div>
+                            <div class="hero-author-avatar hero-author-avatar-primary">MK</div>
                             <div class="hero-author-meta">
                                 <span class="hero-author-name">Marcus Kim</span>
                                 <span class="hero-author-role">Founder, StudioCraft · Verified Member</span>
@@ -333,7 +252,7 @@
             <div class="auth-card animate-cascade delay-2">
                 <div class="auth-card-header">
                     <div class="auth-welcome-badge">
-                        <span class="live-dot" style="background:var(--accent); box-shadow: 0 0 8px var(--accent);"></span>
+                        <span class="live-dot live-dot-accent"></span>
                         Free to start
                     </div>
                     <h2 class="auth-title">Create your account</h2>
@@ -341,7 +260,7 @@
 
                     <!-- Step progress -->
                     <div class="step-progress" id="stepProgress">
-                        <div class="step-bar" id="stepBar" style="width: 0%"></div>
+                        <div class="step-bar step-bar-initial" id="stepBar"></div>
                     </div>
                 </div>
 
@@ -370,7 +289,7 @@
                             <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
                             <input type="text" id="reg-username" class="form-input" required placeholder="johndoe_26" autocomplete="username">
                         </div>
-                        <div id="usernameSuggestions" class="username-suggestions" style="display: none;"></div>
+                        <div id="usernameSuggestions" class="username-suggestions"></div>
                     </div>
 
                     <div class="form-group">
@@ -434,13 +353,13 @@
                         <div class="form-label-row">
                             <label class="form-label" for="reg-security-pin">
                                 <span class="step-dot" id="dot6">6</span>
-                                6-Digit Security PIN <span style="font-size:11px;font-weight:normal;color:var(--text-muted);">(Optional)</span>
+                                6-Digit Security PIN <span class="pin-label-opt">(Optional)</span>
                             </label>
-                            <span style="font-size:11.5px;color:var(--primary);">Zero-Email Recovery</span>
+                            <span class="pin-label-badge">Zero-Email Recovery</span>
                         </div>
                         <div class="input-wrapper">
                             <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                            <input type="password" id="reg-security-pin" class="form-input" placeholder="e.g. 123456 (6 digits)" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="off" style="letter-spacing: 2px;">
+                            <input type="password" id="reg-security-pin" class="form-input input-security-pin" placeholder="e.g. 123456 (6 digits)" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="off">
                             <button type="button" class="input-eye" data-password-toggle="reg-security-pin" aria-label="Toggle PIN">
                                 <svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
                             </button>
@@ -448,26 +367,26 @@
                     </div>
 
 
-                    <button type="button" class="btn-secondary btn-full" id="sendOtpBtn" style="display:none;margin-bottom:12px;">
+                    <button type="button" class="btn-secondary btn-full btn-send-otp" id="sendOtpBtn">
                         <span>Send Verification Code</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     </button>
 
                     <!-- OTP Step (hidden until Send OTP is clicked) -->
-                    <div class="form-group" id="otpGroup" style="display:none;">
+                    <div class="form-group form-group-hidden" id="otpGroup">
                         <div class="form-label-row">
                             <label class="form-label" for="reg-otp">
-                                <span class="step-dot" style="background:var(--highlight); display:inline-flex; align-items:center; justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                                <span class="step-dot highlight"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
                                 Verification Code
                             </label>
-                            <span id="otpTimer" style="font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums;"></span>
+                            <span id="otpTimer" class="otp-timer-text"></span>
                         </div>
                         <div class="input-wrapper">
                             <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                             <input type="text" id="reg-otp" class="form-input" placeholder="6-digit code from your email" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code">
                         </div>
-                        <div style="margin-top:6px;">
-                            <button type="button" id="resendOtpBtn" class="auth-footer-link" style="font-size:12px;background:none;border:none;cursor:pointer;padding:0;">Resend code</button>
+                        <div class="mt-6">
+                            <button type="button" id="resendOtpBtn" class="auth-footer-link btn-link-raw">Resend code</button>
                         </div>
                     </div>
 
