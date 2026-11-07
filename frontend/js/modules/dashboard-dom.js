@@ -78,19 +78,19 @@
         card.classList.add("is-loading");
         const val = card.querySelector(".metric-value");
         if (val) {
-            val.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:115px; height:28px; display:inline-block; margin-bottom:0;\"></span>";
+            val.innerHTML = '<span class="skeleton skeleton-value skeleton-metric-val"></span>';
         }
         const badge = card.querySelector(".status-badge");
         if (badge) {
-            badge.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:48px; height:14px; display:inline-block; border-radius:99px; margin-bottom:0;\"></span>";
+            badge.innerHTML = '<span class="skeleton skeleton-text short skeleton-badge-pill"></span>';
         }
         const dailyBurn = card.querySelector("#dailyBurnRate");
         if (dailyBurn) {
-            dailyBurn.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:65px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+            dailyBurn.innerHTML = '<span class="skeleton skeleton-text short skeleton-daily-burn"></span>';
         } else {
             const footerSpan = card.querySelector(".metric-footer span");
             if (footerSpan && !footerSpan.querySelector(".skeleton")) {
-                footerSpan.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:85px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+                footerSpan.innerHTML = '<span class="skeleton skeleton-text short skeleton-footer-span"></span>';
             }
         }
     });
@@ -125,21 +125,21 @@
         card.classList.add("is-loading");
     });
     const lentVal = document.getElementById("loansTotalLent");
-    if (lentVal) lentVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
+    if (lentVal) lentVal.innerHTML = '<span class="skeleton skeleton-value skeleton-metric-val-md"></span>';
     const borrowedVal = document.getElementById("loansTotalBorrowed");
-    if (borrowedVal) borrowedVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
+    if (borrowedVal) borrowedVal.innerHTML = '<span class="skeleton skeleton-value skeleton-metric-val-md"></span>';
     const netVal = document.getElementById("loansNetBalance");
-    if (netVal) netVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
+    if (netVal) netVal.innerHTML = '<span class="skeleton skeleton-value skeleton-metric-val-md"></span>';
     const pendingCountEl = document.getElementById("loansPendingCount");
     if (pendingCountEl && pendingCountEl.parentElement) {
-        pendingCountEl.parentElement.innerHTML = "<span id=\"loansPendingCount\"><span class=\"skeleton skeleton-value\" style=\"width:36px; height:22px; display:inline-block; margin-bottom:0;\"></span></span> <span style=\"font-size:12px; font-weight:600; color:var(--text-muted);\">open / </span><span id=\"loansSettledCount\"><span class=\"skeleton skeleton-value\" style=\"width:36px; height:22px; display:inline-block; margin-bottom:0;\"></span></span> <span style=\"font-size:12px; font-weight:600; color:#10B981;\">done</span>";
+        pendingCountEl.parentElement.innerHTML = '<span id="loansPendingCount"><span class="skeleton skeleton-value skeleton-loan-count"></span></span> <span class="loans-stat-open">open / </span><span id="loansSettledCount"><span class="skeleton skeleton-value skeleton-loan-count"></span></span> <span class="loans-stat-done">done</span>';
     }
     const lentPendingSubEl = document.getElementById("loansLentPendingCount");
-    if (lentPendingSubEl) lentPendingSubEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:28px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+    if (lentPendingSubEl) lentPendingSubEl.innerHTML = '<span class="skeleton skeleton-text short skeleton-sub-short"></span>';
     const borrowedPendingSubEl = document.getElementById("loansBorrowedPendingCount");
-    if (borrowedPendingSubEl) borrowedPendingSubEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:28px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+    if (borrowedPendingSubEl) borrowedPendingSubEl.innerHTML = '<span class="skeleton skeleton-text short skeleton-sub-short"></span>';
     const netStatusEl = document.getElementById("loansNetStatus");
-    if (netStatusEl) netStatusEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:65px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+    if (netStatusEl) netStatusEl.innerHTML = '<span class="skeleton skeleton-text short skeleton-daily-burn"></span>';
 
     const loansList = document.getElementById("loansListContainer");
     if (loansList) {

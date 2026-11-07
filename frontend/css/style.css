@@ -17496,3 +17496,10 @@ body.has-custom-wallpaper .top-bar {
 .btn-delete-cat.cat-can-delete { color: var(--danger, #C0392B); }
 .font-bold { font-weight: 700; }
 .subs-loading-text { text-align: center; padding: 20px 0; }
+
+.skeleton-daily-burn { width: 65px; height: 12px; display: inline-block; margin-bottom: 0; }
+.skeleton-footer-span { width: 85px; height: 12px; display: inline-block; margin-bottom: 0; }
+.skeleton-loan-count { width: 36px; height: 22px; display: inline-block; margin-bottom: 0; }
+.skeleton-sub-short { width: 28px; height: 12px; display: inline-block; margin-bottom: 0; }
+.loans-stat-open { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.loans-stat-done { font-size: 12px; font-weight: 600; color: #10B981; }
