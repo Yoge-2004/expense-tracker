@@ -533,12 +533,11 @@ function toggleGlobalTheme() {
     updateThemeColorMeta(nextTheme);
     updateAllThemeIcons(nextTheme);
 
-    // If custom theme or wallpaper was active, reset to default themes
-    if (window.WebStudio && typeof window.WebStudio.resetToDefault === "function") {
-        window.WebStudio.resetToDefault();
+    // Deactivate custom theme so theme toggle strictly returns to pure default factory themes
+    localStorage.setItem("app_custom_applied", "false");
+    if (window.WebStudio && typeof window.WebStudio.deactivateCustomTheme === "function") {
+        window.WebStudio.deactivateCustomTheme();
     } else {
-        localStorage.removeItem("app_custom_palette");
-        localStorage.removeItem("app_bg_asset");
         document.body?.classList.remove("has-custom-wallpaper");
         document.documentElement.style.removeProperty("--custom-wallpaper-bg");
     }

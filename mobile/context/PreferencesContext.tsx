@@ -56,6 +56,10 @@ export interface PreferencesContextType {
   customPalette: ExtractedPalette | null;
   setCustomPalette: (palette: ExtractedPalette | null) => Promise<void>;
 
+  isCustomApplied: boolean;
+  applyCustomTheme: () => Promise<void>;
+  deactivateCustomTheme: () => Promise<void>;
+
   themeColors: ThemeColors;
   resetAppearance: () => Promise<void>;
 
@@ -281,12 +285,14 @@ export function PreferencesProvider({
   initialPalette,
   initialBgAsset,
   initialThemeColors,
+  initialCustomApplied,
 }: {
   children: React.ReactNode;
   initialTheme?: 'dark' | 'light';
   initialPalette?: ExtractedPalette | null;
   initialBgAsset?: BackgroundAssetConfig | null;
   initialThemeColors?: ThemeColors;
+  initialCustomApplied?: boolean;
 }) {
   const systemScheme = useColorScheme();
   const [theme, setTheme] = useState<'dark' | 'light'>(
@@ -304,6 +310,9 @@ export function PreferencesProvider({
   );
   const [customPalette, setCustomPaletteState] = useState<ExtractedPalette | null>(
     initialPalette ?? null
+  );
+  const [isCustomApplied, setIsCustomApplied] = useState<boolean>(
+    initialCustomApplied ?? false
   );
   const [appearanceLoaded, setAppearanceLoaded] = useState(
     Boolean(initialTheme || initialPalette || initialBgAsset)
@@ -437,8 +446,9 @@ export function PreferencesProvider({
       safeStorageGet('app_custom_font_uri'),
       safeStorageGet('app_bg_asset'),
       safeStorageGet('app_custom_palette'),
+      safeStorageGet('app_custom_applied'),
     ])
-      .then(async ([savedTheme, savedCurrency, savedStealth, savedFont, savedCustomFont, savedCustomFontUri, savedBg, savedPalette]) => {
+      .then(async ([savedTheme, savedCurrency, savedStealth, savedFont, savedCustomFont, savedCustomFontUri, savedBg, savedPalette, savedCustomApplied]) => {
         if (!mounted) return;
         let customFontAvailable = false;
         if (savedCustomFont && savedCustomFontUri) {
@@ -485,6 +495,11 @@ export function PreferencesProvider({
             // Ignore parse errors
           }
         }
+        if (savedCustomApplied === 'true') {
+          setIsCustomApplied(true);
+        } else if (savedCustomApplied === 'false') {
+          setIsCustomApplied(false);
+        }
 
         // Let the app render once local theme, colors and wallpaper are in place.
         setAppearanceLoaded(true);
@@ -514,11 +529,10 @@ export function PreferencesProvider({
     isTogglingRef.current = true;
     userToggledThemeRef.current = true;
 
-    // Reset custom palette and background asset to default so theme toggle returns to pure default themes
-    setCustomPaletteState(null);
-    setBackgroundAssetState(DEFAULT_BG_ASSET);
-    safeStorageSet('app_custom_palette', '').catch(() => {});
-    safeStorageSet('app_bg_asset', JSON.stringify(DEFAULT_BG_ASSET)).catch(() => {});
+    // Reset active custom theme state so theme toggle strictly returns to pure factory default themes
+    setIsCustomApplied(false);
+    safeStorageSet('app_custom_applied', 'false').catch(() => {});
+    // NOTE: Keep saved custom palette and wallpaper intact in local storage & cloud so user never loses them!
 
     setTheme((prevTheme) => {
       const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
@@ -528,15 +542,10 @@ export function PreferencesProvider({
       return nextTheme;
     });
 
-    void pushAppearanceToCloud({
-      bg: DEFAULT_BG_ASSET,
-      palette: null,
-    });
-
     requestAnimationFrame(() => {
       isTogglingRef.current = false;
     });
-  }, [pushAppearanceToCloud]);
+  }, []);
 
   const toggleStealthMode = useCallback(async (): Promise<void> => {
     setIsStealthMode((prev) => {
@@ -616,12 +625,33 @@ export function PreferencesProvider({
     void pushAppearanceToCloud({ palette });
   }, [pushAppearanceToCloud]);
 
+  const applyCustomTheme = useCallback(async (): Promise<void> => {
+    setIsCustomApplied(true);
+    try {
+      await safeStorageSet('app_custom_applied', 'true');
+    } catch (e) {
+      console.warn('[PreferencesContext] Failed to persist custom applied state:', e);
+    }
+    void pushAppearanceToCloud();
+  }, [pushAppearanceToCloud]);
+
+  const deactivateCustomTheme = useCallback(async (): Promise<void> => {
+    setIsCustomApplied(false);
+    try {
+      await safeStorageSet('app_custom_applied', 'false');
+    } catch (e) {
+      console.warn('[PreferencesContext] Failed to persist custom applied state:', e);
+    }
+  }, []);
+
   const resetAppearance = useCallback(async () => {
+    setIsCustomApplied(false);
     setFontChoiceState('grotesk');
     setCustomFontFamilyState(null);
     setBackgroundAssetState(DEFAULT_BG_ASSET);
     setCustomPaletteState(null);
     try {
+      await safeStorageSet('app_custom_applied', 'false');
       await safeStorageSet('app_font_choice', 'grotesk');
       await safeStorageSet('app_custom_font_family', '');
       await safeStorageSet('app_custom_font_uri', '');
@@ -639,13 +669,18 @@ export function PreferencesProvider({
   }, [pushAppearanceToCloud]);
 
   const activeFonts = useMemo(
-    () => resolveActiveFonts(fontChoice, customFontFamily),
-    [fontChoice, customFontFamily]
+    () => (isCustomApplied ? resolveActiveFonts(fontChoice, customFontFamily) : FontPresets.grotesk),
+    [isCustomApplied, fontChoice, customFontFamily]
   );
 
   const themeColors = useMemo(
-    () => createThemeColors(theme, customPalette, backgroundAsset.presetId),
-    [theme, customPalette, backgroundAsset.presetId]
+    () => {
+      if (!isCustomApplied) {
+        return createThemeColors(theme, null, 'default');
+      }
+      return createThemeColors(theme, customPalette, backgroundAsset.presetId);
+    },
+    [isCustomApplied, theme, customPalette, backgroundAsset.presetId]
   );
 
   const value = useMemo(
@@ -667,6 +702,9 @@ export function PreferencesProvider({
       setBackgroundAsset,
       customPalette,
       setCustomPalette,
+      isCustomApplied,
+      applyCustomTheme,
+      deactivateCustomTheme,
       themeColors,
       resetAppearance,
       syncAppearanceFromCloud,
@@ -689,6 +727,9 @@ export function PreferencesProvider({
       setBackgroundAsset,
       customPalette,
       setCustomPalette,
+      isCustomApplied,
+      applyCustomTheme,
+      deactivateCustomTheme,
       themeColors,
       resetAppearance,
       syncAppearanceFromCloud,

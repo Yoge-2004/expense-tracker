@@ -69,6 +69,8 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
     setBackgroundAsset,
     customPalette,
     setCustomPalette,
+    isCustomApplied,
+    applyCustomTheme,
     themeColors,
     resetAppearance,
   } = usePreferences();
@@ -146,6 +148,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
     if (profile.theme && profile.theme !== theme) {
       await toggleTheme();
     }
+    await applyCustomTheme();
     setExtractSuccess(`Applied custom theme “${profile.name}”.`);
   };
 
@@ -1175,14 +1178,38 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
               <Text style={[styles.resetButtonText, { color: c.textMuted }]}>Reset Defaults</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={onClose}
-              style={[styles.doneButton, { backgroundColor: c.primary }]}
-              accessibilityRole="button"
-              accessibilityLabel="Done"
-            >
-              <Text style={[styles.doneButtonText, { color: c.onPrimary }]}>Done</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <TouchableOpacity
+                onPress={async () => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+                  await applyCustomTheme();
+                  setExtractSuccess('Theme applied to app successfully!');
+                }}
+                style={[
+                  styles.applyButton,
+                  {
+                    backgroundColor: c.primary,
+                    opacity: isCustomApplied ? 0.9 : 1,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Apply Theme"
+              >
+                <Ionicons name="checkmark-done" size={15} color={c.onPrimary} />
+                <Text style={[styles.applyButtonText, { color: c.onPrimary }]}>
+                  {isCustomApplied ? 'Theme Applied' : 'Apply Theme'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={onClose}
+                style={[styles.doneButton, { backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border }]}
+                accessibilityRole="button"
+                accessibilityLabel="Done"
+              >
+                <Text style={[styles.doneButtonText, { color: c.text }]}>Done</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
@@ -1552,6 +1579,18 @@ const styles = StyleSheet.create({
   resetButtonText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  applyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  applyButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
   doneButton: {
     paddingVertical: 10,

@@ -20,14 +20,32 @@ async function initAuthConfig() {
 
     if (!emailVerificationRequired) {
         // Direct registration mode
-        if (sendBtn) sendBtn.style.display = 'none';
-        if (otpGrp)  otpGrp.style.display  = 'none';
-        if (regBtn)  regBtn.style.display  = '';
+        if (sendBtn) {
+            sendBtn.hidden = true;
+            sendBtn.style.display = 'none';
+        }
+        if (otpGrp) {
+            otpGrp.hidden = true;
+            otpGrp.style.display = 'none';
+        }
+        if (regBtn) {
+            regBtn.hidden = false;
+            regBtn.style.display = '';
+        }
     } else {
         // OTP verification required
-        if (sendBtn) sendBtn.style.display = '';
-        if (otpGrp)  otpGrp.style.display  = 'none';
-        if (regBtn)  regBtn.style.display  = 'none';
+        if (sendBtn) {
+            sendBtn.hidden = false;
+            sendBtn.style.display = '';
+        }
+        if (otpGrp) {
+            otpGrp.hidden = true;
+            otpGrp.style.display = 'none';
+        }
+        if (regBtn) {
+            regBtn.hidden = true;
+            regBtn.style.display = 'none';
+        }
     }
 }
 
@@ -89,8 +107,17 @@ async function doSendOtp() {
         if (res && (res.emailVerificationEnabled === false || res.emailVerificationEnabled === 'false')) {
             emailVerificationRequired = false;
             showToast('Email verification is not required. Click Create Account to finish.', 'info');
-            document.getElementById('otpGroup').style.display = 'none';
-            document.getElementById('registerBtn').style.display = '';
+            const otpGrpEl = document.getElementById('otpGroup');
+            const regBtnEl = document.getElementById('registerBtn');
+            if (otpGrpEl) {
+                otpGrpEl.hidden = true;
+                otpGrpEl.style.display = 'none';
+            }
+            if (regBtnEl) {
+                regBtnEl.hidden = false;
+                regBtnEl.style.display = '';
+            }
+            sendBtn.hidden = true;
             sendBtn.style.display = 'none';
             return;
         }
@@ -98,8 +125,17 @@ async function doSendOtp() {
         showToast(`Verification code sent to ${email}`, 'success');
 
         // Reveal OTP field + submit button, hide Send OTP button
-        document.getElementById('otpGroup').style.display = '';
-        document.getElementById('registerBtn').style.display = '';
+        const otpGrpEl = document.getElementById('otpGroup');
+        const regBtnEl = document.getElementById('registerBtn');
+        if (otpGrpEl) {
+            otpGrpEl.hidden = false;
+            otpGrpEl.style.display = '';
+        }
+        if (regBtnEl) {
+            regBtnEl.hidden = false;
+            regBtnEl.style.display = '';
+        }
+        sendBtn.hidden = true;
         sendBtn.style.display = 'none';
         document.getElementById('reg-otp').focus();
         startOtpTimer(600); // 10 minutes

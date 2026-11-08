@@ -30,7 +30,8 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({
   const prefs = useOptionalPreferences();
   const theme = propTheme || prefs?.theme || 'dark';
   const themeColors = customColors || prefs?.themeColors || Colors[theme];
-  const backgroundAsset = propBackgroundAsset || prefs?.backgroundAsset || { type: 'preset', presetId: 'default' };
+  const isCustomApplied = prefs?.isCustomApplied ?? false;
+  const backgroundAsset = propBackgroundAsset || (isCustomApplied ? prefs?.backgroundAsset : undefined) || { type: 'preset', presetId: 'default' };
   const { width, height } = useWindowDimensions();
   const isLight = theme === 'light';
   const [reduceMotion, setReduceMotion] = useState(false);

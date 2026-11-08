@@ -398,6 +398,32 @@
             && (!currentAppSurface || DEFAULT_APP_SURFACES.some(v => sameColor(currentAppSurface, v)));
     }
 
+    let isCustomApplied = localStorage.getItem('app_custom_applied') === 'true' || (localStorage.getItem('app_custom_applied') !== 'false' && Boolean(localStorage.getItem('app_custom_palette')));
+
+    function autoSaveCurrentState() {
+        localStorage.setItem('app_font_choice', currentFontChoice);
+        if (currentCustomFontFamily) localStorage.setItem('app_custom_font_family', currentCustomFontFamily);
+        if (currentCustomFontData) localStorage.setItem('app_custom_font_data', currentCustomFontData);
+        localStorage.setItem('app_custom_palette', JSON.stringify({
+            primary: currentPrimary,
+            primaryGradientEnd: currentPrimaryEnd,
+            accent: currentAccent,
+            highlight: currentHighlight,
+            cardSurface: currentCardSurface,
+            surface: currentAppSurface,
+            paletteColors: currentExtractedPalette,
+            presetId: currentPresetId,
+        }));
+        localStorage.setItem('app_bg_asset', JSON.stringify({
+            type: currentWallpaperType,
+            presetId: currentPresetId,
+            uri: currentWallpaperUri,
+            sourceUri: wallpaperSourceUri,
+            overlayOpacity: currentOverlayOpacity,
+            blurIntensity: currentBlurIntensity,
+        }));
+    }
+
     let currentFontChoice = localStorage.getItem('app_font_choice') || 'grotesk';
     let currentCustomFontFamily = localStorage.getItem('app_custom_font_family') || null;
     let currentCustomFontData = localStorage.getItem('app_custom_font_data') || null;
@@ -432,6 +458,36 @@
             img.onerror = () => reject(new Error('Image could not be loaded. Check the URL and access permissions.'));
             img.src = uri;
         });
+    }
+
+    function applyCustomTheme() {
+        isCustomApplied = true;
+        localStorage.setItem('app_custom_applied', 'true');
+        autoSaveCurrentState();
+        applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
+        autoSaveCurrentState();
+        if (isCustomApplied) {
+            applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
+            applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+        }
+        syncUiControls();
+        void saveAppearanceToCloud();
+        if (typeof window.showToast === 'function') {
+            window.showToast('Theme applied successfully!', 'success');
+        }
+    }
+
+    function deactivateCustomTheme() {
+        isCustomApplied = false;
+        localStorage.setItem('app_custom_applied', 'false');
+        clearPaletteVars();
+        document.body?.classList.remove('has-custom-wallpaper');
+        document.documentElement.style.removeProperty('--custom-wallpaper-bg');
+        document.body?.style.removeProperty('background-image');
+        document.body?.style.removeProperty('background-size');
+        document.body?.style.removeProperty('background-position');
+        document.body?.style.removeProperty('background-attachment');
+        document.body?.style.removeProperty('background-repeat');
     }
 
     async function cropAndExtractWallpaper(uri) {
@@ -644,8 +700,11 @@
             blurIntensity: currentBlurIntensity,
         }));
 
-        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
-        applyAtmosphere('custom', currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+        autoSaveCurrentState();
+        if (isCustomApplied) {
+            applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
+            applyAtmosphere('custom', currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+        }
         syncUiControls();
     }
 
@@ -672,10 +731,8 @@
         if (currentCustomFontData) localStorage.setItem('app_custom_font_data', currentCustomFontData);
         localStorage.setItem('app_custom_palette', JSON.stringify({ primary: currentPrimary, primaryGradientEnd: currentPrimaryEnd, accent: currentAccent, highlight: currentHighlight, cardSurface: currentCardSurface, surface: currentAppSurface }));
         localStorage.setItem('app_bg_asset', JSON.stringify({ type: currentWallpaperType, presetId: currentPresetId, uri: currentWallpaperUri, sourceUri: wallpaperSourceUri, overlayOpacity: currentOverlayOpacity, blurIntensity: currentBlurIntensity }));
-        applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
-        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
-        applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
-        syncUiControls(); void saveAppearanceToCloud();
+        autoSaveCurrentState();
+        applyCustomTheme();
     }
 
     // Try reading cached custom palette
@@ -918,7 +975,7 @@
         if (!bgs.length) return;
 
         const isLight = document.documentElement.getAttribute("data-theme") === "light";
-        const hasWallpaper = Boolean(uri && type !== 'none');
+        const hasWallpaper = Boolean(uri && type !== 'none' && isCustomApplied);
 
         if (hasWallpaper) {
             document.body?.classList.add("has-custom-wallpaper");
@@ -1035,15 +1092,24 @@
         syncUiControls();
     }
 
-    // Immediate zero-flicker application on script load
+    // Immediate application on script load: typography is applied, but custom palette/wallpaper only if isCustomApplied
     applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
-    applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
-    applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+    if (isCustomApplied && !isDefaultPalette()) {
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
+        applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+    } else {
+        clearPaletteVars();
+        document.body?.classList.remove("has-custom-wallpaper");
+        document.documentElement.style.removeProperty("--custom-wallpaper-bg");
+    }
 
-    // The palette is computed for the theme that is active when it runs, so it must be recomputed whenever
-    // data-theme changes (toggle button, another tab, or the saved theme being applied after this script).
-    // A MutationObserver callback runs before the next paint, so no frame shows the old theme's colours.
     new MutationObserver(() => {
+        if (!isCustomApplied) {
+            clearPaletteVars();
+            document.body?.classList.remove("has-custom-wallpaper");
+            document.documentElement.style.removeProperty("--custom-wallpaper-bg");
+            return;
+        }
         if (currentWallpaperType === 'preset' && currentPresetId && currentPresetId !== 'default' && currentPresetId !== 'custom') {
             const isLight = document.documentElement.getAttribute('data-theme') === 'light';
             const preset = STUDIO_PRESETS.find(x => x.id === currentPresetId);
@@ -1367,7 +1433,7 @@
                     </div>
                     <div class="studio-footer-actions">
                         <button type="button" class="btn-secondary" id="studioResetBtn">Reset Defaults</button>
-                        <button type="button" class="btn-primary" id="studioSaveSyncBtn">Save & Sync</button>
+                        <button type="button" class="btn-primary" id="studioSaveSyncBtn">Apply Theme</button>
                     </div>
                 </div>
             </div>
@@ -1520,7 +1586,10 @@
                 currentAppSurface = newHex;
             }
 
-            applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
+            autoSaveCurrentState();
+            if (isCustomApplied) {
+                applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
+            }
             updateColorPickerInputs();
 
             // Highlight active swatch if matches
@@ -1550,7 +1619,10 @@
             card.addEventListener('click', () => {
                 const fontKey = card.getAttribute('data-font');
                 currentFontChoice = fontKey;
-                applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
+                autoSaveCurrentState();
+                if (isCustomApplied) {
+                    applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
+                }
                 syncUiControls();
             });
         });
@@ -1624,33 +1696,48 @@
             const val = Number(e.target.value);
             currentOverlayOpacity = val / 100;
             if (opacityValue) opacityValue.textContent = `${val}%`;
-            applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+            autoSaveCurrentState();
+            if (isCustomApplied) {
+                applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+            }
         });
 
         blurSlider?.addEventListener('input', (e) => {
             const val = Number(e.target.value);
             currentBlurIntensity = val;
             if (blurValue) blurValue.textContent = `${val}px`;
-            applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+            autoSaveCurrentState();
+            if (isCustomApplied) {
+                applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+            }
         });
 
         // Atmosphere Mode Toggles
         bgModePreset?.addEventListener('click', () => {
             currentWallpaperType = 'preset';
             syncAtmosphereMode();
-            applyAtmosphere('preset', currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+            autoSaveCurrentState();
+            if (isCustomApplied) {
+                applyAtmosphere('preset', currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+            }
         });
 
         bgModeCustom?.addEventListener('click', () => {
             currentWallpaperType = 'custom';
             syncAtmosphereMode();
-            applyAtmosphere('custom', currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+            autoSaveCurrentState();
+            if (isCustomApplied) {
+                applyAtmosphere('custom', currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+            }
         });
 
         bgModeNone?.addEventListener('click', () => {
             currentWallpaperType = 'none';
             syncAtmosphereMode();
-            applyAtmosphere('none', '', 0, 0);
+            autoSaveCurrentState();
+            if (isCustomApplied) {
+                applyAtmosphere('none', '', 0, 0);
+            }
         });
 
         wallpaperUrlInput?.addEventListener('input', (e) => {
@@ -1892,6 +1979,8 @@
             localStorage.removeItem('app_custom_font_data');
             localStorage.removeItem('app_custom_palette');
             localStorage.removeItem('app_bg_asset');
+            localStorage.setItem('app_custom_applied', 'false');
+            isCustomApplied = false;
 
             clearPaletteVars();
             applyAtmosphere('preset', '', 0.35, 0);
@@ -1903,39 +1992,19 @@
 
         resetBtn?.addEventListener('click', resetToDefault);
 
-        // Save & Sync to Cloud
+        // Apply Theme
         saveSyncBtn?.addEventListener('click', () => {
             if (wallpaperLoadPending) {
-                if (wallpaperStatus) wallpaperStatus.textContent = 'Wait for the image and palette to finish loading before saving.';
+                if (wallpaperStatus) wallpaperStatus.textContent = 'Wait for the image and palette to finish loading before applying.';
                 return;
             }
             const enteredWallpaperUrl = wallpaperUrlInput?.value.trim();
             if (currentWallpaperType === 'custom' && /^https?:\/\//i.test(enteredWallpaperUrl || '') && enteredWallpaperUrl !== wallpaperSourceUri) {
-                if (wallpaperStatus) wallpaperStatus.textContent = 'Load & extract this image URL before saving the wallpaper.';
+                if (wallpaperStatus) wallpaperStatus.textContent = 'Load & extract this image URL before applying the wallpaper.';
                 return;
             }
-            // Save local cache
-            localStorage.setItem('app_font_choice', currentFontChoice);
-            if (currentCustomFontFamily) localStorage.setItem('app_custom_font_family', currentCustomFontFamily);
-            if (currentCustomFontData) localStorage.setItem('app_custom_font_data', currentCustomFontData);
-            localStorage.setItem('app_custom_palette', JSON.stringify({
-                primary: currentPrimary,
-                primaryGradientEnd: currentPrimaryEnd,
-                accent: currentAccent,
-                highlight: currentHighlight,
-                cardSurface: currentCardSurface,
-                surface: currentAppSurface,
-                paletteColors: currentExtractedPalette,
-            }));
-            localStorage.setItem('app_bg_asset', JSON.stringify({
-                type: currentWallpaperType,
-                presetId: currentPresetId,
-                uri: currentWallpaperUri,
-                overlayOpacity: currentOverlayOpacity,
-                blurIntensity: currentBlurIntensity
-            }));
-
-            void saveAppearanceToCloud();
+            applyCustomTheme();
+            closeStudio();
         });
 
         // Close Modal Handlers
@@ -2066,10 +2135,10 @@
     // Attach to DOMContentLoaded or execute immediately if already loaded
     document.addEventListener('themechange', (e) => {
         if (e && e.detail && e.detail.fromToggle) {
-            resetToDefault();
+            deactivateCustomTheme();
             return;
         }
-        if (isDefaultPalette()) {
+        if (!isCustomApplied || isDefaultPalette()) {
             clearPaletteVars();
             return;
         }
@@ -2084,6 +2153,8 @@
 
     // Expose API to window
     window.WebStudio = {
+        applyCustomTheme,
+        deactivateCustomTheme,
         resetToDefault,
         selectPreset,
         fetchAppearanceFromCloud,

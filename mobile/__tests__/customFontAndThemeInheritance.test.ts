@@ -11,6 +11,8 @@ import { fontForWeight, ThemedText, ThemedTextInput } from '../components/Themed
 import { OfflineBanner } from '../components/OfflineBanner';
 import { ThemeToggleBtn } from '../components/ThemeToggleBtn';
 import { UpdateBanner } from '../components/UpdateBanner';
+import { ThemeStudioModal } from '../components/ThemeStudioModal';
+import { AmbientAura } from '../components/AmbientAura';
 import { Colors, FontPresets } from '../constants/theme';
 import { PRESET_BACKGROUNDS } from '../services/paletteExtractor';
 
@@ -136,9 +138,11 @@ describe('Wallpaper Theme Engine Color Inheritance Suite', () => {
   it('returns pure pristine default Colors when customPalette is null and preset is default', () => {
     const defaultDark = createThemeColors('dark', null, 'default');
     expect(defaultDark).toBe(Colors.dark);
+    expect(defaultDark.primary).toBe(Colors.dark.primary);
 
     const defaultLight = createThemeColors('light', null, 'default');
     expect(defaultLight).toBe(Colors.light);
+    expect(defaultLight.primary).toBe(Colors.light.primary);
   });
 
   it('caches theme calculations for instant 0ms theme toggle performance', () => {
@@ -174,5 +178,18 @@ describe('Theme Banners and Toggle Performance Suite', () => {
 
     const updateBannerElement = React.createElement(UpdateBanner, {});
     expect(updateBannerElement).toBeDefined();
+  });
+
+  it('instantiates ThemeStudioModal and AmbientAura with theme props', () => {
+    const modalElement = React.createElement(ThemeStudioModal, {
+      visible: true,
+      onClose: () => {},
+    });
+    expect(modalElement).toBeDefined();
+
+    const auraElement = React.createElement(AmbientAura, {
+      theme: 'dark',
+    });
+    expect(auraElement).toBeDefined();
   });
 });

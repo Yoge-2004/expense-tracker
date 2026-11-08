@@ -187,6 +187,7 @@ function syncBudgetPeriodVisibility() {
     if (!customBudgetDates || !budgetPeriod) return;
     const isCustom = budgetPeriod.value === "CUSTOM";
     customBudgetDates.hidden = !isCustom;
+    customBudgetDates.classList.toggle("d-none", !isCustom);
     customBudgetDates.style.display = isCustom ? "block" : "none";
 }
 
@@ -3092,6 +3093,7 @@ function openEditSavingsGoal(goalId) {
     if (recFields) {
         recFields.style.display = isRec ? "block" : "none";
         recFields.hidden = !isRec;
+        recFields.classList.toggle("d-none", !isRec);
     }
     const recAmt = document.getElementById("goalRecurringAmount");
     if (recAmt) recAmt.value = goal.recurringAmount || "";
@@ -3334,6 +3336,7 @@ function syncIncomeRecurringIntervalVisibility() {
     const isCustom = incomeRecurringFrequencyEl ? (incomeRecurringFrequencyEl.value === "CUSTOM") : false;
     const shouldShow = isChecked && isCustom;
     incomeCustomIntervalWrapEl.hidden = !shouldShow;
+    incomeCustomIntervalWrapEl.classList.toggle("d-none", !shouldShow);
     incomeCustomIntervalWrapEl.style.display = shouldShow ? "flex" : "none";
 }
 
@@ -3341,6 +3344,7 @@ function updateIncomeRecurrenceUI() {
     const isChecked = incomeIsRecurringEl ? incomeIsRecurringEl.checked : false;
     if (incomeRecurringOptionsEl) {
         incomeRecurringOptionsEl.hidden = !isChecked;
+        incomeRecurringOptionsEl.classList.toggle("d-none", !isChecked);
         incomeRecurringOptionsEl.style.display = isChecked ? "flex" : "none";
     }
     syncIncomeRecurringIntervalVisibility();
@@ -3582,6 +3586,7 @@ addGoalBtn?.addEventListener("click", () => {
     if (recFields) {
         recFields.style.display = "none";
         recFields.hidden = true;
+        recFields.classList.add("d-none");
     }
     const recAmt = document.getElementById("goalRecurringAmount");
     if (recAmt) recAmt.value = "";
@@ -3606,6 +3611,7 @@ document.getElementById("goalIsRecurring")?.addEventListener("change", (e) => {
     if (fields) {
         fields.style.display = e.target.checked ? "block" : "none";
         fields.hidden = !e.target.checked;
+        fields.classList.toggle("d-none", !e.target.checked);
         if (e.target.checked) {
             const targetVal = Number.parseFloat(document.getElementById("goalTargetAmount")?.value || 0);
             const recAmt = document.getElementById("goalRecurringAmount");
@@ -3966,14 +3972,30 @@ function setPeriodModalMode(mode) {
         if (modalIcon) modalIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
         if (modalTitle) modalTitle.textContent = "Export Monthly Summary";
         if (modalSubtitle) modalSubtitle.textContent = "Select statement period & format to download your financial records.";
-        if (viewActions) viewActions.style.display = "none";
-        if (exportActions) exportActions.style.display = "block";
+        if (viewActions) {
+            viewActions.hidden = true;
+            viewActions.style.display = "none";
+            viewActions.classList.add("d-none");
+        }
+        if (exportActions) {
+            exportActions.hidden = false;
+            exportActions.style.display = "block";
+            exportActions.classList.remove("d-none");
+        }
     } else {
         if (modalIcon) modalIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>';
         if (modalTitle) modalTitle.textContent = "View Monthly Report";
         if (modalSubtitle) modalSubtitle.textContent = "Account inception:";
-        if (viewActions) viewActions.style.display = "block";
-        if (exportActions) exportActions.style.display = "none";
+        if (viewActions) {
+            viewActions.hidden = false;
+            viewActions.style.display = "block";
+            viewActions.classList.remove("d-none");
+        }
+        if (exportActions) {
+            exportActions.hidden = true;
+            exportActions.style.display = "none";
+            exportActions.classList.add("d-none");
+        }
     }
 }
 

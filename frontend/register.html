@@ -367,13 +367,13 @@
                     </div>
 
 
-                    <button type="button" class="btn-secondary btn-full btn-send-otp" id="sendOtpBtn">
+                    <button type="button" class="btn-secondary btn-full btn-send-otp" id="sendOtpBtn" hidden style="display:none;">
                         <span>Send Verification Code</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     </button>
 
                     <!-- OTP Step (hidden until Send OTP is clicked) -->
-                    <div class="form-group form-group-hidden" id="otpGroup">
+                    <div class="form-group" id="otpGroup" hidden style="display:none;">
                         <div class="form-label-row">
                             <label class="form-label" for="reg-otp">
                                 <span class="step-dot highlight"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
