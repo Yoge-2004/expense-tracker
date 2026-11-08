@@ -139,8 +139,8 @@ test.describe('Critical UI regressions', () => {
       return { dark, light };
     });
 
-    expect(colors.dark).toBe('#C0565E');
-    expect(colors.light).toBe('#B54858');
+    expect(colors.dark.toUpperCase()).toBe('#C0565E');
+    expect(colors.light.toUpperCase()).toBe('#B54858');
     expect(colors.dark).not.toBe('#8B5CF6');
     expect(colors.light).not.toBe('#7C3AED');
   });

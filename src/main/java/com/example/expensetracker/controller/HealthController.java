@@ -1,23 +1,24 @@
 package com.example.expensetracker.controller;
 
+import com.example.expensetracker.resilience.FallbackRecoveryCoordinator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.poi.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringBootVersion;
 import org.springframework.core.SpringVersion;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.sql.DataSource;
 import java.lang.management.ManagementFactory;
-import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,13 +33,65 @@ public class HealthController {
 
     private static final Logger log = LoggerFactory.getLogger(HealthController.class);
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
+
+    /** Optional: absent when the app runs against a single database. */
+    @Autowired(required = false)
+    private FallbackRecoveryCoordinator fallbackCoordinator;
 
     @Value("${app.database.mode:PRIMARY}")
     private String databaseMode;
 
-    public HealthController(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public HealthController(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Operation(summary = "Get system health status",
+               description = "Checks database connectivity, JVM memory, and system uptime.")
+    @SecurityRequirements
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> getHealth() {
+        Map<String, Object> statusMap = new HashMap<>();
+        long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
+        statusMap.put("uptimeMs", uptime);
+
+        Runtime runtime = Runtime.getRuntime();
+        Map<String, Object> memoryMap = new HashMap<>();
+        memoryMap.put("totalMemoryBytes", runtime.totalMemory());
+        memoryMap.put("freeMemoryBytes", runtime.freeMemory());
+        memoryMap.put("maxMemoryBytes", runtime.maxMemory());
+        statusMap.put("memory", memoryMap);
+
+        boolean dbUp = false;
+        try {
+            //noinspection SqlNoDataSourceInspection
+            Integer result = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
+            dbUp = result != null && result == 1;
+        } catch (Exception ex) {
+            log.error("Database health check probe failed: {}", ex.getMessage());
+        }
+
+        if (dbUp) {
+            log.debug("System health check probe passed: UP, uptimeMs={}", uptime);
+            statusMap.put("status", "UP");
+            statusMap.put("database", "UP");
+            if (fallbackCoordinator != null && fallbackCoordinator.isActive()) {
+                String mode = fallbackCoordinator.mode().name();
+                statusMap.put("databaseMode", mode);
+            } else {
+                statusMap.put("databaseMode", databaseMode);
+            }
+            if (!"PRIMARY".equals(databaseMode)) {
+                statusMap.put("warning", "Running in fallback mode with in-memory H2 database. Data will not persist across restarts.");
+                statusMap.put("message", "Primary database unavailable; serving the emergency fallback.");
+            }
+            return ResponseEntity.ok(statusMap);
+        } else {
+            statusMap.put("status", "DOWN");
+            statusMap.put("database", "DOWN");
+            statusMap.put("message", "Database service is unavailable.");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(statusMap);
+        }
     }
 
     @Operation(summary = "Liveness probe", description = "Checks whether the service process is up and responding.")
@@ -55,35 +108,7 @@ public class HealthController {
     @SecurityRequirements
     @GetMapping("/ready")
     public ResponseEntity<Map<String, Object>> readiness() {
-        Map<String, Object> statusMap = new HashMap<>();
-        long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
-        statusMap.put("uptimeMs", uptime);
-
-        boolean dbHealthy = false;
-        try (Connection conn = dataSource.getConnection()) {
-            dbHealthy = conn.isValid(2);
-        } catch (Exception e) {
-            log.warn("Health check database probe failed: {}", e.getMessage());
-        }
-
-        if (dbHealthy) {
-            statusMap.put("status", "UP");
-            statusMap.put("database", "UP");
-            statusMap.put("databaseMode", databaseMode);
-            if (!"PRIMARY".equals(databaseMode)) {
-                statusMap.put("warning", "Running in fallback mode with in-memory H2 database. Data will not persist across restarts.");
-                if (!"PRIMARY".equals(databaseMode)) {
-                    statusMap.put("message", "Primary database unavailable; serving the emergency fallback.");
-                }
-            }
-            return ResponseEntity.ok(statusMap);
-        } else {
-            log.warn("System health check probe failed: DOWN, uptimeMs={}", uptime);
-            statusMap.put("status", "DOWN");
-            statusMap.put("database", "DOWN");
-            statusMap.put("message", "Database service is unavailable.");
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(statusMap);
-        }
+        return getHealth();
     }
 
     @Operation(summary = "Get dynamic system architecture specification",
