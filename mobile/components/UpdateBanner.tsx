@@ -1,7 +1,7 @@
 /**
  * @file UpdateBanner.tsx
- * @description A slim bar at the very top of the app that says a newer version is available.
- * It stays for as long as the update is pending and opens the update popup when tapped.
+ * @description A slim bar at the very top of the app that says a newer version is available,
+ * or indicates background download progress and install readiness. Follows dynamic theme colors.
  */
 
 import React from 'react';
@@ -13,11 +13,11 @@ import { useUpdate } from '../context/UpdateContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { Colors, readableTextColor } from '../constants/theme';
 
-export default function UpdateBanner() {
-  const { info, hasUpdate, openPrompt } = useUpdate();
+export const UpdateBanner: React.FC = React.memo(() => {
+  const { info, hasUpdate, openPrompt, isDownloading, downloadProgress, readyFileUri } = useUpdate();
   const { theme, themeColors } = usePreferences();
   const c = themeColors || Colors[theme || 'dark'];
-  const bannerBg = c.primary;
+  const bannerBg = readyFileUri ? c.teal : c.primary;
   const bannerInk = c.onPrimary || readableTextColor(bannerBg);
   const insets = useSafeAreaInsets();
 
@@ -25,25 +25,53 @@ export default function UpdateBanner() {
     return null;
   }
 
+  const percent = downloadProgress?.percent || 0;
+
   return (
     <Pressable
       onPress={openPrompt}
       accessibilityRole="button"
-      accessibilityLabel={`Update available, version ${info.latestVersion}. Tap to update.`}
+      accessibilityLabel={
+        readyFileUri
+          ? `Update ready to install, version ${info.latestVersion}. Tap to install.`
+          : isDownloading
+          ? `Downloading update, ${percent}% completed. Tap to view.`
+          : `Update available, version ${info.latestVersion}. Tap to update.`
+      }
       style={[styles.banner, { backgroundColor: bannerBg, paddingTop: insets.top + 8 }]}
     >
       <View style={styles.row}>
-        <Ionicons name="cloud-download-outline" size={18} color={bannerInk} />
+        <Ionicons
+          name={
+            readyFileUri
+              ? 'checkmark-circle'
+              : isDownloading
+              ? 'cloud-download-outline'
+              : 'sparkles-outline'
+          }
+          size={18}
+          color={bannerInk}
+        />
         <Text style={[styles.text, { color: bannerInk }]} numberOfLines={1}>
-          Update available · {info.latestVersion}
+          {readyFileUri
+            ? `Update ready · v${info.latestVersion}`
+            : isDownloading
+            ? `Downloading update… ${percent}%`
+            : `Update available · v${info.latestVersion}`}
         </Text>
         <View style={[styles.cta, { backgroundColor: bannerInk }]}>
-          <Text style={[styles.ctaText, { color: bannerBg }]}>Update</Text>
+          <Text style={[styles.ctaText, { color: bannerBg }]}>
+            {readyFileUri ? 'Install' : isDownloading ? 'View' : 'Update'}
+          </Text>
         </View>
       </View>
     </Pressable>
   );
-}
+});
+
+UpdateBanner.displayName = 'UpdateBanner';
+
+export default UpdateBanner;
 
 const styles = StyleSheet.create({
   banner: {

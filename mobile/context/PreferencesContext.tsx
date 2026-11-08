@@ -96,15 +96,45 @@ function readableTextForSurfaces(...surfaces: string[]): string {
   return minimumContrast('#FFFFFF') >= minimumContrast('#0F172A') ? '#FFFFFF' : '#0F172A';
 }
 
+const THEME_CACHE_LIMIT = 60;
+const themeColorsCache = new Map<string, ThemeColors>();
+
+export function clearThemeColorsCache(): void {
+  themeColorsCache.clear();
+}
+
+function getThemeCacheKey(
+  theme: 'dark' | 'light',
+  customPalette: ExtractedPalette | null,
+  presetId = 'default'
+): string {
+  if (!customPalette) {
+    return `${theme}::preset::${presetId}`;
+  }
+  return `${theme}::custom::${customPalette.primary || ''}_${customPalette.accent || ''}_${customPalette.highlight || ''}_${customPalette.card || ''}_${customPalette.surface || ''}`;
+}
+
 export function createThemeColors(
   theme: 'dark' | 'light',
   customPalette: ExtractedPalette | null,
   presetId = 'default'
 ): ThemeColors {
+  const cacheKey = getThemeCacheKey(theme, customPalette, presetId);
+  const cached = themeColorsCache.get(cacheKey);
+  if (cached) return cached;
+
   const baseColors = Colors[theme];
+  // When no custom palette and default preset, strictly return the pristine default theme colors
+  if (!customPalette && (!presetId || presetId === 'default')) {
+    themeColorsCache.set(cacheKey, baseColors);
+    return baseColors;
+  }
   const preset = PRESET_BACKGROUNDS.find((item) => item.id === presetId) || PRESET_BACKGROUNDS[0];
   const activePalette = customPalette ?? (theme === 'light' ? preset.lightPalette : preset.darkPalette);
-  if (!activePalette) return baseColors;
+  if (!activePalette) {
+    themeColorsCache.set(cacheKey, baseColors);
+    return baseColors;
+  }
 
   const isLight = theme === 'light';
 
@@ -162,7 +192,7 @@ export function createThemeColors(
   // (activePalette.paletteColors) are only a picker for the studio and must not recolour the app's data.
   const paletteColors = buildCategoryPalette([primary, accent, highlight, primaryGradientEnd], cardSurface);
 
-  return {
+  const computedColors: ThemeColors = {
     ...baseColors,
     primary,
     primaryGradientEnd,
@@ -186,18 +216,20 @@ export function createThemeColors(
     surface: appSurface,
     surfaceHover: blendThemeSurface(baseColors.surfaceHover, primary, 0.08),
     bg: appSurface,
-    inputBg: isLight ? blendThemeSurface(cardSurface, appSurface, 0.35) : blendThemeSurface(baseColors.inputBg, cardSurface, 0.22),
-    fillSubtle: blendThemeSurface(cardSurface, textColor, 0.07),
-    fillStrong: blendThemeSurface(cardSurface, textColor, 0.14),
+    inputBg: isLight
+      ? blendThemeSurface(cardSurface, primary, 0.05)
+      : blendThemeSurface(cardSurface, primary, 0.12),
+    fillSubtle: blendThemeSurface(cardSurface, primary, isLight ? 0.07 : 0.14),
+    fillStrong: blendThemeSurface(cardSurface, primary, isLight ? 0.14 : 0.22),
     keyBg: isLight ? cardSurface : blendThemeSurface(cardSurface, textColor, 0.08),
     onSuccess: readableTextForSurfaces(success),
     onWarning: readableTextForSurfaces(warning),
     onDanger: readableTextForSurfaces(danger),
     onAccent: readableTextForSurfaces(accent),
     onHighlight: readableTextForSurfaces(highlight),
-    border: isLight ? 'rgba(15, 23, 42, 0.09)' : 'rgba(236, 231, 216, 0.09)',
-    borderAccent: primary + '80',
-    inputBorder: primary + '33',
+    border: isLight ? 'rgba(15, 23, 42, 0.07)' : 'rgba(236, 231, 216, 0.07)',
+    borderAccent: activePalette.borderAccent || (primary + '40'),
+    inputBorder: isLight ? 'rgba(15, 23, 42, 0.10)' : 'rgba(236, 231, 216, 0.10)',
     trackBg: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
     scrollThumb: primary + '80',
     cardTotalBg: primary + '1F',
@@ -205,14 +237,56 @@ export function createThemeColors(
     cardCountBg: accent + '1F',
     cardCountBorder: accent + '52',
   };
+
+  if (themeColorsCache.size >= THEME_CACHE_LIMIT) {
+    const firstKey = themeColorsCache.keys().next().value;
+    if (firstKey) themeColorsCache.delete(firstKey);
+  }
+  themeColorsCache.set(cacheKey, computedColors);
+  return computedColors;
+}
+
+// Pre-warm default and preset theme color schemes for instant 0ms toggle performance
+for (const p of PRESET_BACKGROUNDS) {
+  createThemeColors('dark', null, p.id);
+  createThemeColors('light', null, p.id);
+}
+
+export function resolveActiveFonts(
+  fontChoice: FontChoice,
+  customFontFamily?: string | null
+): FontTokens {
+  if (fontChoice === 'custom') {
+    if (customFontFamily && customFontFamily.trim()) {
+      return {
+        display: customFontFamily,
+        displaySemiBold: customFontFamily,
+        body: customFontFamily,
+        bodyMedium: customFontFamily,
+        bodySemiBold: customFontFamily,
+        bodyBold: customFontFamily,
+        mono: 'IBMPlexMono_400Regular',
+        monoMedium: 'IBMPlexMono_500Medium',
+        monoSemiBold: 'IBMPlexMono_600SemiBold',
+      };
+    }
+    return FontPresets.grotesk;
+  }
+  return FontPresets[fontChoice] || FontPresets.grotesk;
 }
 
 export function PreferencesProvider({
   children,
   initialTheme,
+  initialPalette,
+  initialBgAsset,
+  initialThemeColors,
 }: {
   children: React.ReactNode;
   initialTheme?: 'dark' | 'light';
+  initialPalette?: ExtractedPalette | null;
+  initialBgAsset?: BackgroundAssetConfig | null;
+  initialThemeColors?: ThemeColors;
 }) {
   const systemScheme = useColorScheme();
   const [theme, setTheme] = useState<'dark' | 'light'>(
@@ -225,9 +299,15 @@ export function PreferencesProvider({
   // Appearance Studio states
   const [fontChoice, setFontChoiceState] = useState<FontChoice>('grotesk');
   const [customFontFamily, setCustomFontFamilyState] = useState<string | null>(null);
-  const [backgroundAsset, setBackgroundAssetState] = useState<BackgroundAssetConfig>(DEFAULT_BG_ASSET);
-  const [customPalette, setCustomPaletteState] = useState<ExtractedPalette | null>(null);
-  const [appearanceLoaded, setAppearanceLoaded] = useState(false);
+  const [backgroundAsset, setBackgroundAssetState] = useState<BackgroundAssetConfig>(
+    initialBgAsset ?? DEFAULT_BG_ASSET
+  );
+  const [customPalette, setCustomPaletteState] = useState<ExtractedPalette | null>(
+    initialPalette ?? null
+  );
+  const [appearanceLoaded, setAppearanceLoaded] = useState(
+    Boolean(initialTheme || initialPalette || initialBgAsset)
+  );
 
   useEffect(() => {
     if (initialTheme && !userToggledThemeRef.current && initialTheme !== theme) {
@@ -428,8 +508,18 @@ export function PreferencesProvider({
     };
   }, [syncAppearanceFromCloud]);
 
+  const isTogglingRef = useRef(false);
   const toggleTheme = useCallback(async (): Promise<void> => {
+    if (isTogglingRef.current) return;
+    isTogglingRef.current = true;
     userToggledThemeRef.current = true;
+
+    // Reset custom palette and background asset to default so theme toggle returns to pure default themes
+    setCustomPaletteState(null);
+    setBackgroundAssetState(DEFAULT_BG_ASSET);
+    safeStorageSet('app_custom_palette', '').catch(() => {});
+    safeStorageSet('app_bg_asset', JSON.stringify(DEFAULT_BG_ASSET)).catch(() => {});
+
     setTheme((prevTheme) => {
       const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
       persistSavedTheme(nextTheme).catch((e) => {
@@ -437,7 +527,16 @@ export function PreferencesProvider({
       });
       return nextTheme;
     });
-  }, []);
+
+    void pushAppearanceToCloud({
+      bg: DEFAULT_BG_ASSET,
+      palette: null,
+    });
+
+    requestAnimationFrame(() => {
+      isTogglingRef.current = false;
+    });
+  }, [pushAppearanceToCloud]);
 
   const toggleStealthMode = useCallback(async (): Promise<void> => {
     setIsStealthMode((prev) => {
@@ -539,22 +638,10 @@ export function PreferencesProvider({
     });
   }, [pushAppearanceToCloud]);
 
-  const activeFonts = useMemo(() => {
-    if (fontChoice === 'custom' && customFontFamily && Font.isLoaded(customFontFamily)) {
-      return {
-        display: customFontFamily,
-        displaySemiBold: customFontFamily,
-        body: customFontFamily,
-        bodyMedium: customFontFamily,
-        bodySemiBold: customFontFamily,
-        bodyBold: customFontFamily,
-        mono: 'IBMPlexMono_400Regular',
-        monoMedium: 'IBMPlexMono_500Medium',
-        monoSemiBold: 'IBMPlexMono_600SemiBold',
-      };
-    }
-    return FontPresets[fontChoice] || FontPresets.grotesk;
-  }, [fontChoice, customFontFamily]);
+  const activeFonts = useMemo(
+    () => resolveActiveFonts(fontChoice, customFontFamily),
+    [fontChoice, customFontFamily]
+  );
 
   const themeColors = useMemo(
     () => createThemeColors(theme, customPalette, backgroundAsset.presetId),

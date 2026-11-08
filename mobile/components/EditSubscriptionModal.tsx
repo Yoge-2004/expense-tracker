@@ -4,7 +4,7 @@
  * including cadence (Daily, Weekly, Monthly, Yearly, Custom days), amount, and due dates.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -14,8 +14,7 @@ import {
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
-import { ThemedTextInput as TextInput } from './ThemedText';
-import { ThemedText as Text } from './ThemedText';
+import { ThemedTextInput as TextInput , ThemedText as Text } from './ThemedText';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { Colors, getCategoryIconName } from '../constants/theme';
@@ -28,6 +27,15 @@ import * as Haptics from 'expo-haptics';
 interface Category {
   id: number;
   name: string;
+}
+
+interface SubscriptionUpdatePayload {
+  description: string;
+  amount: number;
+  categoryId: number;
+  frequency: string;
+  nextDueDate?: string;
+  intervalDays?: number;
 }
 
 interface Subscription {
@@ -80,7 +88,9 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
   const [nextDueDate, setNextDueDate] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  const [prevSub, setPrevSub] = useState(subscription);
+  if (prevSub !== subscription) {
+    setPrevSub(subscription);
     if (subscription) {
       setDesc(subscription.description || '');
       setAmount(String(subscription.amount || ''));
@@ -89,7 +99,7 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
       setIntervalDays(String(subscription.intervalDays || '30'));
       setNextDueDate(subscription.nextDueDate ? subscription.nextDueDate.split('T')[0] : '');
     }
-  }, [subscription, categories]);
+  }
 
   /**
    * Validates and submits the updated recurring subscription payload.
@@ -110,7 +120,7 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
       return;
     }
 
-    const payload: any = {
+    const payload: SubscriptionUpdatePayload = {
       description: desc.trim(),
       amount: numAmt,
       categoryId,
@@ -136,8 +146,9 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       onUpdated();
       onClose();
-    } catch (e: any) {
-      showAlert('Update Failed', e.message || 'Could not update subscription.');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Could not update subscription.';
+      showAlert('Update Failed', msg);
     } finally {
       setSaving(false);
     }

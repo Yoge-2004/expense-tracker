@@ -1,12 +1,8 @@
 /**
  * @file UpdateContext.tsx
- * @description Knows whether a newer version of the app has been published and decides when to tell the user.
- *
- * - On launch it checks GitHub Releases (falling back to the last known answer when offline) and, if an update
- *   exists, opens the update popup once for that launch.
- * - While an update exists the banner at the top of the app stays visible; tapping it reopens the popup.
- * - It re-checks quietly when the app returns to the foreground after a while, and opens the popup when the
- *   user taps the server's "update available" push notification.
+ * @description Knows whether a newer version of the app has been published and manages
+ * the update lifecycle, including non-aborting background downloading, resume capability,
+ * and user-controlled "Install Now" or "Install Later (on app exit)" options.
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -19,17 +15,30 @@ import {
   loadCachedUpdate,
   saveCachedUpdate,
   withCurrentVersion,
+  DownloadProgress,
+  downloadUpdateApk,
+  installDownloadedApk,
+  checkExistingCompleteApk,
 } from '../services/appUpdate';
 import { registerAppUpdateTapListener } from '../services/notifications';
 
 const RECHECK_AFTER_MS = 30 * 60 * 1000;
 
-interface UpdateContextValue {
+export interface UpdateContextValue {
   /** Details of the newer version, or null when the app is up to date (or nothing is known yet). */
   info: AppReleaseInfo | null;
   hasUpdate: boolean;
   openPrompt: () => void;
   closePrompt: () => void;
+  // Resilient background download & install lifecycle
+  isDownloading: boolean;
+  downloadProgress: DownloadProgress | null;
+  downloadError: string | null;
+  readyFileUri: string | null;
+  startDownload: () => Promise<void>;
+  installNow: () => Promise<void>;
+  installLater: () => void;
+  dismissError: () => void;
 }
 
 const UpdateContext = createContext<UpdateContextValue>({
@@ -37,6 +46,14 @@ const UpdateContext = createContext<UpdateContextValue>({
   hasUpdate: false,
   openPrompt: () => undefined,
   closePrompt: () => undefined,
+  isDownloading: false,
+  downloadProgress: null,
+  downloadError: null,
+  readyFileUri: null,
+  startDownload: async () => undefined,
+  installNow: async () => undefined,
+  installLater: () => undefined,
+  dismissError: () => undefined,
 });
 
 export const useUpdate = (): UpdateContextValue => useContext(UpdateContext);
@@ -44,6 +61,11 @@ export const useUpdate = (): UpdateContextValue => useContext(UpdateContext);
 export function UpdateProvider({ children }: { children: React.ReactNode }) {
   const [info, setInfo] = useState<AppReleaseInfo | null>(null);
   const [promptVisible, setPromptVisible] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [readyFileUri, setReadyFileUri] = useState<string | null>(null);
+
   const launchPromptDone = useRef(false);
   const lastCheckAt = useRef(0);
   const inFlight = useRef<Promise<AppReleaseInfo | null> | null>(null);
@@ -66,6 +88,14 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
       }
       const pending = known && known.hasUpdate ? known : null;
       setInfo(pending);
+
+      // Check if existing file is already complete on device
+      if (pending?.apkSize) {
+        const existing = await checkExistingCompleteApk(pending.apkSize);
+        if (existing) {
+          setReadyFileUri(existing);
+        }
+      }
       return pending;
     })().finally(() => {
       inFlight.current = null;
@@ -83,6 +113,10 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
         const rebased = withCurrentVersion(cached, CURRENT_APP_VERSION);
         if (rebased.hasUpdate) {
           setInfo(rebased);
+          if (rebased.apkSize) {
+            const existing = await checkExistingCompleteApk(rebased.apkSize);
+            if (existing && !cancelled) setReadyFileUri(existing);
+          }
         }
       }
       const known = await check();
@@ -121,9 +155,71 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
   const openPrompt = useCallback(() => setPromptVisible(true), []);
   const closePrompt = useCallback(() => setPromptVisible(false), []);
 
+  const startDownload = useCallback(async (): Promise<void> => {
+    if (!info?.apkDownloadUrl) return;
+    setIsDownloading(true);
+    setDownloadError(null);
+    try {
+      const localFile = await downloadUpdateApk(
+        info.apkDownloadUrl,
+        (progress) => setDownloadProgress(progress),
+        info.apkSize
+      );
+      setReadyFileUri(localFile);
+      setIsDownloading(false);
+      // Prompt user with choices when download completes
+      setPromptVisible(true);
+    } catch (e: unknown) {
+      setDownloadError(e instanceof Error ? e.message : 'The download did not finish.');
+      setIsDownloading(false);
+    }
+  }, [info]);
+
+  const installNow = useCallback(async (): Promise<void> => {
+    if (!readyFileUri) return;
+    try {
+      await installDownloadedApk(readyFileUri, info?.apkSize);
+    } catch (e: unknown) {
+      setDownloadError(e instanceof Error ? e.message : 'Could not launch package installer.');
+    }
+  }, [readyFileUri, info]);
+
+  const installLater = useCallback((): void => {
+    setPromptVisible(false);
+  }, []);
+
+  const dismissError = useCallback((): void => {
+    setDownloadError(null);
+  }, []);
+
   const value = useMemo<UpdateContextValue>(
-    () => ({ info, hasUpdate: !!info, openPrompt, closePrompt }),
-    [info, openPrompt, closePrompt]
+    () => ({
+      info,
+      hasUpdate: !!info,
+      openPrompt,
+      closePrompt,
+      isDownloading,
+      downloadProgress,
+      downloadError,
+      readyFileUri,
+      startDownload,
+      installNow,
+      installLater,
+      dismissError,
+    }),
+    [
+      info,
+      openPrompt,
+      closePrompt,
+      isDownloading,
+      downloadProgress,
+      downloadError,
+      readyFileUri,
+      startDownload,
+      installNow,
+      installLater,
+      dismissError,
+    ]
   );
 
   return (

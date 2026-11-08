@@ -6,6 +6,7 @@
 
 /* Keep grain static; blending over the animated canvas causes repeated full-viewport recompositing. */
 .grain-overlay {
+  display: none !important;
   position: fixed;
   inset: 0;
   pointer-events: none;

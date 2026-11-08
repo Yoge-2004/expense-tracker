@@ -12,11 +12,13 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import type * as NotificationsType from 'expo-notifications';
 import { planDueReminders, planMonthEndReminders, ReminderSources, REMINDER_ID_PREFIX } from '../utils/reminderPlan';
 import { getCurrencySymbol } from './currency';
 import { apiRequest, getSession, invalidateApiCache } from './api';
 import { parseFinancialMessage, ParsedTransaction } from './debitParser';
 import { APP_UPDATE_ROUTE, CURRENT_APP_VERSION } from './appUpdate';
+import { LoanAdjustment } from './loans';
 
 const REMINDERS_STORAGE_KEY = 'expense_tracker_daily_reminders_enabled';
 const MIDDAY_NOTIFICATION_ID = 'daily_midday_expense_reminder';
@@ -30,6 +32,12 @@ export const CUSTOM_NOTIFICATION_SOUND = 'custom_chime.wav';
 export const DEBIT_CHANNEL_ID = 'debit-alerts';
 export const ALERTS_CHANNEL_ID = 'financial-alerts';
 export const REMINDERS_CHANNEL_ID = 'expense-reminders';
+
+interface NotificationCategory {
+  id: number;
+  name: string;
+  [key: string]: unknown;
+}
 
 export async function getNotificationSoundEnabled(): Promise<boolean> {
   try {
@@ -71,8 +79,6 @@ export function formatNotificationAmount(
   return isAlphaCode ? `${symbol} ${formatted}` : `${symbol}${formatted}`;
 }
 
-
-
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 /**
@@ -89,10 +95,10 @@ async function serverPushActive(): Promise<boolean> {
 }
 
 // Conditionally load expo-notifications only outside Expo Go to prevent top-level console error
-let Notifications: any = null;
+let Notifications: typeof NotificationsType | null = null;
 if (!isExpoGo) {
   try {
-    Notifications = require('expo-notifications');
+    Notifications = require('expo-notifications') as typeof NotificationsType;
     Notifications.setNotificationHandler({
       handleNotification: async () => {
         let playSound = true;
@@ -288,10 +294,7 @@ export async function getDailyRemindersEnabled(): Promise<boolean> {
 // Real-time Debit Alerts & Notification-based Expense Tracking
 // ---------------------------------------------------------------------------------------------------
 
-// imports moved to top
 export { parseFinancialMessage, ParsedTransaction };
-
-// Channel IDs moved to top of file
 
 /**
  * Checks if automatic real-time debit detection and alerts are enabled.
@@ -448,9 +451,9 @@ export async function detectAndAddExpenseFromMessage(
           apiRequest('/categories/global'),
           apiRequest(`/categories/user/${uid}`),
         ]);
-        const allCats = [
-          ...(globalCats.status === 'fulfilled' && Array.isArray(globalCats.value) ? globalCats.value : []),
-          ...(userCats.status === 'fulfilled' && Array.isArray(userCats.value) ? userCats.value : []),
+        const allCats: NotificationCategory[] = [
+          ...(globalCats.status === 'fulfilled' && Array.isArray(globalCats.value) ? (globalCats.value as NotificationCategory[]) : []),
+          ...(userCats.status === 'fulfilled' && Array.isArray(userCats.value) ? (userCats.value as NotificationCategory[]) : []),
         ];
 
         const merchantLower = (parsed.merchant || '').toLowerCase();
@@ -464,7 +467,7 @@ export async function detectAndAddExpenseFromMessage(
           });
           if (mlRes?.category && (typeof mlRes.confidence !== 'number' || mlRes.confidence >= 0.40)) {
             const mlCatNormalized = String(mlRes.category).toLowerCase().replace(/[_-]/g, ' ');
-            const matched = allCats.find((c: any) => {
+            const matched = allCats.find((c: NotificationCategory) => {
               const name = (c.name || '').toLowerCase().replace(/[_-]/g, ' ');
               return name === mlCatNormalized || name.includes(mlCatNormalized) || mlCatNormalized.includes(name);
             });
@@ -476,7 +479,7 @@ export async function detectAndAddExpenseFromMessage(
 
         // 2. Keyword heuristic fallback
         if (!matchedCategoryId && merchantLower) {
-          const matched = allCats.find((c: any) => {
+          const matched = allCats.find((c: NotificationCategory) => {
             const name = (c.name || '').toLowerCase();
             return merchantLower.includes(name) || name.includes(merchantLower);
           });
@@ -619,12 +622,12 @@ export async function processIncomingFinancialMessage(
 export function registerIncomingNotificationListener(userId?: string | null) {
   if (isExpoGo || !Notifications) return null;
   try {
-    const handleNotification = async (notification: any) => {
+    const handleNotification = async (notification: NotificationsType.Notification) => {
       if (!notification) return;
 
       // 1. Guard against internal app-generated payloads
       const data = notification?.request?.content?.data;
-      if (data?.appInternal) return;
+      if (data && typeof data === 'object' && 'appInternal' in data && data.appInternal) return;
 
       const identifier = notification?.request?.identifier;
       if (typeof identifier === 'string' && (identifier.startsWith(REMINDER_ID_PREFIX) || identifier.startsWith('daily_'))) {
@@ -632,7 +635,8 @@ export function registerIncomingNotificationListener(userId?: string | null) {
       }
 
       // 2. Guard against app channels
-      const channelId = notification?.request?.content?.channelId;
+      const content = notification?.request?.content;
+      const channelId = content && 'channelId' in content ? (content as { channelId?: string | null }).channelId : undefined;
       if (channelId === DEBIT_CHANNEL_ID || channelId === REMINDERS_CHANNEL_ID || channelId === ALERTS_CHANNEL_ID) {
         return;
       }
@@ -659,16 +663,18 @@ export function registerIncomingNotificationListener(userId?: string | null) {
     };
 
     const subReceived = Notifications.addNotificationReceivedListener(handleNotification);
-    const subResponse = Notifications.addNotificationResponseReceivedListener((response: any) => {
-      void handleNotification(response?.notification);
+    const subResponse = Notifications.addNotificationResponseReceivedListener((response: NotificationsType.NotificationResponse) => {
+      if (response?.notification) {
+        void handleNotification(response.notification);
+      }
     });
 
     // Capture any bank notification tapped while app was closed or backgrounded
-    Notifications.getLastNotificationResponseAsync?.().then((resp: any) => {
+    Notifications.getLastNotificationResponseAsync?.().then((resp: NotificationsType.NotificationResponse | null) => {
       if (resp?.notification) {
         void handleNotification(resp.notification);
       }
-    }).catch((e: any) => {
+    }).catch((e: unknown) => {
       console.debug('[Notifications] getLastNotificationResponse error:', e);
     });
 
@@ -830,6 +836,7 @@ let smartQueue: Promise<unknown> = Promise.resolve();
 
 /** Repeating reminders at fixed times. Built on demand because `Notifications` may be unavailable (Expo Go). */
 function fixedSmartReminders() {
+  if (!Notifications) return [];
   const types = Notifications.SchedulableTriggerInputTypes;
   return [
     {
@@ -854,19 +861,21 @@ function fixedSmartReminders() {
 }
 
 async function scheduleSmart(id: string, title: string, body: string, screen: string, trigger: Record<string, unknown>) {
+  if (!Notifications) return;
   await Notifications.scheduleNotificationAsync({
     identifier: id, // a stable id: scheduling again replaces the reminder instead of duplicating it
     content: { title, body, sound: await resolveNotificationSound(), color: '#D4AF37', data: { appInternal: true, screen } },
-    trigger: Platform.OS === 'android' ? { ...trigger, channelId: REMINDERS_CHANNEL_ID } : trigger,
+    trigger: (Platform.OS === 'android' ? { ...trigger, channelId: REMINDERS_CHANNEL_ID } : trigger) as NotificationsType.NotificationTriggerInput,
   });
 }
 
 async function cancelSmartMatching(keep: Set<string>): Promise<void> {
+  if (!Notifications) return;
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   await Promise.all(
     scheduled
-      .filter((n: any) => typeof n.identifier === 'string' && n.identifier.startsWith(REMINDER_ID_PREFIX) && !keep.has(n.identifier))
-      .map((n: any) => Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {}))
+      .filter((n: NotificationsType.NotificationRequest) => typeof n.identifier === 'string' && n.identifier.startsWith(REMINDER_ID_PREFIX) && !keep.has(n.identifier))
+      .map((n: NotificationsType.NotificationRequest) => Notifications!.cancelScheduledNotificationAsync(n.identifier).catch(() => {}))
   );
 }
 
@@ -1036,7 +1045,8 @@ export async function registerPushToken(userId: string): Promise<boolean> {
       });
     }
 
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? (Constants as any).easConfig?.projectId;
+    const easConfig = (Constants as unknown as { easConfig?: { projectId?: string } }).easConfig;
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? easConfig?.projectId;
     const token = (await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)).data;
     await apiRequest(`/notifications/user/${userId}/devices`, {
       method: 'POST',
@@ -1062,8 +1072,9 @@ export async function registerPushToken(userId: string): Promise<boolean> {
 export function registerAppUpdateTapListener(onTap: () => void): (() => void) | null {
   if (isExpoGo || !Notifications) return null;
   try {
-    const subscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
-      if (response?.notification?.request?.content?.data?.route === APP_UPDATE_ROUTE) {
+    const subscription = Notifications.addNotificationResponseReceivedListener((response: NotificationsType.NotificationResponse) => {
+      const data = response?.notification?.request?.content?.data as { route?: string } | undefined;
+      if (data?.route === APP_UPDATE_ROUTE) {
         onTap();
       }
     });
@@ -1090,7 +1101,7 @@ export async function unregisterPushToken(userId: string): Promise<void> {
 /**
  * Schedules customized collection/repayment reminders for unsettled peer loans & friend adjustments.
  */
-export async function scheduleLoanReminders(loans: any[], currSymbol: string = '₹'): Promise<void> {
+export async function scheduleLoanReminders(loans: LoanAdjustment[], currSymbol: string = '₹'): Promise<void> {
   if (isExpoGo || !Notifications) return;
   try {
     const hasPermission = await requestNotificationPermissions();

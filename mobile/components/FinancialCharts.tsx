@@ -42,8 +42,8 @@ function formatCompact(num: number, symbol: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-const EMPTY_EXPENSES: any[] = [];
-const EMPTY_BUDGETS: any[] = [];
+const EMPTY_EXPENSES: readonly never[] = [];
+const EMPTY_BUDGETS: readonly never[] = [];
 
 // 1. CATEGORY DONUT / RING CHART
 // ─────────────────────────────────────────────────────────────────────────────
@@ -338,7 +338,7 @@ export const RecurringSplitChart: React.FC<RecurringSplitProps> = React.memo(({ 
     for (let i = 0; i < safeExpenses.length; i++) {
       const e = safeExpenses[i];
       const amt = Math.max(0, Number(e.amount || 0));
-      if (e.isRecurring || e.recurring || (e as any).frequency) {
+      if (e.isRecurring || e.recurring || e.frequency) {
         rec += amt;
       } else {
         one += amt;
@@ -490,21 +490,23 @@ export const DayOfWeekChart: React.FC<DayOfWeekProps> = React.memo(({ expenses }
 // 5. BUDGET VS ACTUAL GOVERNANCE DUAL BARS
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface BudgetVsActualItem {
+  budgetId?: number;
+  categoryId: number;
+  categoryName: string;
+  limit: number;
+  spent: number;
+  percentage?: number;
+  period?: string;
+  intervalDays?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
 interface BudgetVsActualProps {
-  budgets: Array<{
-    budgetId?: number;
-    categoryId: number;
-    categoryName: string;
-    limit: number;
-    spent: number;
-    percentage?: number;
-    period?: string;
-    intervalDays?: number;
-    startDate?: string;
-    endDate?: string;
-  }>;
-  onEditBudget?: (budget: any) => void;
-  onDeleteBudget?: (budget: any) => void;
+  budgets: Array<BudgetVsActualItem>;
+  onEditBudget?: (budget: BudgetVsActualItem) => void;
+  onDeleteBudget?: (budget: BudgetVsActualItem) => void;
 }
 
 /**

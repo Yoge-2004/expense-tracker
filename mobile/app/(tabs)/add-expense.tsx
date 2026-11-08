@@ -4,7 +4,7 @@
  * and setting category spending caps. Composes isolated, domain-focused form tabs.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -81,7 +81,7 @@ export default function AddExpenseScreen() {
   }>();
 
   const isEditMode = Boolean(params.editId && params.editId !== 'undefined' && params.editId !== '');
-  const [activeTab, setActiveTab] = useState<'expense' | 'income' | 'savings' | 'budget'>('expense');
+  const [activeTab, setActiveTab] = useState<'expense' | 'income' | 'savings' | 'budget'>(() => params.editType || 'expense');
 
   // Categories hook
   const {
@@ -190,11 +190,13 @@ export default function AddExpenseScreen() {
   });
 
   // Synchronize active tab from route query params
-  useEffect(() => {
+  const [prevEditType, setPrevEditType] = useState(params.editType);
+  if (params.editType !== prevEditType) {
+    setPrevEditType(params.editType);
     if (params.editType) {
       setActiveTab(params.editType);
     }
-  }, [params.editType]);
+  }
 
   const resetToAddNew = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -230,6 +232,8 @@ export default function AddExpenseScreen() {
       <ImmersiveLoader
         message="Preparing Transaction Matrix..."
         subMessage="Synchronizing categories & financial tags"
+        customColors={c}
+        theme={theme}
       />
     );
   }
@@ -262,6 +266,11 @@ export default function AddExpenseScreen() {
               void loadCategories();
             }}
             tintColor={c.primary}
+            title="Updating Categories..."
+            titleColor={c.textMuted}
+            colors={[c.primary, c.accent]}
+            progressBackgroundColor={c.card}
+            progressViewOffset={Math.max(insets.top + 10, 48)}
           />
         }
       >

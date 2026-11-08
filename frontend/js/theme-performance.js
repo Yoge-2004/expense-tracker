@@ -299,7 +299,7 @@
 
             const applyBg = () => {
                 const bgs = document.querySelectorAll('.hero-bg, .auth-hero-bg');
-                const hasCustom = wpType === 'custom' && Boolean(wpUri);
+                const hasCustom = Boolean(wpUri && wpType !== 'none');
                 if (hasCustom) {
                     document.body?.classList.add('has-custom-wallpaper');
                     root.style.setProperty('--card-bg', isLight ? 'rgba(255, 255, 255, 0.76)' : 'rgba(23, 26, 20, 0.74)');

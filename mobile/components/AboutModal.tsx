@@ -22,7 +22,9 @@ import { useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Constants from 'expo-constants';
 import { FormattedReleaseNotes } from './FormattedReleaseNotes';
+import { fetchSystemArchitecture, SystemArchitectureSpec } from '../services/api';
 import {
   checkForAppUpdate,
   AppReleaseInfo,
@@ -44,6 +46,14 @@ export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
 
   const [updateInfo, setUpdateInfo] = useState<AppReleaseInfo | null>(null);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [archSpec, setArchSpec] = useState<SystemArchitectureSpec>({
+    springBootVersion: '4.1.2',
+    javaVersion: '27',
+    javaMajor: '27',
+    backendStack: 'Spring Boot 4.1.2 (Java 27)',
+    apachePoiVersion: '5.5.1',
+    virtualThreads: true,
+  });
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -62,9 +72,26 @@ export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
   };
 
   useEffect(() => {
+    let active = true;
     if (visible) {
-      void checkUpdate();
+      fetchSystemArchitecture()
+        .then((spec) => {
+          if (active) setArchSpec(spec);
+        })
+        .catch(() => {});
+
+      checkForAppUpdate()
+        .then((info) => {
+          if (active) setUpdateInfo(info);
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (active) setCheckingUpdate(false);
+        });
     }
+    return () => {
+      active = false;
+    };
   }, [visible]);
 
   const handleOpenRelease = () => {
@@ -96,6 +123,14 @@ export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
       setDownloading(false);
     }
   };
+
+  const rnConst = Platform.constants as { reactNativeVersion?: { major?: number; minor?: number } } | undefined;
+  const rnVersion = rnConst?.reactNativeVersion?.major !== undefined
+    ? `${rnConst.reactNativeVersion.major}.${rnConst.reactNativeVersion.minor}`
+    : (archSpec.mobileStack?.match(/React Native ([\d.]+)/)?.[1] || '0.88');
+  const expoSdk = Constants.expoConfig?.sdkVersion?.split('.')[0] || '58';
+  const reactVer = React.version ? React.version.split('.').slice(0, 2).join('.') : '19.3';
+  const dynamicMobileStack = `React Native ${rnVersion} (Expo SDK ${expoSdk} • React ${reactVer})`;
 
   const apkSizeText = updateInfo?.apkSize
     ? `${(updateInfo.apkSize / (1024 * 1024)).toFixed(1)} MB`
@@ -332,7 +367,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
             <View style={[styles.techCard, { backgroundColor: c.inputBg, borderColor: c.border }]}>
               <Text style={[styles.techTitle, { color: c.text }]}>Core Architecture</Text>
               <Text style={[styles.techSub, { color: c.textMuted }]}>
-                Spring Boot 4.1.1 (Java 27) &bull; React Native 0.88 (Expo SDK 58 &bull; React 19.3) &bull; TypeScript &bull; Apache POI &bull; Tesseract OCR
+                {`${archSpec.backendStack} • ${dynamicMobileStack} • TypeScript • Apache POI ${archSpec.apachePoiVersion} • Tesseract OCR`}
               </Text>
             </View>
           </ScrollView>

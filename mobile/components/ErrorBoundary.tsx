@@ -97,8 +97,9 @@ export class ErrorBoundary extends Component<Props, State> {
         title: 'ExpenseTracker_Crash_Report.txt',
         message: report,
       });
-    } catch (e: any) {
-      Alert.alert('Share Failed', e.message || 'Could not export crash diagnostics.');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Could not export crash diagnostics.';
+      Alert.alert('Share Failed', msg);
     }
   };
 
@@ -112,7 +113,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <SafeAreaView style={styles.safeArea}>
-          <StatusBar barStyle="light-content" {...({ backgroundColor: "#0D0F0C" } as any)} />
+          <StatusBar barStyle="light-content" />
           <View style={styles.container}>
             {/* Header Icon */}
             <View style={styles.iconBox}>

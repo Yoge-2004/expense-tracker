@@ -159,7 +159,8 @@
 }
 
 .form-group input:not([type="checkbox"]),
-.form-group select {
+.form-group select,
+.form-group textarea {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -172,6 +173,41 @@
   font-size: 14px;
   min-width: 0;
 }
+.form-group input:not([type="checkbox"]):focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.18);
+  outline: none;
+}
+
+.modal input[type="date"],
+.modal input[type="time"],
+.modal .form-group .dark-date,
+.modal-content input[type="date"],
+.modal-content .dark-date {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 13px 14px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-main);
+  outline: none;
+  font-size: 14px;
+  font-family: inherit;
+  color-scheme: dark;
+}
+
+[data-theme="light"] .modal input[type="date"],
+[data-theme="light"] .modal input[type="time"],
+[data-theme="light"] .modal .form-group .dark-date,
+[data-theme="light"] .modal-content input[type="date"],
+[data-theme="light"] .modal-content .dark-date {
+  color-scheme: light;
+}
+
 
 .form-group select {
   appearance: none;
@@ -892,7 +928,12 @@
     background-color var(--ease);
 }
 
-.field-input:focus,
+.field-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.18);
+  background: var(--input-bg);
+}
+
 #deleteConfirmInput:focus,
 .delete-confirm-field:focus {
   border-color: #a23e32;

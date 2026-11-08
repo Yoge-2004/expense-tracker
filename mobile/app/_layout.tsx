@@ -8,9 +8,9 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { AlertProvider, useAlert } from '../context/AlertContext';
 import { UpdateProvider, useUpdate } from '../context/UpdateContext';
-import UpdateBanner from '../components/UpdateBanner';
+import { UpdateBanner } from '../components/UpdateBanner';
 import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, StatusBar, useColorScheme, AppState, AppStateStatus, Platform } from 'react-native';
+import { View, StatusBar, useColorScheme, AppState, AppStateStatus } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as WebBrowser from 'expo-web-browser';
 import { useFonts } from 'expo-font';
@@ -43,14 +43,14 @@ import {
   formatNotificationAmount,
 } from '../services/notifications';
 import { readSavedTheme, safeStorageGet } from '../services/api';
-import { createThemeColors, usePreferences } from '../context/PreferencesContext';
+import { createThemeColors, usePreferences, BackgroundAssetConfig } from '../context/PreferencesContext';
 
 WebBrowser.maybeCompleteAuthSession();
 
 
 function RootLayoutNav() {
-  const { token, userId, isLoading, theme, themeColors, activeFonts: _activeFonts } = useAuth();
-  const { appearanceLoaded } = usePreferences();
+  const { token, userId, isLoading, theme, themeColors } = useAuth();
+  const { appearanceLoaded, backgroundAsset } = usePreferences();
   const { showAlert } = useAlert();
   const { hasUpdate } = useUpdate();
   const insets = useSafeAreaInsets();
@@ -96,7 +96,6 @@ function RootLayoutNav() {
     if (isLoading || !token || !userId) return;
 
     const checkClipboardForSms = async () => {
-      if (Platform.OS !== 'android') return;
       try {
         const enabled = await getInstantDebitAlertsEnabled();
         if (!enabled) return;
@@ -107,11 +106,11 @@ function RootLayoutNav() {
         const text = await Clipboard.getStringAsync();
         if (!text || text.length < 12 || text.length > 600) return;
         if (text === lastProcessedClipRef.current) return;
+        lastProcessedClipRef.current = text;
 
         const parsed = parseFinancialMessage(text);
         if (parsed.isFinancial && parsed.amount != null && parsed.amount > 0) {
           const amountVal = parsed.amount;
-          lastProcessedClipRef.current = text;
 
           const formattedAmt = formatNotificationAmount(amountVal, parsed.currency, 2);
           if (parsed.direction === 'DEBIT') {
@@ -191,6 +190,7 @@ function RootLayoutNav() {
         fullScreen
         customColors={themeColors}
         theme={theme}
+        backgroundAsset={backgroundAsset}
       />
     );
   }
@@ -230,6 +230,8 @@ export default function RootLayout() {
   const [themeLoaded, setThemeLoaded] = useState(false);
   const [initialTheme, setInitialTheme] = useState<'dark' | 'light'>(systemScheme === 'light' ? 'light' : 'dark');
   const [initialColors, setInitialColors] = useState<ThemeColors>(() => createThemeColors(systemScheme === 'light' ? 'light' : 'dark', null));
+  const [initialPalette, setInitialPalette] = useState<ExtractedPalette | null>(null);
+  const [initialBgAsset, setInitialBgAsset] = useState<BackgroundAssetConfig | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -258,6 +260,12 @@ export default function RootLayout() {
           console.debug('[AppLayout] Failed parsing savedBackground:', e);
         }
         setInitialTheme(resolvedTheme);
+        setInitialPalette(palette);
+        let bgConfig: BackgroundAssetConfig | null = null;
+        try {
+          if (savedBackground) bgConfig = JSON.parse(savedBackground);
+        } catch { /* ignore */ }
+        setInitialBgAsset(bgConfig);
         setInitialColors(createThemeColors(resolvedTheme, palette, presetId));
         setThemeLoaded(true);
       })
@@ -291,13 +299,19 @@ export default function RootLayout() {
         fullScreen
         customColors={initialColors}
         theme={initialTheme}
+        backgroundAsset={initialBgAsset ?? undefined}
       />
     );
   }
 
   return (
     <ErrorBoundary>
-      <AuthProvider initialTheme={initialTheme}>
+      <AuthProvider
+        initialTheme={initialTheme}
+        initialPalette={initialPalette}
+        initialBgAsset={initialBgAsset}
+        initialColors={initialColors}
+      >
         <AlertProvider>
           <UpdateProvider>
             <RootLayoutNav />

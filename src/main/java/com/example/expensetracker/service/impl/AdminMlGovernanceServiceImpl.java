@@ -1,5 +1,6 @@
 package com.example.expensetracker.service.impl;
 
+import com.example.expensetracker.dto.AdminLogEntryDto;
 import com.example.expensetracker.dto.AdminMlFeedbackItemDto;
 import com.example.expensetracker.dto.AdminMlStatsDto;
 import com.example.expensetracker.dto.MlClassificationRequest;
@@ -165,7 +166,7 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
         // Dynamically load real run history from manifests and automation runs
         List<Map<String, Object>> runs = loadAllRuns();
 
-        // Read real terminal execution logs from disk
+        // Read real terminal execution logs from disk or live Python engine (collapsing tqdm progress)
         String terminalLogs = loadTerminalLogs();
 
         Map<String, Object> automation = new LinkedHashMap<>();
@@ -251,7 +252,7 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    executionLogs.append(String.format("[%s] %s\n", Instant.now(), line));
+                    appendProcessLine(executionLogs, line);
                 }
             }
 
@@ -318,6 +319,52 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
         response.put("message", runMessage);
         response.put("logs", executionLogs.toString());
         return response;
+    }
+
+    private void appendProcessLine(StringBuilder sb, String line) {
+        if (line == null) return;
+        String clean = line.replace("\r", "").stripTrailing();
+        if (clean.isBlank()) return;
+
+        boolean isTqdm = isTqdmLine(clean);
+        if (isTqdm && sb.length() > 0) {
+            int lastNewline = sb.lastIndexOf("\n", sb.length() - 2);
+            String lastLine = (lastNewline >= 0) ? sb.substring(lastNewline + 1) : sb.toString();
+            if (isTqdmLine(lastLine)) {
+                int startReplace = (lastNewline >= 0) ? lastNewline + 1 : 0;
+                sb.replace(startReplace, sb.length(), String.format("[%s] %s\n", Instant.now(), clean));
+                return;
+            }
+        }
+        sb.append(String.format("[%s] %s\n", Instant.now(), clean));
+    }
+
+    public static String collapseTqdmProgress(String logText) {
+        if (logText == null || logText.isBlank()) return "";
+        String[] lines = logText.split("\\r?\\n");
+        List<String> result = new ArrayList<>();
+        boolean inProgress = false;
+
+        for (String line : lines) {
+            boolean isTqdm = isTqdmLine(line);
+            if (isTqdm) {
+                if (inProgress && !result.isEmpty()) {
+                    result.set(result.size() - 1, line);
+                } else {
+                    result.add(line);
+                    inProgress = true;
+                }
+            } else {
+                inProgress = false;
+                result.add(line);
+            }
+        }
+        return String.join("\n", result);
+    }
+
+    public static boolean isTqdmLine(String line) {
+        if (line == null) return false;
+        return line.contains("%|") || (line.contains("it/s") && line.contains("[")) || (line.contains("s/it") && line.contains("["));
     }
 
     private List<Map<String, Object>> buildDynamicFleet(boolean isOnline, Map<String, Object> auxModels) {
@@ -487,7 +534,8 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
         File logFile = new File("artifacts/automation-runs/retrain-execution.log");
         if (logFile.exists() && logFile.length() > 0) {
             try {
-                return Files.readString(logFile.toPath(), StandardCharsets.UTF_8);
+                String content = Files.readString(logFile.toPath(), StandardCharsets.UTF_8);
+                return collapseTqdmProgress(content);
             } catch (Exception e) {
                 log.warn("Failed to read retrain-execution.log: {}", e.getMessage());
             }
@@ -512,7 +560,21 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
             }
         }
 
-        return "[INFO] Retraining automation engine initialized. Waiting for trigger or scheduled run.";
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("[%s] [INFO] [expense_ml.engine] Retraining automation engine initialized.\n", Instant.now()));
+        sb.append(String.format("[%s] [INFO] [expense_ml.engine] Scheduled runner: Hugging Face uv-job (expense-tracker-ml-retrain) @ 0 2 * * *\n", Instant.now()));
+        sb.append(String.format("[%s] [INFO] [expense_ml.engine] Trigger gate: >= 500 approved user feedback corrections\n", Instant.now()));
+
+        List<AdminLogEntryDto> mlLogs = inferenceClient.getLogs(30, "INFO", null);
+        if (mlLogs != null && !mlLogs.isEmpty()) {
+            sb.append(String.format("[%s] [INFO] [expense_ml.engine] Live Python ML engine events:\n", Instant.now()));
+            for (AdminLogEntryDto entry : mlLogs) {
+                sb.append(String.format("[%s] [%s] [%s] %s\n", entry.timestamp(), entry.level(), entry.logger(), entry.message()));
+            }
+        } else {
+            sb.append(String.format("[%s] [INFO] [expense_ml.engine] Waiting for trigger or scheduled run.\n", Instant.now()));
+        }
+        return sb.toString();
     }
 
     private double readRealModelAccuracy() {

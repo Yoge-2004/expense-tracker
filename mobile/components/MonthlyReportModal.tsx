@@ -53,15 +53,36 @@ interface TransferProgressInfo {
   done?: boolean;
 }
 
+interface CategoryBreakdownItem {
+  categoryName: string;
+  totalAmount: number;
+  percentage: number;
+}
+
+interface TopExpenseItem {
+  description: string;
+  expenseDate: string;
+  categoryName?: string;
+  amount: number;
+}
+
+interface MonthlyReportData {
+  totalOutflow?: number;
+  dailyAverage?: number;
+  insights?: string[];
+  categoryBreakdown?: CategoryBreakdownItem[];
+  topExpenses?: TopExpenseItem[];
+}
+
 interface MonthlyReportModalProps {
   visible: boolean;
   onClose: () => void;
 }
 
 export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible, onClose }) => {
-  const { userId, userName, theme, currency } = useAuth();
+  const { userId, userName, theme, currency, themeColors } = useAuth();
   const { showAlert } = useAlert();
-  const c = Colors[theme || 'dark'];
+  const c = themeColors || Colors[theme || 'dark'];
   const currSym = getCurrencySymbol(currency);
 
   const { width } = useWindowDimensions();
@@ -85,7 +106,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
   const [transferProgress, setTransferProgress] = useState<TransferProgressInfo | null>(null);
 
   // Structured Report & HTML Preview state
-  const [reportData, setReportData] = useState<any>(null);
+  const [reportData, setReportData] = useState<MonthlyReportData | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
@@ -136,7 +157,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
     if (visible) {
       void determineInception();
     }
-  }, [visible, userId]);
+  }, [visible, userId, currentMonth, currentYear]);
 
   /**
    * Determines if a specific month in the selected year is selectable.
@@ -185,7 +206,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
       }
 
       setShowPreviewModal(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn('[MonthlyReportModal] Failed to generate monthly report:', err);
       const msg = err instanceof ApiError ? err.message : 'Could not generate report for the selected month.';
       showAlert('Report Unavailable', msg, undefined, 'error');
@@ -243,7 +264,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
         'success'
       );
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       const msg = err instanceof ApiError ? err.message : 'Could not dispatch monthly report email.';
       showAlert('Dispatch Failed', msg, undefined, 'error');
     } finally {
@@ -323,9 +344,10 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
         done: true,
       });
       setTimeout(() => setTransferProgress(null), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setTransferProgress(null);
-      showAlert('PDF Export Failed', err.message || 'Could not export PDF statement.', undefined, 'error');
+      const msg = err instanceof Error ? err.message : 'Could not export PDF statement.';
+      showAlert('PDF Export Failed', msg, undefined, 'error');
     } finally {
       setLoading(false);
     }
@@ -403,9 +425,10 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
         done: true,
       });
       setTimeout(() => setTransferProgress(null), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setTransferProgress(null);
-      showAlert('Excel Export Failed', err.message || 'Could not export Excel workbook.', undefined, 'error');
+      const msg = err instanceof Error ? err.message : 'Could not export Excel workbook.';
+      showAlert('Excel Export Failed', msg, undefined, 'error');
     } finally {
       setLoading(false);
     }
@@ -442,13 +465,14 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
             "text/html",
             "public.html"
           );
-        } catch (shareErr: any) {
+        } catch (shareErr: unknown) {
           console.warn('[MonthlyReportModal] Delayed share invocation error:', shareErr);
         }
       }, 300);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.warn('[MonthlyReportModal] File sharing failed:', e);
-      showAlert('Export Error', e.message || 'Could not export HTML statement file.', undefined, 'error');
+      const msg = e instanceof Error ? e.message : 'Could not export HTML statement file.';
+      showAlert('Export Error', msg, undefined, 'error');
     }
   };
 
@@ -766,7 +790,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
                   {Array.isArray(reportData.categoryBreakdown) && reportData.categoryBreakdown.length > 0 && (
                     <View style={[styles.reportSectionBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}><Ionicons name="pie-chart-outline" size={15} color={c.text} /><Text style={[styles.reportSectionTitle, { color: c.text, marginBottom: 0 }]}>Category Breakdown</Text></View>
-                      {reportData.categoryBreakdown.map((cat: any, idx: number) => (
+                      {reportData.categoryBreakdown.map((cat: CategoryBreakdownItem, idx: number) => (
                         <View key={idx} style={[styles.catRow, { borderBottomColor: c.border }]}>
                           <Text style={[styles.catRowName, { color: c.text }]}>{cat.categoryName}</Text>
                           <View style={styles.catRowRight}>
@@ -786,7 +810,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
                   {Array.isArray(reportData.topExpenses) && reportData.topExpenses.length > 0 && (
                     <View style={[styles.reportSectionBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}><Ionicons name="trending-down-outline" size={15} color={c.text} /><Text style={[styles.reportSectionTitle, { color: c.text, marginBottom: 0 }]}>Peak Outflow Transactions</Text></View>
-                      {reportData.topExpenses.map((exp: any, idx: number) => (
+                      {reportData.topExpenses.map((exp: TopExpenseItem, idx: number) => (
                         <View key={idx} style={[styles.topExpRow, { borderBottomColor: c.border }]}>
                           <View style={{ flex: 1 }}>
                             <Text style={[styles.topExpDesc, { color: c.text }]} numberOfLines={1}>

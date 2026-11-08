@@ -21,8 +21,7 @@ import {
   useWindowDimensions,
   Platform,
 } from 'react-native';
-import { ThemedTextInput as TextInput } from './ThemedText';
-import { ThemedText as Text } from './ThemedText';
+import { ThemedTextInput as TextInput , ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
@@ -281,9 +280,10 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
       await setCustomFont(customFamilyKey, fontUri);
       setFontStatusMsg(`Imported & applied font: ${baseName}`);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn('[ThemeStudio] Font load error:', err);
-      setFontStatusMsg(`Failed to import font: ${err.message || 'Unknown error'}`);
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setFontStatusMsg(`Failed to import font: ${msg}`);
     } finally {
       setIsFontLoading(false);
       setTimeout(() => setFontStatusMsg(null), 4000);
@@ -431,7 +431,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                   accessibilityLabel={`Studio Tab: ${tab.label}`}
                 >
                   <Ionicons
-                    name={tab.icon as any}
+                    name={tab.icon}
                     size={14}
                     color={isActive ? c.primary : c.textMuted}
                   />
@@ -528,7 +528,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                           <Text
                             style={[
                               styles.sampleText,
-                              { color: c.text, fontFamily: f.fontFamily as any },
+                              { color: c.text, fontFamily: f.fontFamily || undefined },
                             ]}
                           >
                             {f.sample}
@@ -577,7 +577,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                         )}
                       </View>
                       <View style={[styles.sampleBox, { backgroundColor: c.card }]}>
-                        <Text style={[styles.sampleText, { color: c.text, fontFamily: customFontFamily as any }]}>
+                        <Text style={[styles.sampleText, { color: c.text, fontFamily: customFontFamily || undefined }]}>
                           ₹142,850.00 · Custom outsourced font rendered live
                         </Text>
                       </View>
@@ -1086,7 +1086,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                       maxLength={7}
                       style={[
                         styles.urlInput,
-                        { backgroundColor: c.inputBg, color: c.text, borderColor: c.inputBorder, paddingHorizontal: 14, minWidth: 0, fontFamily: 'IBMPlexMono_600SemiBold' as any },
+                        { backgroundColor: c.inputBg, color: c.text, borderColor: c.inputBorder, paddingHorizontal: 14, minWidth: 0, fontFamily: 'IBMPlexMono_600SemiBold' },
                       ]}
                       autoCapitalize="characters"
                       autoCorrect={false}

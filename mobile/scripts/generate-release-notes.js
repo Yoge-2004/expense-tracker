@@ -27,8 +27,8 @@ function main() {
   const ipaShaPath = path.join(baseDir, 'expense-tracker.ipa.sha256');
   const outputPath = path.join(baseDir, 'release-notes.md');
 
-  let version = '1.0.12';
-  let versionCode = 14;
+  let version = '1.0.13';
+  let versionCode = 15;
   let packageId = 'com.yoge.expensetracker';
   let bundleId = 'com.yoge.expensetracker';
   if (fs.existsSync(appJsonPath)) {

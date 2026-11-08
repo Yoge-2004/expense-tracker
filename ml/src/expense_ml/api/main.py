@@ -1,17 +1,24 @@
 from __future__ import annotations
 
 import logging
+import re
 import sys
 import threading
+import time
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field, field_validator
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 from ..inference.model_registry import ModelRegistry
 from ..inference.service import InferenceService
+from .logging_buffer import get_log_handler, setup_api_logging
 
+setup_api_logging()
 logger = logging.getLogger(__name__)
 
 
@@ -61,6 +68,14 @@ class DuplicateCheckRequest(BaseModel):
     threshold: float = Field(default=0.85, ge=0.0, le=1.0)
     top_k: int = Field(default=5, ge=1, le=20)
 
+    @field_validator("candidates")
+    @classmethod
+    def validate_candidates(cls, candidates: list[str]) -> list[str]:
+        for c in candidates:
+            if len(c) > 500:
+                raise ValueError("individual candidate string must not exceed 500 characters")
+        return candidates
+
 
 class DuplicateMatchItem(BaseModel):
     text: str
@@ -98,6 +113,23 @@ class SpendingForecastResponse(BaseModel):
 
 
 app = FastAPI(title="Expense Tracker ML API", version="0.3.0")
+
+
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: Any) -> Response:
+        if request.url.path.endswith("/logs"):
+            return await call_next(request)
+        start = time.perf_counter()
+        response = await call_next(request)
+        elapsed_ms = (time.perf_counter() - start) * 1000.0
+        safe_method = re.sub(r"[\r\n]", "", request.method)[:16]
+        safe_path = re.sub(r"[\r\n]", "", request.url.path)[:256]
+        logger.info("%s %s -> %d (%.2fms)", safe_method, safe_path, response.status_code, elapsed_ms)
+        return response
+
+
+app.add_middleware(RequestLoggingMiddleware)
+
 _registry_lock = threading.Lock()
 _registry: ModelRegistry | None = None
 _load_error: str | None = None
@@ -180,6 +212,16 @@ def health() -> dict:
             "timestamp": datetime.now(UTC).isoformat(),
         },
     }
+
+
+@app.get("/api/v1/logs")
+@app.get("/logs")
+def get_logs(
+    lines: int = Query(default=150, ge=1, le=1000),
+    level: str = Query(default="ALL", max_length=20),
+    query: str | None = Query(default=None, max_length=200),
+) -> list[dict[str, Any]]:
+    return get_log_handler().get_logs(limit=lines, level=level, query=query)
 
 
 @app.post("/api/v1/classify", response_model=ClassificationResponse)

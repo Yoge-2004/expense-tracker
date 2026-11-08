@@ -27,8 +27,8 @@ export interface SavingsGoalsSectionProps {
   currSymbol: string;
   isStealthMode: boolean;
   isLargeScreen: boolean;
-  onEditGoal: (goal: any) => void;
-  onDeleteGoal: (goal: any) => void;
+  onEditGoal: (goal: SavingsGoalItem) => void;
+  onDeleteGoal: (goal: SavingsGoalItem) => void;
 }
 
 export const SavingsGoalsSection = memo(function SavingsGoalsSection({

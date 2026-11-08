@@ -375,6 +375,14 @@
   border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
+.ml-suite-panel {
+  display: block;
+  animation: fadeIn 0.2s ease;
+}
+.ml-suite-panel.hidden {
+  display: none !important;
+}
+
 .ml-suite-tabs-wrap {
   display: flex;
   gap: 6px;
@@ -505,26 +513,108 @@
   border-radius: 8px;
   cursor: pointer;
 }
-.ml-btn-forecast {
-  background: var(--palette-5, #3b82f6);
-  color: #ffffff;
-  border: none;
-  height: 28px;
-  padding: 0 12px;
-  font-size: 11px;
-  border-radius: 6px;
-  cursor: pointer;
+/* Forecast Controls & Horizon Selector */
+.ml-forecast-controls-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ml-forecast-horizon-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+[data-theme="light"] .ml-forecast-horizon-group {
+  background: rgba(0, 0, 0, 0.03);
 }
 .ml-forecast-horizon {
   height: 28px;
-  padding: 0 8px;
+  padding: 0 10px;
   font-size: 11px;
+  font-weight: 500;
   border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.ml-forecast-horizon:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.06);
 }
 .ml-forecast-horizon.active {
   font-weight: 700;
   background: var(--primary, #c79a3e);
   color: #10120e;
+  border-color: var(--primary, #c79a3e);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+.ml-btn-forecast {
+  background: var(--primary, #c79a3e);
+  color: #10120e;
+  border: none;
+  height: 32px;
+  padding: 0 14px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.ml-btn-forecast:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+@media (max-width: 640px) {
+  .ml-panel-header.ml-forecast-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .ml-forecast-controls-row {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .ml-forecast-horizon-group {
+    flex: 1 1 auto;
+    justify-content: space-between;
+  }
+  .ml-forecast-horizon {
+    flex: 1 1 0;
+    text-align: center;
+    padding: 0 6px;
+  }
+  .ml-btn-forecast {
+    flex: 0 0 auto;
+    padding: 0 12px;
+  }
+}
+@media (max-width: 420px) {
+  .ml-forecast-controls-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .ml-forecast-horizon-group {
+    width: 100%;
+  }
+  .ml-btn-forecast {
+    width: 100%;
+    height: 34px;
+  }
 }
 
 .ml-placeholder-info {

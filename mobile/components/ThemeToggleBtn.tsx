@@ -1,6 +1,6 @@
 /**
  * @file ThemeToggleBtn.tsx
- * @description Modern haptic-enabled theme switcher button with instant touch-down responsiveness.
+ * @description Modern haptic-enabled theme switcher button with instant touch responsiveness.
  * Adapts seamlessly across all screens and headers in the mobile app.
  */
 
@@ -20,17 +20,15 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
   const isLight = theme === 'light';
   const c = themeColors || Colors[theme];
 
-  const handlePressIn = useCallback(() => {
-    // 1. Immediately toggle theme state on direct touch-down frame
-    void toggleTheme();
-    // 2. Fire physical tactile feedback at the exact millisecond of contact
+  const handlePress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    void toggleTheme();
   }, [toggleTheme]);
 
   return (
     <Pressable
-      onPressIn={handlePressIn}
-      hitSlop={8}
+      onPress={handlePress}
+      hitSlop={10}
       accessibilityRole="button"
       accessibilityLabel={`Switch to ${isLight ? 'Dark' : 'Light'} Theme`}
       style={({ pressed }) => [

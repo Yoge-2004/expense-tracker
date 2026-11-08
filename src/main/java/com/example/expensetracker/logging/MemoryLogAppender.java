@@ -44,9 +44,13 @@ public class MemoryLogAppender extends AppenderBase<ILoggingEvent> {
             buffer.removeFirst();
         }
         String formattedTime = ISO_FMT.format(Instant.ofEpochMilli(event.getTimeStamp()));
+        String lvl = event.getLevel() != null ? event.getLevel().toString().toUpperCase() : "INFO";
+        if ("WARNING".equals(lvl)) lvl = "WARN";
+        if ("CRITICAL".equals(lvl) || "FATAL".equals(lvl)) lvl = "ERROR";
+
         buffer.addLast(new AdminLogEntryDto(
                 formattedTime,
-                event.getLevel().toString(),
+                lvl,
                 event.getThreadName(),
                 event.getLoggerName(),
                 event.getFormattedMessage()
@@ -57,9 +61,10 @@ public class MemoryLogAppender extends AppenderBase<ILoggingEvent> {
         List<AdminLogEntryDto> result = new ArrayList<>();
         String lvl = (levelFilter != null) ? levelFilter.trim().toUpperCase() : "ALL";
         String q = (queryFilter != null) ? queryFilter.trim().toLowerCase() : "";
+        int minSeverity = levelSeverity(lvl);
 
         for (AdminLogEntryDto entry : buffer) {
-            if (!"ALL".equals(lvl) && !entry.level().equalsIgnoreCase(lvl)) {
+            if (minSeverity > 0 && levelSeverity(entry.level()) < minSeverity) {
                 continue;
             }
             if (!q.isEmpty() && !entry.message().toLowerCase().contains(q) && !entry.logger().toLowerCase().contains(q)) {
@@ -69,10 +74,24 @@ public class MemoryLogAppender extends AppenderBase<ILoggingEvent> {
         }
 
         int size = result.size();
-        int max = Math.min(Math.max(limit, 10), 500);
+        int max = Math.min(Math.max(limit, 10), 1000);
         if (size > max) {
             return new ArrayList<>(result.subList(size - max, size));
         }
         return result;
+    }
+
+    private static int levelSeverity(String level) {
+        if (level == null || level.isBlank() || "ALL".equalsIgnoreCase(level)) {
+            return 0;
+        }
+        return switch (level.trim().toUpperCase()) {
+            case "CRITICAL", "FATAL", "ERROR" -> 40;
+            case "WARN", "WARNING" -> 30;
+            case "INFO" -> 20;
+            case "DEBUG" -> 10;
+            case "TRACE" -> 5;
+            default -> 0;
+        };
     }
 }

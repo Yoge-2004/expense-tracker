@@ -139,7 +139,7 @@
                 if (Array.isArray(cached.incomes) && cached.incomes.length > 0) {
                     renderIncomes(cached.incomes);
                 }
-                if (Array.isArray(cached.savingsGoals) && cached.savingsGoals.length > 0) {
+                if (Array.isArray(cached.savingsGoals)) {
                     renderSavingsGoals(cached.savingsGoals);
                 }
                 if (Array.isArray(cached.budgets) && cached.budgets.length > 0 && typeof window.renderBudgets === "function") {
@@ -209,15 +209,7 @@
                             spanAll: true
                         });
                     }
-                    const savingsGoalsEl = document.getElementById("savingsGoalsList");
-                    if (savingsGoalsEl) {
-                        savingsGoalsEl.innerHTML = renderConnectionErrorCompact({
-                            desc: "Could not reach the server to load your savings goals.",
-                            action: "reload",
-                            btnTheme: "warning",
-                            spanAll: true
-                        });
-                    }
+                    renderSavingsGoals([]);
                 } else {
                     renderSavingsGoals(allSavingsGoals);
                 }
@@ -322,7 +314,7 @@
                     if (streakCountEl) streakCountEl.textContent = "--";
                     const streakBadge = document.getElementById("noSpendStreakBadge");
                     if (streakBadge) {
-                        streakBadge.className = "status-badge badge-neutral";
+                        streakBadge.className = "status-badge badge-neutral badge-streak-pill";
                         streakBadge.title = "Streak unavailable (Server offline)";
                     }
                     const safeDailyEl = document.getElementById("safeDailySpend");
@@ -340,15 +332,7 @@
                     if (incomeListEl) {
                         incomeListEl.innerHTML = renderConnectionErrorFull("Could not reach the server to load your income records.");
                     }
-                    const savingsGoalsEl = document.getElementById("savingsGoalsList");
-                    if (savingsGoalsEl) {
-                        savingsGoalsEl.innerHTML = renderConnectionErrorCompact({
-                            desc: "Could not reach the server to load your savings goals.",
-                            action: "reload",
-                            btnTheme: "warning",
-                            spanAll: true
-                        });
-                    }
+                    renderSavingsGoals([]);
                     const moneyFlowBody = document.getElementById("moneyFlowBody");
                     if (moneyFlowBody) {
                         moneyFlowBody.innerHTML = renderConnectionErrorCompact({

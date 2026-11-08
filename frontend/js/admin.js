@@ -1120,7 +1120,8 @@
             }
 
             if (logsEl && data.terminalLogs) {
-                logsEl.textContent = Array.isArray(data.terminalLogs) ? data.terminalLogs.join("\n") : data.terminalLogs;
+                const rawLogs = Array.isArray(data.terminalLogs) ? data.terminalLogs.join("\n") : data.terminalLogs;
+                logsEl.textContent = collapseTqdm(rawLogs);
                 logsEl.scrollTop = logsEl.scrollHeight;
             }
         } catch (e) {
@@ -1161,6 +1162,28 @@
     let cachedLogs = [];
     let logSearchDebounceTimer = null;
 
+    function collapseTqdm(text) {
+        if (!text) return "";
+        const lines = text.split(/\r?\n/);
+        const result = [];
+        let inProgress = false;
+        for (const line of lines) {
+            const isTqdm = line.includes("%|") || (line.includes("it/s") && line.includes("[")) || (line.includes("s/it") && line.includes("["));
+            if (isTqdm) {
+                if (inProgress && result.length > 0) {
+                    result[result.length - 1] = line;
+                } else {
+                    result.push(line);
+                    inProgress = true;
+                }
+            } else {
+                inProgress = false;
+                result.push(line);
+            }
+        }
+        return result.join("\n");
+    }
+
     async function loadApplicationLogs() {
         const viewport = document.getElementById("logsTerminalViewport");
         const countEl = document.getElementById("logEntriesCount");
@@ -1185,19 +1208,43 @@
                 return;
             }
 
-            const html = logs.map(entry => {
-                const ts = entry.timestamp ? entry.timestamp.replace("T", " ").replace("Z", "") : "";
-                const lvl = (entry.level || "INFO").toUpperCase();
-                const thread = entry.threadName ? `[${escapeHtml(entry.threadName)}]` : "";
-                const logger = entry.loggerName ? escapeHtml(entry.loggerName) : "";
-                const msg = escapeHtml(entry.message || "");
+            // Deduplicate consecutive tqdm progress entries across the log stream
+            const dedupedLogs = [];
+            let lastProgressLogger = null;
+            for (const entry of logs) {
+                const msg = entry.message || "";
+                const isTqdm = msg.includes("%|") || (msg.includes("it/s") && msg.includes("[")) || (msg.includes("s/it") && msg.includes("["));
+                const loggerVal = entry.logger || entry.loggerName || "";
+                if (isTqdm && lastProgressLogger === loggerVal && dedupedLogs.length > 0) {
+                    dedupedLogs[dedupedLogs.length - 1] = entry;
+                } else {
+                    dedupedLogs.push(entry);
+                    lastProgressLogger = isTqdm ? loggerVal : null;
+                }
+            }
 
-                return `<div class="log-line log-${lvl.toLowerCase()}">` +
+            const html = dedupedLogs.map(entry => {
+                const ts = entry.timestamp ? entry.timestamp.replace("T", " ").replace("Z", "") : "";
+                let lvl = (entry.level || "INFO").toUpperCase();
+                if (lvl === "WARNING") lvl = "WARN";
+                if (lvl === "CRITICAL" || lvl === "FATAL") lvl = "ERROR";
+
+                const threadVal = entry.thread || entry.threadName || "";
+                const thread = threadVal ? `[${escapeHtml(threadVal)}]` : "";
+                const loggerVal = entry.logger || entry.loggerName || "";
+                const isPython = loggerVal.startsWith("expense_ml") || loggerVal.startsWith("uvicorn") || loggerVal.includes("python");
+                const serviceBadge = isPython ? `<span class="status-badge badge-warning text-2xs mr-2">PYTHON</span>` : `<span class="status-badge badge-netflow text-2xs mr-2">SPRING</span>`;
+                const logger = loggerVal ? escapeHtml(loggerVal) : "";
+                const msg = escapeHtml(entry.message || "");
+                const isProgressLine = msg.includes("%|") || (msg.includes("it/s") && msg.includes("["));
+
+                return `<div class="log-line log-${lvl.toLowerCase()}${isProgressLine ? ' log-progress' : ''}">` +
                     `<span class="log-ts">${escapeHtml(ts)}</span>` +
+                    serviceBadge +
                     `<span class="log-badge ${lvl}">${lvl}</span>` +
                     (thread ? `<span class="log-thread">${thread}</span>` : "") +
                     (logger ? `<span class="log-logger">${logger}:</span>` : "") +
-                    `<span class="log-msg log-msg-${lvl.toLowerCase()}">${msg}</span>` +
+                    `<span class="log-msg log-msg-${lvl.toLowerCase()}${isProgressLine ? ' font-mono text-cyan' : ''}">${msg}</span>` +
                 `</div>`;
             }).join("");
 

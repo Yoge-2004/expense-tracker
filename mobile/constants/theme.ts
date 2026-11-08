@@ -111,7 +111,7 @@ const BaseColors: Record<ThemeName, Omit<ThemeColors, OnColorKey>> = {
     inputBg: '#F1F5F9',
     fillSubtle: '#F1F5F9',
     fillStrong: '#E2E8F0',
-    keyBg: '#FFFFFF',
+    keyBg: 'rgba(255, 255, 255, 0.94)',
     scrollTrack: 'rgba(0, 0, 0, 0.05)',
     scrollThumb: 'rgba(199, 154, 62, 0.45)',
     inputBorder: 'rgba(15, 23, 42, 0.12)',

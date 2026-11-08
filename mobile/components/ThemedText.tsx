@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import {
+  Platform,
   StyleProp,
   StyleSheet,
   Text as NativeText,
@@ -10,7 +11,7 @@ import {
 } from 'react-native';
 import { useOptionalActiveFonts } from '../context/PreferencesContext';
 
-function fontForWeight(fonts: ReturnType<typeof useOptionalActiveFonts>, style: TextStyle): string {
+export function fontForWeight(fonts: ReturnType<typeof useOptionalActiveFonts>, style: TextStyle): string {
   if (typeof style.fontFamily === 'string' && style.fontFamily.length > 0) return style.fontFamily;
   const weight = style.fontWeight === 'bold'
     ? 700
@@ -30,8 +31,19 @@ export const ThemedText = forwardRef<React.ElementRef<typeof NativeText>, TextPr
     const activeFonts = useOptionalActiveFonts();
     const flattenedStyle = (StyleSheet.flatten(style as StyleProp<TextStyle>) || {}) as TextStyle;
     const fontFamily = fontForWeight(activeFonts, flattenedStyle);
+    const isCustomFont = typeof fontFamily === 'string' && fontFamily.startsWith('UserCustom_');
 
-    return <NativeText {...props} ref={ref} style={[style, { fontFamily }]} />;
+    return (
+      <NativeText
+        {...props}
+        ref={ref}
+        style={[
+          style,
+          { fontFamily },
+          isCustomFont && Platform.OS === 'android' ? { fontWeight: undefined } : undefined,
+        ]}
+      />
+    );
   }
 );
 
@@ -42,8 +54,19 @@ export const ThemedTextInput = forwardRef<React.ElementRef<typeof NativeTextInpu
     const activeFonts = useOptionalActiveFonts();
     const flattenedStyle = (StyleSheet.flatten(style as StyleProp<TextStyle>) || {}) as TextStyle;
     const fontFamily = fontForWeight(activeFonts, flattenedStyle);
+    const isCustomFont = typeof fontFamily === 'string' && fontFamily.startsWith('UserCustom_');
 
-    return <NativeTextInput {...props} ref={ref} style={[style, { fontFamily }]} />;
+    return (
+      <NativeTextInput
+        {...props}
+        ref={ref}
+        style={[
+          style,
+          { fontFamily },
+          isCustomFont && Platform.OS === 'android' ? { fontWeight: undefined } : undefined,
+        ]}
+      />
+    );
   }
 );
 

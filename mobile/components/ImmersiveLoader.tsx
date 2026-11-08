@@ -6,10 +6,11 @@ import {
   View,
   ViewStyle,
   StyleProp,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, ThemeColors } from '../constants/theme';
-import { useOptionalPreferences } from '../context/PreferencesContext';
+import { useOptionalPreferences, BackgroundAssetConfig } from '../context/PreferencesContext';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { AmbientAura } from './AmbientAura';
 import { ThemedText as Text } from './ThemedText';
@@ -22,6 +23,7 @@ interface ImmersiveLoaderProps {
   style?: StyleProp<ViewStyle>;
   customColors?: ThemeColors;
   theme?: 'dark' | 'light';
+  backgroundAsset?: BackgroundAssetConfig;
 }
 
 export const ImmersiveLoader: React.FC<ImmersiveLoaderProps> = ({
@@ -32,10 +34,12 @@ export const ImmersiveLoader: React.FC<ImmersiveLoaderProps> = ({
   style,
   customColors,
   theme: propTheme,
+  backgroundAsset: propBgAsset,
 }) => {
   const prefs = useOptionalPreferences();
   const theme = propTheme || prefs?.theme || 'dark';
   const c = customColors || prefs?.themeColors || Colors[theme];
+  const bgAsset = propBgAsset || prefs?.backgroundAsset;
   const reducedMotion = useReducedMotion();
 
   const [spinOuter] = useState(() => new Animated.Value(0));
@@ -261,7 +265,8 @@ export const ImmersiveLoader: React.FC<ImmersiveLoaderProps> = ({
   if (fullScreen) {
     return (
       <View style={[styles.fullScreenWrapper, { backgroundColor: c.bg }]}>
-        <AmbientAura customColors={c} theme={theme} />
+        <StatusBar barStyle={theme === 'light' ? 'dark-content' : 'light-content'} />
+        <AmbientAura customColors={c} theme={theme} backgroundAsset={bgAsset} />
         {content}
       </View>
     );

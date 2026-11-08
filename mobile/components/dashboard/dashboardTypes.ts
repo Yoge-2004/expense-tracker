@@ -1,5 +1,32 @@
 import { ThemeColors } from '../../constants/theme';
 
+export interface RawExpenseCandidate {
+  id?: number;
+  description?: string;
+  amount?: number;
+  categoryId?: number | string;
+  expenseDate?: string;
+  categoryName?: string;
+  isRecurring?: boolean;
+  recurring?: boolean;
+  [key: string]: unknown;
+}
+
+export interface RawIncomeCandidate {
+  id?: number;
+  source?: string;
+  amount?: number;
+  incomeDate?: string;
+  description?: string;
+  isRecurring?: boolean;
+  frequency?: string;
+  intervalDays?: number | string;
+  kind?: string | null;
+  countsTowardMonth?: string | null;
+  reimbursedCategoryId?: number | string;
+  [key: string]: unknown;
+}
+
 export interface UnifiedTxItem {
   id: number;
   uniqueKey: string;
@@ -9,8 +36,8 @@ export interface UnifiedTxItem {
   amount: number;
   date: string;
   isRecurring: boolean;
-  expenseRaw?: any;
-  incomeRaw?: any;
+  expenseRaw?: RawExpenseCandidate;
+  incomeRaw?: RawIncomeCandidate;
 }
 
 export interface TransactionRowProps {

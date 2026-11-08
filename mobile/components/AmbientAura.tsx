@@ -7,7 +7,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View, Animated, useWindowDimensions, Image } from 'react-native';
-import { useOptionalPreferences } from '../context/PreferencesContext';
+import { useOptionalPreferences, BackgroundAssetConfig } from '../context/PreferencesContext';
 import { Colors, ThemeColors } from '../constants/theme';
 
 interface AmbientAuraProps {
@@ -15,6 +15,7 @@ interface AmbientAuraProps {
   pointerEvents?: 'box-none' | 'none' | 'box-only' | 'auto';
   customColors?: ThemeColors;
   theme?: 'dark' | 'light';
+  backgroundAsset?: BackgroundAssetConfig;
 }
 
 /**
@@ -24,11 +25,12 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({
   pointerEvents = 'none',
   customColors,
   theme: propTheme,
+  backgroundAsset: propBackgroundAsset,
 }) => {
   const prefs = useOptionalPreferences();
   const theme = propTheme || prefs?.theme || 'dark';
   const themeColors = customColors || prefs?.themeColors || Colors[theme];
-  const backgroundAsset = prefs?.backgroundAsset || { type: 'preset', presetId: 'default' };
+  const backgroundAsset = propBackgroundAsset || prefs?.backgroundAsset || { type: 'preset', presetId: 'default' };
   const { width, height } = useWindowDimensions();
   const isLight = theme === 'light';
   const [reduceMotion, setReduceMotion] = useState(false);

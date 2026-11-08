@@ -75,8 +75,8 @@
                             <path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.2-.64-1.67-.08-.1-.13-.21-.13-.33 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9z"></path>
                         </svg>
                     </button>
-                    <button id="themeToggle" class="btn-icon theme-toggle-btn" title="Switch Theme" aria-label="Switch Theme">
-                        <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button id="themeToggle" class="header-action-btn theme-toggle-btn" title="Switch Theme" aria-label="Switch Theme">
+                        <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="5"></circle>
                             <line x1="12" y1="1" x2="12" y2="3"></line>
                             <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -87,7 +87,7 @@
                             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                         </svg>
-                        <svg class="moon-icon d-none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                         </svg>
                     </button>
@@ -231,13 +231,16 @@
                     <span class="metric-value" id="totalAmount"><span class="skeleton skeleton-value" ></span></span>
                 </div>
                 <div class="metric-footer metric-footer-wrap">
-                    <div>
+                    <div class="metric-meta-line">
                         <span class="text-muted" id="expenseCountText"><span class="skeleton skeleton-text short" ></span></span>
                         <span class="text-muted" id="topCategoryDetail"> &bull; Top: <strong id="topCategoryName">—</strong> (<span id="topCategoryAmount">—</span>)</span>
                     </div>
-                    <span class="status-badge badge-warning badge-streak-pill" id="noSpendStreakBadge" title="Consecutive zero-spend days">
-                        <svg class="svg-align-streak" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-1.63-1.5-2.5-1.5-4.5 0-2 1.5-3 1.5-3s-1.5.5-2.5 2c-1.1 1.65-2.5 3.5-2.5 5.5z"/><path d="M12 2c-4 4.5-6 8-6 12a6 6 0 0 0 12 0c0-4-2-7.5-6-12z"/></svg><span id="noSpendStreakCount">--</span> streak
-                    </span>
+                    <div class="flex-center-gap8 metric-badges-wrap">
+                        <span class="status-badge badge-netflow font-600" id="monthForecast" title="Forward-looking forecast based on your spending rhythm">Projected: —</span>
+                        <span class="status-badge badge-warning badge-streak-pill" id="noSpendStreakBadge" title="Consecutive zero-spend days">
+                            <svg class="svg-align-streak" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-1.63-1.5-2.5-1.5-4.5 0-2 1.5-3 1.5-3s-1.5.5-2.5 2c-1.1 1.65-2.5 3.5-2.5 5.5z"/><path d="M12 2c-4 4.5-6 8-6 12a6 6 0 0 0 12 0c0-4-2-7.5-6-12z"/></svg><span id="noSpendStreakCount">--</span>
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -258,10 +261,7 @@
                 </div>
             </div>
 
-            <!-- Hidden projection anchor to preserve script compatibility -->
-            <span class="d-none" id="monthForecast">Projected: —</span>
-
-            <span class="d-none" id="topCatBadge"></span>
+                        <span class="d-none" id="topCatBadge"></span>
 
             <!-- Metric 4: Savings Rate & Goals Progress -->
             <div class="metric-card metric-card-savings is-loading" id="metricCardSavings">
@@ -415,23 +415,23 @@
                 </button>
             </div>
             <div id="budgetList" class="budget-grid-matrix">
-                <div class="skeleton-budget-card" class="skeleton-budget-card skeleton-card-wrap">
+                <div class="skeleton-budget-card skeleton-card-wrap">
                     <div class="skeleton-card-header">
                         <div class="skeleton" ></div>
                         <div class="skeleton" ></div>
                     </div>
-                    <div class="skeleton" class="skeleton skeleton-card-bar"></div>
+                    <div class="skeleton skeleton-card-bar"></div>
                     <div class="skeleton-card-footer">
                         <div class="skeleton" ></div>
                         <div class="skeleton" ></div>
                     </div>
                 </div>
-                <div class="skeleton-budget-card" class="skeleton-budget-card skeleton-card-wrap">
+                <div class="skeleton-budget-card skeleton-card-wrap">
                     <div class="skeleton-card-header">
                         <div class="skeleton" ></div>
                         <div class="skeleton" ></div>
                     </div>
-                    <div class="skeleton" class="skeleton skeleton-card-bar"></div>
+                    <div class="skeleton skeleton-card-bar"></div>
                     <div class="skeleton-card-footer">
                         <div class="skeleton" ></div>
                         <div class="skeleton" ></div>
@@ -456,23 +456,23 @@
                 </button>
             </div>
             <div id="savingsGoalsList" class="savings-grid-matrix">
-                <div class="skeleton-goal-card" class="skeleton-goal-card skeleton-card-wrap">
+                <div class="skeleton-goal-card skeleton-card-wrap">
                     <div class="skeleton-card-header">
                         <div class="skeleton" ></div>
                         <div class="skeleton" ></div>
                     </div>
-                    <div class="skeleton" class="skeleton skeleton-card-bar"></div>
+                    <div class="skeleton skeleton-card-bar"></div>
                     <div class="skeleton-card-footer">
                         <div class="skeleton" ></div>
                         <div class="skeleton" ></div>
                     </div>
                 </div>
-                <div class="skeleton-goal-card" class="skeleton-goal-card skeleton-card-wrap">
+                <div class="skeleton-goal-card skeleton-card-wrap">
                     <div class="skeleton-card-header">
                         <div class="skeleton" ></div>
                         <div class="skeleton" ></div>
                     </div>
-                    <div class="skeleton" class="skeleton skeleton-card-bar"></div>
+                    <div class="skeleton skeleton-card-bar"></div>
                     <div class="skeleton-card-footer">
                         <div class="skeleton" ></div>
                         <div class="skeleton" ></div>
@@ -558,7 +558,7 @@
         </section>
 
         <!-- POWERBI / ENTERPRISE BI EXECUTIVE SLICERS RIBBON -->
-        <section class="bi-slicers-ribbon animate-cascade delay-1" id="powerBiSlicersRibbon" aria-label="PowerBI Executive Slicers and Cross-Filters">
+        <section class="card bi-slicers-ribbon animate-cascade delay-1" id="powerBiSlicersRibbon" aria-label="PowerBI Executive Slicers and Cross-Filters">
             <!-- External Slicers Header - Positioned Above & Outside the Filter Container -->
             <div class="bi-slicers-top bi-slicers-external-top">
                 <div class="bi-slicers-heading">
@@ -769,13 +769,13 @@
                     </div>
 
                     <!-- Filter Controls -->
-                    <button id="toggleFiltersBtn" class="btn-icon btn-text-icon" title="Filter Outflows (Expenses, Categories, Dates)" aria-label="Show advanced filters">
+                    <button type="button" id="toggleFiltersBtn" class="btn-icon btn-text-icon" title="Filter Outflows (Expenses, Categories, Dates)" aria-label="Show outflow filters">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                         </svg>
                         <span>Outflow Filters</span>
                     </button>
-                    <button id="toggleIncomeFiltersBtn" class="btn-icon btn-text-icon" title="Filter Inflows (Salary, Cadence, Dates)" aria-label="Show income filters">
+                    <button type="button" id="toggleIncomeFiltersBtn" class="btn-icon btn-text-icon" title="Filter Inflows (Salary, Cadence, Dates)" aria-label="Show inflow filters">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                             <circle cx="19" cy="6" r="3" fill="#10B981" stroke="none"></circle>
@@ -819,20 +819,20 @@
 
             <!-- Gesture & Keyboard Quick Clue Bar -->
             <div class="ledger-gesture-hint-bar" id="ledgerGestureHintBar" >
-                <div class="flex-center-gap8">
+                <div class="flex-center-gap8 gesture-touch-instructions">
                     <span class="gesture-hint-tag">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8L22 12L18 16"/><path d="M6 8L2 12L6 16"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-                        Gestures &amp; Shortcuts:
+                        Gestures:
                     </span>
-                    <span>Swipe row <strong class="text-primary">Right</strong> to Edit &bull; <strong class="text-danger">Left</strong> to Delete (touchscreens)</span>
+                    <span>Swipe row <strong class="text-primary">Right</strong> to Edit &bull; <strong class="text-danger">Left</strong> to Delete</span>
                 </div>
-                <div class="flex-center-gap8">
+                <div class="flex-center-gap8 gesture-shortcuts-desktop" id="gestureShortcutsDesktop">
                     <span>Press <kbd class="gesture-kbd">/</kbd> Search</span>
                     <span><kbd class="gesture-kbd">Ctrl+K</kbd> Palette</span>
                     <span><kbd class="gesture-kbd">Alt+S</kbd> Stealth</span>
                     <span><kbd class="gesture-kbd">Alt+C</kbd> Calc</span>
-                    <button class="btn-dismiss-hint" type="button" id="dismissGestureHintBtn" aria-label="Dismiss shortcut hints" title="Dismiss hint">&times;</button>
                 </div>
+                <button class="btn-dismiss-hint" type="button" id="dismissGestureHintBtn" aria-label="Dismiss shortcut hints" title="Dismiss hint">&times;</button>
             </div>
 
             <!-- Category Pills Quick Bar -->
@@ -1010,12 +1010,14 @@
                     <input class="d-none" type="file" id="receiptFileInput" accept="image/*" aria-label="Upload receipt image file">
                     <input class="d-none" type="file" id="receiptCameraInput" accept="image/*" capture="environment" aria-label="Capture receipt with camera">
                     <div class="receipt-ocr-dropzone" id="receiptDropZone" title="Click or drop a receipt image to auto-fill details">
-                        <div class="receipt-ocr-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
-                        <div class="receipt-ocr-text">
-                            <span class="receipt-ocr-title">Scan Receipt / Bill (Tesseract OCR)</span>
-                            <span class="receipt-ocr-sub">Browse image file, gallery photo, or capture live camera</span>
+                        <div class="receipt-ocr-header-row">
+                            <div class="receipt-ocr-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+                            <div class="receipt-ocr-text">
+                                <span class="receipt-ocr-title">Scan Receipt / Bill (Tesseract OCR)</span>
+                                <span class="receipt-ocr-sub">Browse image file, gallery photo, or capture live camera</span>
+                            </div>
                         </div>
-                        <div class="flex-center-gap6">
+                        <div class="receipt-ocr-actions flex-center-gap6">
                             <button type="button" class="btn-scan-receipt" id="triggerReceiptScanBtn" title="Browse image files or photo gallery">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                 Browse
@@ -1196,7 +1198,7 @@
 
     <!-- MODAL DIALOG: SECURITY PIN SETUP & RECOVERY -->
     <div class="modal-overlay" id="securityPinModal">
-        <div class="modal" class="modal modal-sm">
+        <div class="modal modal-sm">
             <div class="modal-header">
                 <h3>Security PIN</h3>
                 <button class="modal-close" id="closeSecurityPinModalBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1223,7 +1225,7 @@
 
     <!-- MODAL DIALOG: BIOMETRICS & PASSKEY MANAGEMENT -->
     <div class="modal-overlay" id="biometricsModal" role="dialog" aria-modal="true" aria-labelledby="biometricsModalTitle">
-        <div class="modal" class="modal modal-sm">
+        <div class="modal modal-sm">
             <div class="modal-header">
                 <div class="flex-center-gap8">
                     <svg class="menu-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M3 17v2a2 2 0 0 0 2 2h2M21 17v2a2 2 0 0 0 2-2v-2"/><path d="M8 8c1.2-1.7 2.9-2.5 4-2.5S14.8 6.3 16 8M7.5 12c0-1.7 1.6-3.5 4.5-3.5s4.5 1.8 4.5 3.5c0 2.1-1.7 4-4.5 4s-4.5-1.9-4.5-4Z"/></svg>
@@ -1508,7 +1510,7 @@
     
     <!-- LOAN / FRIEND ADJUSTMENT MODAL -->
     <div class="modal-overlay" id="loanModal" role="dialog" aria-modal="true" aria-labelledby="loanModalTitle">
-        <div class="modal animate-pop" class="modal modal-md">
+        <div class="modal modal-md animate-pop">
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title" id="loanModalTitle">Record Loan / Adjustment</h3>
@@ -1611,7 +1613,7 @@
                     </label>
                 </div>
 
-                <div class="modal-footer" class="modal-footer">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-pad-8-16" id="cancelLoanModalBtn">Cancel</button>
                     <button type="submit" class="btn btn-primary btn-save-loan-base" id="saveLoanBtn">Save Record</button>
                 </div>
@@ -1621,7 +1623,7 @@
 
     <!-- MODAL DIALOG: SELECT MONTH & YEAR FOR FINANCIAL REPORT -->
     <div class="modal-overlay" id="monthlyReportPeriodModal">
-        <div class="modal period-picker-modal" class="modal modal-md period-picker-modal">
+        <div class="modal modal-md period-picker-modal">
             <div class="modal-header">
                 <div class="flex-center-gap10">
                     <span class="inline-flex-center" id="periodModalIcon"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>
@@ -1701,7 +1703,7 @@
 
     <!-- MODAL DIALOG: PREVIEW MONTHLY REPORT -->
     <div class="modal-overlay" id="monthlyReportModal">
-        <div class="modal monthly-report-modal" class="modal modal-xl monthly-report-modal">
+        <div class="modal modal-xl monthly-report-modal">
             <div class="modal-header">
                 <div class="flex-center-gap8">
                     <span class="inline-flex-center"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>
@@ -1934,7 +1936,7 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" class="modal-footer">
+            <div class="modal-footer">
                 <button type="button" class="btn btn-primary btn-pad-8-24" id="gotItHelpBtn">Got It!</button>
             </div>
         </div>
@@ -1942,7 +1944,7 @@
 
     <!-- ABOUT SYSTEM MODAL -->
     <div class="modal-overlay" id="aboutSystemModal" role="dialog" aria-modal="true" aria-labelledby="aboutModalTitle">
-        <div class="modal" class="modal modal-lg">
+        <div class="modal modal-lg">
             <div class="modal-header">
                 <h2 class="modal-heading-18" id="aboutModalTitle">About ExpenseTracker</h2>
                 <button class="modal-close" id="closeAboutModal" aria-label="Close about dialog"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1980,8 +1982,8 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" class="modal-footer modal-footer-between">
-                <span class="about-version-text">Spring Boot 4.1.1 (Java 27) &bull; React Native 0.88 (Expo SDK 58 &bull; React 19.3) &bull; Modern Web ES6+ &bull; Tesseract WebAssembly</span>
+            <div class="modal-footer modal-footer-between">
+                <span class="about-version-text">Spring Boot 4.1.2 (Java 27) &bull; React Native 0.88 (Expo SDK 58 &bull; React 19.3) &bull; Modern Web ES6+ &bull; Tesseract WebAssembly</span>
                 <button type="button" class="btn btn-secondary btn-pad-8-20" id="closeAboutBtn">Close</button>
             </div>
         </div>

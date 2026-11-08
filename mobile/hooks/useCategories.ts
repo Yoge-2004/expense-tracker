@@ -68,7 +68,7 @@ export function useCategories(userId: string | number | null) {
         setCategoriesError(true);
         setCategoryRetryTick((n) => n + 1);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.warn('[useCategories] Error fetching categories:', e);
       setCategoriesError(true);
       setCategoryRetryTick((n) => n + 1);

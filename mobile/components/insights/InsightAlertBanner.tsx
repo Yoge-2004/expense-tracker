@@ -17,6 +17,7 @@ interface InsightAlertBannerProps {
   onPressAnomaly: () => void;
   onPressBurnout: () => void;
   colors: ThemeColors;
+  alertType?: 'anomaly' | 'burnout' | 'all';
 }
 
 export const InsightAlertBanner: React.FC<InsightAlertBannerProps> = React.memo(({
@@ -26,9 +27,10 @@ export const InsightAlertBanner: React.FC<InsightAlertBannerProps> = React.memo(
   onPressAnomaly,
   onPressBurnout,
   colors: c,
+  alertType = 'all',
 }) => {
   // 1. High Priority: ML Anomaly detected by Isolation Forest
-  if (anomaly && anomaly.count > 0) {
+  if (alertType !== 'burnout' && anomaly && anomaly.count > 0) {
     const outlierDesc = anomaly.topOutlier?.desc || 'Irregular Outflow';
     const outlierAmt = anomaly.topOutlier ? formatAmt(anomaly.topOutlier.amount) : '';
 
@@ -40,7 +42,7 @@ export const InsightAlertBanner: React.FC<InsightAlertBannerProps> = React.memo(
           styles.banner,
           {
             backgroundColor: c.danger + '14',
-            borderColor: c.danger + '40',
+            borderColor: c.danger + '26',
           },
         ]}
         accessibilityRole="button"
@@ -70,7 +72,7 @@ export const InsightAlertBanner: React.FC<InsightAlertBannerProps> = React.memo(
   }
 
   // 2. Medium-High Priority: Budget Cap Depletion within 7 days
-  if (burnout && burnout.daysRemainingUntilDepletion <= 7) {
+  if (alertType !== 'anomaly' && burnout && burnout.daysRemainingUntilDepletion <= 7) {
     return (
       <TouchableOpacity
         activeOpacity={0.85}
@@ -79,7 +81,7 @@ export const InsightAlertBanner: React.FC<InsightAlertBannerProps> = React.memo(
           styles.banner,
           {
             backgroundColor: c.accent + '14',
-            borderColor: c.accent + '40',
+            borderColor: c.accent + '26',
           },
         ]}
         accessibilityRole="button"
@@ -108,6 +110,11 @@ export const InsightAlertBanner: React.FC<InsightAlertBannerProps> = React.memo(
     );
   }
 
+  // If specific alertType was requested and no alert is active, don't show generic banner in domain tabs
+  if (alertType === 'burnout') {
+    return null;
+  }
+
   // 3. Normal / Nominal status indicator
   return (
     <View
@@ -134,7 +141,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 16,
-    borderWidth: 1.5,
+    borderWidth: 1,
     padding: 14,
     marginBottom: 16,
     gap: 12,

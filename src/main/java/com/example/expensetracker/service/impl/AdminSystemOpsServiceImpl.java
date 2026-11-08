@@ -9,6 +9,7 @@ import com.example.expensetracker.repository.AdminAuditLogRepository;
 import com.example.expensetracker.service.AdminAuditService;
 import com.example.expensetracker.service.AdminMetricsService;
 import com.example.expensetracker.service.AdminSystemOpsService;
+import com.example.expensetracker.service.MlInferenceClient;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -38,6 +40,7 @@ public class AdminSystemOpsServiceImpl implements AdminSystemOpsService {
     private final AdminAuditService auditService;
     private final AdminMetricsService metricsService;
     private final MemoryLogAppender memoryLogAppender;
+    private final MlInferenceClient mlInferenceClient;
 
     @Value("${spring.threads.virtual.enabled:false}")
     private boolean virtualThreadsConfigured;
@@ -154,7 +157,28 @@ public class AdminSystemOpsServiceImpl implements AdminSystemOpsService {
 
     @Override
     public List<AdminLogEntryDto> getApplicationLogs(int lines, String level, String query) {
-        return memoryLogAppender.getRecentLogs(lines, level, query);
+        List<AdminLogEntryDto> springLogs = memoryLogAppender.getRecentLogs(lines, level, query);
+        List<AdminLogEntryDto> mlLogs = mlInferenceClient.getLogs(lines, level, query);
+
+        if (mlLogs == null || mlLogs.isEmpty()) {
+            return springLogs;
+        }
+
+        List<AdminLogEntryDto> combined = new ArrayList<>(springLogs.size() + mlLogs.size());
+        combined.addAll(springLogs);
+        combined.addAll(mlLogs);
+
+        combined.sort((a, b) -> {
+            String tsA = a.timestamp() != null ? a.timestamp() : "";
+            String tsB = b.timestamp() != null ? b.timestamp() : "";
+            return tsA.compareTo(tsB);
+        });
+
+        int max = Math.min(Math.max(lines, 10), 1000);
+        if (combined.size() > max) {
+            return new ArrayList<>(combined.subList(combined.size() - max, combined.size()));
+        }
+        return combined;
     }
 
     @Override

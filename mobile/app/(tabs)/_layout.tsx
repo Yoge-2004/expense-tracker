@@ -6,7 +6,7 @@
  * Features spring-animated icon pops on tab switches for responsive, tactile feedback.
  */
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { StyleSheet, Platform, Animated } from "react-native";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,7 +33,7 @@ function AnimatedTabIcon({
   iconNameOutline,
   size = 21,
 }: AnimatedTabIconProps) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [scaleAnim] = useState(() => new Animated.Value(1));
   const prevFocused = useRef(focused);
 
   useEffect(() => {
@@ -75,7 +75,7 @@ function AnimatedAddTabIcon({
   activeColor: string;
   onPrimary: string;
 }) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [scaleAnim] = useState(() => new Animated.Value(1));
   const prevFocused = useRef(focused);
 
   useEffect(() => {

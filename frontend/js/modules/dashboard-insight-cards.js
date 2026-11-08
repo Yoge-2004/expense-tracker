@@ -133,9 +133,14 @@
             return (b.magnitude || 0) - (a.magnitude || 0);
         });
 
-        const frag = document.createElement("div");
-        frag.innerHTML = insights.slice(0, 8).map(cardHtml).join("");
-        grid.append(...frag.children);
+        /* Prioritize actionable anomalies and critical cautions so they don't flood the dashboard */
+        const actionable = insights.filter(i => i.id.startsWith("anomaly") || i.kind === "caution");
+        const cardsToRender = actionable.length > 0 ? actionable.slice(0, 2) : [];
+        if (cardsToRender.length > 0) {
+            const frag = document.createElement("div");
+            frag.innerHTML = cardsToRender.map(cardHtml).join("");
+            grid.append(...frag.children);
+        }
     }
 
     /* --- wrap the original renderer -------------------------------------

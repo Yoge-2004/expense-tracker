@@ -52,9 +52,9 @@ import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { DashboardSegmentSwitcher, DashboardSegment } from '../../components/dashboard/DashboardSegmentSwitcher';
 import { DashboardMetricsMatrix } from '../../components/dashboard/DashboardMetricsMatrix';
 import { DashboardLedger } from '../../components/dashboard/DashboardLedger';
-import { SavingsGoalsSection } from '../../components/dashboard/SavingsGoalsSection';
+import { SavingsGoalsSection, SavingsGoalItem } from '../../components/dashboard/SavingsGoalsSection';
 import { dashboardStyles as styles } from '../../components/dashboard/dashboardStyles';
-import { UnifiedTxItem } from '../../components/dashboard/dashboardTypes';
+import { UnifiedTxItem, RawExpenseCandidate, RawIncomeCandidate } from '../../components/dashboard/dashboardTypes';
 import { earnedTotal, effectiveMonth, monthKey, netSpent } from '../../utils/moneyFlow';
 import { OfflineBanner } from '../../components/OfflineBanner';
 import { ImmersiveLoader } from '../../components/ImmersiveLoader';
@@ -348,10 +348,15 @@ export default function DashboardScreen() {
     }
   };
 
+  const loadWithCacheRef = useRef(loadWithCache);
+  useEffect(() => {
+    loadWithCacheRef.current = loadWithCache;
+  });
+
   useFocusEffect(
     useCallback(() => {
-      void loadWithCache();
-    }, [userId])
+      void loadWithCacheRef.current();
+    }, [])
   );
 
   // Keep the on-device bill, salary and savings reminders in step with the data on screen.
@@ -496,7 +501,7 @@ export default function DashboardScreen() {
     );
   };
 
-  const handleGoalEdit = (goal: SavingsGoal) => {
+  const handleGoalEdit = (goal: SavingsGoalItem) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     router.push({
       pathname: "/(tabs)/add-expense",
@@ -515,7 +520,7 @@ export default function DashboardScreen() {
     });
   };
 
-  const handleGoalDelete = (goal: SavingsGoal) => {
+  const handleGoalDelete = (goal: SavingsGoalItem) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     showAlert(
       "Delete Savings Goal?",
@@ -815,7 +820,7 @@ export default function DashboardScreen() {
             amount: Number(e.amount || 0),
             date: e.expenseDate || "",
             isRecurring: !!(e.isRecurring || e.recurring),
-            expenseRaw: e,
+            expenseRaw: e as unknown as RawExpenseCandidate,
           }))
         : []),
       ...(ledgerTab === "all" || ledgerTab === "incomes"
@@ -828,7 +833,7 @@ export default function DashboardScreen() {
             amount: Number(i.amount || 0),
             date: i.incomeDate || "",
             isRecurring: !!(i.isRecurring || i.recurring),
-            incomeRaw: i,
+            incomeRaw: i as unknown as RawIncomeCandidate,
           }))
         : []),
     ];
@@ -863,7 +868,9 @@ export default function DashboardScreen() {
   }, [ledgerTab, filteredExpenses, filteredIncomes, sortOption]);
 
   const rowActions = useRef({ press: handleTransactionPress, edit: handleTransactionEdit, remove: handleTransactionDelete });
-  rowActions.current = { press: handleTransactionPress, edit: handleTransactionEdit, remove: handleTransactionDelete };
+  useEffect(() => {
+    rowActions.current = { press: handleTransactionPress, edit: handleTransactionEdit, remove: handleTransactionDelete };
+  });
   const onRowPress = useCallback((tx: UnifiedTxItem) => rowActions.current.press(tx), []);
   const onRowEdit = useCallback((tx: UnifiedTxItem) => rowActions.current.edit(tx), []);
   const onRowDelete = useCallback((tx: UnifiedTxItem) => rowActions.current.remove(tx), []);
@@ -899,6 +906,8 @@ export default function DashboardScreen() {
       <ImmersiveLoader
         message="Assembling Financial Ledger..."
         subMessage="Calculating spend velocity & intelligence"
+        customColors={c}
+        theme={theme}
       />
     );
   }
@@ -924,7 +933,18 @@ export default function DashboardScreen() {
           },
         ]}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={c.primary}
+            title="Synchronizing Ledger..."
+            titleColor={c.textMuted}
+            colors={[c.primary, c.accent]}
+            progressBackgroundColor={c.card}
+            progressViewOffset={Math.max(insets.top + 10, 48)}
+          />
+        }
       >
         {/* =========================================
             1. TOP COMMAND BAR
@@ -952,6 +972,7 @@ export default function DashboardScreen() {
             }
             onRetry={() => fetchData(true)}
             retrying={refreshing}
+            style={{ marginHorizontal: 16 }}
           />
         )}
 
@@ -960,13 +981,32 @@ export default function DashboardScreen() {
           <TouchableOpacity
             onPress={() => setExportModalVisible(true)}
             style={{
-              marginHorizontal: 16, marginBottom: 12, padding: 14, borderRadius: 14, borderWidth: 1,
-              borderColor: c.accent, backgroundColor: c.accent + '18', flexDirection: 'row', alignItems: 'center', gap: 10,
+              marginHorizontal: 16,
+              marginBottom: 12,
+              padding: 12,
+              borderRadius: 14,
+              borderWidth: 1,
+              borderColor: c.accent + '4D',
+              backgroundColor: c.fillSubtle,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 10,
             }}
           >
-            <Ionicons name="shield-checkmark-outline" size={22} color={c.accent} />
+            <View
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                backgroundColor: c.accent + '22',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="shield-checkmark-outline" size={19} color={c.accent} />
+            </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: c.text, fontWeight: '700', fontSize: 14 }}>
+              <Text style={{ color: c.text, fontWeight: '700', fontSize: 13.5 }}>
                 This phone holds {deviceGap.toLocaleString()} more records than the server
               </Text>
               <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 2 }}>Tap to review and restore them safely.</Text>

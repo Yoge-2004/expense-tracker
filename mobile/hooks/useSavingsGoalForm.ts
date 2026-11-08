@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 import { apiRequest, ApiError } from '../services/api';
+import { AlertButton, AlertType } from '../context/AlertContext';
 
 export interface UseSavingsGoalFormOptions {
   userId: string | number | null;
@@ -18,7 +19,7 @@ export interface UseSavingsGoalFormOptions {
     intervalDays?: string;
   };
   onSuccess: () => void;
-  showAlert: (title: string, message: string, buttons?: any[], type?: any) => void;
+  showAlert: (title: string, message?: string, buttons?: AlertButton[], type?: AlertType) => void;
 }
 
 export function useSavingsGoalForm({
@@ -46,7 +47,9 @@ export function useSavingsGoalForm({
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
+  const [prevParams, setPrevParams] = useState(initialParams);
+  if (prevParams !== initialParams) {
+    setPrevParams(initialParams);
     if (initialParams) {
       if (initialParams.name !== undefined) setGoalName(initialParams.name);
       if (initialParams.targetAmount !== undefined) setGoalTargetAmount(initialParams.targetAmount);
@@ -58,17 +61,7 @@ export function useSavingsGoalForm({
       if (initialParams.frequency !== undefined) setGoalFrequency(initialParams.frequency);
       if (initialParams.intervalDays !== undefined) setGoalIntervalDays(initialParams.intervalDays);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    initialParams?.name,
-    initialParams?.targetAmount,
-    initialParams?.currentAmount,
-    initialParams?.targetDate,
-    initialParams?.isRecurring,
-    initialParams?.recurringAmount,
-    initialParams?.frequency,
-    initialParams?.intervalDays,
-  ]);
+  }
 
   const resetForm = useCallback(() => {
     setGoalName('');
@@ -151,8 +144,8 @@ export function useSavingsGoalForm({
         );
       }
       resetForm();
-    } catch (e: any) {
-      const msg = e instanceof ApiError ? e.message : 'Could not save savings goal.';
+    } catch (e: unknown) {
+      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : 'Could not save savings goal.');
       showAlert('Save Error', msg);
     } finally {
       setIsSubmitting(false);
@@ -193,6 +186,7 @@ export function useSavingsGoalForm({
     setGoalIntervalDays,
     focusedField,
     setFocusedField,
+    errors: {} as Record<string, string>,
     isSubmitting,
     handleSaveSavingsGoal,
     resetForm,

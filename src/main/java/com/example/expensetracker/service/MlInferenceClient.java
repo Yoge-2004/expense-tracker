@@ -1,17 +1,21 @@
 package com.example.expensetracker.service;
 
+import com.example.expensetracker.dto.AdminLogEntryDto;
 import com.example.expensetracker.dto.MlClassificationRequest;
 import com.example.expensetracker.dto.MlClassificationResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -84,6 +88,25 @@ public class MlInferenceClient {
                     .body(Map.class);
         } catch (Exception e) {
             return Map.of("status", "unavailable", "error", e.getMessage());
+        }
+    }
+
+    public List<AdminLogEntryDto> getLogs(int lines, String level, String query) {
+        try {
+            UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromPath("/api/v1/logs")
+                    .queryParam("lines", lines)
+                    .queryParam("level", level != null ? level : "ALL");
+            if (query != null && !query.isBlank()) {
+                uriBuilder.queryParam("query", query);
+            }
+            List<AdminLogEntryDto> logs = client.get()
+                    .uri(uriBuilder.build().toUriString())
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<List<AdminLogEntryDto>>() {});
+            return logs != null ? logs : List.of();
+        } catch (Exception e) {
+            return List.of();
         }
     }
 

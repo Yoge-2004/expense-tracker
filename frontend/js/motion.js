@@ -309,7 +309,7 @@
         });
 
         document.querySelectorAll('.metric-card, .float-card, .perk-item, .card:not(.unified-ledger-card):not(.recent-transactions):not(#unifiedLedgerCard)').forEach((el) => {
-            el.classList.add('tilt-target', 'glow-follow');
+            el.classList.add('glow-follow');
             let rect = null;
             let rafId = null;
             el.addEventListener('mouseenter', () => {
@@ -323,8 +323,6 @@
                     if (!rect || rect.width === 0 || rect.height === 0) return;
                     const px = (e.clientX - rect.left) / rect.width;
                     const py = (e.clientY - rect.top) / rect.height;
-                    el.style.setProperty('--tilt-x', `${(px - 0.5) * 6}deg`);
-                    el.style.setProperty('--tilt-y', `${(0.5 - py) * 6}deg`);
                     el.style.setProperty('--glow-x', `${px * 100}%`);
                     el.style.setProperty('--glow-y', `${py * 100}%`);
                 });
@@ -335,8 +333,6 @@
                     cancelAnimationFrame(rafId);
                     rafId = null;
                 }
-                el.style.setProperty('--tilt-x', '0deg');
-                el.style.setProperty('--tilt-y', '0deg');
             });
         });
     }

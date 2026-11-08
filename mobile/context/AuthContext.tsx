@@ -1,3 +1,4 @@
+import { ExtractedPalette } from '../services/paletteExtractor';
 /**
  * @file AuthContext.tsx
  * @description React Context Provider managing identity state, secure token lifecycle,
@@ -453,12 +454,23 @@ function AuthInnerProvider({
 export function AuthProvider({
   children,
   initialTheme,
+  initialPalette,
+  initialBgAsset,
+  initialColors,
 }: {
   children: React.ReactNode;
   initialTheme?: 'dark' | 'light';
+  initialPalette?: ExtractedPalette | null;
+  initialBgAsset?: BackgroundAssetConfig | null;
+  initialColors?: ThemeColors;
 }) {
   return (
-    <PreferencesProvider initialTheme={initialTheme}>
+    <PreferencesProvider
+      initialTheme={initialTheme}
+      initialPalette={initialPalette}
+      initialBgAsset={initialBgAsset}
+      initialThemeColors={initialColors}
+    >
       <AuthInnerProvider>{children}</AuthInnerProvider>
     </PreferencesProvider>
   );
@@ -471,11 +483,12 @@ export function useAuth(): AuthContextType {
     throw new Error('useAuth must be used within an AuthProvider');
   }
 
+  const { updateCurrency: prefsUpdateCurrency } = prefs;
   const updateCurrency = useCallback(
     async (code: string) => {
-      await prefs.updateCurrency(code, auth.userId);
+      await prefsUpdateCurrency(code, auth.userId);
     },
-    [prefs.updateCurrency, auth.userId]
+    [prefsUpdateCurrency, auth.userId]
   );
 
   return useMemo(

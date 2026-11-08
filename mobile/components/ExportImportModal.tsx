@@ -10,8 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { ThemedTextInput as TextInput } from './ThemedText';
-import { ThemedText as Text } from './ThemedText';
+import { ThemedTextInput as TextInput , ThemedText as Text } from './ThemedText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
@@ -21,13 +20,26 @@ import { saveFileToDevice } from '../utils/fileDownloader';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { Colors } from '../constants/theme';
-import { apiRequest, API_BASE_URL, getSession } from '../services/api';
+import { apiRequest, API_BASE_URL } from '../services/api';
 import { applyRestore, computeRestorePlan, exportDeviceCopy, importDeviceCopyFile } from '../services/ledgerVault';
 import { planSamples } from '../utils/ledgerReconcile';
 
+export interface ExportExpenseItem {
+  id?: number | string;
+  description?: string;
+  amount?: number | string;
+  expenseDate?: string;
+  date?: string;
+  categoryId?: number | string;
+  categoryName?: string;
+  category?: { name?: string };
+  isRecurring?: boolean;
+  recurring?: boolean;
+}
+
 interface Props {
   visible: boolean;
-  expenses: any[];
+  expenses: ExportExpenseItem[];
   onClose: () => void;
   onDataImported: () => void;
 }
@@ -131,22 +143,36 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
   }, []);
 
   const range = useMemo(() => {
-    if (mode === 'all') return { from: '', to: '', label: 'All time' };
-    if (mode === 'custom')
-      return { from, to, label: from && to ? `${from} to ${to}` : 'Choose a start and end date' };
-    const start = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-    const endDate = new Date(year, month + 1, 0);
-    const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
-    return { from: start, to: end, label: `${MONTHS[month]} ${year}` };
+    if (mode === 'month') {
+      const end = new Date(year, month + 1, 0);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return {
+        from: `${year}-${pad(month + 1)}-01`,
+        to: `${year}-${pad(month + 1)}-${pad(end.getDate())}`,
+        label: `${MONTHS[month]} ${year}`,
+      };
+    }
+    if (mode === 'custom') {
+      return {
+        from: from.trim(),
+        to: to.trim(),
+        label: from.trim() && to.trim() ? `${from.trim()} to ${to.trim()}` : 'Custom range',
+      };
+    }
+    return { from: '', to: '', label: 'All Recorded Time' };
   }, [mode, month, year, from, to]);
 
   const validateRange = () => {
-    if (
-      mode === 'custom' &&
-      (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to))
-    ) {
-      showAlert('Choose a date range', 'Enter both dates as YYYY-MM-DD before exporting.');
-      return false;
+    if (mode === 'custom') {
+      const dateRx = /^\d{4}-\d{2}-\d{2}$/;
+      if (!from.trim() || !to.trim()) {
+        showAlert('Missing dates', 'Please enter both start and end dates (YYYY-MM-DD).');
+        return false;
+      }
+      if (!dateRx.test(from.trim()) || !dateRx.test(to.trim())) {
+        showAlert('Invalid format', 'Please use YYYY-MM-DD format.');
+        return false;
+      }
     }
     if (range.from && range.to && range.to < range.from) {
       showAlert('Invalid range', 'The end date must be on or after the start date.');
@@ -155,10 +181,10 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
     return true;
   };
 
-  const freshExpenses = async () => {
+  const freshExpenses = async (): Promise<ExportExpenseItem[]> => {
     if (!userId) return [];
     const latest = await apiRequest(`/expenses/user/${userId}`, { skipCache: true });
-    return Array.isArray(latest) ? latest : [];
+    return Array.isArray(latest) ? (latest as ExportExpenseItem[]) : [];
   };
 
   const save = async (uri: string, filename: string, mime: string, uti: string) => {
@@ -254,9 +280,10 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
         done: true,
       });
       setTimeout(() => updateProgress(null), 4000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       updateProgress(null);
-      showAlert('Export Failed', e.message || 'Could not create the report.');
+      const msg = e instanceof Error ? e.message : 'Could not create the report.';
+      showAlert('Export Failed', msg);
     } finally {
       setBusy(null);
     }
@@ -269,50 +296,50 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
       updateProgress({
         active: true,
         type: 'export',
-        filename: `Financial_Statement_${range.label}.html`,
-        stage: 'Querying monthly ledger...',
+        filename: 'HTML Statement',
+        stage: 'Compiling financial metrics & statements...',
         percent: 25,
-        detail: `Aggregating period: ${range.label}`,
       });
-
-      const session = await getSession();
-      const token = session?.token;
-      const headers: Record<string, string> = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      let reqYear = year;
-      let reqMonth = month + 1;
-      if (mode === 'custom' && from) {
-        reqYear = Number.parseInt(from.slice(0, 4), 10) || year;
-        reqMonth = Number.parseInt(from.slice(5, 7), 10) || month + 1;
-      }
+      const safeLabel = range.label.replace(/[^A-Za-z0-9]+/g, '_');
+      const filename = `ExpenseTracker_Statement_${safeLabel}.html`;
+      const uri = `${FileSystem.cacheDirectory || FileSystem.documentDirectory}${filename}`;
+      const params = new URLSearchParams();
+      if (range.from) params.set('from', range.from);
+      if (range.to) params.set('to', range.to);
+      params.set('currency', currency || 'INR');
+      const url = `${API_BASE_URL}/reports/user/${userId}/export/html?${params.toString()}`;
 
       updateProgress({
         active: true,
         type: 'export',
-        filename: `Financial_Statement_${range.label}.html`,
-        stage: 'Generating executive HTML statement...',
+        filename,
+        stage: 'Rendering interactive obsidian HTML statement...',
         percent: 60,
-        detail: 'Compiling Obsidian & Gold themes and KPI insights',
       });
 
-      const res = await fetch(
-        `${API_BASE_URL}/reports/monthly/user/${userId}/html?year=${reqYear}&month=${reqMonth}`,
-        { headers }
+      const downloadResumable = FileSystem.createDownloadResumable(
+        url,
+        uri,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+        (downloadData) => {
+          const total = downloadData.totalBytesExpectedToWrite;
+          const written = downloadData.totalBytesWritten;
+          const pct = total > 0 ? Math.round((written / total) * 100) : 75;
+          updateProgress({
+            active: true,
+            type: 'export',
+            filename,
+            stage: 'Transferring statement file...',
+            percent: Math.min(95, Math.max(60, pct)),
+            detail: `${Math.round(written / 1024)} KB downloaded`,
+          });
+        }
       );
-      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
-      const htmlText = await res.text();
+      const result = await downloadResumable.downloadAsync();
+      if (!result || result.status !== 200)
+        throw new Error(`Server returned HTTP ${result?.status || 500}`);
 
-      const safeLabel = range.label.replace(/[^A-Za-z0-9]+/g, '_');
-      const filename = `Financial_Statement_${safeLabel}.html`;
-      const base = FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
-      const uri = `${base}${filename}`;
-
-      await FileSystem.writeAsStringAsync(uri, htmlText, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
-      await save(uri, filename, 'text/html', 'public.html');
-
+      await save(result.uri, filename, 'text/html', 'public.html');
       updateProgress({
         active: true,
         type: 'export',
@@ -322,9 +349,10 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
         done: true,
       });
       setTimeout(() => updateProgress(null), 4000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       updateProgress(null);
-      showAlert('Export Failed', e.message || 'Could not export HTML statement.');
+      const msg = e instanceof Error ? e.message : 'Could not export HTML statement.';
+      showAlert('Export Failed', msg);
     } finally {
       setBusy(null);
     }
@@ -343,7 +371,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
       });
       const latest = await freshExpenses();
       const filtered = latest.filter(
-        (e: any) => !range.from || (e.expenseDate >= range.from && e.expenseDate <= range.to)
+        (e: ExportExpenseItem) => !range.from || (((e.expenseDate || e.date) ?? '') >= range.from && ((e.expenseDate || e.date) ?? '') <= range.to)
       );
       if (!filtered.length) {
         updateProgress(null);
@@ -362,7 +390,6 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
         mime = 'text/csv';
         uti = 'public.comma-separated-values-text';
 
-        // 2026 Resilient Practice: Chunked string builder with event-loop yielding
         // Prevents Hermes/V8 heap allocation spikes or OOM crashes on thousands/lakhs of transactions
         const CHUNK_SIZE = 2500;
         const rows: string[] = ['Date,Category,Description,Amount,Recurring'];
@@ -376,7 +403,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
               e.amount || 0,
               e.isRecurring || e.recurring ? 'Yes' : 'No',
             ]
-              .map((v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`)
+              .map((v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`)
               .join(',');
             rows.push(row);
           }
@@ -401,14 +428,24 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
           active: true,
           type: 'export',
           filename,
-          stage: 'Encoding JSON payload...',
-          percent: 60,
-          detail: `Serializing ${filtered.length.toLocaleString()} items...`,
+          stage: 'Serializing JSON ledger...',
+          percent: 50,
+          detail: `Serializing ${filtered.length.toLocaleString()} objects`,
         });
-        await new Promise((r) => setTimeout(r, 0));
-        fileData = JSON.stringify(filtered, null, 2);
+        fileData = JSON.stringify(
+          filtered.map((e) => ({
+            id: e.id,
+            date: e.expenseDate,
+            category: e.categoryName || e.category?.name || 'Uncategorized',
+            description: e.description,
+            amount: e.amount,
+            isRecurring: Boolean(e.isRecurring || e.recurring),
+          })),
+          null,
+          2
+        );
       } else {
-        filename = `Financial_Summary_${safeLabel}.txt`;
+        filename = `Summary_${safeLabel}.txt`;
         fileData = buildSummary(filtered);
       }
 
@@ -416,33 +453,44 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
         active: true,
         type: 'export',
         filename,
-        stage: 'Writing file to local storage...',
+        stage: 'Flushing to device storage...',
         percent: 85,
-        detail: `Encoded ${filtered.length.toLocaleString()} entries into ${type.toUpperCase()}`,
       });
+
       const uri = `${base}${filename}`;
       await FileSystem.writeAsStringAsync(uri, fileData, {
         encoding: FileSystem.EncodingType.UTF8,
       });
-      await save(uri, filename, mime, uti);
+
       updateProgress({
         active: true,
         type: 'export',
         filename,
-        stage: 'Export complete!',
+        stage: 'Launching OS share sheet...',
+        percent: 98,
+      });
+
+      await save(uri, filename, mime, uti);
+
+      updateProgress({
+        active: true,
+        type: 'export',
+        filename,
+        stage: 'Data export completed!',
         percent: 100,
         done: true,
       });
       setTimeout(() => updateProgress(null), 4000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       updateProgress(null);
-      showAlert('Export Failed', e.message || 'Could not export the selected data.');
+      const msg = e instanceof Error ? e.message : 'Could not export the selected data.';
+      showAlert('Export Failed', msg);
     } finally {
       setBusy(null);
     }
   };
 
-  const buildSummary = (items: any[]) => {
+  const buildSummary = (items: ExportExpenseItem[]) => {
     const total = items.reduce((s, e) => s + Number(e.amount || 0), 0);
     const byCat: Record<string, number> = {};
     items.forEach((e) => {
@@ -550,9 +598,10 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
         onDataImported();
         onClose();
       }, 1200);
-    } catch (e: any) {
+    } catch (e: unknown) {
       updateProgress(null);
-      showAlert('Import Failed', e.message || 'Could not import the file.');
+      const msg = e instanceof Error ? e.message : 'Could not import the file.';
+      showAlert('Import Failed', msg);
     } finally {
       setBusy(null);
     }
@@ -614,7 +663,10 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
                 : `${r.created.toLocaleString()} of ${r.attempted.toLocaleString()} added. Still missing: ${r.remainingAfterVerify}. Failed: ${r.failures.length}. Run Restore again to retry.`
             );
           })
-          .catch((e) => showAlert('Restore stopped', e?.message || 'Could not reach the server. Nothing was lost; try again.'))
+          .catch((e: unknown) => {
+            const msg = e instanceof Error ? e.message : 'Could not reach the server. Nothing was lost; try again.';
+            showAlert('Restore stopped', msg);
+          })
           .finally(() => setBusy(null));
       };
       showAlert('Restore to server?', `This adds only what the server is missing: ${describePlan(result.plan)}. Nothing is edited or deleted.\n\nExamples:\n${planSamples(result.plan).join('\n')}${conflictNote(result.conflicts)}`, [
@@ -622,8 +674,9 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
         { text: 'Restore', onPress: () => startRestore(false) },
         ...(result.conflicts > 0 ? [{ text: 'Restore incl. look-alikes', onPress: () => startRestore(true) }] : []),
       ]);
-    } catch (e: any) {
-      showAlert('Could not complete', e?.message || 'Please try again.');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Please try again.';
+      showAlert('Could not complete', msg);
     } finally {
       setBusy(null);
     }
@@ -651,15 +704,15 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
       for (let i = 0; i < items.length; i += CHUNK_SIZE) {
         const chunk = items.slice(i, i + CHUNK_SIZE);
         await Promise.all(
-          chunk.map(async (item: any) => {
+          chunk.map(async (item: Record<string, unknown>) => {
             if (item.amount && item.description) {
               await apiRequest(`/expenses/user/${userId}`, {
                 method: 'POST',
                 body: JSON.stringify({
-                  description: item.description,
+                  description: String(item.description),
                   amount: Number(item.amount),
-                  expenseDate: item.expenseDate || new Date().toISOString().slice(0, 10),
-                  categoryId: item.categoryId || 1,
+                  expenseDate: (item.expenseDate as string) || new Date().toISOString().slice(0, 10),
+                  categoryId: (item.categoryId as number) || 1,
                 }),
               });
               count++;
@@ -694,9 +747,10 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
       onDataImported();
       setTimeout(() => updateProgress(null), 4000);
       onClose();
-    } catch (e: any) {
+    } catch (e: unknown) {
       updateProgress(null);
-      showAlert('Invalid JSON', e.message || 'Please paste a valid JSON array of expenses.');
+      const msg = e instanceof Error ? e.message : 'Please paste a valid JSON array of expenses.';
+      showAlert('Invalid JSON', msg);
     } finally {
       setBusy(null);
     }
@@ -936,24 +990,28 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
             </View>
             <Text style={[styles.label, { color: c.textMuted }]}>2. EXECUTIVE EXPORTS</Text>
             <View style={styles.grid}>
-              {[
-                ['excel', 'Excel Dashboard', 'PowerBI-style workbook'],
-                ['pdf', 'Executive PDF', 'Insights + KPI report'],
-                ['html', 'HTML Statement', 'Obsidian & Gold web report'],
-                ['csv', 'CSV Ledger', 'Fresh filtered transactions'],
-                ['json', 'JSON Ledger', 'Fresh raw transaction data'],
-                ['summary', 'Summary', 'Compact management brief'],
-              ].map(([key, title, sub]) => (
+              {(
+                [
+                  ['excel', 'Excel Dashboard', 'PowerBI-style workbook'],
+                  ['pdf', 'Executive PDF', 'Insights + KPI report'],
+                  ['html', 'HTML Statement', 'Obsidian & Gold web report'],
+                  ['csv', 'CSV Ledger', 'Fresh filtered transactions'],
+                  ['json', 'JSON Ledger', 'Fresh raw transaction data'],
+                  ['summary', 'Summary', 'Compact management brief'],
+                ] as const
+              ).map(([key, title, sub]) => (
                 <TouchableOpacity
                   key={key}
                   disabled={busy !== null}
-                  onPress={() =>
-                    key === 'excel' || key === 'pdf'
-                      ? downloadReport(key as any)
-                      : key === 'html'
-                      ? downloadHtmlReport()
-                      : exportDataFile(key as any)
-                  }
+                  onPress={() => {
+                    if (key === 'excel' || key === 'pdf') {
+                      void downloadReport(key);
+                    } else if (key === 'html') {
+                      void downloadHtmlReport();
+                    } else {
+                      void exportDataFile(key);
+                    }
+                  }}
                   style={[styles.action, { backgroundColor: c.inputBg, borderColor: c.border }]}
                 >
                   <View style={[styles.icon, { backgroundColor: c.primary + '20' }]}>
@@ -986,15 +1044,17 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
             </View>
             <Text style={[styles.label, { color: c.textMuted, marginTop: 22 }]}>3. IMPORT</Text>
             <View style={styles.grid}>
-              {[
-                ['excel', 'Import Excel'],
-                ['csv', 'Import CSV'],
-                ['json', 'Import JSON'],
-              ].map(([key, title]) => (
+              {(
+                [
+                  ['excel', 'Import Excel'],
+                  ['csv', 'Import CSV'],
+                  ['json', 'Import JSON'],
+                ] as const
+              ).map(([key, title]) => (
                 <TouchableOpacity
                   key={key}
                   disabled={busy !== null}
-                  onPress={() => importFile(key as any)}
+                  onPress={() => void importFile(key)}
                   style={[styles.action, { backgroundColor: c.inputBg, borderColor: c.border }]}
                 >
                   <View style={[styles.icon, { backgroundColor: c.primary + '20' }]}>

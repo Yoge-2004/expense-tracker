@@ -1,6 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 import { apiRequest, ApiError } from '../services/api';
+import { AlertButton, AlertType } from '../context/AlertContext';
+
+export interface ExistingBudgetItem {
+  budgetId?: number | string;
+  categoryId: number | string;
+  categoryName?: string;
+  amount?: number | string;
+  period?: string;
+  [key: string]: unknown;
+}
 
 export interface UseBudgetFormOptions {
   userId: string | number | null;
@@ -14,7 +24,7 @@ export interface UseBudgetFormOptions {
     intervalDays?: string;
   };
   onSuccess: () => void;
-  showAlert: (title: string, message: string, buttons?: any[], type?: any) => void;
+  showAlert: (title: string, message?: string, buttons?: AlertButton[], type?: AlertType) => void;
 }
 
 export function useBudgetForm({
@@ -33,17 +43,19 @@ export function useBudgetForm({
   const [budgetIntervalDays, setBudgetIntervalDays] = useState<string>(
     initialParams?.intervalDays || '30'
   );
-  const [existingBudgets, setExistingBudgets] = useState<any[]>([]);
+  const [existingBudgets, setExistingBudgets] = useState<ExistingBudgetItem[]>([]);
   const [isLoadingBudgets, setIsLoadingBudgets] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Default to first category if unselected
-  useEffect(() => {
+  const [prevCategories, setPrevCategories] = useState(categories);
+  if (prevCategories !== categories) {
+    setPrevCategories(categories);
     if (!budgetCategoryId && categories.length > 0) {
       setBudgetCategoryId(categories[0].id);
     }
-  }, [categories, budgetCategoryId]);
+  }
 
   const loadExistingBudgets = useCallback(async () => {
     if (!userId) return;
@@ -51,7 +63,7 @@ export function useBudgetForm({
       setIsLoadingBudgets(true);
       const data = await apiRequest(`/expenses/budget/status/user/${userId}`);
       if (Array.isArray(data)) {
-        setExistingBudgets(data);
+        setExistingBudgets(data as ExistingBudgetItem[]);
       }
     } catch {
       // ignore
@@ -61,8 +73,20 @@ export function useBudgetForm({
   }, [userId]);
 
   useEffect(() => {
-    void loadExistingBudgets();
-  }, [loadExistingBudgets]);
+    let active = true;
+    if (userId) {
+      apiRequest(`/expenses/budget/status/user/${userId}`)
+        .then((data) => {
+          if (active && Array.isArray(data)) {
+            setExistingBudgets(data as ExistingBudgetItem[]);
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      active = false;
+    };
+  }, [userId]);
 
   const resetForm = useCallback(() => {
     setBudgetLimit('');
@@ -72,11 +96,11 @@ export function useBudgetForm({
   }, []);
 
   const handleDeleteBudgetFromList = useCallback(
-    (b: any) => {
+    (b: ExistingBudgetItem) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       showAlert(
         'Delete Category Budget?',
-        `Are you sure you want to remove the spending limit for ${b.categoryName}?`,
+        `Are you sure you want to remove the spending limit for ${b.categoryName || 'this category'}?`,
         [
           { text: 'Cancel', style: 'cancel' },
           {
@@ -100,8 +124,8 @@ export function useBudgetForm({
                   'success'
                 );
                 void loadExistingBudgets();
-              } catch (e: any) {
-                const msg = e instanceof ApiError ? e.message : 'Could not delete budget.';
+              } catch (e: unknown) {
+                const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : 'Could not delete budget.');
                 showAlert('Delete Failed', msg, undefined, 'error');
               }
             },
@@ -185,9 +209,9 @@ export function useBudgetForm({
       if (!isEditMode) {
         setBudgetLimit('');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       const isApiErr = e instanceof ApiError;
-      const msg = isApiErr ? e.message : 'Could not save category budget.';
+      const msg = isApiErr ? e.message : (e instanceof Error ? e.message : 'Could not save category budget.');
       showAlert('Budget Error', msg);
     } finally {
       setIsSubmitting(false);

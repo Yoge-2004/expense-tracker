@@ -7,7 +7,7 @@
  * Includes defensive client-side validation and lockout handling.
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -18,8 +18,7 @@ import {
   ScrollView,
   Animated,
 } from "react-native";
-import { ThemedTextInput as TextInput } from '../components/ThemedText';
-import { ThemedText as Text } from '../components/ThemedText';
+import { ThemedTextInput as TextInput, ThemedText as Text } from '../components/ThemedText';
 import { useAuth } from "../context/AuthContext";
 import { useAlert } from "../context/AlertContext";
 import { apiRequest, ApiError } from "../services/api";
@@ -54,12 +53,11 @@ export default function ForgotPasswordScreen() {
   const [hasSecurityPin, setHasSecurityPin] = useState(false);
   const [isEmailVerificationEnabled, setIsEmailVerificationEnabled] = useState(false);
   const [step, setStep] = useState<"request" | "verify">("request");
-  /** True when a fingerprint-protected PIN is saved on this phone for the account being recovered. */
-  const [fingerprintReady, setFingerprintReady] = useState(false);
+  const [savedEmail, setSavedEmail] = useState<string | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+  const [slideAnim] = useState(() => new Animated.Value(30));
 
   useEffect(() => {
     fadeAnim.setValue(0);
@@ -68,7 +66,18 @@ export default function ForgotPasswordScreen() {
       Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
       Animated.spring(slideAnim, { toValue: 0, friction: 8, tension: 60, useNativeDriver: true }),
     ]).start();
-  }, [step]);
+  }, [step, fadeAnim, slideAnim]);
+
+  // Load saved pin email for fingerprint support on mount
+  useEffect(() => {
+    let active = true;
+    void savedPinEmail().then((saved) => {
+      if (active) setSavedEmail(saved);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const fingerprintReady = step === "verify" && hasSecurityPin && !!savedEmail && savedEmail === email.trim().toLowerCase();
 
   // Step 1: Initiate Password Recovery
   const handleInitiateRecovery = async () => {
@@ -130,15 +139,6 @@ export default function ForgotPasswordScreen() {
       setIsLoading(false);
     }
   };
-
-  // Offer the fingerprint only when the PIN saved on this phone belongs to the account being recovered.
-  useEffect(() => {
-    if (step !== "verify" || !hasSecurityPin) {
-      setFingerprintReady(false);
-      return;
-    }
-    void savedPinEmail().then((saved) => setFingerprintReady(!!saved && saved === email.trim().toLowerCase())).catch(() => {});
-  }, [step, hasSecurityPin, email]);
 
   // Fingerprint releases the saved Security PIN; the server still verifies the PIN as usual.
   const handleFingerprintReset = async () => {

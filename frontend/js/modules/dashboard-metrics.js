@@ -155,7 +155,7 @@
                 if (streakCountEl) streakCountEl.textContent = "--";
                 if (streakBadge) {
                     streakBadge.title = "No transactions recorded yet";
-                    streakBadge.className = "status-badge badge-neutral";
+                    streakBadge.className = "status-badge badge-neutral badge-streak-pill";
                 }
                 return;
             }
@@ -200,10 +200,10 @@
             }
 
             if (streakCountEl) {
-                streakCountEl.textContent = `${streak}d streak`;
+                streakCountEl.textContent = `${streak}d`;
             }
             if (streakBadge) {
-                streakBadge.className = "status-badge badge-warning";
+                streakBadge.className = "status-badge badge-warning badge-streak-pill";
                 streakBadge.title = `${streak} consecutive day${streak === 1 ? '' : 's'} with ${formatCurrency(0)} recorded non-recurring expenses`;
             }
 

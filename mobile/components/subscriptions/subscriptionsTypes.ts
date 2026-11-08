@@ -55,7 +55,15 @@ export type SubscriptionFilterTab = 'all' | 'expenses' | 'incomes' | 'savings';
 export function getDaysUntil(dateStr?: string): number {
   if (!dateStr) return 999;
   try {
-    const target = new Date(dateStr);
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr);
+    let target: Date;
+    if (match) {
+      target = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    } else {
+      target = new Date(dateStr);
+    }
+    if (isNaN(target.getTime())) return 999;
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     target.setHours(0, 0, 0, 0);

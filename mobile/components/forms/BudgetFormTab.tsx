@@ -5,15 +5,14 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import { ThemedTextInput as TextInput } from '../ThemedText';
-import { ThemedText as Text } from '../ThemedText';
+import { ThemedTextInput as TextInput , ThemedText as Text } from '../ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { StaggeredView } from '../StaggeredView';
 import { ThemeColors, getCategoryIconName } from '../../constants/theme';
 import { formStyles as styles } from './formStyles';
 
-import { useBudgetForm } from '../../hooks/useBudgetForm';
+import { useBudgetForm, ExistingBudgetItem } from '../../hooks/useBudgetForm';
 
 export interface BudgetFormTabProps {
   colors: ThemeColors;
@@ -32,8 +31,8 @@ export interface BudgetFormTabProps {
   errors?: Record<string, string>;
   setErrors?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   handleSaveBudget?: () => void;
-  handleDeleteBudgetFromList?: (budget: any) => void;
-  existingBudgets?: any[];
+  handleDeleteBudgetFromList?: (budget: ExistingBudgetItem) => void;
+  existingBudgets?: ExistingBudgetItem[];
   isSubmitting?: boolean;
   isEditMode: boolean;
 }
@@ -231,7 +230,7 @@ export const BudgetFormTab = memo(function BudgetFormTab(props: BudgetFormTabPro
             Configured Category Budgets
           </Text>
           <View style={{ gap: 10 }}>
-            {existingBudgets.map((b: any, idx: number) => {
+            {existingBudgets.map((b: ExistingBudgetItem, idx: number) => {
               const limitVal = Number(b.limit || 0);
               const spentVal = Number(b.spent || 0);
               const pct = limitVal > 0 ? Math.min(Math.round((spentVal / limitVal) * 100), 100) : 0;
@@ -262,7 +261,7 @@ export const BudgetFormTab = memo(function BudgetFormTab(props: BudgetFormTabPro
                       <TouchableOpacity
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                          setBudgetCategoryId(b.categoryId);
+                          setBudgetCategoryId(Number(b.categoryId));
                           setBudgetLimit(String(b.limit || ''));
                           setBudgetPeriod(b.period || 'MONTHLY');
                           if (b.intervalDays) setBudgetIntervalDays(String(b.intervalDays));

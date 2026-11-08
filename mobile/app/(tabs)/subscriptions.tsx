@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -127,10 +127,15 @@ export default function SubscriptionsScreen() {
     }
   };
 
+  const fetchAllRecurringDataRef = useRef(fetchAllRecurringData);
+  useEffect(() => {
+    fetchAllRecurringDataRef.current = fetchAllRecurringData;
+  });
+
   useFocusEffect(
     useCallback(() => {
-      void fetchAllRecurringData();
-    }, [userId])
+      void fetchAllRecurringDataRef.current();
+    }, [])
   );
 
   const onRefresh = () => {
@@ -324,6 +329,8 @@ export default function SubscriptionsScreen() {
       <ImmersiveLoader
         message="Loading Commitments & Subscriptions..."
         subMessage="Projecting recurring cash flow obligations"
+        customColors={c}
+        theme={theme}
       />
     );
   }
@@ -378,7 +385,18 @@ export default function SubscriptionsScreen() {
           },
         ]}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={c.primary}
+            title="Syncing Subscriptions..."
+            titleColor={c.textMuted}
+            colors={[c.primary, c.accent]}
+            progressBackgroundColor={c.card}
+            progressViewOffset={Math.max(insets.top + 10, 48)}
+          />
+        }
       >
         {fetchError ? (
           <OfflineBanner

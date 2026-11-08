@@ -48,7 +48,7 @@
   --danger: #ef4444;
   --danger-gradient: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
 
-  --glass: blur(28px);
+  --glass: blur(12px);
   --shadow-premium:
     0 20px 45px -12px rgba(15, 23, 42, 0.09),
     0 0 20px rgba(var(--primary-rgb), 0.1);
@@ -116,4 +116,10 @@
 
 :root {
   color-scheme: dark;
+}
+
+@media (max-width: 1024px), (pointer: coarse) {
+  :root {
+    --glass: none;
+  }
 }

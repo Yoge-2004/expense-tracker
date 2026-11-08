@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 /**
  * @file types.ts
  * @description Type definitions for financial intelligence and ML insight components.
@@ -48,7 +49,7 @@ export interface SavingsGoalItem {
 
 export interface DetailedInsightModalData {
   title: string;
-  icon: any;
+  icon: keyof typeof Ionicons.glyphMap;
   color: string;
   headline: string;
   metrics: { label: string; value: string }[];

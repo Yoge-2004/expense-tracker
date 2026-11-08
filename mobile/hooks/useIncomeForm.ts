@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 import { apiRequest, ApiError } from '../services/api';
 import { notifyTransactionRecorded } from '../services/notifications';
 import { IncomeKind, monthKey, monthLabel, shiftMonth } from '../utils/moneyFlow';
+import { AlertButton, AlertType } from '../context/AlertContext';
 
 export interface UseIncomeFormOptions {
   userId: string | number | null;
@@ -22,7 +23,7 @@ export interface UseIncomeFormOptions {
     reimbursedCategoryId?: number | null;
   };
   onSuccess: () => void;
-  showAlert: (title: string, message: string, buttons?: any[], type?: any) => void;
+  showAlert: (title: string, message?: string, buttons?: AlertButton[], type?: AlertType) => void;
 }
 
 export function useIncomeForm({
@@ -56,7 +57,9 @@ export function useIncomeForm({
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
+  const [prevParams, setPrevParams] = useState(initialParams);
+  if (prevParams !== initialParams) {
+    setPrevParams(initialParams);
     if (initialParams) {
       if (initialParams.source !== undefined) setIncomeSource(initialParams.source);
       if (initialParams.amount !== undefined) setIncomeAmount(initialParams.amount);
@@ -70,18 +73,7 @@ export function useIncomeForm({
       if (initialParams.reimbursedCategoryId !== undefined)
         setIncomeReimbursedCategoryId(initialParams.reimbursedCategoryId);
     }
-  }, [
-    initialParams?.source,
-    initialParams?.amount,
-    initialParams?.date,
-    initialParams?.description,
-    initialParams?.isRecurring,
-    initialParams?.frequency,
-    initialParams?.intervalDays,
-    initialParams?.kind,
-    initialParams?.countsToward,
-    initialParams?.reimbursedCategoryId,
-  ]);
+  }
 
   const incomeMonthOptions = useMemo(() => {
     const base = monthKey(incomeDate) || monthKey(new Date());
@@ -167,8 +159,8 @@ export function useIncomeForm({
         ]);
       }
       resetForm();
-    } catch (e: any) {
-      const msg = e instanceof ApiError ? e.message : 'Could not save income record.';
+    } catch (e: unknown) {
+      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : 'Could not save income record.');
       showAlert('Save Error', msg);
     } finally {
       setIsSubmitting(false);

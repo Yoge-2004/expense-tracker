@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -58,30 +58,39 @@ export const WallpaperCropModal: React.FC<WallpaperCropModalProps> = ({
   const maxFrameHeight = Math.max(180, Math.min(screenHeight - 310, 420));
   const frameWidth = Math.max(1, Math.min(maxFrameWidth, maxFrameHeight * aspect));
   const frameHeight = Math.max(1, frameWidth / aspect);
-  frameSize.current = { width: frameWidth, height: frameHeight };
 
-  const updateSelection = (rect: CropRect | null) => {
+  useEffect(() => {
+    frameSize.current = { width: frameWidth, height: frameHeight };
+  }, [frameWidth, frameHeight]);
+
+  const updateSelection = useCallback((rect: CropRect | null) => {
     selectionRef.current = rect;
     setSelection(rect);
-  };
+  }, []);
+
   const updateSelectionRef = useRef(updateSelection);
-  updateSelectionRef.current = updateSelection;
+  useEffect(() => {
+    updateSelectionRef.current = updateSelection;
+  }, [updateSelection]);
 
   useEffect(() => {
     if (visible) {
-      updateSelection(null);
-      setError(null);
-      setProcessing(false);
-      requestAnimationFrame(() => {
+      const handle = requestAnimationFrame(() => {
+        selectionRef.current = null;
+        setSelection(null);
+        setError(null);
+        setProcessing(false);
         frameRef.current?.measureInWindow((x, y) => {
           frameOffset.current = { x, y };
         });
       });
+      return () => cancelAnimationFrame(handle);
     }
   }, [visible, uri]);
 
-  const panResponder = useMemo(
-    () => PanResponder.create({
+  // eslint-disable-next-line react-hooks/refs
+  const [panResponder] = useState(() =>
+    PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderTerminationRequest: () => false,
@@ -136,7 +145,7 @@ export const WallpaperCropModal: React.FC<WallpaperCropModalProps> = ({
       },
       onPanResponderRelease: () => { gestureRef.current = null; },
       onPanResponderTerminate: () => { gestureRef.current = null; },
-    }), []
+    })
   );
 
   const applyCrop = async () => {

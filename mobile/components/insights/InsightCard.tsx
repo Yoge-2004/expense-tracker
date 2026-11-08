@@ -13,7 +13,7 @@ import { ThemeColors } from '../../constants/theme';
 interface InsightCardProps {
   title: string;
   tag: string;
-  icon: any;
+  icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
   primaryVal: string;
   primaryValColor?: string;

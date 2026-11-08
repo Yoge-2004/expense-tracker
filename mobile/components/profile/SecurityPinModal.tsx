@@ -1,3 +1,4 @@
+import { AlertButton, AlertType } from '../../context/AlertContext';
 /**
  * @file SecurityPinModal.tsx
  * @description Accessible 6-digit numeric recovery PIN configuration modal.
@@ -22,7 +23,7 @@ export interface SecurityPinModalProps {
   colors: ThemeColors;
   onClose: () => void;
   onSavePin: (pin: string) => Promise<void>;
-  showAlert: (title: string, message: string, buttons?: any[], type?: any) => void;
+  showAlert: (title: string, message: string, buttons?: AlertButton[], type?: AlertType) => void;
 }
 
 export const SecurityPinModal = memo(function SecurityPinModal({

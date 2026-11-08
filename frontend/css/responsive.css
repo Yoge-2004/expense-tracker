@@ -312,22 +312,34 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 6px;
+    gap: 4px;
     flex-shrink: 0;
-    margin-left: 6px;
+    margin-left: auto;
   }
 
   .expense-amount {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     white-space: nowrap;
   }
 
+  .expense-item-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+
   .expense-actions-col .btn-edit,
   .expense-actions-col .btn-delete {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     padding: 0;
+  }
+
+  .expense-actions-col .btn-split-loan {
+    height: 26px;
+    padding: 0 6px;
+    font-size: 10.5px;
   }
 }
 
@@ -1383,5 +1395,14 @@ body {
 @media (max-width: 480px) {
   .loans-metrics-grid {
     grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* Hide desktop keyboard shortcuts on mobile and tablet touch devices */
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+  .gesture-shortcuts-desktop,
+  #gestureShortcutsDesktop {
+    display: none !important;
   }
 }

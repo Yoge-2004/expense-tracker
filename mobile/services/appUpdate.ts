@@ -37,7 +37,7 @@ export interface DownloadProgress {
   percent: number;
 }
 
-export const CURRENT_APP_VERSION = Constants.expoConfig?.version || '1.0.12';
+export const CURRENT_APP_VERSION = Constants.expoConfig?.version || '1.0.13';
 export const DISPLAY_VERSION = `v${CURRENT_APP_VERSION}`;
 
 /**
@@ -224,6 +224,138 @@ export async function openInstallPermissionSettings(): Promise<void> {
   });
 }
 
+const progressListeners = new Set<(progress: DownloadProgress) => void>();
+let activeDownloadPromise: Promise<string> | null = null;
+let activeDownloadUrl: string | null = null;
+
+export function addDownloadProgressListener(listener: (progress: DownloadProgress) => void): () => void {
+  progressListeners.add(listener);
+  return () => { progressListeners.delete(listener); };
+}
+
+export function isUpdateDownloadActive(url?: string): boolean {
+  if (!activeDownloadPromise) return false;
+  if (url && activeDownloadUrl !== url) return false;
+  return true;
+}
+
+/**
+ * Checks if a verified, complete update APK already exists on local storage.
+ */
+export async function checkExistingCompleteApk(expectedBytes?: number | null): Promise<string | null> {
+  const targetDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
+  const localFileUri = `${targetDir}expense-tracker-update.apk`;
+  try {
+    const fileInfo = await FileSystem.getInfoAsync(localFileUri);
+    const size = fileInfo.exists && typeof (fileInfo as { size?: number }).size === 'number'
+      ? (fileInfo as { size: number }).size
+      : 0;
+    if (fileInfo.exists && size >= MIN_APK_BYTES) {
+      if (!expectedBytes || expectedBytes <= 0 || size === expectedBytes) {
+        return localFileUri;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+/**
+ * Downloads the update APK in the background. Reuses active downloads and does not wipe out
+ * an already completed APK.
+ */
+export async function downloadUpdateApk(
+  downloadUrl: string,
+  onProgress?: (progress: DownloadProgress) => void,
+  expectedBytes?: number | null
+): Promise<string> {
+  if (onProgress) {
+    progressListeners.add(onProgress);
+  }
+
+  // Check if complete APK already exists in local storage
+  const existing = await checkExistingCompleteApk(expectedBytes);
+  if (existing) {
+    const total = expectedBytes || 1;
+    const p: DownloadProgress = { totalBytes: total, downloadedBytes: total, percent: 100 };
+    for (const listener of progressListeners) {
+      listener(p);
+    }
+    if (onProgress) progressListeners.delete(onProgress);
+    return existing;
+  }
+
+  // If download is already actively in progress for this URL, reuse the existing promise!
+  if (activeDownloadPromise && activeDownloadUrl === downloadUrl) {
+    try {
+      const result = await activeDownloadPromise;
+      if (onProgress) progressListeners.delete(onProgress);
+      return result;
+    } catch (e) {
+      if (onProgress) progressListeners.delete(onProgress);
+      throw e;
+    }
+  }
+
+  const targetDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
+  const localFileUri = `${targetDir}expense-tracker-update.apk`;
+
+  activeDownloadUrl = downloadUrl;
+  activeDownloadPromise = (async () => {
+    try {
+      const downloadResumable = FileSystem.createDownloadResumable(
+        downloadUrl,
+        localFileUri,
+        {},
+        (downloadProgress) => {
+          const total = downloadProgress.totalBytesExpectedToWrite;
+          const written = downloadProgress.totalBytesWritten;
+          const percent = total > 0 ? Math.round((written / total) * 100) : 0;
+          const p: DownloadProgress = {
+            totalBytes: total,
+            downloadedBytes: written,
+            percent,
+          };
+          for (const listener of progressListeners) {
+            listener(p);
+          }
+        }
+      );
+
+      const result = await downloadResumable.downloadAsync();
+      if (!result || result.status !== 200) {
+        throw new Error(`Failed to download APK. Server returned HTTP ${result?.status || 500}`);
+      }
+
+      if (Platform.OS === 'android') {
+        await assertDownloadedApk(localFileUri, expectedBytes);
+      }
+      return localFileUri;
+    } finally {
+      activeDownloadPromise = null;
+      activeDownloadUrl = null;
+    }
+  })();
+
+  try {
+    const result = await activeDownloadPromise;
+    if (onProgress) progressListeners.delete(onProgress);
+    return result;
+  } catch (e) {
+    if (onProgress) progressListeners.delete(onProgress);
+    throw e;
+  }
+}
+
+/** Installs an already downloaded and verified APK. */
+export async function installDownloadedApk(localFileUri: string, expectedBytes?: number | null): Promise<void> {
+  if (Platform.OS === 'android') {
+    await assertDownloadedApk(localFileUri, expectedBytes);
+    await launchApkInstaller(localFileUri);
+  }
+}
+
 /**
  * Downloads the release APK and opens the installer. Resolves with the local file so the caller
  * can reopen the installer without downloading again.
@@ -233,45 +365,11 @@ export async function downloadAndInstallApk(
   onProgress?: (progress: DownloadProgress) => void,
   expectedBytes?: number | null
 ): Promise<string> {
-  const targetDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
-  const localFileUri = `${targetDir}expense-tracker-update.apk`;
-
-  try {
-    const fileInfo = await FileSystem.getInfoAsync(localFileUri);
-    if (fileInfo.exists) {
-      await FileSystem.deleteAsync(localFileUri, { idempotent: true });
-    }
-  } catch {
-    // a stale file that cannot be removed is overwritten by the download
-  }
-
-  const downloadResumable = FileSystem.createDownloadResumable(
-    downloadUrl,
-    localFileUri,
-    {},
-    (downloadProgress) => {
-      const total = downloadProgress.totalBytesExpectedToWrite;
-      const written = downloadProgress.totalBytesWritten;
-      const percent = total > 0 ? Math.round((written / total) * 100) : 0;
-      onProgress?.({
-        totalBytes: total,
-        downloadedBytes: written,
-        percent,
-      });
-    }
-  );
-
-  const result = await downloadResumable.downloadAsync();
-  if (!result || result.status !== 200) {
-    throw new Error(`Failed to download APK. Server returned HTTP ${result?.status || 500}`);
-  }
-
+  const localFileUri = await downloadUpdateApk(downloadUrl, onProgress, expectedBytes);
   if (Platform.OS === 'android') {
-    await assertDownloadedApk(localFileUri, expectedBytes);
     await launchApkInstaller(localFileUri);
   } else {
     await Linking.openURL(downloadUrl);
   }
-
   return localFileUri;
 }

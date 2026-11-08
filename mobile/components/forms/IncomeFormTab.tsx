@@ -4,8 +4,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { ThemedTextInput as TextInput } from '../ThemedText';
-import { ThemedText as Text } from '../ThemedText';
+import { ThemedTextInput as TextInput , ThemedText as Text } from '../ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { StaggeredView } from '../StaggeredView';
 import { ChoiceChips } from '../ChoiceChips';

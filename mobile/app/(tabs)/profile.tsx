@@ -22,8 +22,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import { ThemedTextInput as TextInput } from '../../components/ThemedText';
-import { ThemedText as Text } from '../../components/ThemedText';
+import { ThemedTextInput as TextInput , ThemedText as Text } from '../../components/ThemedText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
@@ -112,15 +111,6 @@ export default function ProfileScreen() {
   const [isOffline, setIsOffline] = useState(false);
   const [retryingProfile, setRetryingProfile] = useState(false);
 
-  const checkConnectivity = async () => {
-    try {
-      const healthy = await checkServerHealth();
-      setIsOffline(!healthy);
-    } catch {
-      setIsOffline(true);
-    }
-  };
-
   const handleRetryProfile = async () => {
     setRetryingProfile(true);
     try {
@@ -135,8 +125,22 @@ export default function ProfileScreen() {
   };
 
   React.useEffect(() => {
-    void checkConnectivity();
-    void checkForAppUpdate().then((info) => setUpdateInfo(info)).catch(() => {});
+    let active = true;
+    checkServerHealth()
+      .then((healthy) => {
+        if (active) setIsOffline(!healthy);
+      })
+      .catch(() => {
+        if (active) setIsOffline(true);
+      });
+    checkForAppUpdate()
+      .then((info) => {
+        if (active) setUpdateInfo(info);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleCheckUpdate = async () => {
@@ -569,6 +573,10 @@ export default function ProfileScreen() {
    */
   const handleSaveNickname = async () => {
     const cleanName = nickname.trim();
+    if (cleanName === (userName || '').trim()) {
+      setIsEditing(false);
+      return;
+    }
     if (!cleanName) {
       showAlert('Invalid Name', 'Display name cannot be empty.', undefined, 'warning');
       return;
@@ -590,6 +598,11 @@ export default function ProfileScreen() {
   /**
    * Executes permanent account deletion once confirmation text matches "DELETE".
    */
+  const handleCancelEditNickname = () => {
+    setNickname(userName || '');
+    setIsEditing(false);
+  };
+
   const handleExecuteDeleteAccount = async (password: string) => {
     setIsDeletingAccount(true);
     try {
@@ -686,14 +699,31 @@ export default function ProfileScreen() {
                     <TouchableOpacity
                       onPress={handleSaveNickname}
                       style={[styles.saveNickBtn, { backgroundColor: c.primary }]}
+                      accessibilityLabel="Save display name"
+                      accessibilityRole="button"
                     >
                       <Ionicons name="checkmark" size={16} color={c.onPrimary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={handleCancelEditNickname}
+                      style={[styles.cancelNickBtn, { backgroundColor: c.inputBg, borderColor: c.border }]}
+                      accessibilityLabel="Cancel editing display name"
+                      accessibilityRole="button"
+                    >
+                      <Ionicons name="close" size={16} color={c.textMuted} />
                     </TouchableOpacity>
                   </View>
                 ) : (
                   <View style={styles.nameRow}>
                     <Text style={[styles.userNameText, { color: c.text }]}>{userName || 'User'}</Text>
-                    <TouchableOpacity onPress={() => setIsEditing(true)}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setNickname(userName || '');
+                        setIsEditing(true);
+                      }}
+                      accessibilityLabel="Edit display name"
+                      accessibilityRole="button"
+                    >
                       <Ionicons name="pencil" size={16} color={c.textMuted} />
                     </TouchableOpacity>
                   </View>
@@ -1328,6 +1358,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   saveNickBtn: { width: 36, height: 36, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  cancelNickBtn: { width: 36, height: 36, borderRadius: 8, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   sectionTitle: {
     fontSize: 11.5,
     fontWeight: '800',

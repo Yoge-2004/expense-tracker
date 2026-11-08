@@ -11,7 +11,7 @@
  * - Full iOS and Android safe area adaptation.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -24,8 +24,7 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
-import { ThemedTextInput as TextInput } from '../components/ThemedText';
-import { ThemedText as Text } from '../components/ThemedText';
+import { ThemedTextInput as TextInput , ThemedText as Text } from '../components/ThemedText';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { apiRequest, ApiError } from '../services/api';
@@ -74,15 +73,15 @@ export default function RegisterScreen() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+  const [slideAnim] = useState(() => new Animated.Value(30));
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.spring(slideAnim, { toValue: 0, friction: 8, tension: 60, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim]);
 
   useEffect(() => {
     async function checkAuthConfig() {

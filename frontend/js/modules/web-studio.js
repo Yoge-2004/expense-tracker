@@ -639,6 +639,7 @@
             type: currentWallpaperType,
             presetId: currentPresetId,
             uri: currentWallpaperUri,
+            sourceUri: wallpaperSourceUri,
             overlayOpacity: currentOverlayOpacity,
             blurIntensity: currentBlurIntensity,
         }));
@@ -670,7 +671,7 @@
         if (currentCustomFontFamily) localStorage.setItem('app_custom_font_family', currentCustomFontFamily);
         if (currentCustomFontData) localStorage.setItem('app_custom_font_data', currentCustomFontData);
         localStorage.setItem('app_custom_palette', JSON.stringify({ primary: currentPrimary, primaryGradientEnd: currentPrimaryEnd, accent: currentAccent, highlight: currentHighlight, cardSurface: currentCardSurface, surface: currentAppSurface }));
-        localStorage.setItem('app_bg_asset', JSON.stringify({ type: currentWallpaperType, presetId: currentPresetId, uri: currentWallpaperUri, overlayOpacity: currentOverlayOpacity, blurIntensity: currentBlurIntensity }));
+        localStorage.setItem('app_bg_asset', JSON.stringify({ type: currentWallpaperType, presetId: currentPresetId, uri: currentWallpaperUri, sourceUri: wallpaperSourceUri, overlayOpacity: currentOverlayOpacity, blurIntensity: currentBlurIntensity }));
         applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
         applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
         applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
@@ -711,6 +712,8 @@
                 }
             }
             if (parsed.uri) currentWallpaperUri = parsed.uri;
+            if (parsed.sourceUri) wallpaperSourceUri = parsed.sourceUri;
+            else if (parsed.uri && /^https?:\/\//i.test(parsed.uri)) wallpaperSourceUri = parsed.uri;
             if (typeof parsed.overlayOpacity === 'number') currentOverlayOpacity = parsed.overlayOpacity;
             if (typeof parsed.blurIntensity === 'number') currentBlurIntensity = parsed.blurIntensity;
         }
@@ -1799,7 +1802,11 @@
             reader.onload = (ev) => {
                 const dataUrl = ev.target?.result;
                 if (!dataUrl) return;
-                if (wallpaperUrlInput) wallpaperUrlInput.value = 'Local Image File';
+                wallpaperSourceUri = 'local:' + (file.name || 'image');
+                if (wallpaperUrlInput) {
+                    wallpaperUrlInput.value = '';
+                    wallpaperUrlInput.placeholder = 'Uploaded file: ' + (file.name || 'image');
+                }
                 void processWallpaper(dataUrl);
             };
             reader.readAsDataURL(file);
@@ -1864,7 +1871,7 @@
         }
 
         // Reset to Defaults
-        resetBtn?.addEventListener('click', () => {
+        function resetToDefault() {
             currentFontChoice = 'grotesk';
             currentCustomFontFamily = null;
             currentCustomFontData = null;
@@ -1886,12 +1893,15 @@
             localStorage.removeItem('app_custom_palette');
             localStorage.removeItem('app_bg_asset');
 
-            applyTypography('grotesk', null, null);
-            applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
+            clearPaletteVars();
             applyAtmosphere('preset', '', 0.35, 0);
+            document.body?.classList.remove("has-custom-wallpaper");
+            document.documentElement.style.removeProperty("--custom-wallpaper-bg");
             syncUiControls();
             void saveAppearanceToCloud();
-        });
+        }
+
+        resetBtn?.addEventListener('click', resetToDefault);
 
         // Save & Sync to Cloud
         saveSyncBtn?.addEventListener('click', () => {
@@ -2024,9 +2034,22 @@
             if (blurSlider) blurSlider.value = currentBlurIntensity;
             if (blurValue) blurValue.textContent = `${currentBlurIntensity}px`;
             if (wallpaperUrlInput) {
-                wallpaperUrlInput.value = currentWallpaperType === 'custom'
-                    ? (currentWallpaperUri.startsWith('data:') ? 'Local Image File' : currentWallpaperUri)
-                    : '';
+                if (currentWallpaperType === 'custom') {
+                    if (/^https?:\/\//i.test(wallpaperSourceUri)) {
+                        wallpaperUrlInput.value = wallpaperSourceUri;
+                        wallpaperUrlInput.placeholder = 'Paste image URL (https://...)';
+                    } else if (wallpaperSourceUri.startsWith('local:') || currentWallpaperUri.startsWith('data:')) {
+                        wallpaperUrlInput.value = '';
+                        const fileName = wallpaperSourceUri.replace(/^local:/, '');
+                        wallpaperUrlInput.placeholder = fileName ? `Uploaded file: ${fileName}` : 'Uploaded local image active';
+                    } else {
+                        wallpaperUrlInput.value = currentWallpaperUri || '';
+                        wallpaperUrlInput.placeholder = 'Paste image URL (https://...)';
+                    }
+                } else {
+                    wallpaperUrlInput.value = '';
+                    wallpaperUrlInput.placeholder = 'Paste image URL (https://...)';
+                }
             }
         }
 
@@ -2041,7 +2064,15 @@
     }
 
     // Attach to DOMContentLoaded or execute immediately if already loaded
-    document.addEventListener('themechange', () => {
+    document.addEventListener('themechange', (e) => {
+        if (e && e.detail && e.detail.fromToggle) {
+            resetToDefault();
+            return;
+        }
+        if (isDefaultPalette()) {
+            clearPaletteVars();
+            return;
+        }
         applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
     });
 
@@ -2053,6 +2084,7 @@
 
     // Expose API to window
     window.WebStudio = {
+        resetToDefault,
         selectPreset,
         fetchAppearanceFromCloud,
         saveAppearanceToCloud,

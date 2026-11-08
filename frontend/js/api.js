@@ -497,6 +497,8 @@ function updateAllThemeIcons(theme) {
         const sun = btn.querySelector(".sun-icon");
         const moon = btn.querySelector(".moon-icon");
         if (sun && moon) {
+            sun.classList.remove("d-none", "theme-icon-hidden");
+            moon.classList.remove("d-none", "theme-icon-hidden");
             if (theme === "dark") {
                 sun.style.display = "block";
                 moon.style.display = "none";
@@ -530,8 +532,19 @@ function toggleGlobalTheme() {
     localStorage.setItem("theme", nextTheme);
     updateThemeColorMeta(nextTheme);
     updateAllThemeIcons(nextTheme);
+
+    // If custom theme or wallpaper was active, reset to default themes
+    if (window.WebStudio && typeof window.WebStudio.resetToDefault === "function") {
+        window.WebStudio.resetToDefault();
+    } else {
+        localStorage.removeItem("app_custom_palette");
+        localStorage.removeItem("app_bg_asset");
+        document.body?.classList.remove("has-custom-wallpaper");
+        document.documentElement.style.removeProperty("--custom-wallpaper-bg");
+    }
+
     requestAnimationFrame(() => {
-        document.dispatchEvent(new CustomEvent("themechange", { detail: { theme: nextTheme } }));
+        document.dispatchEvent(new CustomEvent("themechange", { detail: { theme: nextTheme, fromToggle: true } }));
     });
 }
 

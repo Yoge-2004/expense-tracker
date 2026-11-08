@@ -4,7 +4,7 @@
  * Allows users to visually browse months and tap any calendar date without manual typing.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -43,8 +43,8 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
   onClose,
   onSelectDate,
 }) => {
-  const { theme } = useAuth();
-  const c = Colors[theme || 'dark'];
+  const { theme, themeColors } = useAuth();
+  const c = themeColors || Colors[theme || 'dark'];
 
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -53,7 +53,9 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
   const [pickerMode, setPickerMode] = useState<'none' | 'month' | 'year'>('none');
   const [decadeBase, setDecadeBase] = useState(Math.floor(today.getFullYear() / 12) * 12);
 
-  useEffect(() => {
+  const [prevTrigger, setPrevTrigger] = useState({ initialDate, visible });
+  if (prevTrigger.initialDate !== initialDate || prevTrigger.visible !== visible) {
+    setPrevTrigger({ initialDate, visible });
     if (initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
       const parts = initialDate.split('-');
       const y = Number.parseInt(parts[0], 10);
@@ -71,7 +73,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
       setDecadeBase(Math.floor(now.getFullYear() / 12) * 12);
       setSelectedDateStr('');
     }
-  }, [initialDate, visible]);
+  }
 
   const handlePrevMonth = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});

@@ -493,3 +493,51 @@ export async function checkServerHealth(): Promise<boolean> {
     return false;
   }
 }
+
+export interface SystemArchitectureSpec {
+  springBootVersion: string;
+  springVersion?: string;
+  javaVersion: string;
+  javaMajor: string;
+  backendStack: string;
+  apachePoiVersion: string;
+  virtualThreads: boolean;
+  frontendStack?: string;
+  mobileStack?: string;
+}
+
+/**
+ * Fetches runtime system architecture metadata from the backend.
+ * Falls back to canonical baseline if offline or unreachable.
+ */
+export async function fetchSystemArchitecture(): Promise<SystemArchitectureSpec> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`${API_BASE_URL}/health/architecture`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.springBootVersion) {
+        return data as SystemArchitectureSpec;
+      }
+    }
+  } catch {
+    // Offline or fallback to baseline
+  }
+
+  return {
+    springBootVersion: '4.1.2',
+    javaVersion: '27',
+    javaMajor: '27',
+    backendStack: 'Spring Boot 4.1.2 (Java 27)',
+    apachePoiVersion: '5.5.1',
+    virtualThreads: true,
+    frontendStack: 'Modern Web ES6+ • Tesseract WebAssembly • PWA',
+    mobileStack: 'React Native 0.88 (Expo SDK 58 • React 19.3)',
+  };
+}

@@ -288,13 +288,30 @@
 }
 .receipt-ocr-dropzone {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   cursor: var(--cursor-pointer, pointer);
+  width: 100%;
+  box-sizing: border-box;
+}
+.receipt-ocr-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
 }
 .receipt-ocr-icon {
-  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+  background: rgba(var(--primary-rgb, 199, 154, 62), 0.12);
+  color: var(--primary, #c79a3e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
+  flex-shrink: 0;
 }
 .receipt-ocr-text {
   flex: 1;
@@ -302,33 +319,65 @@
 }
 .receipt-ocr-title {
   display: block;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--text-main, #ededec);
+  line-height: 1.3;
 }
 .receipt-ocr-sub {
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-muted, #8e8d8a);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+.receipt-ocr-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .btn-scan-receipt {
+  flex: 1 1 0;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   background: var(--primary, #c79a3e);
   color: #111;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 8px;
-  font-size: 11px;
-  font-weight: 800;
-  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 8px 10px;
   cursor: var(--cursor-pointer, pointer);
+  white-space: nowrap;
+  box-sizing: border-box;
   transition:
     transform 0.15s ease,
-    opacity 0.15s ease;
+    opacity 0.15s ease,
+    background 0.15s ease;
 }
 .btn-scan-receipt:hover {
-  transform: scale(1.03);
+  transform: translateY(-1px);
+}
+.btn-scan-receipt.btn-scan-gold-tint {
+  background: rgba(var(--primary-rgb, 199, 154, 62), 0.14);
+  color: var(--primary, #c79a3e);
+  border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.28);
+}
+.btn-scan-receipt.btn-scan-gold-tint:hover {
+  background: rgba(var(--primary-rgb, 199, 154, 62), 0.22);
+  border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.45);
+}
+@media (max-width: 360px) {
+  .btn-scan-receipt {
+    padding: 6px 4px;
+    font-size: 10.5px;
+    gap: 4px;
+  }
 }
 .receipt-ocr-progress {
   margin-top: 10px;

@@ -352,14 +352,29 @@ function renderList(expenses) {
             </div>`;
         return;
     }
+    const anomalySet = new Set();
+    if (expenses.length >= 3) {
+        const amounts = expenses.map(e => Number(e.amount || 0));
+        const mean = amounts.reduce((a, b) => a + b, 0) / amounts.length;
+        const variance = amounts.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / (amounts.length - 1);
+        const stdev = Math.sqrt(variance);
+        const threshold = mean + 2 * stdev;
+        expenses.forEach(e => {
+            if (Number(e.amount || 0) > threshold && Number(e.amount || 0) > 80) {
+                anomalySet.add(e.id);
+            }
+        });
+    }
+
     elements.expenseList.innerHTML = expenses.map((exp, idx) => {
         const catColor = getCategoryColor(exp.categoryName);
         const catName = exp.categoryName || 'General';
         const isRecurring = exp.recurring || exp.isRecurring;
+        const isAnomaly = anomalySet.has(exp.id);
         const delay = Math.min(idx * 0.04, 0.4);
         return `
         <div class="expense-item" data-delay="${delay}">
-            <div class="expense-emoji-box" data-bg="${catColor.bg}">
+            <div class="expense-emoji-box" data-bg="${catColor.bg}" data-color="${catColor.color}">
                 ${getCategoryEmoji(catName)}
             </div>
             <div class="expense-info">
@@ -367,21 +382,24 @@ function renderList(expenses) {
                 <div class="expense-meta">
                     <span>${formatDate(exp.expenseDate)}</span>
                     <span class="cat-chip" data-cat-bg="${catColor.bg}" data-cat-color="${catColor.color}">${escapeHtml(catName)}</span>
+                    ${isAnomaly ? '<span class="anomaly-tag" title="Statistical Surge (>2σ): Significantly higher than normal for this category"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>SURGE (>2σ)</span>' : ''}
                     ${isRecurring ? '<span class="recurring-tag"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>RECURRING</span>' : ''}
                 </div>
             </div>
             <div class="expense-actions-col">
                 <div class="expense-amount">${formatCurrency(exp.amount)}</div>
-                <button class="btn-text-icon btn-split-loan" data-action="split" data-id="${exp.id}" data-desc="${escapeHtml(exp.description || '')}" data-amount="${exp.amount}" data-date="${exp.expenseDate}" title="Split / Link to Peer Loan">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
-                    <span>Split</span>
-                </button>
-                <button class="btn-edit" data-action="edit" data-id="${exp.id}" title="Edit">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                </button>
-                <button class="btn-delete" data-action="delete" data-id="${exp.id}" title="Delete">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                </button>
+                <div class="expense-item-actions">
+                    <button type="button" class="btn-text-icon btn-split-loan" data-action="split" data-id="${exp.id}" data-desc="${escapeHtml(exp.description || '')}" data-amount="${exp.amount}" data-date="${exp.expenseDate}" title="Split / Link to Peer Loan">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                        <span>Split</span>
+                    </button>
+                    <button type="button" class="btn-edit" data-action="edit" data-id="${exp.id}" title="Edit Expense">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button type="button" class="btn-delete" data-action="delete" data-id="${exp.id}" title="Delete Expense">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                </div>
             </div>
         </div>`;
     }).join("");
@@ -390,6 +408,7 @@ function renderList(expenses) {
     });
     elements.expenseList.querySelectorAll('.expense-emoji-box[data-bg]').forEach(el => {
         el.style.background = el.dataset.bg;
+        if (el.dataset.color) el.style.color = el.dataset.color;
     });
     elements.expenseList.querySelectorAll('.cat-chip[data-cat-bg]').forEach(el => {
         el.style.background = el.dataset.catBg;
@@ -397,6 +416,8 @@ function renderList(expenses) {
         el.style.borderColor = `${el.dataset.catColor}30`;
     });
 }
+window.renderList = renderList;
+window.renderExpenses = renderList;
 
 function populateCategoryDropdown(categories) {
     if (!categories || categories.length === 0) {
@@ -786,10 +807,14 @@ manageCategoriesModal?.addEventListener("click", (e) => {
     if (e.target === manageCategoriesModal) closeModal(manageCategoriesModal);
 });
 
-elements.toggleFiltersBtn.addEventListener("click", () => {
-    const isActive = elements.filterPanel.classList.toggle("active");
-    elements.toggleFiltersBtn.classList.toggle("active", isActive);
+// Outflow Filters toggle
+elements.toggleFiltersBtn?.addEventListener("click", () => {
+    const expPanel = elements.filterPanel || document.getElementById("filterPanel");
+    if (!expPanel) return;
+    const isOpen = expPanel.classList.toggle("active");
+    elements.toggleFiltersBtn.classList.toggle("active", isOpen);
 });
+
 
 // Theme Logic
 const savedTheme = localStorage.getItem("theme") || "dark";
@@ -2004,7 +2029,8 @@ window.switchSubsModalTab = switchSubsModalTab;
 document.getElementById("subsTabExpensesBtn")?.addEventListener("click", () => switchSubsModalTab('expenses'));
 document.getElementById("subsTabIncomesBtn")?.addEventListener("click", () => switchSubsModalTab('incomes'));
 document.getElementById("subsTabSavingsBtn")?.addEventListener("click", () => switchSubsModalTab('savings'));
-document.getElementById("triggerSmsPasteBtn")?.addEventListener("click", () => {
+document.getElementById("triggerSmsPasteBtn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
     if (window.DashboardNotifications) window.DashboardNotifications.promptPasteBankSMS();
 });
 
@@ -2574,7 +2600,12 @@ if (editProfileBtn && editProfileModal) {
 
     editProfileForm?.addEventListener("submit", async (e) => {
         e.preventDefault();
+        const currentName = (localStorage.getItem("userName") || "").trim();
         const newName = editProfileNameInput?.value?.trim();
+        if (newName === currentName) {
+            closeEditModal();
+            return;
+        }
         if (!newName || newName.length < 2 || newName.length > 50) {
             showToast("Display name must be between 2 and 50 characters.", "warning");
             return;
@@ -2970,12 +3001,14 @@ function renderIncomesTableOnly(incomes) {
                         <div class="expense-amount amount-inflow">
                             +${formatCurrency(inc.amount)}
                         </div>
-                        <button class="btn-edit edit-income-btn" data-inc-id="${inc.id}" data-inc-source="${escapeHtml(inc.source || "")}" data-inc-amount="${inc.amount || 0}" data-inc-date="${inc.incomeDate || ""}" data-inc-desc="${escapeHtml(inc.description || "")}" data-inc-recurring="${isRec}" data-inc-freq="${escapeHtml(inc.frequency || "MONTHLY")}" data-inc-interval="${inc.intervalDays || 1}" data-inc-kind="${escapeHtml(inc.kind || "")}" data-inc-month="${escapeHtml(inc.countsTowardMonth || "")}" data-inc-cat="${inc.reimbursedCategoryId || ""}" title="Edit Income">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        </button>
-                        <button class="btn-delete delete-income-btn" data-income-id="${inc.id}" title="Delete Income">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                        </button>
+                        <div class="expense-item-actions">
+                            <button type="button" class="btn-edit edit-income-btn" data-inc-id="${inc.id}" data-inc-source="${escapeHtml(inc.source || "")}" data-inc-amount="${inc.amount || 0}" data-inc-date="${inc.incomeDate || ""}" data-inc-desc="${escapeHtml(inc.description || "")}" data-inc-recurring="${isRec}" data-inc-freq="${escapeHtml(inc.frequency || "MONTHLY")}" data-inc-interval="${inc.intervalDays || 1}" data-inc-kind="${escapeHtml(inc.kind || "")}" data-inc-month="${escapeHtml(inc.countsTowardMonth || "")}" data-inc-cat="${inc.reimbursedCategoryId || ""}" title="Edit Income">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </button>
+                            <button type="button" class="btn-delete delete-income-btn" data-income-id="${inc.id}" title="Delete Income">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 `;}).join("")}
@@ -3098,26 +3131,42 @@ function renderSavingsSkeleton() {
 window.renderSavingsSkeleton = renderSavingsSkeleton;
 
 function renderSavingsGoals(goals) {
-if (container && !container.__goalsDelegated) {
-    container.__goalsDelegated = true;
-    container.addEventListener("click", (e) => {
-        const btn = e.target.closest("button[data-action]");
-        if (!btn || !container.contains(btn)) return;
-        const action = btn.getAttribute("data-action");
-        if (action === "create-goal") {
-            document.getElementById("addGoalBtn")?.click();
-        }
-    });
-}
-
-    allSavingsGoals = Array.isArray(goals) ? goals : [];
     const container = document.getElementById("savingsGoalsList");
     if (!container) return;
+
+    if (!container.__goalsDelegated) {
+        container.__goalsDelegated = true;
+        container.addEventListener("click", (e) => {
+            const btn = e.target.closest("button[data-action]");
+            if (!btn || !container.contains(btn)) return;
+            const action = btn.getAttribute("data-action");
+            if (action === "create-goal") {
+                document.getElementById("addGoalBtn")?.click();
+            } else if (action === "quick-template") {
+                const name = btn.getAttribute("data-name") || "";
+                const target = btn.getAttribute("data-target") || "";
+                const nameInput = document.getElementById("goalName");
+                const targetInput = document.getElementById("goalTargetAmount");
+                const currentInput = document.getElementById("goalCurrentAmount");
+                if (nameInput) nameInput.value = name;
+                if (targetInput) targetInput.value = target;
+                if (currentInput) currentInput.value = "0";
+                const modal = document.getElementById("savingsGoalModal");
+                if (modal && typeof openModal === "function") {
+                    openModal(modal);
+                } else {
+                    document.getElementById("addGoalBtn")?.click();
+                }
+            }
+        });
+    }
+
+    allSavingsGoals = Array.isArray(goals) ? goals : [];
     if (!allSavingsGoals || allSavingsGoals.length === 0) {
         container.innerHTML = `
             <div class="empty-state-compact goal-empty-compact">
                 <p class="goal-empty-title">No savings goals configured yet</p>
-                <span class="goal-empty-desc">Set targets for emergency reserves, investments, or travel milestones.</span>
+                <span class="goal-empty-desc">Set targets for emergency reserves, investments, or milestones.</span>
                 <button type="button" class="btn-primary btn-small btn-create-goal" data-action="create-goal">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span>Create Savings Goal</span>
@@ -3228,6 +3277,7 @@ if (container && !container.__goalsDelegated) {
         });
     });
 }
+window.renderSavingsGoals = renderSavingsGoals;
 
 // Income Modal & Form
 const incomeModal = document.getElementById("incomeModal");
@@ -4506,6 +4556,12 @@ function initLedgerStreamTabs() {
             tab.style.borderColor = "var(--border)";
 
             const mode = tab.getAttribute("data-tab");
+            const expBtn = elements.toggleFiltersBtn || document.getElementById("toggleFiltersBtn");
+            const incBtn = document.getElementById("toggleIncomeFiltersBtn");
+
+            if (expBtn) expBtn.style.display = (mode === "incomes") ? "none" : "";
+            if (incBtn) incBtn.style.display = (mode === "expenses") ? "none" : "";
+
             if (grid) {
                 grid.classList.remove("view-expenses", "view-incomes");
                 if (mode === "expenses") {
@@ -4823,6 +4879,20 @@ function openHelpModal() {
 function openAboutModal() {
     if (typeof toggleProfileMenu === "function") toggleProfileMenu(false);
     if (typeof openModal === "function" && aboutSystemModal) openModal(aboutSystemModal);
+    // Dynamically query architecture spec and update modal version line
+    fetch("/api/health/architecture", { headers: { "Accept": "application/json" } })
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+            if (!data) return;
+            const targetEl = document.querySelector("#aboutSystemModal .about-version-text");
+            if (targetEl) {
+                const backend = data.backendStack || ('Spring Boot ' + (data.springBootVersion || '4.1.2') + ' (Java ' + (data.javaMajor || '27') + ')');
+                const mobile = data.mobileStack || 'React Native 0.88 (Expo SDK 58 &bull; React 19.3)';
+                const web = data.frontendStack || 'Modern Web ES6+ &bull; Tesseract WebAssembly';
+                targetEl.innerHTML = `${backend} &bull; ${mobile} &bull; ${web}`;
+            }
+        })
+        .catch(() => {});
 }
 
 document.getElementById("headerHelpBtn")?.addEventListener("click", openHelpModal);

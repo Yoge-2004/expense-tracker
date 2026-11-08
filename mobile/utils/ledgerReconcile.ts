@@ -9,31 +9,115 @@
  *  - the plan only ever ADDS missing records; it never edits or deletes anything on the server.
  */
 
+export interface ReconcileExpense {
+  id?: number | string;
+  expenseDate?: string | number[] | null;
+  amount?: number | string | null;
+  description?: string | null;
+  categoryId?: number | string | null;
+  categoryName?: string | null;
+}
+
+export interface ReconcileIncome {
+  id?: number | string;
+  incomeDate?: string | number[] | null;
+  amount?: number | string | null;
+  source?: string | null;
+  description?: string | null;
+  kind?: string | null;
+  isRecurring?: boolean | null;
+  frequency?: string | null;
+  intervalDays?: number | string | null;
+  countsTowardMonth?: string | null;
+  reimbursedCategoryId?: number | string | null;
+}
+
+export interface ReconcileGoal {
+  id?: number | string;
+  name?: string | null;
+  targetAmount?: number | string | null;
+  currentAmount?: number | string | null;
+  targetDate?: string | number[] | null;
+  status?: string | null;
+  isRecurring?: boolean | null;
+  recurringAmount?: number | string | null;
+  frequency?: string | null;
+  intervalDays?: number | string | null;
+  nextDueDate?: string | number[] | null;
+}
+
+export interface ReconcileLoan {
+  id?: number | string;
+  counterparty?: string | null;
+  type?: string | null;
+  amount?: number | string | null;
+  adjustmentDate?: string | number[] | null;
+  dueDate?: string | number[] | null;
+  notes?: string | null;
+  isSettled?: boolean | null;
+  reminderEnabled?: boolean | null;
+  reminderDate?: string | number[] | null;
+  reminderTime?: string | null;
+}
+
+export interface ReconcileBudget {
+  id?: number | string;
+  categoryId?: number | string | null;
+  categoryName?: string | null;
+  period?: string | null;
+  limit?: number | string | null;
+  limitAmount?: number | string | null;
+  intervalDays?: number | string | null;
+  startDate?: string | number[] | null;
+}
+
+export interface ReconcileSubscription {
+  id?: number | string;
+  description?: string | null;
+  amount?: number | string | null;
+  frequency?: string | null;
+  intervalDays?: number | string | null;
+  nextDueDate?: string | number[] | null;
+  expenseDate?: string | number[] | null;
+  categoryId?: number | string | null;
+  categoryName?: string | null;
+}
+
+export interface ReconcileCategory {
+  id?: number | string;
+  name?: string | null;
+}
+
 export interface LedgerData {
-  expenses?: any[];
-  incomes?: any[];
-  budgets?: any[];
-  categories?: any[];
-  subscriptions?: any[];
-  savingsGoals?: any[];
-  loans?: any[];
+  expenses?: ReconcileExpense[];
+  incomes?: ReconcileIncome[];
+  budgets?: ReconcileBudget[];
+  categories?: ReconcileCategory[];
+  subscriptions?: ReconcileSubscription[];
+  savingsGoals?: ReconcileGoal[];
+  loans?: ReconcileLoan[];
   [key: string]: unknown;
 }
 
 export interface RestorePlan {
   categories: string[];
-  expenses: any[];
-  incomes: any[];
-  goals: any[];
-  loans: any[];
-  budgets: any[];
-  subscriptions: any[];
+  expenses: ReconcileExpense[];
+  incomes: ReconcileIncome[];
+  goals: ReconcileGoal[];
+  loans: ReconcileLoan[];
+  budgets: ReconcileBudget[];
+  subscriptions: ReconcileSubscription[];
   /**
    * Device records that look like a record the server already has in a changed form (same date and text but a
    * different amount, or the reverse). They are NOT uploaded: the server's version wins, and uploading would
    * create a near-duplicate or bring back something that was edited or deleted elsewhere.
    */
-  conflicts: { expenses: any[]; incomes: any[]; loans: any[]; subscriptions: any[] };
+  conflicts: {
+    expenses: ReconcileExpense[];
+    incomes: ReconcileIncome[];
+    loans: ReconcileLoan[];
+    subscriptions: ReconcileSubscription[];
+  };
 }
 
 /** Lists that make up "the user's data" when deciding whether one copy is bigger than another. */
@@ -61,7 +145,7 @@ export function isoDate(value: unknown): string {
   return typeof value === 'string' ? value.slice(0, 10) : '';
 }
 
-const list = (v: unknown): any[] => (Array.isArray(v) ? v : []);
+const list = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
 export function ledgerRichness(data: LedgerData | null | undefined): number {
   if (!data) return 0;
@@ -75,19 +159,20 @@ export function isSuspiciousDrop(previous: LedgerData | null | undefined, incomi
   return before >= SUSPICIOUS_DROP_MIN_RECORDS && after < before * SUSPICIOUS_DROP_RATIO;
 }
 
-const categoryKey = (r: any): string => norm(r?.categoryName) || (r?.categoryId != null ? `#${r.categoryId}` : '');
+const categoryKey = (r: { categoryName?: string | null; categoryId?: number | string | null } | null | undefined): string =>
+  norm(r?.categoryName) || (r?.categoryId != null ? `#${r.categoryId}` : '');
 
 export const signatures = {
-  expense: (e: any) => [isoDate(e?.expenseDate), money(e?.amount), norm(e?.description), categoryKey(e)].join('|'),
-  income: (i: any) =>
+  expense: (e: ReconcileExpense) => [isoDate(e?.expenseDate), money(e?.amount), norm(e?.description), categoryKey(e)].join('|'),
+  income: (i: ReconcileIncome) =>
     [
       isoDate(i?.incomeDate), money(i?.amount), norm(i?.source) || 'other', norm(i?.description),
       norm(i?.kind), i?.isRecurring ? '1' : '0', norm(i?.frequency),
     ].join('|'),
-  goal: (g: any) => norm(g?.name),
-  loan: (l: any) => [norm(l?.counterparty), norm(l?.type), money(l?.amount), isoDate(l?.adjustmentDate)].join('|'),
-  budget: (b: any) => [categoryKey(b), norm(b?.period)].join('|'),
-  subscription: (s: any) =>
+  goal: (g: ReconcileGoal) => norm(g?.name),
+  loan: (l: ReconcileLoan) => [norm(l?.counterparty), norm(l?.type), money(l?.amount), isoDate(l?.adjustmentDate)].join('|'),
+  budget: (b: ReconcileBudget) => [categoryKey(b), norm(b?.period)].join('|'),
+  subscription: (s: ReconcileSubscription) =>
     [norm(s?.description), money(s?.amount), norm(s?.frequency), String(s?.intervalDays ?? ''), categoryKey(s)].join('|'),
 };
 
@@ -111,15 +196,15 @@ export function multisetMissing<T>(device: T[], server: T[], sig: (t: T) => stri
 /** Looser keys, tried in order, that identify "the same record, edited" for each entity. */
 export const looseSignatures = {
   expense: [
-    (e: any) => [isoDate(e?.expenseDate), norm(e?.description), categoryKey(e)].join('|'), // amount edited
-    (e: any) => [isoDate(e?.expenseDate), money(e?.amount), categoryKey(e)].join('|'), // description edited
+    (e: ReconcileExpense) => [isoDate(e?.expenseDate), norm(e?.description), categoryKey(e)].join('|'), // amount edited
+    (e: ReconcileExpense) => [isoDate(e?.expenseDate), money(e?.amount), categoryKey(e)].join('|'), // description edited
   ],
   income: [
-    (i: any) => [isoDate(i?.incomeDate), norm(i?.source) || 'other', norm(i?.description), norm(i?.kind)].join('|'),
-    (i: any) => [isoDate(i?.incomeDate), money(i?.amount), norm(i?.source) || 'other'].join('|'),
+    (i: ReconcileIncome) => [isoDate(i?.incomeDate), norm(i?.source) || 'other', norm(i?.description), norm(i?.kind)].join('|'),
+    (i: ReconcileIncome) => [isoDate(i?.incomeDate), money(i?.amount), norm(i?.source) || 'other'].join('|'),
   ],
-  loan: [(l: any) => [norm(l?.counterparty), norm(l?.type), isoDate(l?.adjustmentDate)].join('|')],
-  subscription: [(s: any) => [norm(s?.description), norm(s?.frequency), categoryKey(s)].join('|')],
+  loan: [(l: ReconcileLoan) => [norm(l?.counterparty), norm(l?.type), isoDate(l?.adjustmentDate)].join('|')],
+  subscription: [(s: ReconcileSubscription) => [norm(s?.description), norm(s?.frequency), categoryKey(s)].join('|')],
 };
 
 /** Exact multiset diff that also returns the server records no device record matched. */
@@ -183,29 +268,29 @@ function diffWithConflicts<T>(device: T[], server: T[], sig: (t: T) => string, p
 }
 
 export function buildRestorePlan(device: LedgerData, server: LedgerData): RestorePlan {
-  const serverCategoryNames = new Set(list(server.categories).map((c) => norm(c?.name)));
+  const serverCategoryNames = new Set(list<ReconcileCategory>(server.categories).map((c) => norm(c?.name)));
   const seen = new Set<string>();
   const categories: string[] = [];
-  for (const c of list(device.categories)) {
+  for (const c of list<ReconcileCategory>(device.categories)) {
     const key = norm(c?.name);
     if (key && !serverCategoryNames.has(key) && !seen.has(key)) {
       seen.add(key);
       categories.push(String(c.name).trim());
     }
   }
-  const expenses = diffWithConflicts(list(device.expenses), list(server.expenses), signatures.expense, looseSignatures.expense);
-  const incomes = diffWithConflicts(list(device.incomes), list(server.incomes), signatures.income, looseSignatures.income);
-  const loans = diffWithConflicts(list(device.loans), list(server.loans), signatures.loan, looseSignatures.loan);
+  const expenses = diffWithConflicts(list<ReconcileExpense>(device.expenses), list<ReconcileExpense>(server.expenses), signatures.expense, looseSignatures.expense);
+  const incomes = diffWithConflicts(list<ReconcileIncome>(device.incomes), list<ReconcileIncome>(server.incomes), signatures.income, looseSignatures.income);
+  const loans = diffWithConflicts(list<ReconcileLoan>(device.loans), list<ReconcileLoan>(server.loans), signatures.loan, looseSignatures.loan);
   const subscriptions = diffWithConflicts(
-    list(device.subscriptions), list(server.subscriptions), signatures.subscription, looseSignatures.subscription
+    list<ReconcileSubscription>(device.subscriptions), list<ReconcileSubscription>(server.subscriptions), signatures.subscription, looseSignatures.subscription
   );
   return {
     categories,
     expenses: expenses.missing,
     incomes: incomes.missing,
-    goals: multisetMissing(list(device.savingsGoals), list(server.savingsGoals), signatures.goal),
+    goals: multisetMissing(list<ReconcileGoal>(device.savingsGoals), list<ReconcileGoal>(server.savingsGoals), signatures.goal),
     loans: loans.missing,
-    budgets: multisetMissing(list(device.budgets), list(server.budgets), signatures.budget),
+    budgets: multisetMissing(list<ReconcileBudget>(device.budgets), list<ReconcileBudget>(server.budgets), signatures.budget),
     subscriptions: subscriptions.missing,
     conflicts: {
       expenses: expenses.conflicts, incomes: incomes.conflicts, loans: loans.conflicts, subscriptions: subscriptions.conflicts,
@@ -231,21 +316,24 @@ export function conflictTotal(plan: RestorePlan): number {
   return c.expenses.length + c.incomes.length + c.loans.length + c.subscriptions.length;
 }
 
+type EntityRecord = ReconcileExpense | ReconcileIncome | ReconcileGoal | ReconcileLoan | ReconcileBudget | ReconcileSubscription | ReconcileCategory;
+
 /** Adds to `base` every record of `extra` it does not already contain (used when importing a device-copy file). */
 export function mergeLedgers(base: LedgerData, extra: LedgerData): LedgerData {
   const merged: LedgerData = { ...base };
   const sigs: Record<string, (t: any) => string> = {
     expenses: signatures.expense, incomes: signatures.income, savingsGoals: signatures.goal, loans: signatures.loan,
-    budgets: signatures.budget, subscriptions: signatures.subscription, categories: (c: any) => norm(c?.name),
+    budgets: signatures.budget, subscriptions: signatures.subscription, categories: (c: ReconcileCategory) => norm(c?.name),
   };
   for (const [key, sig] of Object.entries(sigs)) {
-    const have = list(base[key]);
-    merged[key] = [...have, ...multisetMissing(list(extra[key]), have, sig)];
+    const prop = key as keyof LedgerData;
+    const have = list<EntityRecord>(base[prop]);
+    (merged as Record<string, unknown>)[key] = [...have, ...multisetMissing(list<EntityRecord>(extra[prop]), have, sig)];
   }
   return merged;
 }
 
-const labelOf = (kind: string, r: any): string => {
+const labelOf = (kind: string, r: Record<string, unknown>): string => {
   const text = r?.description || r?.source || r?.name || r?.counterparty || r?.categoryName || kind;
   const date = isoDate(r?.expenseDate) || isoDate(r?.incomeDate) || isoDate(r?.adjustmentDate) || isoDate(r?.nextDueDate);
   const amount = r?.amount ?? r?.targetAmount ?? r?.limit;
@@ -255,13 +343,14 @@ const labelOf = (kind: string, r: any): string => {
 /** A few example lines per kind so a person can see what is about to be uploaded. */
 export function planSamples(plan: RestorePlan, perKind = 2): string[] {
   const lines: string[] = [];
-  const add = (kind: string, items: any[]) => items.slice(0, perKind).forEach((r) => lines.push(`${kind}: ${labelOf(kind, r)}`));
-  add('Expense', plan.expenses);
-  add('Income', plan.incomes);
-  add('Goal', plan.goals);
-  add('Loan', plan.loans);
-  add('Budget', plan.budgets);
-  add('Recurring', plan.subscriptions);
+  const add = (kind: string, items: Array<Record<string, unknown>>) =>
+    items.slice(0, perKind).forEach((r) => lines.push(`${kind}: ${labelOf(kind, r)}`));
+  add('Expense', plan.expenses as Array<Record<string, unknown>>);
+  add('Income', plan.incomes as Array<Record<string, unknown>>);
+  add('Goal', plan.goals as Array<Record<string, unknown>>);
+  add('Loan', plan.loans as Array<Record<string, unknown>>);
+  add('Budget', plan.budgets as Array<Record<string, unknown>>);
+  add('Recurring', plan.subscriptions as Array<Record<string, unknown>>);
   return lines;
 }
 
@@ -325,19 +414,19 @@ export function recurringStartDate(nextDue: string, frequency: unknown, interval
 }
 
 export const bodies = {
-  expense: (e: any, cats: CategoryIds) => {
+  expense: (e: ReconcileExpense, cats: CategoryIds) => {
     const categoryId = cats.get(norm(e?.categoryName));
     return categoryId == null
       ? null
       : { amount: Number(e.amount), description: e.description ?? '', expenseDate: isoDate(e.expenseDate), categoryId };
   },
-  income: (i: any) =>
+  income: (i: ReconcileIncome) =>
     clean({
       amount: Number(i.amount), source: String(i.source ?? '').trim() || 'Other', description: i.description ?? '',
       incomeDate: isoDate(i.incomeDate), isRecurring: !!i.isRecurring, frequency: i.frequency,
       intervalDays: i.intervalDays, kind: i.kind, countsTowardMonth: i.countsTowardMonth,
     }),
-  goal: (g: any) =>
+  goal: (g: ReconcileGoal) =>
     clean({
       name: g.name, targetAmount: Number(g.targetAmount), currentAmount: Number(g.currentAmount ?? 0),
       targetDate: g.targetDate ? isoDate(g.targetDate) : undefined, status: g.status, isRecurring: g.isRecurring,
@@ -345,23 +434,23 @@ export const bodies = {
       nextDueDate: g.nextDueDate ? isoDate(g.nextDueDate) : undefined,
     }),
   // expenseId is deliberately left out: expense ids change when a database is restored.
-  loan: (l: any) =>
+  loan: (l: ReconcileLoan) =>
     clean({
       counterparty: l.counterparty, type: l.type, amount: Number(l.amount), adjustmentDate: isoDate(l.adjustmentDate),
       dueDate: l.dueDate ? isoDate(l.dueDate) : undefined, notes: l.notes, isSettled: !!l.isSettled,
       reminderEnabled: l.reminderEnabled, reminderDate: l.reminderDate ? isoDate(l.reminderDate) : undefined,
       reminderTime: l.reminderTime,
     }),
-  budget: (b: any, cats: CategoryIds) => {
+  budget: (b: ReconcileBudget, cats: CategoryIds) => {
     const categoryId = cats.get(norm(b?.categoryName));
     return categoryId == null
       ? null
       : clean({
-          categoryId, limitAmount: Number(b.limit), period: b.period, intervalDays: b.intervalDays,
+          categoryId, limitAmount: Number(b.limit ?? b.limitAmount), period: b.period, intervalDays: b.intervalDays,
           startDate: b.startDate ? isoDate(b.startDate) : undefined,
         });
   },
-  subscription: (s: any, cats: CategoryIds) => {
+  subscription: (s: ReconcileSubscription, cats: CategoryIds) => {
     const categoryId = cats.get(norm(s?.categoryName));
     return categoryId == null
       ? null

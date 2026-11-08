@@ -21,7 +21,7 @@
     <img src="https://img.shields.io/badge/Hugging%20Face-Spaces%20Live-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black&labelColor=141812" alt="Hugging Face Space" />
   </a>
   <a href="https://github.com/Yoge-2004/expense-tracker/releases/latest">
-    <img src="https://img.shields.io/github/v/release/Yoge-2004/expense-tracker?label=Release%20v1.0.12&style=for-the-badge&color=C79A3E&labelColor=141812" alt="Release" />
+    <img src="https://img.shields.io/github/v/release/Yoge-2004/expense-tracker?label=Release%20v1.0.13&style=for-the-badge&color=C79A3E&labelColor=141812" alt="Release" />
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-Apache_2.0-D22128?style=for-the-badge&logo=apache&labelColor=141812" alt="Apache 2.0 License" />
@@ -30,7 +30,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Java-27_Temurin-EA2D42?style=flat-square&logo=openjdk&logoColor=white" alt="Java 27" />
-  <img src="https://img.shields.io/badge/Spring%20Boot-4.1.1-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot 4.1.1" />
+  <img src="https://img.shields.io/badge/Spring%20Boot-4.1.2-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot 4.1.2" />
   <img src="https://img.shields.io/badge/Python-3.14-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.14" />
   <img src="https://img.shields.io/badge/FastAPI-0.135+-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React%20Native-0.88-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React Native" />
@@ -118,7 +118,7 @@
 
 Modern wealth management and expense auditing are frequently broken across fragmented SaaS tools: clunky spreadsheets, privacy-invasive third-party aggregators that monetize consumer banking data, slow electron-based wrappers, and disconnected mobile apps. 
 
-Operating on **Java 27** using Generational ZGC, **Spring Boot 4.1.1**, **Python 3.14**, and **Expo React Native**, ExpenseTracker PRO harmonizes four cooperating surfaces:
+Operating on **Java 27** using Generational ZGC, **Spring Boot 4.1.2**, **Python 3.14**, and **Expo React Native**, ExpenseTracker PRO harmonizes four cooperating surfaces:
 1. **🌐 Web Command Studio** — High-velocity browser desktop center with 12 luxury atmospheric themes, diffused ambient lighting, and sub-millisecond filtering.
 2. **📱 Mobile Native Companion** — Expo React Native client supporting offline caching, native haptic feedback, SMS bank debit parsing, and biometric authentication.
 3. **⚙️ Enterprise Core API** — Spring Boot microservices managing JWT/OAuth2/WebAuthn identity, business rule validation, audit trails, and Apache POI Excel analytics.
@@ -180,7 +180,7 @@ flowchart TD
 
     subgraph CoreBackend ["Core Enterprise Backend (Eclipse Temurin Java 27)"]
         direction TB
-        Boot["🌱 Spring Boot 4.1.1 Engine<br/>(:8080 Virtual Thread Dispatcher)"]
+        Boot["🌱 Spring Boot 4.1.2 Engine<br/>(:8080 Virtual Thread Dispatcher)"]
         Security["🔐 Security & Auth Pipeline<br/>(JJWT 0.13.0 & WebAuthn FIDO2)"]
         AdminFleet["⚡ Admin Fleet Governance<br/>& Ground-Truth Feedback Dispatcher"]
         DataSync["🔄 FileDbSyncService<br/>& DR Snapshot AES-256 Engine"]
@@ -432,7 +432,7 @@ sequenceDiagram
     autonumber
     actor User as User / Admin Operator
     participant Client as Web / Mobile Client
-    participant Boot as Spring Boot 4.1.1 (:8080)
+    participant Boot as Spring Boot 4.1.2 (:8080)
     participant AuditDB as Category Audit Table
     participant HFJob as Retraining Dispatcher Job
     participant PyML as FastAPI ML Engine (:8000)
@@ -727,6 +727,9 @@ Whether accessed on an ultrawide desktop monitor, laptop, iPad, or mobile browse
 - Elastic CSS Grid layout with zero horizontal overflow.
 - Adaptive typography scaling down smoothly across viewport breakpoints.
 - Collapsible sidebar with quick drawer gesture toggles.
+- **Dual Outflow & Inflow Ledgers**: Distinct dedicated filter triggers on the unified ledger for independent and concurrent filtering across expenses and earnings streams.
+- **Pure Database Persistence**: Zero client-side mock data; savings goals, milestones, and transactions stream strictly from backend PostgreSQL/H2 tables with responsive, collision-free action controls.
+- **Optical Precision & Ergonomics**: Clean focus states eliminating inner placeholder outlines, automatic desktop reticle fading during typing, and geometrically harmonized top-bar action buttons with SVG sun/crescent icons.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/responsive.png">
@@ -740,10 +743,13 @@ Whether accessed on an ultrawide desktop monitor, laptop, iPad, or mobile browse
 ### 1. Mobile Feature Architecture & Capabilities
 
 The mobile companion application in `mobile/` is built on **React Native 0.88, React 19.3, and Expo Router 58**:
+- **Universal Appearance & Wallpaper Theme Engine**: Custom user wallpaper background assets with dynamic palette auto-extraction, 6 curated luxury atmosphere presets, and instant 0ms pre-warmed theme switching.
+- **Custom Typography Pipeline**: Complete support for user-imported custom font files (`.ttf` / `.otf`) across all headings, body text, and inputs with Android-safe typeface matching.
+- **Zero-Latency In-App Updates**: Background streaming APK download with warm-up cache, non-blocking notification banner, and deferred post-exit installer options.
 - **Native Gesture Navigation**: Swipe right on ledger rows to edit, swipe left to delete with custom haptic feedback.
-- **SMS Debit Listener**: Automatically captures incoming banking SMS notifications (UPI, NEFT, IMPS, Cards) and extracts transaction details.
-- **Biometric Unlock**: Integrated `expo-local-authentication` for fingerprint and Face ID authentication.
-- **Adaptive Screen Orientations**: Seamless portrait and landscape layout transitions across smartphones, foldables, and tablets.
+- **SMS Debit & UPI Listener**: Ingests SMS notifications from banking and UPI apps (HDFC, ICICI, SBI, Google Pay, PhonePe, CRED) and auto-parses amounts and merchants.
+- **Biometric Unlock & Secure PIN Vault**: Integrated `expo-local-authentication` for fingerprint/Face ID plus offline encrypted 6-digit PIN fallback.
+- **Adaptive Screen Orientations**: Seamless portrait, tablet, and landscape layouts with dynamic container width parity.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/mobile/app-collage.png">
@@ -875,7 +881,7 @@ The mobile client embeds a regex extraction engine (`mobile/services/debitParser
 
 ## ⚡ Performance Engineering & Java 27 Optimization
 
-Operating on **Java 27 (Eclipse Temurin)** with **Spring Boot 4.1.1**, the platform leverages cutting-edge JVM capabilities:
+Operating on **Java 27 (Eclipse Temurin)** with **Spring Boot 4.1.2**, the platform leverages cutting-edge JVM capabilities:
 
 - **Generational ZGC (`-XX:+UseZGC -XX:+ZGenerational`)**:
   - Millisecond-level pause times even under peak concurrent allocations.
@@ -927,7 +933,7 @@ Operating on **Java 27 (Eclipse Temurin)** with **Spring Boot 4.1.1**, the platf
 |---|---|---|
 | `frontend/`<br/><sub>Web Client Studio</sub> | High-performance responsive command center with 12 themes and client-side OCR. | HTML5, Modular ES6+, Tesseract.js WebAssembly, Web Studio |
 | `mobile/`<br/><sub>Mobile Companion</sub> | Cross-platform native iOS/Android client with SMS bank debit listeners and gestures. | React Native 0.88, Expo Router 58, Haptics, LocalAuth, Jest (160 tests) |
-| `src/main/java/`<br/><sub>Spring Boot Backend</sub> | Enterprise business logic, security filters, virtual threads, and POI reporting. | Eclipse Temurin Java 27, Spring Boot 4.1.1, JJWT 0.13.0, Apache POI 5.5.1 |
+| `src/main/java/`<br/><sub>Spring Boot Backend</sub> | Enterprise business logic, security filters, virtual threads, and POI reporting. | Eclipse Temurin Java 27, Spring Boot 4.1.2, JJWT 0.13.0, Apache POI 5.5.1 |
 | `ml/`<br/><sub>Machine Learning Subsystem</sub> | Dual-engine real-time NLP categorization, anomaly detection, and automated retraining. | Python 3.14, FastAPI, UV 0.11.21, Scikit-Learn, PyTorch, Transformers |
 | `docker/`<br/><sub>Production Orchestration</sub> | Multi-daemon container supervisor and reverse proxy configuration. | Supervisord, Nginx 1.26, Entrypoint bootstrap scripts |
 | `e2e/`<br/><sub>End-to-End Automation</sub> | Cross-browser automated test suites verifying critical user workflows. | Playwright Test, TypeScript, Cross-browser Chromium/Firefox/WebKit |
@@ -963,7 +969,7 @@ ExpenseTracker PRO is engineered for friction-free deployment across cloud provi
 ## 🚀 Quick Start Guide
 
 <details open>
-<summary><b>1. Launch Backend API (Spring Boot 4.1.1 on Java 27)</b></summary>
+<summary><b>1. Launch Backend API (Spring Boot 4.1.2 on Java 27)</b></summary>
 <br/>
 
 ```bash
@@ -1160,7 +1166,7 @@ Wallpaper colour extraction produces a palette that is applied through CSS varia
 
 ## 📦 Releases & Installation
 
-- **Latest Android APK**: [**Download v1.0.12 (Build 14)**](https://github.com/Yoge-2004/expense-tracker/releases/latest)
+- **Latest Android APK**: [**Download v1.0.13 (Build 15)**](https://github.com/Yoge-2004/expense-tracker/releases/latest)
 - **Detailed Release Notes**: Read [RELEASE_NOTES.md](RELEASE_NOTES.md) for full change logs, security enhancements, and migration notes.
 
 ---

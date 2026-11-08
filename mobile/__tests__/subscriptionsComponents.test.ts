@@ -7,6 +7,13 @@ import { SubscriptionsSegmentFilter } from '../components/subscriptions/Subscrip
 import { RecurringItemCard } from '../components/subscriptions/RecurringItemCard';
 import { QuickDepositModal } from '../components/subscriptions/QuickDepositModal';
 
+const toLocalDateStr = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 describe('Subscriptions & Recurring Components and Utilities', () => {
   describe('toMonthlyRate run-rate calculations', () => {
     it('calculates monthly amount for monthly frequency', () => {
@@ -49,21 +56,21 @@ describe('Subscriptions & Recurring Components and Utilities', () => {
     });
 
     it('returns 0 for today', () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateStr(new Date());
       expect(getDaysUntil(today)).toBe(0);
     });
 
     it('returns positive days for future dates', () => {
       const future = new Date();
       future.setDate(future.getDate() + 5);
-      const futureStr = future.toISOString().split('T')[0];
+      const futureStr = toLocalDateStr(future);
       expect(getDaysUntil(futureStr)).toBe(5);
     });
 
     it('returns negative days for overdue dates', () => {
       const past = new Date();
       past.setDate(past.getDate() - 3);
-      const pastStr = past.toISOString().split('T')[0];
+      const pastStr = toLocalDateStr(past);
       expect(getDaysUntil(pastStr)).toBe(-3);
     });
   });

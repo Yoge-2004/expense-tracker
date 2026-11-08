@@ -128,6 +128,7 @@
         };
 
         let activePalette = null;
+        let cachedPrimaryRgb = { r: 199, g: 154, b: 62 };
         function refreshPalette() {
             isLight = document.documentElement.getAttribute("data-theme") === "light" || document.body.getAttribute("data-theme") === "light";
             const style = getComputedStyle(document.documentElement);
@@ -141,6 +142,7 @@
             const p = parseRgb(style.getPropertyValue("--primary-rgb"), isLight ? { r: 212, g: 175, b: 55 } : { r: 199, g: 154, b: 62 });
             const a = parseRgb(style.getPropertyValue("--accent-rgb"), isLight ? { r: 231, g: 76, b: 60 } : { r: 162, g: 62, b: 50 });
             const h = parseRgb(style.getPropertyValue("--highlight-rgb"), isLight ? { r: 14, g: 165, b: 233 } : { r: 76, g: 122, b: 120 });
+            cachedPrimaryRgb = p;
             const alpha = isLight ? 0.32 : 0.36;
 
             const dynamicSlots = [];
@@ -276,9 +278,7 @@
                 if (this.x > width + 10) this.x = -10;
 
                 const currentAlpha = Math.max(0.12, Math.min(0.9, this.opacity + Math.sin(this.twinkleAngle) * 0.3));
-                const pStyle = getComputedStyle(document.documentElement);
-                const rgbParts = (pStyle.getPropertyValue("--primary-rgb") || (lightTheme ? "212, 175, 55" : "199, 154, 62")).split(",").map(n => parseInt(n.trim(), 10));
-                const pr = rgbParts[0] || 212, pg = rgbParts[1] || 175, pb = rgbParts[2] || 55;
+                const pr = cachedPrimaryRgb.r, pg = cachedPrimaryRgb.g, pb = cachedPrimaryRgb.b;
                 ctx.fillStyle = `rgba(${pr}, ${pg}, ${pb}, ${lightTheme ? currentAlpha * 0.8 : currentAlpha})`;
 
                 ctx.beginPath();
@@ -297,11 +297,11 @@
                 return;
             }
             orbs = [];
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 4; i++) {
                 orbs.push(new AuroraOrb(i));
             }
             particles = [];
-            const particleCount = Math.min(52, Math.max(26, Math.floor(width / 28)));
+            const particleCount = Math.min(24, Math.max(12, Math.floor(width / 60)));
             for (let i = 0; i < particleCount; i++) {
                 particles.push(new StardustParticle());
             }
@@ -318,6 +318,15 @@
         let animFrameId = null;
         let pauseUntil = 0;
         let lastRenderTime = -Infinity;
+        let isPageScrolling = false;
+        let pageScrollTimer = null;
+        window.addEventListener("scroll", () => {
+            isPageScrolling = true;
+            if (pageScrollTimer) clearTimeout(pageScrollTimer);
+            pageScrollTimer = setTimeout(() => {
+                isPageScrolling = false;
+            }, 120);
+        }, { passive: true });
 
         function stopAnimation() {
             if (animFrameId !== null) {
@@ -350,7 +359,7 @@
                 stopAnimation();
                 return;
             }
-            if (time < pauseUntil || time - lastRenderTime < FRAME_INTERVAL_MS) {
+            if (time < pauseUntil || isPageScrolling || time - lastRenderTime < FRAME_INTERVAL_MS) {
                 animFrameId = requestAnimationFrame(render);
                 return;
             }

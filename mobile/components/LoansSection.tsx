@@ -1,3 +1,4 @@
+import { AlertButton, AlertType } from "../context/AlertContext";
 /**
  * @file LoansSection.tsx
  * @description Dedicated Mobile Component for managing Peer Loans & Casual Friend Adjustments.
@@ -23,8 +24,7 @@ import {
   KeyboardAvoidingView,
   Pressable,
 } from 'react-native';
-import { ThemedTextInput as TextInput } from './ThemedText';
-import { ThemedText as Text } from './ThemedText';
+import { ThemedTextInput as TextInput , ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AnimatedCard } from './AnimatedCard';
@@ -42,6 +42,14 @@ import {
 } from '../services/loans';
 import { scheduleLoanReminders } from '../services/notifications';
 
+export interface LoanExpenseCandidate {
+  id: number;
+  amount: number;
+  description: string;
+  categoryName?: string;
+  expenseDate?: string;
+}
+
 interface LoansSectionProps {
   userId: string | number | null;
   currSymbol: string;
@@ -51,10 +59,10 @@ interface LoansSectionProps {
   theme: 'light' | 'dark';
   loans: LoanAdjustment[];
   loanMetrics: LoanMetrics | null;
-  expenses?: any[];
+  expenses?: LoanExpenseCandidate[];
   setLoans: React.Dispatch<React.SetStateAction<LoanAdjustment[]>>;
   setLoanMetrics: React.Dispatch<React.SetStateAction<LoanMetrics | null>>;
-  showAlert: (title: string, message: string, buttons?: any[], type?: any) => void;
+  showAlert: (title: string, message: string, buttons?: AlertButton[], type?: AlertType) => void;
 }
 
 export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
@@ -139,7 +147,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
     }
   };
 
-  const handleOpenAddModal = (initialExpense?: any) => {
+  const handleOpenAddModal = (initialExpense?: LoanExpenseCandidate) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setEditingLoan(null);
     setFormType('LENT');
@@ -176,12 +184,12 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
     setFormReminderEnabled(Boolean(loan.reminderEnabled));
     setFormReminderDate(loan.reminderDate || '');
     setFormReminderTime(loan.reminderTime || '10:00');
-    setFormReminderFrequency((loan.reminderFrequency as any) || 'DAILY');
+    setFormReminderFrequency((loan.reminderFrequency as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'DAILY');
     setShowExpensePicker(false);
     setModalVisible(true);
   };
 
-  const handleSelectExpense = (exp: any) => {
+  const handleSelectExpense = (exp: LoanExpenseCandidate) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setFormExpenseId(exp.id);
     if (!formAmount) {
@@ -209,8 +217,9 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
         undefined,
         'success'
       );
-    } catch (e: any) {
-      showAlert('Error', e?.message || 'Could not update settlement status.', undefined, 'error');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Could not update settlement status.';
+      showAlert('Error', msg, undefined, 'error');
     }
   };
 
@@ -234,8 +243,9 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
               await refreshMetrics();
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
               showAlert('Deleted', 'Record removed successfully.', undefined, 'success');
-            } catch (e: any) {
-              showAlert('Delete Failed', e?.message || 'Could not delete record.', undefined, 'error');
+            } catch (e: unknown) {
+              const msg = e instanceof Error ? e.message : 'Could not delete record.';
+              showAlert('Delete Failed', msg, undefined, 'error');
             }
           },
         },
@@ -291,8 +301,9 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
       await refreshMetrics();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       setModalVisible(false);
-    } catch (e: any) {
-      showAlert('Error', e?.message || 'Could not save peer adjustment.', undefined, 'error');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Could not save peer adjustment.';
+      showAlert('Error', msg, undefined, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -431,14 +442,16 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
           style={[
             styles.loanNoticeCard,
             {
-              backgroundColor: c.primary + '1F',
-              borderColor: c.primary + '66',
+              backgroundColor: c.fillSubtle,
+              borderColor: c.primary + '4D',
             },
           ]}
         >
           <View style={styles.loanNoticeLeft}>
-            <Ionicons name="sparkles" size={16} color={c.primary} />
-            <View style={{ flex: 1, marginLeft: 8 }}>
+            <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: c.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="sparkles" size={15} color={c.primary} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={[styles.loanNoticeTitle, { color: c.text }]}>
                 {loanCategoryExpenses.length} transaction(s) tagged as &quot;Loan&quot;
               </Text>

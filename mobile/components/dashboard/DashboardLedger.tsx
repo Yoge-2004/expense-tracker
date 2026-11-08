@@ -92,7 +92,7 @@ export const DashboardLedger = memo(function DashboardLedger({
   const [showFilters, setShowFilters] = useState(false);
   const [displayLimit, setDisplayLimit] = useState(25);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const ledgerScrollY = useRef(new Animated.Value(0)).current;
+  const [ledgerScrollY] = useState(() => new Animated.Value(0));
   const [ledgerContentHeight, setLedgerContentHeight] = useState(0);
   const [ledgerViewHeight, setLedgerViewHeight] = useState(0);
   const ledgerFlatListRef = useRef<FlatList<UnifiedTxItem>>(null);
@@ -131,12 +131,18 @@ export const DashboardLedger = memo(function DashboardLedger({
     ledgerScrollY.setValue(e.nativeEvent.contentOffset.y);
   }, [ledgerScrollY]);
 
-  // Changing filters resets the list view to top and resets progressive batching
-  useEffect(() => {
-    ledgerFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+  const filterKey = `${searchQuery}_${selectedCategory}_${datePreset}_${startDate}_${endDate}_${ledgerTab}_${sortOption}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey);
     setDisplayLimit(25);
     setIsLoadingMore(false);
-  }, [searchQuery, selectedCategory, datePreset, startDate, endDate, ledgerTab, sortOption]);
+  }
+
+  // Changing filters resets the list view to top
+  useEffect(() => {
+    ledgerFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [filterKey]);
 
   const handleEndReached = useCallback(() => {
     if (isLoadingMore || displayLimit >= unifiedTransactions.length) return;

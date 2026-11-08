@@ -2,7 +2,7 @@
  * Notification inbox: the newest notifications, mark all read, swipe gesture to clear,
  * a switch per notification kind, and a button to send yourself a test notification.
  */
-import React, { useCallback, useState, useRef, useMemo } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import {
   Animated,
   FlatList,
@@ -64,8 +64,7 @@ interface SwipeableItemProps {
 }
 
 const SwipeableNotificationItem: React.FC<SwipeableItemProps> = ({ item, theme: c, onOpen, onClear }) => {
-  const pan = useRef(new Animated.ValueXY()).current;
-  const isSwiping = useRef(false);
+  const [pan] = useState(() => new Animated.ValueXY());
 
   const panResponder = useMemo(
     () =>
@@ -74,9 +73,7 @@ const SwipeableNotificationItem: React.FC<SwipeableItemProps> = ({ item, theme: 
         onMoveShouldSetPanResponder: (_, gestureState) => {
           return Math.abs(gestureState.dx) > 12 && Math.abs(gestureState.dy) < 12;
         },
-        onPanResponderGrant: () => {
-          isSwiping.current = true;
-        },
+        onPanResponderGrant: () => {},
         onPanResponderMove: (_, gestureState) => {
           pan.x.setValue(gestureState.dx);
         },
@@ -96,9 +93,7 @@ const SwipeableNotificationItem: React.FC<SwipeableItemProps> = ({ item, theme: 
               friction: 7,
               tension: 50,
               useNativeDriver: true,
-            }).start(() => {
-              isSwiping.current = false;
-            });
+            }).start();
           }
         },
       }),
@@ -403,7 +398,7 @@ export default function NotificationsScreen() {
       </View>
 
       {loading ? (
-        <ImmersiveLoader message="Syncing Notifications..." compact />
+        <ImmersiveLoader message="Syncing Notifications..." compact customColors={c} theme={theme} />
       ) : (
         <FlatList
           data={items}
@@ -418,6 +413,11 @@ export default function NotificationsScreen() {
                 void load();
               }}
               tintColor={c.primary}
+              title="Syncing Notifications..."
+              titleColor={c.textMuted}
+              colors={[c.primary, c.accent]}
+              progressBackgroundColor={c.card}
+              progressViewOffset={Math.max(insets.top + 10, 48)}
             />
           }
           ListEmptyComponent={<Text style={[styles.empty, { color: c.textMuted }]}>You&apos;re all caught up.</Text>}

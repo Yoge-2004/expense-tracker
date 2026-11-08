@@ -839,15 +839,20 @@
 
             <!-- TAB 5: SPENDING FORECAST -->
             <div id="mlTabContent_forecast" class="ml-suite-panel hidden">
-                <div class="ml-panel-header">
+                <div class="ml-panel-header ml-forecast-header-row">
                     <div class="ml-panel-desc">
                         Time-Series Model projects forward daily spending trends based on historical cash outflow rhythms.
                     </div>
-                    <div class="inline-flex-center-gap6">
-                        <button type="button" class="btn-scan-receipt ml-forecast-horizon active" data-days="7">7 Days</button>
-                        <button type="button" class="btn-scan-receipt ml-forecast-horizon" data-days="14">14 Days</button>
-                        <button type="button" class="btn-scan-receipt ml-forecast-horizon" data-days="30">30 Days</button>
-                        <button type="button" id="mlRunForecastBtn" class="btn-small ml-btn-forecast">Generate</button>
+                    <div class="ml-forecast-controls-row">
+                        <div class="ml-forecast-horizon-group" role="group" aria-label="Forecast timeframe selection">
+                            <button type="button" class="ml-forecast-horizon active" data-days="7">7 Days</button>
+                            <button type="button" class="ml-forecast-horizon" data-days="14">14 Days</button>
+                            <button type="button" class="ml-forecast-horizon" data-days="30">30 Days</button>
+                        </div>
+                        <button type="button" id="mlRunForecastBtn" class="btn-small ml-btn-forecast">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                            <span>Generate</span>
+                        </button>
                     </div>
                 </div>
                 <div id="mlForecastResult" class="ml-panel-result">
@@ -1200,22 +1205,9 @@
         fBtn?.addEventListener("click", doForecast);
     }
 
-    // Wrap DashboardInsights.renderFinancialInsights
+    // ML models are contextually embedded directly in transaction forms, ledger anomaly chips, and forecasts.
     function setupInsightsIntegration() {
-        if (window.DashboardInsights && typeof window.DashboardInsights.renderFinancialInsights === "function") {
-            const original = window.DashboardInsights.renderFinancialInsights;
-            window.DashboardInsights = Object.freeze({
-                renderFinancialInsights: function () {
-                    const res = original.apply(this, arguments);
-                    try {
-                        renderMlIntelligenceCard();
-                    } catch (e) {
-                        console.error("[DashboardML] Failed rendering insight card:", e);
-                    }
-                    return res;
-                }
-            });
-        }
+        renderMlIntelligenceCard();
     }
 
     // 10. PUBLIC API EXPORTS

@@ -6,10 +6,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest, ApiError } from '../services/api';
 import { notifyTransactionRecorded, parseFinancialMessage, formatNotificationAmount } from '../services/notifications';
 import { parseReceiptText, scanReceiptWithOcr, SAMPLE_RECEIPTS, ParsedReceipt } from '../services/receiptOcr';
+import { AlertButton, AlertType } from '../context/AlertContext';
 
 export interface Category {
   id: number;
   name: string;
+}
+
+interface MerchantMatchCandidate {
+  merchant?: string;
+  similarity?: number;
+}
+
+interface CachedExpenseCandidate {
+  amount?: string | number;
+  description?: string;
+  [key: string]: unknown;
 }
 
 function toCanonicalCategory(raw: string): string {
@@ -54,7 +66,7 @@ export interface UseExpenseFormOptions {
     date?: string;
   };
   onSuccess: () => void;
-  showAlert: (title: string, message: string, buttons?: any[], type?: any) => void;
+  showAlert: (title: string, message?: string, buttons?: AlertButton[], type?: AlertType) => void;
 }
 
 export function useExpenseForm({
@@ -106,14 +118,18 @@ export function useExpenseForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Sync default category if empty
-  useEffect(() => {
+  const [prevCategories, setPrevCategories] = useState(categories);
+  if (prevCategories !== categories) {
+    setPrevCategories(categories);
     if (!categoryId && categories.length > 0) {
       setCategoryId(categories[0].id);
     }
-  }, [categories, categoryId]);
+  }
 
   // Sync initial params on edit or prefill change
-  useEffect(() => {
+  const [prevParams, setPrevParams] = useState(initialParams);
+  if (prevParams !== initialParams) {
+    setPrevParams(initialParams);
     if (initialParams) {
       if (initialParams.description !== undefined) setDescription(initialParams.description);
       if (initialParams.amount !== undefined) setAmount(initialParams.amount);
@@ -122,19 +138,19 @@ export function useExpenseForm({
       }
       if (initialParams.date !== undefined) setExpenseDate(initialParams.date);
     }
-  }, [initialParams?.description, initialParams?.amount, initialParams?.categoryId, initialParams?.date]);
+  }
 
   // Model 1: AI Classification Debounce
   useEffect(() => {
     if (isEditMode) return;
     const cleanDesc = description.trim();
-    if (cleanDesc.length < 3) {
-      setAiSuggestion(null);
-      setIsAiClassifying(false);
-      return;
-    }
 
     const timer = setTimeout(async () => {
+      if (cleanDesc.length < 3) {
+        setAiSuggestion(null);
+        setIsAiClassifying(false);
+        return;
+      }
       setIsAiClassifying(true);
       try {
         const res = await apiRequest('/ml/classify', {
@@ -177,30 +193,31 @@ export function useExpenseForm({
   useEffect(() => {
     if (isEditMode) return;
     const cleanDesc = description.trim();
-    if (cleanDesc.length < 2) {
-      setMerchantSuggestions([]);
-      setIsMatchingMerchant(false);
-      return;
-    }
 
     const timer = setTimeout(async () => {
+      if (cleanDesc.length < 2) {
+        setMerchantSuggestions([]);
+        setIsMatchingMerchant(false);
+        return;
+      }
       setIsMatchingMerchant(true);
       try {
         const res = await apiRequest('/ml/merchants/match', {
           method: 'POST',
           body: JSON.stringify({ query: cleanDesc, top_k: 4 }),
         });
-        if (res && Array.isArray(res.matches)) {
-          const valid = res.matches
-            .filter((m: any) => (m.similarity || 0) >= 0.30)
-            .map((m: any) => {
+        if (res && Array.isArray((res as { matches?: unknown }).matches)) {
+          const matches = (res as { matches: MerchantMatchCandidate[] }).matches;
+          const valid = matches
+            .filter((m: MerchantMatchCandidate) => (m.similarity || 0) >= 0.30)
+            .map((m: MerchantMatchCandidate) => {
               let name = String(m.merchant || '').trim();
               name = name.replace(/^(?:parse this banking sms and extract entities|extract financial entities from this message|identify transaction details in this message)\s*/i, '');
               name = name.replace(/\b(?:hdfc|sbi|icici|axis|xx|rs|inr|vpa|upi|ref|ac|a\/c|ybl|okaxis)\b/gi, ' ');
               name = name.replace(/\s+/g, ' ').trim();
               const words = name.split(' ').filter((w: string) => w.length > 1).slice(0, 3);
               const clean = words.join(' ');
-              const finalName = clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : String(m.merchant).slice(0, 20);
+              const finalName = clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : String(m.merchant || '').slice(0, 20);
               return { merchant: finalName, similarity: Number(m.similarity) || 0 };
             });
           setMerchantSuggestions(valid.slice(0, 4));
@@ -220,36 +237,36 @@ export function useExpenseForm({
     if (isEditMode) return;
     const cleanDesc = description.trim();
     const numAmt = parseFloat(amount);
-    if (cleanDesc.length < 3 || isNaN(numAmt) || numAmt <= 0) {
-      setDuplicateMatch(null);
-      setIsCheckingDuplicates(false);
-      return;
-    }
 
     const timer = setTimeout(async () => {
+      if (cleanDesc.length < 3 || isNaN(numAmt) || numAmt <= 0) {
+        setDuplicateMatch(null);
+        setIsCheckingDuplicates(false);
+        return;
+      }
       setIsCheckingDuplicates(true);
       try {
         const stored = await AsyncStorage.getItem('cached_expenses');
         if (stored) {
-          const list = JSON.parse(stored);
+          const list: unknown = JSON.parse(stored);
           if (Array.isArray(list) && list.length > 0) {
-            const candidateList = list
-              .filter((e: any) => {
-                const a = parseFloat(e.amount);
+            const candidateList = (list as CachedExpenseCandidate[])
+              .filter((e: CachedExpenseCandidate) => {
+                const a = parseFloat(String(e.amount ?? ''));
                 return !isNaN(a) && (Math.abs(a - numAmt) <= 2.0 || Math.abs(a - numAmt) / numAmt <= 0.15);
               })
-              .map((e: any) => e.description)
-              .filter(Boolean);
+              .map((e: CachedExpenseCandidate) => e.description)
+              .filter((desc): desc is string => Boolean(desc));
 
             if (candidateList.length > 0) {
-              const res = await apiRequest('/ml/duplicates/check', {
+              const res = (await apiRequest('/ml/duplicates/check', {
                 method: 'POST',
                 body: JSON.stringify({
                   query: cleanDesc,
                   candidates: candidateList.slice(0, 15),
                   threshold: 0.65,
                 }),
-              });
+              })) as { matches?: Array<{ text: string; similarity: number }> } | null;
               if (res && Array.isArray(res.matches) && res.matches.length > 0) {
                 const best = res.matches[0];
                 setDuplicateMatch({
@@ -329,8 +346,9 @@ export function useExpenseForm({
       setIsScanningOcr(true);
       const parsed = await scanReceiptWithOcr(file.uri, file.name, file.mimeType || 'image/png');
       applyReceiptData(parsed);
-    } catch (err: any) {
-      showAlert('OCR Scan Failed', err?.message || 'Unable to scan receipt document.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unable to scan receipt document.';
+      showAlert('OCR Scan Failed', msg);
     } finally {
       setIsScanningOcr(false);
     }
@@ -385,8 +403,9 @@ export function useExpenseForm({
         undefined,
         'info'
       );
-    } catch (err: any) {
-      showAlert('Could Not Read SMS', err?.message || 'Please check clipboard permissions.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Please check clipboard permissions.';
+      showAlert('Could Not Read SMS', msg);
     }
   }, [showAlert]);
 
@@ -523,7 +542,15 @@ export function useExpenseForm({
           },
         ]);
       } else {
-        const payload: any = {
+        const payload: {
+          description: string;
+          amount: number;
+          categoryId: number | null;
+          expenseDate: string;
+          isRecurring: boolean;
+          frequency?: string;
+          intervalDays?: number;
+        } = {
           description: cleanDesc,
           amount: numAmount,
           categoryId,
@@ -538,10 +565,10 @@ export function useExpenseForm({
           }
         }
 
-        const savedExpense: any = await apiRequest(`/expenses/user/${userId}`, {
+        const savedExpense = (await apiRequest(`/expenses/user/${userId}`, {
           method: 'POST',
           body: JSON.stringify(payload),
-        });
+        })) as { id?: number | string } | null;
 
         if (aiSuggestion && aiSuggestion.category && savedExpense?.id) {
           const selectedCatName = categories.find((cat) => cat.id === categoryId)?.name || "";
@@ -573,9 +600,9 @@ export function useExpenseForm({
         ]);
         resetForm();
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       const isApiErr = e instanceof ApiError;
-      const msg = isApiErr ? e.message : 'Could not save expense transaction.';
+      const msg = isApiErr ? e.message : (e instanceof Error ? e.message : 'Could not save expense transaction.');
       showAlert('Save Error', msg);
     } finally {
       setIsSubmitting(false);
@@ -593,6 +620,7 @@ export function useExpenseForm({
     userId,
     currSymbol,
     categories,
+    aiSuggestion,
     resetForm,
     onSuccess,
     showAlert,

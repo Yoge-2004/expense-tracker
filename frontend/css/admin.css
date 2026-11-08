@@ -200,7 +200,7 @@ html[data-theme="light"] #themeToggle .moon-icon {
 }
 
 [data-theme="light"] .stream-pill-btn.admin-nav-item.active {
-  background: #ffffff !important;
+  background: var(--card-bg) !important;
   color: #111827 !important;
   border: 1px solid rgba(var(--primary-rgb), 0.5) !important;
   box-shadow:
@@ -351,7 +351,7 @@ html[data-theme="light"] #themeToggle .moon-icon {
 }
 
 [data-theme="light"] .admin-drawer {
-  background: #ffffff;
+  background: var(--card-bg);
   border-left-color: rgba(var(--primary-rgb), 0.28);
   box-shadow: -15px 0 45px rgba(15, 23, 42, 0.12);
 }
@@ -1470,16 +1470,16 @@ select.custom-select-native {
 
 .card,
 .metric-card {
-  background: var(--card-bg, #161a14) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  background: var(--card-bg);
+  backdrop-filter: var(--glass);
+  -webkit-backdrop-filter: var(--glass);
 }
 
 [data-theme="light"] .card,
 [data-theme="light"] .metric-card {
-  background: #ffffff !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  background: var(--card-bg);
+  backdrop-filter: var(--glass);
+  -webkit-backdrop-filter: var(--glass);
 }
 
 .card::before,
@@ -2584,4 +2584,61 @@ select.custom-select-native {
   border: 1px solid var(--border);
   padding: 14px;
   border-radius: 12px;
+}
+
+
+/* ── Custom Wallpaper & Frosted Glass Harmonization for Admin ── */
+body.has-custom-wallpaper
+  :is(
+    .card,
+    .metric-card,
+    .admin-drawer,
+    .admin-topbar-root,
+    .admin-status-panel-box,
+    .admin-table-scroll-wrapper,
+    .admin-nav-stream,
+    .table-wrapper,
+    .modal-card
+  ) {
+  background: rgba(23, 26, 20, 0.74) !important;
+  backdrop-filter: blur(24px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow:
+    0 12px 32px -8px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
+}
+
+[data-theme="light"]
+  body.has-custom-wallpaper
+  :is(
+    .card,
+    .metric-card,
+    .admin-drawer,
+    .admin-topbar-root,
+    .admin-status-panel-box,
+    .admin-table-scroll-wrapper,
+    .admin-nav-stream,
+    .table-wrapper,
+    .modal-card
+  ) {
+  background: rgba(255, 255, 255, 0.76) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  border-color: rgba(15, 23, 42, 0.1) !important;
+  box-shadow:
+    0 14px 34px -10px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset !important;
+}
+
+body.has-custom-wallpaper .admin-topbar-root {
+  background: rgba(23, 26, 20, 0.76) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+}
+
+[data-theme="light"] body.has-custom-wallpaper .admin-topbar-root {
+  background: rgba(255, 255, 255, 0.78) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
 }

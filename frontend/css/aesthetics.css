@@ -526,10 +526,6 @@ body.has-custom-wallpaper
     .loans-section,
     .recent-transactions,
     .insights-intelligence-panel,
-    .powerbi-slicers-container,
-    .bi-slicers-panel,
-    .bi-slicer-card,
-    .bi-slicers-filter-container,
     .bi-slicers-ribbon,
     .notification-permission-banner,
     .ai-assistant-container,
@@ -539,11 +535,18 @@ body.has-custom-wallpaper
     .modal-content,
     .modal,
     .studio-modal,
-    .auth-card
+    .auth-card,
+    .admin-drawer,
+    .admin-topbar-root,
+    .admin-status-panel-box,
+    .admin-table-scroll-wrapper,
+    .admin-nav-stream,
+    .table-wrapper,
+    .modal-card
   ) {
   background: rgba(23, 26, 20, 0.74) !important;
-  backdrop-filter: blur(24px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+  backdrop-filter: blur(12px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(130%) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
   box-shadow:
     0 12px 32px -8px rgba(0, 0, 0, 0.45),
@@ -566,10 +569,6 @@ body.has-custom-wallpaper
     .loans-section,
     .recent-transactions,
     .insights-intelligence-panel,
-    .powerbi-slicers-container,
-    .bi-slicers-panel,
-    .bi-slicer-card,
-    .bi-slicers-filter-container,
     .bi-slicers-ribbon,
     .notification-permission-banner,
     .ai-assistant-container,
@@ -579,11 +578,18 @@ body.has-custom-wallpaper
     .modal-content,
     .modal,
     .studio-modal,
-    .auth-card
+    .auth-card,
+    .admin-drawer,
+    .admin-topbar-root,
+    .admin-status-panel-box,
+    .admin-table-scroll-wrapper,
+    .admin-nav-stream,
+    .table-wrapper,
+    .modal-card
   ) {
   background: rgba(255, 255, 255, 0.76) !important;
-  backdrop-filter: blur(24px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  backdrop-filter: blur(12px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(130%) !important;
   border-color: rgba(15, 23, 42, 0.1) !important;
   box-shadow:
     0 14px 34px -10px rgba(15, 23, 42, 0.08),
@@ -592,12 +598,12 @@ body.has-custom-wallpaper
 
 body.has-custom-wallpaper .top-bar {
   background: rgba(23, 26, 20, 0.76) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  backdrop-filter: blur(12px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(130%) !important;
 }
 
 [data-theme="light"] body.has-custom-wallpaper .top-bar {
   background: rgba(255, 255, 255, 0.78) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  backdrop-filter: blur(12px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(130%) !important;
 }

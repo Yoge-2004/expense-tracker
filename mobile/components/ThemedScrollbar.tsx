@@ -8,7 +8,7 @@
  * that the list updates from its onScroll handler, and ignores touches so it never blocks the list.
  */
 
-import React, { useMemo, useRef, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   Animated,
   StyleSheet,

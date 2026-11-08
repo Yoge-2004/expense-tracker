@@ -35,4 +35,22 @@ class AdminSystemOpsServiceImplTest {
         assertEquals("jdbc:h2:file:./data/expense", AdminSystemOpsServiceImpl.maskJdbcUrl("jdbc:h2:file:./data/expense;MODE=PostgreSQL"));
         assertEquals("", AdminSystemOpsServiceImpl.maskJdbcUrl(null));
     }
+
+    @Test
+    void collapseTqdmProgress_multipleEntriesCollapsedToSingleEntry() {
+        String log = """
+                [2026-11-07T12:00:00Z] [INFO] Starting training loop...
+                [2026-11-07T12:00:01Z] 10%|#         | 10/100 [00:01<00:09, 9.87it/s]
+                [2026-11-07T12:00:02Z] 20%|##        | 20/100 [00:02<00:08, 9.85it/s]
+                [2026-11-07T12:00:03Z] 30%|###       | 30/100 [00:03<00:07, 9.84it/s]
+                [2026-11-07T12:00:10Z] 100%|##########| 100/100 [00:10<00:00, 10.0it/s]
+                [2026-11-07T12:00:11Z] [INFO] Training complete!
+                """;
+        String collapsed = AdminMlGovernanceServiceImpl.collapseTqdmProgress(log);
+        String[] lines = collapsed.trim().split("\n");
+        assertEquals(3, lines.length);
+        assertEquals("[2026-11-07T12:00:00Z] [INFO] Starting training loop...", lines[0].trim());
+        assertEquals("[2026-11-07T12:00:10Z] 100%|##########| 100/100 [00:10<00:00, 10.0it/s]", lines[1].trim());
+        assertEquals("[2026-11-07T12:00:11Z] [INFO] Training complete!", lines[2].trim());
+    }
 }

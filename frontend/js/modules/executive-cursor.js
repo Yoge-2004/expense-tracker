@@ -39,21 +39,33 @@
             document.body.appendChild(reticleEl);
         }
 
-        // Animate loop with subtle dampening for a tactile feel
+        let rafId = null;
+        // Animate loop with subtle dampening for a tactile feel. Stops RAF when at rest to eliminate idle CPU/GPU usage.
         function render() {
             if (isMoving) {
-                // Smooth interpolation (lerp factor 0.35)
-                currentX += (targetX - currentX) * 0.35;
-                currentY += (targetY - currentY) * 0.35;
+                const dx = targetX - currentX;
+                const dy = targetY - currentY;
 
-                // Center reticle around pointer
-                const halfW = reticleEl.offsetWidth / 2;
-                const halfH = reticleEl.offsetHeight / 2;
-                reticleEl.style.transform = `translate3d(${currentX - halfW}px, ${currentY - halfH}px, 0)`;
+                if (Math.abs(dx) < 0.25 && Math.abs(dy) < 0.25) {
+                    currentX = targetX;
+                    currentY = targetY;
+                    reticleEl.style.transform = `translate3d(${currentX - 11}px, ${currentY - 11}px, 0)`;
+                    rafId = null;
+                    return; // Rest reached, stop RAF until next mousemove
+                }
+
+                currentX += dx * 0.35;
+                currentY += dy * 0.35;
+                reticleEl.style.transform = `translate3d(${currentX - 11}px, ${currentY - 11}px, 0)`;
             }
-            requestAnimationFrame(render);
+            rafId = requestAnimationFrame(render);
         }
-        requestAnimationFrame(render);
+
+        function wakeReticle() {
+            if (!rafId) {
+                rafId = requestAnimationFrame(render);
+            }
+        }
 
         // Document mouse movement
         document.addEventListener("mousemove", (e) => {
@@ -65,6 +77,7 @@
                 isMoving = true;
                 reticleEl.classList.add("active");
             }
+            wakeReticle();
         }, { passive: true });
 
         // Document mouse leave/enter window
@@ -106,15 +119,7 @@
                 reticleEl.classList.add("is-text");
                 reticleEl.classList.remove("is-hovering");
             } else {
-                let isClickable = Boolean(target.closest("a, button, [role='button'], select, label, summary, [onclick], .tab-item, .card, .clickable, .metric-card, .receipt-breakdown-pill, .expense-item, tr, .pill-chip, .loan-tab-btn, .period-chip, .period-month-chip, .budget-item, .savings-goal-card, .insight-card-item, .header-action-btn, .btn, .loan-metric-card, .chart-card, .stat-card, .empty-state-luxury, .preset-btn, .cal-nav-btn, .cal-day-cell, .custom-select-trigger, .custom-option, .avatar, .input-eye, .stealth-toggle-btn"));
-                if (!isClickable) {
-                    try {
-                        const comp = window.getComputedStyle(target);
-                        if (comp && comp.cursor && comp.cursor.includes("pointer")) {
-                            isClickable = true;
-                        }
-                    } catch (err) { console.debug("[Cursor] Element check fallback:", err.message); }
-                }
+                const isClickable = Boolean(target.closest("a, button, [role='button'], select, label, summary, [onclick], .tab-item, .card, .clickable, .metric-card, .receipt-breakdown-pill, .expense-item, tr, .pill-chip, .loan-tab-btn, .period-chip, .period-month-chip, .budget-item, .savings-goal-card, .insight-card-item, .header-action-btn, .btn, .loan-metric-card, .chart-card, .stat-card, .empty-state-luxury, .preset-btn, .cal-nav-btn, .cal-day-cell, .custom-select-trigger, .custom-option, .avatar, .input-eye, .stealth-toggle-btn, .bi-action-btn, .bi-slicer-pill, .bi-reset-slicers-btn"));
                 if (isClickable) {
                     reticleEl.classList.add("is-hovering");
                     reticleEl.classList.remove("is-text");

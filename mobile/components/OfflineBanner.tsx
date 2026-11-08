@@ -2,14 +2,13 @@
  * OfflineBanner
  *
  * Inline notice for "couldn't reach the server / showing saved data" with an
- * explicit Retry button. Only the button is pressable: the message is plain
- * text inside a plain View, so the bar itself no longer reacts to touches, and
- * the button carries an icon, a label and an outline so it reads as a button.
+ * explicit Retry button. Fully inherits the wallpaper theme engine tokens
+ * (c.fillSubtle, c.text, c.primary, c.onPrimary) for high-contrast WCAG readability.
  */
 import React from 'react';
 import { usePreferences } from '../context/PreferencesContext';
 import { Colors, readableTextColor } from '../constants/theme';
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View, StyleProp, ViewStyle } from 'react-native';
 import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -20,22 +19,40 @@ interface OfflineBannerProps {
   onRetry: () => void;
   /** Shows a spinner in the button and ignores presses while a retry runs. */
   retrying?: boolean;
-  /** Accent colour; defaults to the app's gold. */
+  /** Accent colour; defaults to the app's gold / theme primary. */
   tone?: string;
+  /** Optional layout style overrides, e.g. marginHorizontal */
+  style?: StyleProp<ViewStyle>;
 }
 
-export function OfflineBanner({ message, onRetry, retrying = false, tone }: OfflineBannerProps) {
+export const OfflineBanner: React.FC<OfflineBannerProps> = React.memo(({
+  message,
+  onRetry,
+  retrying = false,
+  tone,
+  style,
+}) => {
   const { theme, themeColors } = usePreferences();
   const c = themeColors || Colors[theme || 'dark'];
   const bannerTone = tone || c.primary;
   const onTone = c.onPrimary || readableTextColor(bannerTone);
+
   return (
     <View
       accessibilityRole="alert"
-      style={[styles.banner, { backgroundColor: bannerTone + '18', borderColor: bannerTone + '40' }]}
+      style={[
+        styles.banner,
+        {
+          backgroundColor: c.fillSubtle,
+          borderColor: bannerTone + '4D',
+        },
+        style,
+      ]}
     >
-      <Ionicons name="cloud-offline" size={16} color={bannerTone} />
-      <Text style={[styles.message, { color: bannerTone }]} numberOfLines={2}>
+      <View style={[styles.iconBox, { backgroundColor: bannerTone + '22' }]}>
+        <Ionicons name="cloud-offline" size={16} color={bannerTone} />
+      </View>
+      <Text style={[styles.message, { color: c.text }]} numberOfLines={2}>
         {message}
       </Text>
       <TouchableOpacity
@@ -58,39 +75,48 @@ export function OfflineBanner({ message, onRetry, retrying = false, tone }: Offl
       </TouchableOpacity>
     </View>
   );
-}
+});
+
+OfflineBanner.displayName = 'OfflineBanner';
 
 const styles = StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingLeft: 12,
+    gap: 10,
+    paddingLeft: 10,
     paddingRight: 8,
     paddingVertical: 8,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     marginBottom: 14,
   },
+  iconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   message: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '600',
+    lineHeight: 17,
   },
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    minWidth: 76,
-    minHeight: 34,
+    gap: 5,
+    minWidth: 72,
+    minHeight: 32,
     paddingHorizontal: 12,
-    borderRadius: 17,
+    borderRadius: 16,
     borderWidth: 1,
   },
   retryText: {
-    color: '#10120E',
-    fontWeight: '800',
+    fontWeight: '700',
     fontSize: 12,
   },
 });

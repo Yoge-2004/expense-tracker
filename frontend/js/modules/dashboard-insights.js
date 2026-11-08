@@ -240,6 +240,7 @@
         }
     
         grid.innerHTML = `
+            <!-- CARD 1: Monthly Cash Flow & Liquidity Summary -->
             <div class="insight-card-item highlight-card insight-monthly-summary">
                 <div class="insight-summary-header">
                     <div class="insight-summary-title-wrap">
@@ -277,77 +278,47 @@
                     ${cashflowInsight}
                 </div>
             </div>
-    
+
+            <!-- CARD 2: Reserves & Goal Funding Trajectory -->
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
                     <div class="insight-icon-box box-savings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
-                    <span class="insight-card-label">Savings Goals Trajectory</span>
+                    <span class="insight-card-label">Reserves & Goal Trajectory</span>
                 </div>
                 <div class="insight-card-content">
-                    ${goalsInsight}
-                </div>
-            </div>
-    
-            <div class="insight-card-item">
-                <div class="insight-card-item-header">
-                    <div class="insight-icon-box box-inflow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg></div>
-                    <span class="insight-card-label">Salary Coverage & Stability</span>
-                </div>
-                <div class="insight-card-content">
-                    ${salaryInsight}
+                    <p class="mb-8">${goalsInsight}</p>
+                    <p class="text-muted fs-12">${runwayInsight}</p>
                 </div>
             </div>
 
-            <div class="insight-card-item">
-                <div class="insight-card-item-header">
-                    <div class="insight-icon-box box-savings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                    <span class="insight-card-label">Emergency Savings Runway</span>
-                </div>
-                <div class="insight-card-content">
-                    ${runwayInsight}
-                </div>
-            </div>
-
-            <div class="insight-card-item">
-                <div class="insight-card-item-header">
-                    <div class="insight-icon-box box-palette4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg></div>
-                    <span class="insight-card-label">Recurring Baseline Coverage</span>
-                </div>
-                <div class="insight-card-content">
-                    ${recurringInsight}
-                </div>
-            </div>
-    
+            <!-- CARD 3: Spending Pace & Baseline Stability -->
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
                     <div class="insight-icon-box box-primary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-1.63-1.5-2.5-1.5-4.5 0-2 1.5-3 1.5-3s-1.5.5-2.5 2c-1.1 1.65-2.5 3.5-2.5 5.5z"/><path d="M12 2c-4 4.5-6 8-6 12a6 6 0 0 0 12 0c0-4-2-7.5-6-12z"/></svg></div>
-                    <span class="insight-card-label">Burn Velocity & Runway</span>
+                    <span class="insight-card-label">Spending Pace & Stability</span>
                 </div>
                 <div class="insight-card-content">
-                    Averaging <strong>${formatCurrency(dailyBurn)}/day</strong> this month. Projected month-end outflow is <strong>${formatCurrency(projectedSpent)}</strong>.
+                    <p class="mb-8">Averaging <strong>${formatCurrency(dailyBurn)}/day</strong> this month. Projected month-end outflow is <strong>${formatCurrency(projectedSpent)}</strong>.</p>
+                    <p class="text-muted fs-12">${salaryInsight} ${recurringInsight}</p>
                 </div>
             </div>
-    
-            <div class="insight-card-item">
-                <div class="insight-card-item-header">
-                    <div class="insight-icon-box box-highlight"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
-                    <span class="insight-card-label">Category Concentration</span>
-                </div>
-                <div class="insight-card-content">
-                    <strong>${escapeHtml(topCat)}</strong> is your primary driver, taking <strong>${topCatPct}%</strong> (<strong>${formatCurrency(topCatAmt)}</strong>) of all recorded spend.
-                </div>
-            </div>
-    
+
+            <!-- CARD 4: Category Focus & Budget Governance -->
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
                     <div class="insight-icon-box box-accent"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                    <span class="insight-card-label">Budget Governance</span>
+                    <span class="insight-card-label">Category Allocation & Governance</span>
                 </div>
                 <div class="insight-card-content">
-                    ${budgetInsightText}
+                    <p class="mb-8"><strong>${escapeHtml(topCat)}</strong> is your primary outflow driver taking <strong>${topCatPct}%</strong> (${formatCurrency(topCatAmt)}).</p>
+                    <p class="text-muted fs-12">${budgetInsightText}</p>
                 </div>
             </div>
         `;
+
+        if (window.DashboardML && typeof window.DashboardML.renderMlIntelligenceCard === "function") {
+            window.DashboardML.renderMlIntelligenceCard();
+        }
     }
 
     window.DashboardInsights = Object.freeze({ renderFinancialInsights });

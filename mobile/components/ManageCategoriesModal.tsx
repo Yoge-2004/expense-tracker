@@ -14,8 +14,7 @@ import {
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
-import { ThemedTextInput as TextInput } from './ThemedText';
-import { ThemedText as Text } from './ThemedText';
+import { ThemedTextInput as TextInput , ThemedText as Text } from './ThemedText';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { Colors, getCategoryIconName } from '../constants/theme';
@@ -23,6 +22,11 @@ import { ThemedScrollView } from './ThemedScrollbar';
 import { apiRequest } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+
+interface CategoryUsageRecord {
+  categoryId?: number | string;
+  [key: string]: unknown;
+}
 
 interface Category {
   id: number;
@@ -56,9 +60,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [usedIds, setUsedIds] = useState<Set<number>>(new Set());
-  const [activeExpenses, setActiveExpenses] = useState<any[]>([]);
-  const [activeRecurring, setActiveRecurring] = useState<any[]>([]);
-  const [activeBudgets, setActiveBudgets] = useState<any[]>([]);
+  const [activeExpenses, setActiveExpenses] = useState<CategoryUsageRecord[]>([]);
+  const [activeRecurring, setActiveRecurring] = useState<CategoryUsageRecord[]>([]);
+  const [activeBudgets, setActiveBudgets] = useState<CategoryUsageRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [creating, setCreating] = useState(false);
@@ -87,22 +91,63 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
       setActiveBudgets(safeBud);
 
       const used = new Set<number>([
-        ...safeExp.map((e: any) => Number(e.categoryId)),
-        ...safeRec.map((r: any) => Number(r.categoryId)),
-        ...safeBud.map((b: any) => Number(b.categoryId)),
+        ...safeExp.map((e: CategoryUsageRecord) => Number(e.categoryId)),
+        ...safeRec.map((r: CategoryUsageRecord) => Number(r.categoryId)),
+        ...safeBud.map((b: CategoryUsageRecord) => Number(b.categoryId)),
       ]);
       setUsedIds(used);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.warn('[ManageCategoriesModal] Failed to load categories and usage:', e);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
+  const [prevVisible, setPrevVisible] = useState(visible);
+  if (prevVisible !== visible) {
+    setPrevVisible(visible);
     if (visible) {
-      void fetchCategoriesAndUsage();
+      setLoading(true);
     }
+  }
+
+  useEffect(() => {
+    let active = true;
+    if (visible && userId) {
+      Promise.all([
+        apiRequest(`/categories/user/${userId}`).catch(() => []),
+        apiRequest(`/expenses/user/${userId}`).catch(() => []),
+        apiRequest(`/expenses/recurring/user/${userId}`).catch(() => []),
+        apiRequest(`/expenses/budget/status/user/${userId}`).catch(() => []),
+      ])
+        .then(([allCats, expenses, recurring, budgets]) => {
+          if (!active) return;
+          setCategories(Array.isArray(allCats) ? allCats : []);
+          const safeExp = Array.isArray(expenses) ? expenses : [];
+          const safeRec = Array.isArray(recurring) ? recurring : [];
+          const safeBud = Array.isArray(budgets) ? budgets : [];
+
+          setActiveExpenses(safeExp);
+          setActiveRecurring(safeRec);
+          setActiveBudgets(safeBud);
+
+          const used = new Set<number>([
+            ...safeExp.map((e: CategoryUsageRecord) => Number(e.categoryId)),
+            ...safeRec.map((r: CategoryUsageRecord) => Number(r.categoryId)),
+            ...safeBud.map((b: CategoryUsageRecord) => Number(b.categoryId)),
+          ]);
+          setUsedIds(used);
+          setLoading(false);
+        })
+        .catch((e) => {
+          if (!active) return;
+          console.warn('[ManageCategoriesModal] Failed to load categories and usage:', e);
+          setLoading(false);
+        });
+    }
+    return () => {
+      active = false;
+    };
   }, [visible, userId]);
 
   /**
@@ -128,8 +173,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
       setNewCatName('');
       await fetchCategoriesAndUsage();
       onCategoriesUpdated();
-    } catch (e: any) {
-      showAlert('Creation Failed', e.message || 'Could not create category.');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Could not create category.';
+      showAlert('Creation Failed', msg);
     } finally {
       setCreating(false);
     }
@@ -140,9 +186,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
    */
   const handleDeleteCategory = async (cat: Category) => {
     if (usedIds.has(cat.id)) {
-      const expCount = activeExpenses.filter((e: any) => Number(e.categoryId) === cat.id).length;
-      const recCount = activeRecurring.filter((r: any) => Number(r.categoryId) === cat.id).length;
-      const budCount = activeBudgets.filter((b: any) => Number(b.categoryId) === cat.id).length;
+      const expCount = activeExpenses.filter((e) => Number(e.categoryId) === cat.id).length;
+      const recCount = activeRecurring.filter((r) => Number(r.categoryId) === cat.id).length;
+      const budCount = activeBudgets.filter((b) => Number(b.categoryId) === cat.id).length;
 
       const usageParts: string[] = [];
       if (expCount > 0) usageParts.push(`${expCount} expense${expCount > 1 ? 's' : ''}`);
@@ -174,8 +220,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
               setCategories((prev) => prev.filter((c) => c.id !== cat.id));
               onCategoriesUpdated();
-            } catch (e: any) {
-              showAlert('Delete Failed', e.message || 'Could not delete category.');
+            } catch (e: unknown) {
+              const msg = e instanceof Error ? e.message : 'Could not delete category.';
+              showAlert('Delete Failed', msg);
             }
           },
         },

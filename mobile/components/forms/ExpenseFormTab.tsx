@@ -5,8 +5,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import { ThemedTextInput as TextInput } from '../ThemedText';
-import { ThemedText as Text } from '../ThemedText';
+import { ThemedTextInput as TextInput , ThemedText as Text } from '../ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { StaggeredView } from '../StaggeredView';
@@ -58,7 +57,7 @@ export interface ExpenseFormTabProps {
   setShowSampleReceipts?: (show: boolean) => void;
   handlePickReceipt?: () => void;
   handlePasteBankSms?: () => void;
-  handleTestSampleReceipt?: (receipt: any) => void;
+  handleTestSampleReceipt?: (index: number) => void;
   handleSmsDetectionInDesc?: (text: string) => void;
   focusedField?: string | null;
   setFocusedField?: (field: string | null) => void;
@@ -72,7 +71,6 @@ export interface ExpenseFormTabProps {
 export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTabProps) {
   const {
     colors: c,
-    theme,
     currSymbol,
     categories,
     onOpenManageCategories,
@@ -80,7 +78,6 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
     form,
     isEditMode,
   } = props;
-  const isLight = theme === 'light';
 
   const description = props.description ?? form?.description ?? '';
   const setDescription = props.setDescription ?? form?.setDescription ?? (() => {});
@@ -123,9 +120,9 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
         {/* Receipt OCR Scanner Banner */}
         <View
           style={{
-            backgroundColor: c.primary + (isLight ? '14' : '1F'),
-            borderColor: c.primary + '55',
-            borderWidth: 1.5,
+            backgroundColor: c.fillSubtle,
+            borderColor: c.primary + '4D',
+            borderWidth: 1,
             borderRadius: 14,
             padding: 12,
             marginBottom: 16,
