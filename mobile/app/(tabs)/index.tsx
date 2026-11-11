@@ -56,6 +56,7 @@ import { SavingsGoalsSection, SavingsGoalItem } from '../../components/dashboard
 import { dashboardStyles as styles } from '../../components/dashboard/dashboardStyles';
 import { UnifiedTxItem, RawExpenseCandidate, RawIncomeCandidate } from '../../components/dashboard/dashboardTypes';
 import { earnedTotal, effectiveMonth, monthKey, netSpent } from '../../utils/moneyFlow';
+import { forecastMonth } from '../../utils/subscriptionPlan';
 import { OfflineBanner } from '../../components/OfflineBanner';
 import { ImmersiveLoader } from '../../components/ImmersiveLoader';
 import { LoansSection } from '../../components/LoansSection';
@@ -724,7 +725,10 @@ export default function DashboardScreen() {
     );
     const cMonthNet = thisMonthInflow - cMonthSpent;
     const burn = cMonthSpent / cDay;
-    const forecast = burn * dInMonth;
+    // Subscriptions still due this month are added to the forecast and taken off the safe-to-spend pool.
+    const monthPlan = forecastMonth(currentMonthExpenses, cMonthSpent, subscriptions, nowD);
+    const forecast = monthPlan.forecast;
+    const upcomingSubs = monthPlan.upcomingSubscriptions;
 
     const catSummary: Record<string, number> = {};
     dashboardExpenses.forEach((e) => {
@@ -740,9 +744,9 @@ export default function DashboardScreen() {
     const totalBudgetLimit = budgets.reduce((sum, b) => sum + Number(b.limit || 0), 0);
     let safeSpend = 0;
     if (totalBudgetLimit > 0) {
-      safeSpend = Math.max(0, (totalBudgetLimit - cMonthSpent) / daysLeft);
+      safeSpend = Math.max(0, (totalBudgetLimit - cMonthSpent - upcomingSubs) / daysLeft);
     } else if (thisMonthInflow > 0) {
-      safeSpend = Math.max(0, (thisMonthInflow - cMonthSpent) / daysLeft);
+      safeSpend = Math.max(0, (thisMonthInflow - cMonthSpent - upcomingSubs) / daysLeft);
     } else if (income > 0) {
       const remainingPool = income - spent;
       safeSpend = Math.max(0, remainingPool > 0 ? remainingPool / daysLeft : 0);
@@ -805,7 +809,7 @@ export default function DashboardScreen() {
       safeDailySpend: safeSpend,
       noSpendStreak: streak,
     };
-  }, [dashboardExpenses, dashboardIncomes, expenses, incomes, budgets]);
+  }, [dashboardExpenses, dashboardIncomes, expenses, incomes, budgets, subscriptions]);
 
   // Unified chronological ledger (memoized across theme changes)
   const unifiedTransactions: UnifiedTxItem[] = useMemo(() => {

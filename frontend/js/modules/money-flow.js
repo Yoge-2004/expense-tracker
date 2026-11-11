@@ -117,8 +117,90 @@
         };
     }
 
+    /* ---- Subscriptions (recurring expenses) ------------------------------------------
+     * Charges that are already due become real "(Auto)" expenses (RecurringExpenseScheduler),
+     * so they are in the totals. These helpers cover the rest: a subscription's monthly
+     * run-rate, and the charges still to come this month. Mirrors mobile/utils/subscriptionPlan.ts. */
+
+    function toMonthlyRate(amount, frequency, intervalDays) {
+        const amt = Math.max(0, num(amount));
+        const freq = String(frequency || "MONTHLY").toUpperCase();
+        if (freq === "DAILY") return amt * 30;
+        if (freq === "WEEKLY") return amt * 4.33;
+        if (freq === "BI_WEEKLY" || freq === "BIWEEKLY") return amt * 2.16;
+        if (freq === "YEARLY") return amt / 12;
+        if (freq === "CUSTOM" && Number(intervalDays) > 0) return (amt / Number(intervalDays)) * 30;
+        return amt;
+    }
+
+    function parseDay(value) {
+        const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ""));
+        return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+    }
+
+    function nextOccurrence(date, frequency, intervalDays) {
+        const d = new Date(date.getTime());
+        switch (String(frequency || "MONTHLY").toUpperCase()) {
+            case "DAILY": d.setDate(d.getDate() + 1); break;
+            case "WEEKLY": d.setDate(d.getDate() + 7); break;
+            case "BI_WEEKLY":
+            case "BIWEEKLY": d.setDate(d.getDate() + 14); break;
+            case "YEARLY": d.setFullYear(d.getFullYear() + 1); break;
+            case "CUSTOM": d.setDate(d.getDate() + (Number(intervalDays) > 0 ? Number(intervalDays) : 30)); break;
+            default: d.setMonth(d.getMonth() + 1);
+        }
+        return d;
+    }
+
+    /** Subscription charges still to come after today and up to the end of today's month. */
+    function upcomingSubscriptionCharges(subscriptions, today) {
+        const now = today instanceof Date ? today : new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        let total = 0;
+        let count = 0;
+        (subscriptions || []).forEach((sub) => {
+            let due = parseDay(sub && sub.nextDueDate);
+            const amount = Math.max(0, num(sub && sub.amount));
+            if (!due || amount <= 0) return;
+            for (let guard = 0; due <= monthEnd && guard < 400; guard++) {
+                if (due > startOfToday) { total += amount; count++; }
+                const next = nextOccurrence(due, sub.frequency, sub.intervalDays);
+                if (next <= due) break;
+                due = next;
+            }
+        });
+        return { total, count };
+    }
+
+    /** True for expenses that came from a subscription (flagged, or auto-created by the scheduler). */
+    function isSubscriptionExpense(expense) {
+        return !!(expense && (expense.recurring || expense.isRecurring || /\(Auto\)\s*$/.test(String(expense.description || ""))));
+    }
+
+    /**
+     * Month-end forecast: what is spent so far, plus everyday spending at the current pace for the
+     * days left, plus the subscription charges still due. Subscriptions are kept out of the pace
+     * so they are not extrapolated (and not counted twice).
+     */
+    function forecastMonth(monthExpenses, spentSoFar, subscriptions, today) {
+        const now = today instanceof Date ? today : new Date();
+        const day = Math.max(now.getDate(), 1);
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const subsSoFar = sum((monthExpenses || []).filter(isSubscriptionExpense), (e) => e.amount);
+        const everydayPace = Math.max(0, spentSoFar - subsSoFar) / day;
+        const upcoming = upcomingSubscriptionCharges(subscriptions, now);
+        return {
+            forecast: spentSoFar + everydayPace * (daysInMonth - day) + upcoming.total,
+            upcomingSubscriptions: upcoming.total,
+            upcomingCount: upcoming.count,
+            everydayPace,
+        };
+    }
+
     window.MoneyFlow = Object.freeze({
         monthKey, shiftMonth, monthLabel, kindOf, effectiveMonth,
         earnedTotal, reimbursedTotal, netSpent, summarize,
+        toMonthlyRate, upcomingSubscriptionCharges, isSubscriptionExpense, forecastMonth,
     });
 })();

@@ -18,6 +18,17 @@
         const countEl = document.getElementById("expenseCountText");
         if (countEl) countEl.textContent = `${count} transaction${count === 1 ? '' : 's'} recorded`;
 
+        // Subscriptions come first: their upcoming charges feed the forecast and the safe-to-spend figure.
+        let subsList = [];
+        let subsFetchFailed = false;
+        try {
+            const subs = await apiRequest(`/expenses/recurring/user/${userId}`);
+            subsList = Array.isArray(subs) ? subs : [];
+        } catch (err) {
+            subsFetchFailed = true;
+            console.error("Subs fetch error", err);
+        }
+
         // Daily Burn Rate & Month End Forecast
         const now = new Date();
         const currentDay = Math.max(now.getDate(), 1);
@@ -30,7 +41,12 @@
         });
         const currentMonthSpent = currentMonthExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
         const dailyBurn = currentMonthSpent / currentDay;
-        const projectedSpent = dailyBurn * daysInMonth;
+        // Everyday spending continues at its pace; subscriptions still due this month are added on top.
+        const monthPlan = window.MoneyFlow
+            ? window.MoneyFlow.forecastMonth(currentMonthExpenses, currentMonthSpent, subsList, now)
+            : { forecast: dailyBurn * daysInMonth, upcomingSubscriptions: 0, upcomingCount: 0 };
+        const projectedSpent = monthPlan.forecast;
+        const upcomingSubsTotal = monthPlan.upcomingSubscriptions;
 
         let dailyBurnEl = document.getElementById("dailyBurnRate");
         if (!dailyBurnEl) {
@@ -42,7 +58,12 @@
         }
         if (dailyBurnEl) dailyBurnEl.textContent = `${formatCurrency(dailyBurn)} / day`;
         const forecastEl = document.getElementById("monthForecast");
-        if (forecastEl) forecastEl.textContent = `Projected: ${formatCurrency(projectedSpent)}`;
+        if (forecastEl) {
+            forecastEl.textContent = `Projected: ${formatCurrency(projectedSpent)}`;
+            forecastEl.title = upcomingSubsTotal > 0
+                ? `Forecast for this month, including ${formatCurrency(upcomingSubsTotal)} of subscription charges still due (${monthPlan.upcomingCount})`
+                : "Forward-looking forecast based on your spending rhythm";
+        }
 
         // Top Category
         const catMap = {};
@@ -65,24 +86,20 @@
         const topCatAmtEl = document.getElementById("topCategoryAmount");
         if (topCatAmtEl) topCatAmtEl.textContent = `${formatCurrency(maxAmt)} spent`;
 
-        // Subscriptions Fetch
-        let monthlyTotal = 0;
-        try {
-            const subs = await apiRequest(`/expenses/recurring/user/${userId}`);
-            const safeSubs = Array.isArray(subs) ? subs : [];
-            const activeSubs = safeSubs;
-            monthlyTotal = activeSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
-
+        // Subscriptions card: every plan normalised to a monthly run-rate (weekly, yearly and custom included).
+        {
             const subsBadge = document.getElementById("subsCountBadge");
-            if (subsBadge) subsBadge.textContent = `${activeSubs.length} Active`;
             const subsTotal = document.getElementById("subsMonthlyTotal");
-            if (subsTotal) animateNumber(subsTotal, monthlyTotal, true, false, " / mo");
-        } catch (err) {
-            console.error("Subs fetch error", err);
-            const subsBadge = document.getElementById("subsCountBadge");
-            if (subsBadge) subsBadge.textContent = "0 Active";
-            const subsTotal = document.getElementById("subsMonthlyTotal");
-            if (subsTotal) subsTotal.textContent = `${formatCurrency(0)} / mo`;
+            if (subsFetchFailed) {
+                if (subsBadge) subsBadge.textContent = "0 Active";
+                if (subsTotal) subsTotal.textContent = `${formatCurrency(0)} / mo`;
+            } else {
+                const monthlyTotal = subsList.reduce((acc, s) => acc + (window.MoneyFlow
+                    ? window.MoneyFlow.toMonthlyRate(s.amount, s.frequency, s.intervalDays)
+                    : Number(s.amount || 0)), 0);
+                if (subsBadge) subsBadge.textContent = `${subsList.length} Active`;
+                if (subsTotal) animateNumber(subsTotal, monthlyTotal, true, false, " / mo");
+            }
         }
 
         // Safe-to-Spend Allowance Calculation
@@ -110,7 +127,7 @@
 
                 let safeDaily = 0;
                 if (monthlyBudgetLimit > 0) {
-                    const budgetRemaining = Math.max(0, monthlyBudgetLimit - currentMonthSpent);
+                    const budgetRemaining = Math.max(0, monthlyBudgetLimit - currentMonthSpent - upcomingSubsTotal);
                     safeDaily = budgetRemaining / daysLeftInMonth;
                 } else {
                     const currentMonthIncomes = Array.isArray(incomes) ? incomes.filter(i => {
@@ -119,7 +136,7 @@
                     }) : [];
                     const currentMonthIncome = currentMonthIncomes.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
                     if (currentMonthIncome > 0) {
-                        const incomeRemaining = Math.max(0, currentMonthIncome - currentMonthSpent);
+                        const incomeRemaining = Math.max(0, currentMonthIncome - currentMonthSpent - upcomingSubsTotal);
                         safeDaily = incomeRemaining / daysLeftInMonth;
                     } else {
                         safeDaily = Math.max(0, dailyBurn * 0.85);
