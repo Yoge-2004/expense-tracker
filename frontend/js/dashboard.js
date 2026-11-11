@@ -342,9 +342,17 @@ dashboardFilterController.wireControls();
 
 
 
+/** Small non-cryptographic string hash, used only to tell whether the list markup changed. */
+function hashString(text) {
+    let h = 5381;
+    for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36);
+}
+
 function renderList(expenses) {
     updateStreamBadges();
     if (expenses.length === 0) {
+        delete elements.expenseList.dataset.renderedHtml;
         elements.expenseList.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="opacity-85"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
@@ -367,7 +375,7 @@ function renderList(expenses) {
         });
     }
 
-    elements.expenseList.innerHTML = expenses.map((exp, idx) => {
+    const listHtml = expenses.map((exp, idx) => {
         const catColor = getCategoryColor(exp.categoryName);
         const catName = exp.categoryName || 'General';
         const isRecurring = exp.recurring || exp.isRecurring;
@@ -404,6 +412,18 @@ function renderList(expenses) {
             </div>
         </div>`;
     }).join("");
+    // Same markup as last time (a refresh or a repeated applyFilters) means the DOM is already right.
+    // Rebuilding it would throw away every row and replay the entry animation on all of them.
+    const list = elements.expenseList;
+    if (list.dataset.renderedHtml === String(listHtml.length) + ":" + hashString(listHtml) &&
+        list.children.length === expenses.length) {
+        return;
+    }
+    const wasEmpty = list.children.length === 0 || !!list.querySelector('.empty-state');
+    list.innerHTML = listHtml;
+    list.dataset.renderedHtml = String(listHtml.length) + ":" + hashString(listHtml);
+    // Only a first paint of the list animates in; later rebuilds (a filter change) appear at once.
+    list.classList.toggle('no-enter-anim', !wasEmpty);
     elements.expenseList.querySelectorAll('.expense-item[data-delay]').forEach(el => {
         el.style.animationDelay = `${el.dataset.delay}s`;
     });

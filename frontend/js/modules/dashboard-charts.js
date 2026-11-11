@@ -9,13 +9,17 @@
     // font config that doesn't set `family` explicitly (axis ticks, tooltips,
     // most legends below never did). Setting this once here makes every chart
     // element inherit the project's body typeface without touching each config.
+    // Set once. setChartMotion() owns the duration after that: initChartDefaults() runs on every render,
+    // so it must not put the 900 ms entry animation back after a renderer asked for none.
+    let motionManaged = false;
+
     function initChartDefaults() {
         if (typeof Chart !== "undefined" && Chart.defaults) {
             if (Chart.defaults.font) {
                 Chart.defaults.font.family = "'Hanken Grotesk', sans-serif";
             }
             if (Chart.defaults.animation) {
-                Chart.defaults.animation.duration = 900;
+                if (!motionManaged) Chart.defaults.animation.duration = 900;
                 Chart.defaults.animation.easing = 'easeOutBack';
             }
         }
@@ -542,6 +546,67 @@
     // A new palette or theme re-colours the charts that are already on screen.
     document.addEventListener('palettechange', () => updateChartsTheme());
 
+    /*
+     * Redraw control. applyFilters() calls every chart renderer on each filter change, data load and
+     * refresh, and each used to destroy and rebuild its chart with a full 900 ms entry animation even when
+     * nothing it draws had changed. That is the flicker and the main-thread cost on phones. Now:
+     *  - a renderer whose inputs, theme and currency are unchanged does nothing;
+     *  - a chart that is rebuilt because its data changed does not replay the entry animation;
+     *  - the first draw still animates, except in lite / reduced-motion mode.
+     */
+    function lowMotion() {
+        const perf = window.PerfMode;
+        return !!(perf && (perf.isLite() || perf.reducedMotion()));
+    }
+
+    function setChartMotion(isRebuild) {
+        if (typeof Chart === "undefined" || !Chart.defaults || !Chart.defaults.animation) return;
+        motionManaged = true;
+        Chart.defaults.animation.duration = (isRebuild || lowMotion()) ? 0 : 900;
+    }
+
+    function themeSignature() {
+        const symbol = typeof getCurrencySymbol === "function" ? getCurrencySymbol() : "";
+        return JSON.stringify(chartColors()) + "|" + symbol;
+    }
+
+    function expensesSignature(list) {
+        if (!Array.isArray(list)) return String(list);
+        let sig = list.length + ":";
+        for (let i = 0; i < list.length; i++) {
+            const e = list[i] || {};
+            sig += (e.id || "") + "," + e.amount + "," + (e.expenseDate || e.date || "") + "," +
+                (e.categoryName || "") + "," + ((e.recurring || e.isRecurring) ? 1 : 0) + ";";
+        }
+        return sig;
+    }
+
+    function budgetsSignature(list) {
+        if (!Array.isArray(list)) return String(list);
+        return list.map(b => `${(b && b.categoryName) || ""},${(b && b.limit) || 0},${(b && b.spent) || 0}`).join(";");
+    }
+
+    function withRedrawControl(render, chartKey, canvasId, signatureOf, extra) {
+        let lastSignature = null;
+        return function controlledRender(input) {
+            const canvas = document.getElementById(canvasId);
+            const chart = chartState[chartKey];
+            const signature = themeSignature() + "|" + signatureOf(input) + "|" + (extra ? extra() : "");
+            const live = !!(chart && canvas && chart.canvas === canvas);
+            if (live && signature === lastSignature) return;
+            lastSignature = signature;
+            setChartMotion(live);
+            return render.apply(this, arguments);
+        };
+    }
+
+    const today = () => new Date().toDateString();
+    renderPieChart = withRedrawControl(renderPieChart, "pieChart", "expenseChart", expensesSignature);
+    renderTrendChart = withRedrawControl(renderTrendChart, "trendChart", "trendChart", expensesSignature, today);
+    renderRecurringSplitChart = withRedrawControl(renderRecurringSplitChart, "recurringSplitChart", "recurringSplitChart", expensesSignature);
+    renderDayOfWeekChart = withRedrawControl(renderDayOfWeekChart, "dayOfWeekChart", "dayOfWeekChart", expensesSignature);
+    renderBudgetVsActualChart = withRedrawControl(renderBudgetVsActualChart, "budgetVsActualChart", "budgetVsActualChart", budgetsSignature);
+
     // Preserve the established dashboard globals for legacy call sites.
     window.renderPieChart = renderPieChart;
     window.renderTrendChart = renderTrendChart;
@@ -561,6 +626,7 @@
         renderDayOfWeekChart,
         renderBudgetVsActualChart,
         updateChartsTheme,
-        chartColors
+        chartColors,
+        setChartMotion
     };
 })();

@@ -1155,6 +1155,12 @@ Android only, off until the user enables it (Profile > Automatic transaction cap
 - Limitation: while the app is closed the service only queues; recording happens at the next open.
 - Tests: the filter has JUnit tests (`CaptureFilterTest`), the queue logic has Jest tests (`captureQueue.test.ts`). The Kotlin module and manifest are only compiled by the EAS build; behaviour on a real phone must be checked by hand. The in-app updater follows `releases/latest`, so build a first version as a prerelease.
 
+### Performance modes (website)
+
+`frontend/js/perf-guard.js` (loaded in `<head>` on every page) chooses **full** or **lite** and exposes it as `window.PerfMode`; `frontend/css/performance.css` (linked last) does the work. Lite is automatic for phones and touch devices, `prefers-reduced-motion`, data-saver, 2-core or 2 GB devices, and any device whose measured frame rate stays under about 38 fps; scripted browsers (`navigator.webdriver`) are never probed. In lite mode the paint-heavy infinite loops (animated `box-shadow`, `filter`, `border-color` and gradient position), the blur on repeated cards and the canvas background are switched off; skeletons, spinners, modals and the top bar are untouched. In every mode, animations pause while the tab is hidden and for sections scrolled out of view. Override with `localStorage.perfMode = "lite"` or `"full"` (delete the key for automatic).
+
+Redraw rules: chart renderers skip when their data, theme and currency are unchanged and never replay the entry animation on a rebuild; count-up numbers keep one loop per element and skip unchanged values; the transaction list is not rebuilt when its markup is identical, and only the first screenful animates in.
+
 ### Appearance and colours
 
 Wallpaper colour extraction produces a palette that is applied through CSS variables on the web (`--primary`, `--primary-rgb`, fill and on-colour tokens, a `palettechange` event) and through theme tokens on mobile (`mobile/constants/theme.ts`). Recent work removed hard-coded colours from components so palettes apply in both themes.

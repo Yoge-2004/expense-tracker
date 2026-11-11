@@ -1,0 +1,89 @@
+/*
+ * Performance layer. Linked LAST on every page; it only has an effect when js/perf-guard.js has put
+ * a class on <html>:  .perf-lite (phones, reduced motion, slow devices), .page-hidden (background tab),
+ * and .perf-offscreen on sections scrolled out of view. On a capable desktop in the foreground the page
+ * looks exactly as before.
+ */
+
+/* 1. Nothing animates in a background tab. */
+html.page-hidden *,
+html.page-hidden *::before,
+html.page-hidden *::after {
+  animation-play-state: paused !important;
+}
+
+/* 2. Sections scrolled out of view stop animating until they come back. */
+.perf-offscreen,
+.perf-offscreen *,
+.perf-offscreen *::before,
+.perf-offscreen *::after {
+  animation-play-state: paused !important;
+}
+
+/* 3. Lite mode: decorative infinite loops that repaint every frame (box-shadow, filter, border-color
+ *    and gradient-position keyframes). Generated from the stylesheets; loading skeletons, spinners and
+ *    progress indicators are not in this list and keep animating. */
+html.perf-lite #deleteAccountBtn:hover,
+html.perf-lite #incomeModal.active .modal,
+html.perf-lite #openModalBtn:hover,
+html.perf-lite .avatar:hover,
+html.perf-lite .badge-pulse-glow,
+html.perf-lite .bi-badge-dot,
+html.perf-lite .brightness-pulse-hover:hover,
+html.perf-lite .btn-cyber-glow:hover,
+html.perf-lite .btn-delete:hover,
+html.perf-lite .btn-floating-glow:hover,
+html.perf-lite .btn-primary:hover,
+html.perf-lite .budget-bar-fill::after,
+html.perf-lite .budget-progress-bar-fill,
+html.perf-lite .goal-progress-fill,
+html.perf-lite .goal-progress-fill::after,
+html.perf-lite .hero-orb,
+html.perf-lite .immersive-core,
+html.perf-lite .insights-badge svg,
+html.perf-lite .is-long-pressing,
+html.perf-lite .live-dot,
+html.perf-lite .live-pulse,
+html.perf-lite .live-pulse-dot,
+html.perf-lite .metric-card-glow,
+html.perf-lite .modal-overlay.active .modal,
+html.perf-lite .modal-overlay.active#incomeModal .modal,
+html.perf-lite .moon-icon,
+html.perf-lite .otp-input:focus,
+html.perf-lite .radar-ping::before,
+html.perf-lite .server-status-badge .status-dot.online,
+html.perf-lite .stat-card.active,
+html.perf-lite .stat-card.hero,
+html.perf-lite .status-dot,
+html.perf-lite .step-bar::after,
+html.perf-lite .step-item.active .step-number,
+html.perf-lite .step-number.active,
+html.perf-lite .step-progress-fill,
+html.perf-lite .sun-icon,
+html.perf-lite .unread-indicator,
+html.perf-lite .user-profile:hover .avatar,
+html.perf-lite [data-theme="light"] #incomeModal.active .modal,
+html.perf-lite [data-theme="light"] .modal-overlay.active#incomeModal .modal,
+html.perf-lite[data-theme="light"] #incomeModal.active .modal,
+html.perf-lite[data-theme="light"] .modal-overlay.active#incomeModal .modal {
+  animation: none !important;
+}
+
+/* 4. Lite mode: backdrop blur on the many in-flow cards is re-computed on every scroll frame.
+ *    Modals, overlays, popovers, toasts and the top bar keep theirs. */
+html.perf-lite :is(
+  .metric-card, .card, .unified-ledger-card, .insight-card-item, .savings-goal-card, .budget-item,
+  .recent-transactions, .insight-card, .trend-card, .budget-section, .savings-section, .loans-section,
+  .table-wrapper, .money-flow, .insights-intelligence-panel, .ai-assistant-container,
+  .ai-intelligence-panel, .float-card, .perk-item, .empty-state-compact
+) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* 5. Transaction rows: a long list does not slide in row by row, and a rebuilt list (filter change)
+ *    appears at once. Only the first screenful animates on first paint. */
+#expenseList .expense-item:nth-child(n + 13),
+#expenseList.no-enter-anim .expense-item {
+  animation: none;
+}

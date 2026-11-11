@@ -4,50 +4,69 @@
     const { formatCurrency } = window.DashboardUtils;
     const elements = window.DashboardDom.elements;
 
-    function animateNumber(el, target, isCurrency = false, showSign = false, suffix = "") {
-        if (!el) return;
-        const duration = 850;
-        const startTime = performance.now();
-        const startVal = parseFloat(el.getAttribute('data-val') || 0);
+    /*
+     * Count-up animations. Each element has at most one running loop: a new call cancels the old one and
+     * continues from the value currently on screen (the old code stacked a requestAnimationFrame loop per
+     * call, which fought over the same text node when metrics refreshed quickly). A value that did not
+     * change is written once with no animation; lite / reduced-motion mode and hidden tabs skip it too.
+     */
+    const countRuns = new WeakMap();
+
+    function motionAllowed() {
+        const perf = window.PerfMode;
+        if (document.hidden) return false;
+        return !(perf && (perf.isLite() || perf.reducedMotion()));
+    }
+
+    function runCount(el, target, ease, format, finalText) {
+        const running = countRuns.get(el);
+        if (running) cancelAnimationFrame(running.raf);
+        const from = running ? running.current : (parseFloat(el.getAttribute('data-val')) || 0);
         el.setAttribute('data-val', target);
 
+        if (from === target || !motionAllowed()) {
+            countRuns.delete(el);
+            el.textContent = finalText;
+            return;
+        }
+
+        const state = { raf: 0, current: from };
+        countRuns.set(el, state);
+        const duration = 850;
+        const startTime = performance.now();
         function step(now) {
             const progress = Math.min((now - startTime) / duration, 1);
-            const easeOutBack = 1 + 2.70158 * Math.pow(progress - 1, 3) + 1.70158 * Math.pow(progress - 1, 2);
-            const current = startVal + (target - startVal) * Math.min(Math.max(easeOutBack, 0), 1);
-            const sign = showSign ? (current < 0 ? "-" : "+") : "";
-            const body = isCurrency ? `${sign}${formatCurrency(Math.abs(current))}` : Math.round(current);
-            el.textContent = `${body}${suffix}`;
+            state.current = from + (target - from) * ease(progress);
             if (progress < 1) {
-                requestAnimationFrame(step);
+                el.textContent = format(state.current);
+                state.raf = requestAnimationFrame(step);
             } else {
-                const finalSign = showSign ? (target < 0 ? "-" : "+") : "";
-                const finalBody = isCurrency ? `${finalSign}${formatCurrency(Math.abs(target))}` : target;
-                el.textContent = `${finalBody}${suffix}`;
+                countRuns.delete(el);
+                el.textContent = finalText;
             }
         }
-        requestAnimationFrame(step);
+        state.raf = requestAnimationFrame(step);
+    }
+
+    function animateNumber(el, target, isCurrency = false, showSign = false, suffix = "") {
+        if (!el) return;
+        const signOf = (value) => (showSign ? (value < 0 ? "-" : "+") : "");
+        const format = (current) => {
+            const body = isCurrency ? `${signOf(current)}${formatCurrency(Math.abs(current))}` : Math.round(current);
+            return `${body}${suffix}`;
+        };
+        const finalBody = isCurrency ? `${signOf(target)}${formatCurrency(Math.abs(target))}` : target;
+        const easeOutBack = (progress) => {
+            const v = 1 + 2.70158 * Math.pow(progress - 1, 3) + 1.70158 * Math.pow(progress - 1, 2);
+            return Math.min(Math.max(v, 0), 1);
+        };
+        runCount(el, target, easeOutBack, format, `${finalBody}${suffix}`);
     }
 
     function animatePercent(el, target) {
         if (!el) return;
-        const duration = 850;
-        const startTime = performance.now();
-        const startVal = parseFloat(el.getAttribute('data-val') || 0);
-        el.setAttribute('data-val', target);
-
-        function step(now) {
-            const progress = Math.min((now - startTime) / duration, 1);
-            const easeOut = 1 - Math.pow(1 - progress, 3);
-            const current = startVal + (target - startVal) * easeOut;
-            el.textContent = `${current.toFixed(1)}%`;
-            if (progress < 1) {
-                requestAnimationFrame(step);
-            } else {
-                el.textContent = `${target.toFixed(1)}%`;
-            }
-        }
-        requestAnimationFrame(step);
+        runCount(el, target, (progress) => 1 - Math.pow(1 - progress, 3),
+            (current) => `${current.toFixed(1)}%`, `${target.toFixed(1)}%`);
     }
 
     function celebrateSuccess(x, y) {

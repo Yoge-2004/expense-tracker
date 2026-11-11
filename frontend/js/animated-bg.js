@@ -12,6 +12,8 @@
     'use strict';
 
     function isMobileDevice() {
+        // Lite performance mode (slow device, data-saver, reduced motion) gets the static CSS wash too.
+        if (document.documentElement.classList.contains('perf-lite')) return true;
         return window.innerWidth <= 768 ||
             (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
             (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0 && window.innerWidth <= 1024);
@@ -425,6 +427,17 @@
                 animFrameId = requestAnimationFrame(render);
             }
         }
+
+        // The performance mode can change after load (a frame-rate probe, or the user's settings).
+        document.addEventListener('perfmodechange', () => {
+            if (isMobileDevice()) {
+                canvas.style.display = 'none';
+                stopAnimation();
+            } else {
+                canvas.style.display = '';
+                startAnimation();
+            }
+        });
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {

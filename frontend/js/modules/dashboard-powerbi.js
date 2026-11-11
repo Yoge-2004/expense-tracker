@@ -911,7 +911,11 @@
         const totalBudget = budgets.reduce((acc, b) => acc + Number(b.limit || 0), 0) || (runningTotal * 1.25);
         const idealRate = labels.map((_, idx) => Math.round((totalBudget / daysInMonth) * (idx + 1)));
 
+        const hadTrendChart = !!(chartState.trendChart && chartState.trendChart.canvas === ctx.canvas);
         if (chartState.trendChart) chartState.trendChart.destroy();
+        if (window.DashboardCharts && typeof window.DashboardCharts.setChartMotion === "function") {
+            window.DashboardCharts.setChartMotion(hadTrendChart);
+        }
 
         const themePrimary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#C79A3E';
         const themePrimaryRgb = getComputedStyle(document.documentElement).getPropertyValue('--primary-rgb').trim() || '199, 154, 62';
