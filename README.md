@@ -791,7 +791,7 @@ The mobile client embeds a regex extraction engine (`mobile/services/debitParser
 - Understands formats from Indian banks / UPI apps (SBI, HDFC, ICICI, Axis, Kotak, Google Pay, PhonePe, Paytm, CRED) and global providers (Chase, Bank of America, Wells Fargo, Citi, Barclays, HSBC, Revolut, Monzo).
 - Shows a 1-tap confirmation card before recording anything.
 
-> **Status: detection is manual or clipboard-based, not automatic.** The parser runs when you (a) paste a message in Profile, or (b) open the app while a bank message is on the clipboard (`mobile/app/_layout.tsx`). The app has **no permission or native component that reads SMS or other apps' notifications** (`RECEIVE_SMS`/`READ_SMS` and a notification-listener service are not declared; `expo-notifications` only sees this app's own notifications). Truly automatic capture needs native Android code; the design is in [Project Status](#-project-status-operations--known-issues).
+> **Status: manual, clipboard, and (Android, opt-in) automatic capture.** The parser runs when you (a) paste a message in Profile, (b) open the app while a bank message is on the clipboard (`mobile/app/_layout.tsx`), or (c) on Android, after you switch on *Notification access* for the app in Profile, when a bank or UPI notification arrives (see [Automatic transaction capture](#automatic-transaction-capture)). No SMS permission is used. `expo-notifications` itself only sees this app's own notifications; capture comes from the local module in `mobile/modules/notification-capture/`.
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
@@ -1145,11 +1145,15 @@ The app never uploads anything while authentication is failing: unauthenticated 
 - Server: Tesseract runs single-threaded (`OMP_THREAD_LIMIT=1`), up to three attempts of 15 s each; text uploads are capped at 20,000 characters.
 - Historical bugs fixed: the app returned a built-in sample receipt whenever the call failed, and nginx rejected photos over 1 MB.
 
-### Automatic transaction capture (not implemented natively)
+### Automatic transaction capture
 
-What exists: the debit parser, the clipboard check on app open, manual paste, and a local-notification listener that only sees this app's own notifications. What is missing is any component that reads incoming SMS or other apps' notifications.
+Android only, off until the user enables it (Profile > Automatic transaction capture). It is a local Expo module, `mobile/modules/notification-capture/`:
 
-Design to implement it: a small local Expo module (Kotlin) containing a `NotificationListenerService` (the user grants *Notification access* in system settings; no SMS permission is needed and it also catches bank and UPI app notifications) that appends matching notification texts to a native queue in `SharedPreferences`. On app foreground the JS side drains the queue, runs `debitParser`, de-duplicates (amount + merchant + minute), and shows the existing 1-tap confirmation card. This needs a native build and a device to test.
+- A `NotificationListenerService` (the user grants *Notification access*; no SMS permission) keeps only notifications that contain an amount (Rs, INR, rupee sign) and a transaction word (debit, credit, spent, paid, UPI, a/c, card, txn). One-time-code messages, this app, ongoing notifications and chat/social apps are ignored. Matching texts go into a capped, de-duplicated queue in the app's private `SharedPreferences`; nothing leaves the device.
+- `mobile/services/notificationCapture.ts` drains the queue when the app is opened, on return to the foreground and about every 20 s while it is active, and records each message through the existing pipeline with the notification's own time. The same amount from two different apps within 10 minutes (bank SMS plus UPI app) is treated as one transaction; failures are kept and retried for 24 h.
+- Enabling opens Android's own switch for this app (Android 11+; older versions open the list with the row highlighted). Sideloaded builds on Android 13+ grey the switch out: the app tells the user to open App info > three-dot menu > *Allow restricted settings*.
+- Limitation: while the app is closed the service only queues; recording happens at the next open.
+- Tests: the filter has JUnit tests (`CaptureFilterTest`), the queue logic has Jest tests (`captureQueue.test.ts`). The Kotlin module and manifest are only compiled by the EAS build; behaviour on a real phone must be checked by hand. The in-app updater follows `releases/latest`, so build a first version as a prerelease.
 
 ### Appearance and colours
 

@@ -1,0 +1,15 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- Reads bank/UPI transaction notifications so the app can record them. The user must switch it on
+         themselves in Android's "Notification access" settings; nothing is read until they do. -->
+    <service
+      android:name="expo.modules.notificationcapture.TransactionListenerService"
+      android:exported="false"
+      android:label="Expense Tracker transaction capture"
+      android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+      <intent-filter>
+        <action android:name="android.service.notification.NotificationListenerService" />
+      </intent-filter>
+    </service>
+  </application>
+</manifest>
