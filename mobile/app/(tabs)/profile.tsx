@@ -50,6 +50,7 @@ import { CurrencySelectorModal } from '../../components/profile/CurrencySelector
 import { SecurityPinModal } from '../../components/profile/SecurityPinModal';
 import { AvatarEditModal } from '../../components/profile/AvatarEditModal';
 import { DeleteAccountModal } from '../../components/profile/DeleteAccountModal';
+import { NotificationCaptureCard } from '../../components/profile/NotificationCaptureCard';
 import { checkForAppUpdate, AppReleaseInfo, DISPLAY_VERSION } from '../../services/appUpdate';
 import {
   enableSmartReminders,
@@ -737,6 +738,7 @@ export default function ProfileScreen() {
         {/* Preferences Section */}
         <StaggeredView delay={150} direction="up">
           <Text style={[styles.sectionTitle, { color: c.textMuted }]}>PREFERENCES</Text>
+          <NotificationCaptureCard colors={c} />
           <View style={[styles.menuBlock, { backgroundColor: c.card, borderColor: c.border }]}>
             <TouchableOpacity
               activeOpacity={0.8}

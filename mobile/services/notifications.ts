@@ -317,6 +317,17 @@ export async function setInstantDebitAlertsEnabled(enabled: boolean): Promise<vo
 
 // In-memory deduplication cache: fingerprint -> timestamp
 const PROCESSED_DEBITS_CACHE = new Map<string, number>();
+/** Optional extras for recording a message: when it actually arrived (a captured notification can be recorded later). */
+export interface IncomingMessageOptions {
+  capturedAt?: number;
+}
+
+/** "YYYY-MM-DD" in the phone's local time (toISOString would use UTC and be a day off around midnight). */
+export function localDateString(ms?: number): string {
+  const d = typeof ms === 'number' && Number.isFinite(ms) && ms > 0 ? new Date(ms) : new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 const DEDUPLICATION_WINDOW_MS = 5 * 60 * 1000; // 5-minute sliding window
 
 function isDebitDuplicate(parsed: ParsedTransaction): boolean {
@@ -417,7 +428,8 @@ export async function notifyInstantDebit(transaction: ParsedTransaction, autoAdd
  */
 export async function detectAndAddExpenseFromMessage(
   rawText: string,
-  targetUserId?: string | null
+  targetUserId?: string | null,
+  options?: IncomingMessageOptions
 ): Promise<(ParsedTransaction & { addedToExpense: boolean; duplicate?: boolean }) | null> {
   const isEnabled = await getInstantDebitAlertsEnabled();
   if (!isEnabled) {
@@ -501,7 +513,7 @@ export async function detectAndAddExpenseFromMessage(
         amount: parsed.amount,
         description,
         categoryId: matchedCategoryId ?? 1,
-        expenseDate: new Date().toISOString().split('T')[0],
+        expenseDate: localDateString(options?.capturedAt),
         isRecurring: false,
       };
 
@@ -530,7 +542,8 @@ export async function detectAndAddExpenseFromMessage(
  */
 export async function detectAndAddCreditFromMessage(
   rawText: string,
-  targetUserId?: string | null
+  targetUserId?: string | null,
+  options?: IncomingMessageOptions
 ): Promise<(ParsedTransaction & { addedToIncome: boolean; duplicate?: boolean }) | null> {
   const isEnabled = await getInstantDebitAlertsEnabled();
   if (!isEnabled) {
@@ -566,7 +579,7 @@ export async function detectAndAddCreditFromMessage(
         amount: parsed.amount,
         source,
         description,
-        incomeDate: new Date().toISOString().split('T')[0],
+        incomeDate: localDateString(options?.capturedAt),
         isRecurring: false,
       };
 
@@ -606,13 +619,14 @@ export async function processIncomingMessageForDebitNotification(
  */
 export async function processIncomingFinancialMessage(
   rawText: string,
-  userId?: string | null
-): Promise<ParsedTransaction | null> {
+  userId?: string | null,
+  options?: IncomingMessageOptions
+): Promise<(ParsedTransaction & { addedToExpense?: boolean; addedToIncome?: boolean; duplicate?: boolean }) | null> {
   const parsed = parseFinancialMessage(rawText);
   if (parsed.direction === 'CREDIT') {
-    return await detectAndAddCreditFromMessage(rawText, userId);
+    return await detectAndAddCreditFromMessage(rawText, userId, options);
   }
-  return await detectAndAddExpenseFromMessage(rawText, userId);
+  return await detectAndAddExpenseFromMessage(rawText, userId, options);
 }
 
 /**

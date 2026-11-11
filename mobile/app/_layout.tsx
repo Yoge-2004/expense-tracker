@@ -42,6 +42,7 @@ import {
   detectAndAddCreditFromMessage,
   formatNotificationAmount,
 } from '../services/notifications';
+import { startCapturePolling } from '../services/notificationCapture';
 import { readSavedTheme, safeStorageGet } from '../services/api';
 import { createThemeColors, usePreferences, BackgroundAssetConfig } from '../context/PreferencesContext';
 
@@ -81,6 +82,12 @@ function RootLayoutNav() {
     // The morning, weekly, month-start and month-end reminders (bills and salary follow once data loads).
     scheduleSmartReminders().catch(() => {});
   }, [isLoading, token]);
+
+  // Bank / UPI notifications queued by the Android listener (when the user has enabled it).
+  useEffect(() => {
+    if (isLoading || !token || !userId) return;
+    return startCapturePolling(userId);
+  }, [isLoading, token, userId]);
 
   useEffect(() => {
     if (isLoading || !token) return;
