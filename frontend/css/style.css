@@ -19826,6 +19826,16 @@ body.has-custom-wallpaper .top-bar {
 .d-none {
   display: none !important;
 }
+
+/* `.d-none` is `display: none !important`, which an inline `style.display = "block"` can never beat. Much of
+ * the JS (admin tabs, the AI suggestion and duplicate-warning boxes, receipt OCR progress) still reveals
+ * elements that way, so after the HTML moved to `.d-none` they stayed hidden. An inline display that
+ * actually shows the element wins again; `display: none` (inline) and a bare `.d-none` still hide it. */
+.d-none[style*="display: block"] { display: block !important; }
+.d-none[style*="display: flex"] { display: flex !important; }
+.d-none[style*="display: inline-flex"] { display: inline-flex !important; }
+.d-none[style*="display: inline-block"] { display: inline-block !important; }
+.d-none[style*="display: grid"] { display: grid !important; }
 .flex-1 {
   flex: 1 !important;
 }

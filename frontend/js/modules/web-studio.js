@@ -1995,6 +1995,7 @@
             void saveAppearanceToCloud();
         }
 
+        studioResetToDefault = resetToDefault;
         resetBtn?.addEventListener('click', resetToDefault);
 
         // Apply Theme
@@ -2162,6 +2163,10 @@
         applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
     });
 
+    // resetToDefault lives inside initStudioController; the exported API below used to name it directly,
+    // which threw a ReferenceError at load and meant window.WebStudio was never created on any page.
+    let studioResetToDefault = () => {};
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initStudioController);
     } else {
@@ -2172,7 +2177,7 @@
     window.WebStudio = {
         applyCustomTheme,
         deactivateCustomTheme,
-        resetToDefault,
+        resetToDefault: () => studioResetToDefault(),
         selectPreset,
         fetchAppearanceFromCloud,
         saveAppearanceToCloud,

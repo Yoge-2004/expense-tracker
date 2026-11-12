@@ -122,14 +122,16 @@
                 navItems.forEach(i => i.classList.remove("active"));
                 views.forEach(v => {
                     v.classList.remove("active");
-                    v.style.display = "none";
+                    v.classList.add("d-none");
+                    v.style.display = "";
                 });
 
                 item.classList.add("active");
                 const targetView = document.getElementById(targetId);
                 if (targetView) {
                     targetView.classList.add("active");
-                    targetView.style.display = "block";
+                    targetView.classList.remove("d-none");
+                    targetView.style.display = "";
                 }
 
                 if (tabMetadata[targetId] && topbarTitle && topbarSubtitle) {
@@ -966,13 +968,13 @@
             if (!stats) return;
 
             const activeModelEl = document.getElementById("mlActiveModel");
-            if (activeModelEl) activeModelEl.textContent = stats.activeModel || "TF-IDF";
+            if (activeModelEl) activeModelEl.textContent = stats.activeModelVersion || stats.activeModel || "TF-IDF";
 
             const pendingEl = document.getElementById("mlPendingFeedback");
-            if (pendingEl) pendingEl.textContent = `${stats.pendingFeedback || 0} Pending Review`;
+            if (pendingEl) pendingEl.textContent = `${stats.pendingFeedbackCount ?? stats.pendingFeedback ?? 0} Pending Review`;
 
             const totalEl = document.getElementById("mlTotalFeedback");
-            if (totalEl) totalEl.textContent = (stats.totalFeedback || 0).toLocaleString();
+            if (totalEl) totalEl.textContent = (stats.totalFeedbackCount ?? stats.totalFeedback ?? 0).toLocaleString();
         } catch (e) {
             console.error("ML stats error:", e);
         }
@@ -1272,8 +1274,9 @@
             const diag = await apiRequest("/admin/resilience/status");
             if (!diag) return;
 
-            badge.textContent = diag.configured ? "ONLINE & SYNCHRONIZED" : "NOT CONFIGURED";
-            badge.style.color = diag.configured ? "var(--metric-inflow)" : "var(--metric-outflow)";
+            const configured = diag.isConfigured ?? diag.configured;
+            badge.textContent = configured ? "ONLINE & SYNCHRONIZED" : "NOT CONFIGURED";
+            badge.style.color = configured ? "var(--metric-inflow)" : "var(--metric-outflow)";
             spaceSub.textContent = `Space: ${diag.space || "Not Configured"}`;
             box.textContent = JSON.stringify(diag, null, 2);
         } catch (e) {
@@ -1424,7 +1427,7 @@
                 desc: `Are you sure you want to ${newLockedState ? "suspend and lockout" : "reinstate access for"} this user? Requires 6-digit PIN.`,
                 onConfirm: async (pin) => {
                     await apiRequest(`/admin/users/${selectedDrawerUserId}/status`, {
-                        method: "PUT",
+                        method: "PATCH",
                         body: JSON.stringify({
                             accountLocked: newLockedState,
                             reason: newLockedState ? "Administrative security enforcement" : "Reinstatement by admin",
@@ -1463,7 +1466,7 @@
                 desc: "Altering administrative authorities is an audited operation requiring Super Admin PIN verification.",
                 onConfirm: async (pin) => {
                     await apiRequest(`/admin/users/${selectedDrawerUserId}/role`, {
-                        method: "PUT",
+                        method: "POST",
                         body: JSON.stringify({
                             role: selectedRole,
                             stepUpPin: pin
@@ -1667,23 +1670,25 @@
             }
 
             try {
-                const res = await apiRequest("/admin/ml/sandbox/predict", {
+                const res = await apiRequest("/admin/ml/test-prediction", {
                     method: "POST",
-                    body: JSON.stringify({ text: input })
+                    body: JSON.stringify({ description: input })
                 });
 
                 if (res) {
                     const stage = document.getElementById("sandboxOutputStage");
                     stage.style.display = "block";
-                    document.getElementById("sandboxTopCategory").textContent = res.predictedCategory || "General";
+                    document.getElementById("sandboxTopCategory").textContent = res.category || res.predictedCategory || "General";
                     document.getElementById("sandboxTopScore").textContent = `${Math.round((res.confidence || 0) * 100)}% confidence`;
 
                     const barsStage = document.getElementById("sandboxCandidateBars");
                     barsStage.innerHTML = "";
 
-                    if (Array.isArray(res.candidates)) {
-                        res.candidates.slice(0, 4).forEach(cand => {
-                            const pct = Math.round((cand.score || 0) * 100);
+                    // The backend returns the ranked alternatives as topK: [{ category, confidence }].
+                    const ranked = res.topK || res.top_k || res.candidates;
+                    if (Array.isArray(ranked)) {
+                        ranked.slice(0, 4).forEach(cand => {
+                            const pct = Math.round((cand.confidence ?? cand.score ?? 0) * 100);
                             const wrap = document.createElement("div");
                             wrap.className = "sandbox-cand-row";
                             wrap.innerHTML = `
@@ -1941,7 +1946,7 @@
                 showToast("No log events to copy", "warning");
                 return;
             }
-            const text = cachedLogs.map(l => `${l.timestamp} [${l.level}] [${l.threadName || "-"}] ${l.loggerName || "-"}: ${l.message}`).join("\n");
+            const text = cachedLogs.map(l => `${l.timestamp} [${l.level}] [${l.thread || l.threadName || "-"}] ${l.logger || l.loggerName || "-"}: ${l.message}`).join("\n");
             try {
                 await navigator.clipboard.writeText(text);
                 showToast(`Copied ${cachedLogs.length} log lines to clipboard`, "success");
