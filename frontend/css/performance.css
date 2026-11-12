@@ -271,3 +271,10 @@ html.perf-lite :is(
 #expenseList.no-enter-anim .expense-item {
   animation: none;
 }
+
+/* 6. A custom wallpaper covers the background, so every ambient layer is removed from rendering (not just
+ *    faded): display:none stops their animations and takes them out of compositing. The canvas background
+ *    is stopped by js/animated-bg.js for the same condition. */
+body.has-custom-wallpaper :is(.hero-orb, .mesh-wash, .light-ray-sweep, .dust-mote, .animated-mesh-canvas) {
+  display: none !important;
+}

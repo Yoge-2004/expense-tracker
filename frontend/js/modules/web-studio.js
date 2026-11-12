@@ -1172,7 +1172,12 @@
                 }));
                 dirty = true;
             }
-            if (remote.wallpaperType) {
+            // A custom wallpaper is only usable here if it is a URL or a data URI. A device-local path such as
+            // file:///... (pushed by an older app build) cannot be loaded by a browser: keep the current
+            // wallpaper instead of applying a broken one.
+            const remoteWallpaperUsable = remote.wallpaperType !== 'custom' ||
+                /^(https?:\/\/|data:image\/)/i.test(remote.wallpaperUri || '');
+            if (remote.wallpaperType && remoteWallpaperUsable) {
                 currentWallpaperType = remote.wallpaperType;
                 currentWallpaperUri = remote.wallpaperUri || '';
                 currentOverlayOpacity = remote.overlayOpacity != null ? remote.overlayOpacity : 0.35;
@@ -2129,6 +2134,18 @@
         const userId = localStorage.getItem('userId');
         if (userId) {
             void fetchAppearanceFromCloud(userId);
+
+            // Pull again when the tab becomes visible (at most once a minute), so a theme or wallpaper changed
+            // in the app shows up without a reload. Never while the studio is open: that would discard the
+            // unsaved changes being previewed there.
+            let lastCloudPull = Date.now();
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden || Date.now() - lastCloudPull < 60000) return;
+                const studio = document.getElementById('themeStudioModal');
+                if (studio && studio.classList.contains('active')) return;
+                lastCloudPull = Date.now();
+                void fetchAppearanceFromCloud(userId);
+            });
         }
     }
 

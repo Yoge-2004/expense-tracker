@@ -457,12 +457,14 @@ export function AuthProvider({
   initialPalette,
   initialBgAsset,
   initialColors,
+  initialCustomApplied,
 }: {
   children: React.ReactNode;
   initialTheme?: 'dark' | 'light';
   initialPalette?: ExtractedPalette | null;
   initialBgAsset?: BackgroundAssetConfig | null;
   initialColors?: ThemeColors;
+  initialCustomApplied?: boolean;
 }) {
   return (
     <PreferencesProvider
@@ -470,6 +472,7 @@ export function AuthProvider({
       initialPalette={initialPalette}
       initialBgAsset={initialBgAsset}
       initialThemeColors={initialColors}
+      initialCustomApplied={initialCustomApplied}
     >
       <AuthInnerProvider>{children}</AuthInnerProvider>
     </PreferencesProvider>

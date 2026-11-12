@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, StyleSheet, View, Animated, useWindowDimensions, Image } from 'react-native';
+import { AccessibilityInfo, StyleSheet, View, Animated, useWindowDimensions, Image, AppState } from 'react-native';
 import { useOptionalPreferences, BackgroundAssetConfig } from '../context/PreferencesContext';
 import { Colors, ThemeColors } from '../constants/theme';
 
@@ -36,6 +36,15 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({
   const isLight = theme === 'light';
   const [reduceMotion, setReduceMotion] = useState(false);
 
+  // The orbs only exist over a preset background. With a custom wallpaper or none they are not drawn, so
+  // their drift loops must not run either; they also stop while the app is in the background.
+  const orbsVisible = backgroundAsset.type === 'preset';
+  const [appActive, setAppActive] = useState(AppState.currentState !== 'background');
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => setAppActive(state === 'active'));
+    return () => subscription.remove();
+  }, []);
+
   const orb1Anim = useRef(new Animated.Value(0)).current;
   const orb2Anim = useRef(new Animated.Value(0)).current;
   const orb3Anim = useRef(new Animated.Value(0)).current;
@@ -58,7 +67,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({
   }, []);
 
   useEffect(() => {
-    if (reduceMotion) {
+    if (reduceMotion || !orbsVisible || !appActive) {
       orb1Anim.stopAnimation();
       orb2Anim.stopAnimation();
       orb3Anim.stopAnimation();
@@ -95,7 +104,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({
       drift2.stop();
       drift3.stop();
     };
-  }, [reduceMotion, orb1Anim, orb2Anim, orb3Anim]);
+  }, [reduceMotion, orbsVisible, appActive, orb1Anim, orb2Anim, orb3Anim]);
 
   const orb1TranslateX = orb1Anim.interpolate({
     inputRange: [0, 1],
@@ -137,7 +146,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({
   const orb2Color = themeColors.accent + (isLight ? '22' : '22');
   const orb3Color = themeColors.highlight + (isLight ? '22' : '20');
   const hasCustomBg = backgroundAsset.type === 'custom' && !!backgroundAsset.uri;
-  const showAmbientOrbs = backgroundAsset.type === 'preset';
+  const showAmbientOrbs = orbsVisible;
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={pointerEvents}>

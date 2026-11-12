@@ -44,6 +44,7 @@ import {
 } from '../services/notifications';
 import { startCapturePolling } from '../services/notificationCapture';
 import { readSavedTheme, safeStorageGet } from '../services/api';
+import { BootTheme, buildBootTheme, readBootTheme, writeBootTheme } from '../utils/bootTheme';
 import { createThemeColors, usePreferences, BackgroundAssetConfig } from '../context/PreferencesContext';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -234,57 +235,77 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   const systemScheme = useColorScheme();
-  const [themeLoaded, setThemeLoaded] = useState(false);
-  const [initialTheme, setInitialTheme] = useState<'dark' | 'light'>(systemScheme === 'light' ? 'light' : 'dark');
-  const [initialColors, setInitialColors] = useState<ThemeColors>(() => createThemeColors(systemScheme === 'light' ? 'light' : 'dark', null));
-  const [initialPalette, setInitialPalette] = useState<ExtractedPalette | null>(null);
-  const [initialBgAsset, setInitialBgAsset] = useState<BackgroundAssetConfig | null>(null);
+  const systemTheme: 'dark' | 'light' = systemScheme === 'light' ? 'light' : 'dark';
+
+  // The saved appearance, read synchronously. With it the very first frame, the loader included, already
+  // wears the user's theme; without it (the first launch after an update) the async read below runs and
+  // a plain neutral screen is shown meanwhile, never a loader in the wrong colours.
+  const [boot] = useState(() => readBootTheme());
+  const bootColors = (snapshot: BootTheme) =>
+    createThemeColors(
+      snapshot.theme,
+      snapshot.customApplied ? snapshot.palette : null,
+      snapshot.customApplied ? snapshot.bg?.presetId || 'default' : 'default'
+    );
+
+  const [themeLoaded, setThemeLoaded] = useState(!!boot);
+  const [initialTheme, setInitialTheme] = useState<'dark' | 'light'>(boot?.theme ?? systemTheme);
+  const [initialColors, setInitialColors] = useState<ThemeColors>(() =>
+    boot ? bootColors(boot) : createThemeColors(systemTheme, null)
+  );
+  const [initialPalette, setInitialPalette] = useState<ExtractedPalette | null>(boot?.palette ?? null);
+  const [initialBgAsset, setInitialBgAsset] = useState<BackgroundAssetConfig | null>(boot?.bg ?? null);
+  const [initialCustomApplied, setInitialCustomApplied] = useState<boolean>(boot?.customApplied ?? false);
 
   useEffect(() => {
+    if (boot) return; // already themed; the providers re-read storage themselves
     let mounted = true;
+    // A storage read that never answers must not leave the app on a blank screen.
+    const giveUp = setTimeout(() => {
+      if (mounted) setThemeLoaded(true);
+    }, 3000);
     Promise.all([
       readSavedTheme().catch(() => null),
       safeStorageGet('app_custom_palette').catch(() => null),
       safeStorageGet('app_bg_asset').catch(() => null),
+      safeStorageGet('app_custom_applied').catch(() => null),
     ])
-      .then(([saved, savedPalette, savedBackground]) => {
+      .then(([saved, savedPalette, savedBackground, savedApplied]) => {
         if (!mounted) return;
-        const resolvedTheme = saved === 'light' || saved === 'dark'
-          ? saved
-          : systemScheme === 'light' ? 'light' : 'dark';
+        const resolvedTheme = saved === 'light' || saved === 'dark' ? saved : systemTheme;
         let palette: ExtractedPalette | null = null;
-        let presetId = 'default';
         try {
           const parsed = savedPalette ? JSON.parse(savedPalette) : null;
           if (parsed && typeof parsed === 'object') palette = parsed as ExtractedPalette;
         } catch (e) {
           console.debug('[AppLayout] Failed parsing savedPalette:', e);
         }
-        try {
-          const parsed = savedBackground ? JSON.parse(savedBackground) : null;
-          if (typeof parsed?.presetId === 'string') presetId = parsed.presetId;
-        } catch (e) {
-          console.debug('[AppLayout] Failed parsing savedBackground:', e);
-        }
-        setInitialTheme(resolvedTheme);
-        setInitialPalette(palette);
         let bgConfig: BackgroundAssetConfig | null = null;
         try {
           if (savedBackground) bgConfig = JSON.parse(savedBackground);
         } catch { /* ignore */ }
+        const customApplied = savedApplied === 'true';
+        const snapshot = buildBootTheme({ theme: resolvedTheme, customApplied, palette, bg: bgConfig });
+        writeBootTheme(snapshot); // next launch gets the head start
+        setInitialTheme(resolvedTheme);
+        setInitialPalette(palette);
         setInitialBgAsset(bgConfig);
-        setInitialColors(createThemeColors(resolvedTheme, palette, presetId));
+        setInitialCustomApplied(customApplied);
+        setInitialColors(bootColors(snapshot));
         setThemeLoaded(true);
       })
       .catch(() => {
         if (!mounted) return;
-        const fallbackTheme = systemScheme === 'light' ? 'light' : 'dark';
-        setInitialTheme(fallbackTheme);
-        setInitialColors(createThemeColors(fallbackTheme, null));
+        setInitialTheme(systemTheme);
+        setInitialColors(createThemeColors(systemTheme, null));
         setThemeLoaded(true);
       });
-    return () => { mounted = false; };
-  }, [systemScheme]);
+    return () => {
+      mounted = false;
+      clearTimeout(giveUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [fontsLoaded] = useFonts({
     Fraunces_500Medium,
@@ -298,7 +319,12 @@ export default function RootLayout() {
     IBMPlexMono_600SemiBold,
   });
 
-  if (!fontsLoaded || !themeLoaded) {
+  if (!themeLoaded) {
+    // The saved theme is not known yet: show only the neutral system background, not a themed-looking loader.
+    return <View style={{ flex: 1, backgroundColor: initialColors.bg }} />;
+  }
+
+  if (!fontsLoaded) {
     return (
       <ImmersiveLoader
         message="ExpenseTracker"
@@ -318,6 +344,7 @@ export default function RootLayout() {
         initialPalette={initialPalette}
         initialBgAsset={initialBgAsset}
         initialColors={initialColors}
+        initialCustomApplied={initialCustomApplied}
       >
         <AlertProvider>
           <UpdateProvider>

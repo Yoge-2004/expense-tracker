@@ -14,6 +14,9 @@
     function isMobileDevice() {
         // Lite performance mode (slow device, data-saver, reduced motion) gets the static CSS wash too.
         if (document.documentElement.classList.contains('perf-lite')) return true;
+        // A custom wallpaper covers the background: the aurora would be drawn for nothing (it used to keep
+        // running at 18% opacity underneath), so the engine stays stopped for as long as one is set.
+        if (document.body && document.body.classList.contains('has-custom-wallpaper')) return true;
         return window.innerWidth <= 768 ||
             (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
             (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0 && window.innerWidth <= 1024);
@@ -440,8 +443,9 @@
             }
         }
 
-        // The performance mode can change after load (a frame-rate probe, or the user's settings).
-        document.addEventListener('perfmodechange', () => {
+        // Stop or resume the engine when the mode or the wallpaper changes after load: a frame-rate probe, the
+        // user's settings, or a wallpaper being set or removed (the body class is what the studio toggles).
+        function syncAmbientMode() {
             if (isMobileDevice()) {
                 canvas.style.display = 'none';
                 stopAnimation();
@@ -449,7 +453,16 @@
                 canvas.style.display = '';
                 startAnimation();
             }
-        });
+        }
+        document.addEventListener('perfmodechange', syncAmbientMode);
+        document.addEventListener('appearancechange', syncAmbientMode);
+        if (document.body) {
+            new MutationObserver(syncAmbientMode).observe(document.body, {
+                attributes: true,
+                attributeFilter: ['class'],
+            });
+        }
+        syncAmbientMode(); // a wallpaper that is already set when the page loads
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {

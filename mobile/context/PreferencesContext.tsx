@@ -12,11 +12,13 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useColorScheme } from 'react-native';
+import { AppState, useColorScheme } from 'react-native';
 import * as Font from 'expo-font';
 import { safeStorageGet, safeStorageSet, readSavedTheme, persistSavedTheme, apiRequest, getSession } from '../services/api';
 import { Colors, ThemeColors, FontChoice, FontTokens, FontPresets, ensureColorContrast, buildCategoryPalette } from '../constants/theme';
 import { ExtractedPalette, PRESET_BACKGROUNDS, PresetBackground } from '../services/paletteExtractor';
+import { buildBootTheme, writeBootTheme } from '../utils/bootTheme';
+import { cloudUriToLocalWallpaper, wallpaperToCloudUri } from '../utils/wallpaperSync';
 
 export interface BackgroundAssetConfig {
   type: 'preset' | 'custom' | 'none';
@@ -351,6 +353,13 @@ export function PreferencesProvider({
         const activePal =
           pal ?? (theme === 'light' ? activePreset.lightPalette : activePreset.darkPalette);
 
+        // A wallpaper picked in the app is a local file the website cannot load: send a compressed copy.
+        // '' clears a previous cloud wallpaper (the server only overwrites non-null fields). If a custom
+        // wallpaper cannot be prepared, leave the cloud's wallpaper fields alone rather than send a path.
+        const isCustomWallpaper = bg?.type === 'custom' && !!bg.uri;
+        const cloudWallpaperUri = isCustomWallpaper ? await wallpaperToCloudUri(bg?.uri) : '';
+        const wallpaperUnsyncable = isCustomWallpaper && cloudWallpaperUri === null;
+
         const payload = {
           fontChoice: f,
           customFontFamily: cf,
@@ -362,8 +371,8 @@ export function PreferencesProvider({
           cardSurface: activePal?.card,
           surface: activePal?.surface,
           borderAccent: activePal?.borderAccent,
-          wallpaperType: bg?.type || 'preset',
-          wallpaperUri: bg?.uri || null,
+          wallpaperType: wallpaperUnsyncable ? undefined : bg?.type || 'preset',
+          wallpaperUri: wallpaperUnsyncable ? undefined : cloudWallpaperUri,
           overlayOpacity: bg?.overlayOpacity ?? 0.35,
           blurIntensity: bg?.blurIntensity ?? 0,
         };
@@ -414,17 +423,24 @@ export function PreferencesProvider({
           safeStorageSet('app_custom_palette', JSON.stringify(pal)).catch(() => {});
         }
         if (remote.wallpaperType) {
-          const bg: BackgroundAssetConfig = {
-            type: (remote.wallpaperType as 'preset' | 'custom' | 'none') || 'preset',
-            presetId: remote.presetId || 'default',
-            uri: remote.wallpaperUri || undefined,
-            overlayOpacity:
-              typeof remote.overlayOpacity === 'number' ? remote.overlayOpacity : 0.35,
-            blurIntensity:
-              typeof remote.blurIntensity === 'number' ? remote.blurIntensity : 0,
-          };
-          setBackgroundAssetState(bg);
-          safeStorageSet('app_bg_asset', JSON.stringify(bg)).catch(() => {});
+          const remoteType = (remote.wallpaperType as 'preset' | 'custom' | 'none') || 'preset';
+          // A cloud wallpaper arrives as a data URI or URL; a data URI is stored as a file so only a short
+          // path is kept. One that cannot be used on this device (another device's file path, pushed by an
+          // older version) is ignored and the local wallpaper stays.
+          const localUri = remoteType === 'custom' ? await cloudUriToLocalWallpaper(remote.wallpaperUri) : undefined;
+          if (remoteType !== 'custom' || localUri) {
+            const bg: BackgroundAssetConfig = {
+              type: remoteType,
+              presetId: remote.presetId || 'default',
+              uri: localUri,
+              overlayOpacity:
+                typeof remote.overlayOpacity === 'number' ? remote.overlayOpacity : 0.35,
+              blurIntensity:
+                typeof remote.blurIntensity === 'number' ? remote.blurIntensity : 0,
+            };
+            setBackgroundAssetState(bg);
+            safeStorageSet('app_bg_asset', JSON.stringify(bg)).catch(() => {});
+          }
         }
       } catch (e) {
         console.warn('[PreferencesContext] Cloud appearance pull skipped/failed:', e);
@@ -522,6 +538,32 @@ export function PreferencesProvider({
       mounted = false;
     };
   }, [syncAppearanceFromCloud]);
+
+  // Pull again when the app returns to the foreground (at most once a minute), so a change made on the
+  // website or another device shows up without restarting the app.
+  const lastCloudPullRef = useRef(0);
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      const now = Date.now();
+      if (now - lastCloudPullRef.current < 60_000) return;
+      lastCloudPullRef.current = now;
+      getSession()
+        .then((session) => {
+          if (session?.userId) syncAppearanceFromCloud(session.userId).catch(() => {});
+        })
+        .catch(() => {});
+    });
+    return () => subscription.remove();
+  }, [syncAppearanceFromCloud]);
+
+  // Keep the start-up snapshot current: the next launch reads it synchronously so even the first frame
+  // (the loader) already wears this theme and wallpaper.
+  useEffect(() => {
+    writeBootTheme(
+      buildBootTheme({ theme, customApplied: isCustomApplied, palette: customPalette, bg: backgroundAsset })
+    );
+  }, [theme, isCustomApplied, customPalette, backgroundAsset]);
 
   const isTogglingRef = useRef(false);
   const toggleTheme = useCallback(async (): Promise<void> => {
