@@ -8,14 +8,20 @@
      * Count-up animations. Each element has at most one running loop: a new call cancels the old one and
      * continues from the value currently on screen (the old code stacked a requestAnimationFrame loop per
      * call, which fought over the same text node when metrics refreshed quickly). A value that did not
-     * change is written once with no animation; lite / reduced-motion mode and hidden tabs skip it too.
+     * change is written once with no animation. Lite devices (phones, slow machines) still animate, but
+     * for 380 ms instead of 850 and at about 30 updates a second; only prefers-reduced-motion and hidden
+     * tabs skip the animation.
      */
     const countRuns = new WeakMap();
 
     function motionAllowed() {
         const perf = window.PerfMode;
         if (document.hidden) return false;
-        return !(perf && (perf.isLite() || perf.reducedMotion()));
+        return !(perf && perf.reducedMotion());
+    }
+
+    function isLite() {
+        return !!(window.PerfMode && window.PerfMode.isLite());
     }
 
     function runCount(el, target, ease, format, finalText) {
@@ -32,13 +38,19 @@
 
         const state = { raf: 0, current: from };
         countRuns.set(el, state);
-        const duration = 850;
+        const lite = isLite();
+        const duration = lite ? 380 : 850;
+        const minGap = lite ? 33 : 0; // ms between text updates
         const startTime = performance.now();
+        let lastWrite = -Infinity;
         function step(now) {
             const progress = Math.min((now - startTime) / duration, 1);
             state.current = from + (target - from) * ease(progress);
             if (progress < 1) {
-                el.textContent = format(state.current);
+                if (now - lastWrite >= minGap) {
+                    el.textContent = format(state.current);
+                    lastWrite = now;
+                }
                 state.raf = requestAnimationFrame(step);
             } else {
                 countRuns.delete(el);

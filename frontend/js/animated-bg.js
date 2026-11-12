@@ -36,8 +36,20 @@
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        let width = (canvas.width = window.innerWidth);
-        let height = (canvas.height = window.innerHeight);
+        // The aurora is made of large soft gradients, so it is drawn into a backing store at half the
+        // size in each direction (a quarter of the pixels to fill every frame) and stretched by CSS.
+        // The context is scaled to match, so every coordinate below stays in CSS pixels.
+        const RESOLUTION = 0.5;
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        function sizeBackingStore() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = Math.max(1, Math.round(width * RESOLUTION));
+            canvas.height = Math.max(1, Math.round(height * RESOLUTION));
+            ctx.setTransform(RESOLUTION, 0, 0, RESOLUTION, 0, 0); // resizing resets the transform
+        }
+        sizeBackingStore();
 
         let mouseX = width / 2;
         let mouseY = height / 2;
@@ -55,8 +67,7 @@
                 return;
             }
             canvas.style.display = '';
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+            sizeBackingStore();
             initOrbs();
             startAnimation();
         }
@@ -315,7 +326,8 @@
 
         const motionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
         let prefersReducedMotion = motionMediaQuery.matches;
-        const TARGET_FPS = 40;
+        // 40 fps on capable machines, 30 on 4-core and smaller ones.
+        const TARGET_FPS = (navigator.hardwareConcurrency || 8) <= 4 ? 30 : 40;
         const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
         let animFrameId = null;
         let pauseUntil = 0;

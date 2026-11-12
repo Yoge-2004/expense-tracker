@@ -297,13 +297,30 @@
 
         document.querySelectorAll('.btn-primary, .btn-oauth:not(#googleOAuthBtn)').forEach((el) => {
             el.classList.add('magnetic-target');
-            el.addEventListener('mousemove', (e) => {
-                const rect = el.getBoundingClientRect();
-                const relX = e.clientX - rect.left - rect.width / 2;
-                const relY = e.clientY - rect.top - rect.height / 2;
-                el.style.transform = `translate(${relX * 0.12}px, ${relY * 0.22}px)`;
+            // Read the box once on enter and write at most once per frame, instead of a layout read plus a
+            // style write on every mouse event.
+            let rect = null;
+            let frame = null;
+            let pending = null;
+            el.addEventListener('mouseenter', () => {
+                rect = el.getBoundingClientRect();
             });
+            el.addEventListener('mousemove', (e) => {
+                if (!rect) rect = el.getBoundingClientRect();
+                pending = e;
+                if (frame) return;
+                frame = requestAnimationFrame(() => {
+                    frame = null;
+                    if (!pending || !rect) return;
+                    const relX = pending.clientX - rect.left - rect.width / 2;
+                    const relY = pending.clientY - rect.top - rect.height / 2;
+                    el.style.transform = `translate(${relX * 0.12}px, ${relY * 0.22}px)`;
+                });
+            }, { passive: true });
             el.addEventListener('mouseleave', () => {
+                rect = null;
+                pending = null;
+                if (frame) { cancelAnimationFrame(frame); frame = null; }
                 el.style.transform = '';
             });
         });

@@ -554,15 +554,21 @@
      *  - a chart that is rebuilt because its data changed does not replay the entry animation;
      *  - the first draw still animates, except in lite / reduced-motion mode.
      */
-    function lowMotion() {
+    function reducedMotion() {
         const perf = window.PerfMode;
-        return !!(perf && (perf.isLite() || perf.reducedMotion()));
+        return !!(perf && perf.reducedMotion());
+    }
+
+    function liteMode() {
+        const perf = window.PerfMode;
+        return !!(perf && perf.isLite());
     }
 
     function setChartMotion(isRebuild) {
         if (typeof Chart === "undefined" || !Chart.defaults || !Chart.defaults.animation) return;
         motionManaged = true;
-        Chart.defaults.animation.duration = (isRebuild || lowMotion()) ? 0 : 900;
+        // First draw: 900 ms (350 ms on lite devices). A rebuild or prefers-reduced-motion: none.
+        Chart.defaults.animation.duration = (isRebuild || reducedMotion()) ? 0 : (liteMode() ? 350 : 900);
     }
 
     function themeSignature() {

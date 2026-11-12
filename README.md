@@ -1155,11 +1155,19 @@ Android only, off until the user enables it (Profile > Automatic transaction cap
 - Limitation: while the app is closed the service only queues; recording happens at the next open.
 - Tests: the filter has JUnit tests (`CaptureFilterTest`), the queue logic has Jest tests (`captureQueue.test.ts`). The Kotlin module and manifest are only compiled by the EAS build; behaviour on a real phone must be checked by hand. The in-app updater follows `releases/latest`, so build a first version as a prerelease.
 
-### Performance modes (website)
+### Performance (website)
 
-`frontend/js/perf-guard.js` (loaded in `<head>` on every page) chooses **full** or **lite** and exposes it as `window.PerfMode`; `frontend/css/performance.css` (linked last) does the work. Lite is automatic for phones and touch devices, `prefers-reduced-motion`, data-saver, 2-core or 2 GB devices, and any device whose measured frame rate stays under about 38 fps; scripted browsers (`navigator.webdriver`) are never probed. In lite mode the paint-heavy infinite loops (animated `box-shadow`, `filter`, `border-color` and gradient position), the blur on repeated cards and the canvas background are switched off; skeletons, spinners, modals and the top bar are untouched. In every mode, animations pause while the tab is hidden and for sections scrolled out of view. Override with `localStorage.perfMode = "lite"` or `"full"` (delete the key for automatic).
+Animations are kept and made cheap; they are not removed. `frontend/css/performance.css` is linked last on every page and redefines the heavy keyframes so they replace the earlier ones in the cascade:
 
-Redraw rules: chart renderers skip when their data, theme and currency are unchanged and never replay the entry animation on a rebuild; count-up numbers keep one loop per element and skip unchanged values; the transaction list is not rebuilt when its markup is identical, and only the first screenful animates in.
+- Pulses and glows that animated `box-shadow` (badges, status dots, avatars, buttons) now animate `scale` / `opacity`, which the GPU composites with no layout or paint, and which compose with an element's own `transform`.
+- Orb and sparkle effects that animated `filter` keep their `transform` motion with a constant filter.
+- Shimmer sweeps (`background-position`) and the modal border glow are drawn in fixed steps per cycle, so far fewer repaints.
+- Transaction rows use `content-visibility: auto`, so off-screen rows cost nothing; only the first screenful slides in on first paint.
+- The canvas background renders at half resolution (a quarter of the pixels) and at 30 fps on machines with 4 cores or fewer.
+
+`frontend/js/perf-guard.js` (in `<head>` on every page) picks **full** or **lite** and exposes `window.PerfMode`. Lite is automatic for phones and touch devices, data-saver, 2-core or 2 GB devices, and any device whose measured frame rate stays under about 38 fps; scripted browsers (`navigator.webdriver`) are never probed. Lite swaps the canvas for a slow transform-only drift of the CSS wash, drops backdrop blur on the repeated cards, and shortens count-ups (380 ms, about 30 updates/s) and first chart draws (350 ms). Only `prefers-reduced-motion` removes motion. In every mode, animations pause while the tab is hidden and for sections scrolled out of view. Override with `localStorage.perfMode = "lite"` or `"full"` (delete the key for automatic).
+
+Redraw rules: chart renderers skip when their data, theme and currency are unchanged and never replay the entry animation on a rebuild; count-up numbers keep one loop per element and skip unchanged values; the transaction list is not rebuilt when its markup is identical.
 
 ### Appearance and colours
 

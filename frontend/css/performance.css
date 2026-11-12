@@ -1,8 +1,10 @@
 /*
- * Performance layer. Linked LAST on every page; it only has an effect when js/perf-guard.js has put
- * a class on <html>:  .perf-lite (phones, reduced motion, slow devices), .page-hidden (background tab),
- * and .perf-offscreen on sections scrolled out of view. On a capable desktop in the foreground the page
- * looks exactly as before.
+ * Performance layer. Linked LAST on every page, so the keyframes below replace the heavier ones defined
+ * earlier in the cascade. Nothing is switched off: each animation keeps its motion but is rebuilt from
+ * properties the GPU composites (transform, scale, opacity) or drawn in fewer steps.
+ *
+ * js/perf-guard.js adds classes to <html>:  .perf-lite (phones, slow devices), .page-hidden (background
+ * tab) and .perf-offscreen on sections scrolled out of view. Only prefers-reduced-motion removes motion.
  */
 
 /* 1. Nothing animates in a background tab. */
@@ -20,57 +22,233 @@ html.page-hidden *::after {
   animation-play-state: paused !important;
 }
 
-/* 3. Lite mode: decorative infinite loops that repaint every frame (box-shadow, filter, border-color
- *    and gradient-position keyframes). Generated from the stylesheets; loading skeletons, spinners and
- *    progress indicators are not in this list and keep animating. */
-html.perf-lite #deleteAccountBtn:hover,
-html.perf-lite #incomeModal.active .modal,
-html.perf-lite #openModalBtn:hover,
-html.perf-lite .avatar:hover,
-html.perf-lite .badge-pulse-glow,
-html.perf-lite .bi-badge-dot,
-html.perf-lite .brightness-pulse-hover:hover,
-html.perf-lite .btn-cyber-glow:hover,
-html.perf-lite .btn-delete:hover,
-html.perf-lite .btn-floating-glow:hover,
-html.perf-lite .btn-primary:hover,
-html.perf-lite .budget-bar-fill::after,
-html.perf-lite .budget-progress-bar-fill,
-html.perf-lite .goal-progress-fill,
-html.perf-lite .goal-progress-fill::after,
-html.perf-lite .hero-orb,
-html.perf-lite .immersive-core,
-html.perf-lite .insights-badge svg,
-html.perf-lite .is-long-pressing,
-html.perf-lite .live-dot,
-html.perf-lite .live-pulse,
-html.perf-lite .live-pulse-dot,
-html.perf-lite .metric-card-glow,
-html.perf-lite .modal-overlay.active .modal,
-html.perf-lite .modal-overlay.active#incomeModal .modal,
-html.perf-lite .moon-icon,
-html.perf-lite .otp-input:focus,
-html.perf-lite .radar-ping::before,
-html.perf-lite .server-status-badge .status-dot.online,
-html.perf-lite .stat-card.active,
-html.perf-lite .stat-card.hero,
-html.perf-lite .status-dot,
-html.perf-lite .step-bar::after,
-html.perf-lite .step-item.active .step-number,
-html.perf-lite .step-number.active,
-html.perf-lite .step-progress-fill,
-html.perf-lite .sun-icon,
-html.perf-lite .unread-indicator,
-html.perf-lite .user-profile:hover .avatar,
-html.perf-lite [data-theme="light"] #incomeModal.active .modal,
-html.perf-lite [data-theme="light"] .modal-overlay.active#incomeModal .modal,
-html.perf-lite[data-theme="light"] #incomeModal.active .modal,
-html.perf-lite[data-theme="light"] .modal-overlay.active#incomeModal .modal {
-  animation: none !important;
+/* ---- A. Pulses and glows: scale/opacity instead of animated box-shadow ------------------------------
+ * Every one of these ran infinitely and repainted the element (and its shadow) on each frame. The
+ * `scale` and `opacity` properties are composited on the GPU: no layout, no paint, and they compose with
+ * an element's own `transform` instead of replacing it. The resting box-shadow still comes from each
+ * element's own rule, so the glow stays; it now breathes by size and opacity. */
+@keyframes avatarGlow {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.05; }
 }
 
-/* 4. Lite mode: backdrop blur on the many in-flow cards is re-computed on every scroll frame.
- *    Modals, overlays, popovers, toasts and the top bar keep theirs. */
+@keyframes avatarPulse {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.05; }
+}
+
+@keyframes cyberButtonGlow {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.04; }
+}
+
+@keyframes otpBoxPulse {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.04; }
+}
+
+@keyframes stepRingGlow {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.06; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.05; }
+}
+
+@keyframes pulseGlowRing {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.04; }
+}
+
+@keyframes btnPulseGlow {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.04; }
+}
+
+@keyframes deleteWarningPulse {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.04; }
+}
+
+@keyframes longPressGlow {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.05; }
+}
+
+@keyframes floatUnderglow {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.012; }
+}
+
+@keyframes badgePulseAura {
+  0%, 100% { scale: 1; opacity: 1; }
+  70% { scale: 1.3; opacity: 0.5; }
+}
+
+@keyframes liveHaloPulse {
+  0%, 100% { scale: 1; opacity: 1; }
+  70% { scale: 1.3; opacity: 0.5; }
+}
+
+@keyframes statusDotPulse {
+  0%, 100% { scale: 1; opacity: 1; }
+  70% { scale: 1.3; opacity: 0.5; }
+}
+
+@keyframes radarBeaconPulse {
+  0% { transform: scale(0.95); opacity: 0.6; }
+  70% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.6; }
+}
+
+@keyframes livePulseAnim {
+  0% { transform: scale(0.95); opacity: 0.6; }
+  70% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.6; }
+}
+
+@keyframes unreadDotPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+@keyframes bi-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+
+/* ---- B. Filter animations: blur / drop-shadow / hue / brightness change per frame forces a re-raster of
+ * the whole element. The transform and opacity parts of each loop are kept; a constant filter stays
+ * constant. */
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); filter: blur(55px); }
+  33% { transform: translate(35px, -25px) scale(1.1); filter: blur(55px); }
+  66% { transform: translate(-25px, 20px) scale(0.95); filter: blur(55px); }
+}
+
+@keyframes immersive-core-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(var(--primary-rgb), 0.6)); }
+  50% { transform: scale(1.14); filter: drop-shadow(0 0 10px rgba(var(--primary-rgb), 0.6)); }
+}
+
+@keyframes moonlightShimmer {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.85; }
+  50% { transform: scale(1.15) rotate(-10deg); opacity: 1; }
+}
+
+@keyframes pulseSparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+  50% { transform: scale(1.25) rotate(15deg); opacity: 1; }
+}
+
+@keyframes sunburstPulse {
+  0% { transform: rotate(0deg) scale(0.95); opacity: 0.8; }
+  50% { transform: rotate(180deg) scale(1.1); opacity: 1; }
+  100% { transform: rotate(360deg) scale(0.95); opacity: 0.8; }
+}
+
+@keyframes brightnessPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.88; }
+}
+
+@keyframes gradientAngleRotate {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.94; }
+}
+
+
+/* ---- C. Shimmer sweeps and the modal border glow cannot be moved to the compositor without changing
+ * their markup, so they are quantised instead: the same animation, drawn in a fixed number of steps per
+ * cycle rather than on every frame, so far fewer repaints for a look that is hard to tell apart. */
+@keyframes skeletonShimmer {
+  0% { background-position: -200% 0; animation-timing-function: steps(48, end); }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; animation-timing-function: steps(48, end); }
+  100% { background-position: 200% center; }
+}
+
+@keyframes shimmerSweep {
+  0% { background-position: -200% 0; animation-timing-function: steps(48, end); }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes progressShimmerSweep {
+  0% { background-position: -200% 0; animation-timing-function: steps(48, end); }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes barShimmer {
+  0% { background-position: -200% 0; animation-timing-function: steps(48, end); }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes stepBarGleam {
+  0% { background-position: -200% center; animation-timing-function: steps(48, end); }
+  100% { background-position: 200% center; }
+}
+
+@keyframes emeraldModalBorderGlow {
+  0%, 100% { border-color: rgba(var(--primary-rgb), 0.5);
+    box-shadow:
+      0 25px 60px rgba(0, 0, 0, 0.65),
+      0 0 26px rgba(var(--primary-rgb), 0.32),
+      0 0 0 1px rgba(var(--primary-rgb), 0.3); animation-timing-function: steps(24, end); }
+  50% { border-color: rgba(var(--primary-rgb), 0.8);
+    box-shadow:
+      0 25px 60px rgba(0, 0, 0, 0.65),
+      0 0 40px rgba(var(--primary-rgb), 0.48),
+      0 0 0 1.5px rgba(var(--primary-rgb), 0.5); }
+}
+
+@keyframes emeraldModalBorderGlowLight {
+  0%, 100% { border-color: rgba(var(--primary-rgb), 0.45);
+    box-shadow:
+      0 20px 45px rgba(0, 0, 0, 0.08),
+      0 0 22px rgba(var(--primary-rgb), 0.22),
+      0 0 0 1px rgba(var(--primary-rgb), 0.25); animation-timing-function: steps(24, end); }
+  50% { border-color: rgba(var(--primary-rgb), 0.7);
+    box-shadow:
+      0 20px 45px rgba(0, 0, 0, 0.08),
+      0 0 34px rgba(var(--primary-rgb), 0.38),
+      0 0 0 1.5px rgba(var(--primary-rgb), 0.4); }
+}
+
+@keyframes modalBorderGlow {
+  0%, 100% { border-color: rgba(var(--primary-rgb), 0.4);
+    box-shadow:
+      0 25px 60px rgba(0, 0, 0, 0.6),
+      0 0 20px rgba(var(--primary-rgb), 0.25); animation-timing-function: steps(24, end); }
+  50% { border-color: rgba(76, 122, 120, 0.6);
+    box-shadow:
+      0 25px 60px rgba(0, 0, 0, 0.6),
+      0 0 35px rgba(76, 122, 120, 0.4); }
+}
+
+/* 3. Phones and slow devices (lite): the canvas background is off there, so the ambient wash gets a slow
+ *    drift instead. It is one fixed layer animated with transform only: rasterised once, then moved by
+ *    the compositor, so it costs almost nothing per frame. */
+@keyframes meshDrift {
+  from { transform: translate3d(-2%, -1.5%, 0) scale(1); }
+  to { transform: translate3d(2.5%, 2%, 0) scale(1.06); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.perf-lite .mesh-wash {
+    inset: -14%;
+    will-change: transform;
+    animation: meshDrift 48s ease-in-out infinite alternate;
+  }
+}
+
+/* 4. Lite: backdrop blur on the many in-flow cards is re-computed on every scroll frame. Modals,
+ *    overlays, popovers, toasts and the top bar keep theirs. */
 html.perf-lite :is(
   .metric-card, .card, .unified-ledger-card, .insight-card-item, .savings-goal-card, .budget-item,
   .recent-transactions, .insight-card, .trend-card, .budget-section, .savings-section, .loans-section,
@@ -81,8 +259,14 @@ html.perf-lite :is(
   -webkit-backdrop-filter: none !important;
 }
 
-/* 5. Transaction rows: a long list does not slide in row by row, and a rebuilt list (filter change)
- *    appears at once. Only the first screenful animates on first paint. */
+/* 5. Transaction rows: the browser skips layout and paint for rows that are off screen (a long ledger
+ *    is thousands of nodes), and only the first screenful slides in on first paint; a rebuilt list
+ *    (filter change) appears at once. */
+#expenseList .expense-item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 76px;
+}
+
 #expenseList .expense-item:nth-child(n + 13),
 #expenseList.no-enter-anim .expense-item {
   animation: none;

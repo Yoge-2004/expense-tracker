@@ -3,10 +3,13 @@
  *
  * Decides between two modes and exposes it as window.PerfMode:
  *   full  every animation as designed (capable desktops);
- *   lite  the paint-heavy infinite loops (animated box-shadow, filter, gradient positions) and the
- *         blur on repeated cards are switched off in css/performance.css. Lite is chosen for phones and
- *         touch devices, prefers-reduced-motion, data-saver, very low-end hardware, and any device whose
- *         measured frame rate is poor. Nothing about layout or colour changes.
+ *   lite  the canvas background is replaced by a transform-only drift of the CSS wash, the blur on
+ *         repeated cards is dropped, and count-ups / chart entrances are shortened. Animations are NOT
+ *         removed. Lite is chosen for phones and touch devices, prefers-reduced-motion, data-saver, very
+ *         low-end hardware, and any device whose measured frame rate is poor.
+ *
+ * The heavy animations themselves (css/performance.css) are cheap in BOTH modes: they run on
+ * transform / scale / opacity, or in quantised steps. Only prefers-reduced-motion removes motion.
  *
  * It also pauses CSS animations while the tab is hidden and for sections scrolled out of view, so
  * decorative loops stop costing GPU time that nobody can see.
