@@ -51,6 +51,9 @@ class PostgresCompatibilityIT {
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
         registry.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.PostgreSQLDialect");
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
+        // The app builds an emergency H2 file database next to the primary; point it at a writable temp dir
+        // (production keeps it under /data, which does not exist on a CI runner).
+        registry.add("app.fallback-db-path", () -> System.getProperty("java.io.tmpdir") + "/pg_it_fallback/expensetracker_fallback");
     }
 
     @Autowired private UserRepository userRepository;
