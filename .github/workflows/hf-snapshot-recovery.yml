@@ -1,8 +1,7 @@
 name: HF snapshot recovery (manual)
 
-# Runs scripts/recover_hf_snapshot.py against the Hugging Face Space from GitHub's network.
-# Manual only. The token lives in the repository secret HF_RECOVERY_TOKEN (delete it when done).
-# Results are printed as an annotation because job logs cannot be downloaded through the API.
+# TEMPORARY content on a throwaway branch (never merged): reads the Space run log with the repository secret
+# HF_RECOVERY_TOKEN and prints a REDACTED summary as annotations.
 
 on:
   workflow_dispatch:
@@ -11,17 +10,17 @@ on:
         description: What to do
         type: choice
         required: true
-        options: [list, health, pause, restore-oid, cleanup, resume]
+        options: [logs]
       oid:
-        description: Snapshot checksum (sha256) to restore (restore-oid only)
+        description: unused
         required: false
         default: ''
       target_repo:
-        description: Restore into this repo instead (owner/name), optional
+        description: unused
         required: false
         default: ''
       target_repo_type:
-        description: Type of the target repo (space or dataset), optional
+        description: unused
         required: false
         default: ''
 
@@ -36,36 +35,18 @@ jobs:
   run:
     name: ${{ inputs.action }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - name: Install dependencies
-        shell: bash
-        run: |
-          python3 -m venv .venv
-          . .venv/bin/activate
-          pip install --quiet huggingface_hub requests
-      - name: Run
+      - name: Download run log (not printed)
         shell: bash
         env:
           HF_TOKEN: ${{ secrets.HF_RECOVERY_TOKEN }}
-          ACTION: ${{ inputs.action }}
-          OID: ${{ inputs.oid }}
-          HF_TARGET_REPO: ${{ inputs.target_repo }}
-          HF_TARGET_REPO_TYPE: ${{ inputs.target_repo_type }}
         run: |
-          set -o pipefail
-          . .venv/bin/activate
-          case "$ACTION" in
-            list|pause|resume) python scripts/recover_hf_snapshot.py "$ACTION" 2>&1 | tee out.txt ;;
-            health)            { curl -sS -m 40 -w '\nHTTP %{http_code} in %{time_total}s\n' "https://yoge-2004-expense-tracker-backend.hf.space/api/health" || echo "request failed"; } 2>&1 | tee out.txt ;;
-            restore-oid)       python scripts/recover_hf_snapshot.py restore-oid --oid "$OID" --yes 2>&1 | tee out.txt ;;
-            cleanup)           python scripts/recover_hf_snapshot.py cleanup --yes 2>&1 | tee out.txt ;;
-            *) echo "unknown action $ACTION" | tee out.txt; exit 1 ;;
-          esac
-      - name: Show the result as an annotation
-        if: always()
+          curl -sS -N --max-time 45 \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            "https://huggingface.co/api/spaces/Yoge-2004/expense-tracker-backend/logs/run" > raw.sse 2> curl.err || true
+          echo "bytes: $(wc -c < raw.sse)"; head -c 300 curl.err | sed 's/Bearer [^ ]*/Bearer [x]/'
+      - name: Summarise (redacted)
         shell: bash
-        env:
-          ACTION: ${{ inputs.action }}
-        run: python3 scripts/ci_notice.py "hf-recovery $ACTION" < out.txt || true
+        run: python3 scripts/tmp_hf_log_summary.py raw.sse
