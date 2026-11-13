@@ -1,0 +1,39 @@
+name: HF Space logs summary (temporary, manual)
+
+# Temporary diagnostic on a throwaway branch. Reads the Space run log with the repository secret
+# HF_RECOVERY_TOKEN and prints a REDACTED summary as annotations. Never merged; the secret is deleted after use.
+
+on:
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: How long to read the log stream
+        required: false
+        default: '40'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hf-logs-temp
+  cancel-in-progress: false
+
+jobs:
+  logs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Download run log (not printed)
+        shell: bash
+        env:
+          HF_TOKEN: ${{ secrets.HF_RECOVERY_TOKEN }}
+          SECS: ${{ inputs.seconds }}
+        run: |
+          curl -sS -N --max-time "${SECS:-40}" \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            "https://huggingface.co/api/spaces/Yoge-2004/expense-tracker-backend/logs/run" > raw.sse 2> curl.err || true
+          echo "bytes: $(wc -c < raw.sse)"; head -c 300 curl.err | sed 's/Bearer [^ ]*/Bearer [x]/'
+      - name: Summarise (redacted)
+        shell: bash
+        run: python3 scripts/tmp_hf_log_summary.py raw.sse
