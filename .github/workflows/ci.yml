@@ -42,6 +42,47 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+  backend-postgres:
+    name: Backend on real PostgreSQL
+    runs-on: ubuntu-latest
+    # The H2 suite cannot catch what only a real PostgreSQL rejects (large-object columns, untyped
+    # parameters). This runs the admin-console and appearance-sync paths against PostgreSQL 16 with the
+    # same ddl-auto=update production uses.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: expense_it
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d expense_it"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '27'
+          cache: maven
+      - name: Run PostgreSQL compatibility tests
+        shell: bash
+        env:
+          POSTGRES_IT_URL: jdbc:postgresql://localhost:5432/expense_it
+          POSTGRES_IT_USER: postgres
+          POSTGRES_IT_PASSWORD: postgres
+        run: |
+          set -o pipefail
+          mvn -B test -Dtest=PostgresCompatibilityIT -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | tee backend-postgres-test.log
+      - name: Annotate Maven failures
+        if: failure()
+        shell: bash
+        run: python3 .github/scripts/annotate_maven_failures.py backend-postgres-test.log
+
   mobile-restore:
     name: Mobile restore against real backend
     runs-on: ubuntu-latest
