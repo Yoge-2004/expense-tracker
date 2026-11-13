@@ -125,3 +125,10 @@ for l in lines:
         req[m.group(1) + " " + re.sub(r"/\d+", "/{id}", m.group(2))] += 1
 if req:
     notice("hf-logs 6 request lines seen", "\n".join(f"{n:>5} x {k}" for k, n in req.most_common(14)))
+
+warn = collections.Counter()
+for l in lines:
+    m = re.search(r"\b(WARN|ERROR)\b", l[:80])
+    if m:
+        warn[m.group(1) + " " + re.sub(r"\d+", "N", clean(re.sub(r"^.*?\b(WARN|ERROR)\b\s*(?:\d+\s*---)?\s*", "", l), 200))] += 1
+notice("hf-logs 7 warn and error lines", "\n".join(f"{n:>4} x {k}" for k, n in warn.most_common(14)) or "none")
