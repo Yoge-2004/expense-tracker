@@ -82,6 +82,15 @@ jobs:
         if: failure()
         shell: bash
         run: python3 .github/scripts/annotate_maven_failures.py backend-postgres-test.log
+      - name: Show the root causes
+        if: failure()
+        shell: bash
+        run: |
+          grep -E "Caused by:|PSQLException|SQL Error|SQLState|Detail:|Hint:|Position:|ERROR: " backend-postgres-test.log \
+            | sed -E 's/^[0-9: .TZ-]+//' | awk '!seen[$0]++' | cut -c1-320 | head -22 \
+            | python3 scripts/ci_notice.py "Postgres root causes (first)" || true
+          grep -E "Caused by:|PSQLException" backend-postgres-test.log | tail -8 | cut -c1-320 \
+            | python3 scripts/ci_notice.py "Postgres root causes (last)" || true
 
   mobile-restore:
     name: Mobile restore against real backend
