@@ -1,0 +1,196 @@
+package com.example.expensetracker.domain.expense.service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+
+import com.example.expensetracker.domain.budget.repository.BudgetRepository;
+import com.example.expensetracker.domain.expense.model.Category;
+import com.example.expensetracker.domain.expense.repository.CategoryRepository;
+import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
+import com.example.expensetracker.domain.expense.repository.RecurringExpenseRepository;
+import com.example.expensetracker.domain.user.model.User;
+import com.example.expensetracker.infrastructure.exception.GlobalExceptionHandler;
+
+
+
+/**
+ * Concrete implementation of {@link CategoryService} that provides
+ * business logic for managing expense categories.
+ *
+ * <p>This service interacts with {@link CategoryRepository} to perform
+ * database operations for creating user-specific categories and retrieving
+ * both user-owned and global (system-level) categories.</p>
+ *
+ * <p>Key rules enforced in this implementation:</p>
+ * <ul>
+ *   <li>Category names must be unique per user — if a user already has a category
+ *       with the same name, an {@link IllegalArgumentException} is thrown.</li>
+ *   <li>Global categories are identified by a {@code null} user reference and
+ *       are retrieved separately from user-owned categories.</li>
+ * </ul>
+ *
+ * @author Yogeshwaran
+ * @version 1.0
+ * @see CategoryService
+ * @see CategoryRepository
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class CategoryServiceImpl implements CategoryService {
+
+    /** Repository used for category persistence and querying. */
+    private final CategoryRepository categoryRepository;
+    private final ExpenseRepository expenseRepository;
+    private final RecurringExpenseRepository recurringExpenseRepository;
+    private final BudgetRepository budgetRepository;
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Before creating the category, checks whether a category with the same name
+     * already exists for the specified user using
+     * {@link CategoryRepository#existsByNameAndUser(String, User)}.\n     * If a duplicate is found, an {@link IllegalArgumentException} is thrown
+     * to enforce per-user uniqueness of category names.</p>
+     *
+     * <p>After a successful save, both the per-user cache and the global categories
+     * cache are evicted to ensure freshness on the next fetch.</p>
+     *
+     * @param name the name of the new category; must not be blank
+     * @param user the owner of the new category; must not be {@code null}
+     * @return the saved {@link Category} entity with a generated ID
+     * @throws IllegalArgumentException if a category with this name already exists for the user
+     */
+    @Override
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "userCategories", key = "#user.id"),
+        @CacheEvict(value = "globalCategories", allEntries = true)
+    })
+    public Category createCategory(String name, User user) {
+        if (user == null || user.getId() == null) {
+            log.warn("Rejected category creation with null user context");
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (name == null || name.isBlank()) {
+            log.warn("Rejected category creation with blank name for userId={}", user.getId());
+            throw new IllegalArgumentException("Category name cannot be blank");
+        }
+
+        String trimmedName = name.trim();
+        log.info("Creating category '{}' for userId={}", trimmedName, user.getId());
+        if (categoryRepository.existsByNameAndUser(trimmedName, user)) {
+            log.warn("Duplicate category creation attempt: '{}' already exists for userId={}",
+                    trimmedName, user.getId());
+            throw new IllegalArgumentException(
+                    "Category '" + trimmedName + "' already exists for this user"
+            );
+        }
+
+        Category category = new Category();
+        category.setName(trimmedName);
+        category.setUser(user);
+
+        // CONCURRENCY NOTE: there is still a small TOCTOU window between existsByNameAndUser
+        // and save(). The DB-level unique constraint (uk_category_user_name on Category) is
+        // the source of truth — if two concurrent inserts slip through, the second one will
+        // throw DataIntegrityViolationException. GlobalExceptionHandler maps that to 409.
+        Category saved = categoryRepository.save(category);
+        log.info("Saved category '{}' with id={} for userId={}", trimmedName, saved.getId(), user.getId());
+        return saved;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Result is cached in {@code userCategories} by {@code user.id}.
+     * Cache is evicted whenever a category is created for this user.</p>
+     *
+     * @param user the {@link User} whose categories are to be retrieved
+     * @return a list of user-owned {@link Category} entities; empty list if none exist
+     */
+    @Override
+    @Cacheable(value = "userCategories", key = "#user.id")
+    public List<Category> getUserCategories(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
+        log.debug("Loading categories for userId={}", user.getId());
+        List<Category> categories = categoryRepository.findByUser(user);
+        log.debug("Loaded {} categories for userId={}", categories.size(), user.getId());
+        return categories;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Global categories change infrequently; this result is cached in
+     * {@code globalCategories}. The cache is evicted when any new category
+     * is created (since global categories can only be seeded at startup).</p>
+     *
+     * @return a list of global {@link Category} entities; empty list if none are defined
+     */
+    @Override
+    @Cacheable(value = "globalCategories")
+    public List<Category> getGlobalCategories() {
+        log.debug("Loading global categories");
+        List<Category> globals = categoryRepository.findByUserIsNull();
+        log.debug("Loaded {} global categories", globals.size());
+        return globals;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Ownership and the global-category guard are checked before the usage
+     * check, so a user attempting to delete someone else's category (or a
+     * global one) gets a clear "not found/not yours" error rather than a
+     * confusing "in use" message. Both {@link ExpenseRepository},
+     * {@link RecurringExpenseRepository}, and {@link BudgetRepository} are checked,
+     * since a category can be referenced by one-off expenses, recurring subscriptions, or budgets.</p>
+     */
+    @Override
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "userCategories", key = "#user.id"),
+        @CacheEvict(value = "globalCategories", allEntries = true)
+    })
+    public void deleteCategory(Long categoryId, User user) {
+        if (categoryId == null) {
+            throw new IllegalArgumentException("Category ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
+        log.info("Deleting category id={} for userId={}", categoryId, user.getId());
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+
+        if (category.getUser() == null) {
+            log.warn("Attempt to delete global category id={}", categoryId);
+            throw new IllegalArgumentException("Global categories cannot be deleted");
+        }
+        if (!category.getUser().getId().equals(user.getId())) {
+            log.warn("Ownership mismatch: category id={} does not belong to userId={}", categoryId, user.getId());
+            throw new IllegalArgumentException("Category not found");
+        }
+        if (expenseRepository.existsByCategory_Id(categoryId)
+                || recurringExpenseRepository.existsByCategory_Id(categoryId)
+                || budgetRepository.existsByCategory_Id(categoryId)) {
+            log.warn("Category id={} cannot be deleted because it is still referenced "
+                    + "by expenses, recurring expenses, or budgets", categoryId);
+            throw new IllegalStateException(
+                    "Category '" + category.getName() + "' is still used by expenses, subscriptions, or budgets and can't be deleted");
+        }
+
+        categoryRepository.delete(category);
+        log.info("Category id={} deleted successfully for userId={}", categoryId, user.getId());
+    }
+}

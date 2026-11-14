@@ -1,6 +1,7 @@
 package com.example.expensetracker.cucumber;
 
 import com.example.expensetracker.cucumber.CucumberSpringConfig.TestContext;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.en.Given;
@@ -10,15 +11,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.example.expensetracker.domain.budget.model.Budget;
+import com.example.expensetracker.domain.expense.model.Category;
+
+
+
 
 public class BudgetSteps {
 

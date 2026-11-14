@@ -6,12 +6,16 @@ import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
-
 import java.time.LocalDate;
 import java.util.Map;
-
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+
+import com.example.expensetracker.domain.user.dto.UserDto;
+import com.example.expensetracker.domain.user.model.User;
+
+
+
 
 /**
  * Modern integration test suite using RestAssured.

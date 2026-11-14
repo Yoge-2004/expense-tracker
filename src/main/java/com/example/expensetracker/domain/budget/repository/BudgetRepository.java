@@ -1,0 +1,76 @@
+package com.example.expensetracker.domain.budget.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import java.util.List;
+import java.util.Optional;
+
+import com.example.expensetracker.domain.budget.model.Budget;
+import com.example.expensetracker.domain.expense.api.ExpenseController;
+import com.example.expensetracker.domain.expense.model.Category;
+import com.example.expensetracker.domain.user.model.User;
+
+
+
+/**
+ * Spring Data JPA repository for {@link Budget} entities.
+ *
+ * <p>Provides CRUD operations inherited from {@link JpaRepository} along with
+ * custom query methods for retrieving budgets scoped to a specific user
+ * or a user–category combination.</p>
+ *
+ * <p>Used primarily by
+ * {@link com.example.expensetracker.domain.expense.api.ExpenseController} to set budgets
+ * and calculate budget utilisation status for the current calendar month.</p>
+ *
+ * @author Yogeshwaran
+ * @version 1.0
+ * @see Budget
+ */
+@SuppressWarnings("unused")
+public interface BudgetRepository extends JpaRepository<Budget, Long> {
+
+    /**
+     * Retrieves all budgets configured by the specified user.
+     * Uses LEFT JOIN FETCH to eagerly initialize category and avoid LazyInitializationException.
+     *
+     * @param user the {@link User} whose budgets are to be fetched
+     * @return a list of {@link Budget} records owned by the user;
+     *         empty list if none exist
+     */
+    @Query("SELECT b FROM Budget b LEFT JOIN FETCH b.category WHERE b.user = :user")
+    List<Budget> findByUser(@Param("user") User user);
+
+    /**
+     * Retrieves the budget configured for a specific user and category combination.
+     * Uses LEFT JOIN FETCH to eagerly initialize category and avoid LazyInitializationException.
+     *
+     * <p>Used to check whether a budget already exists before deciding to
+     * create a new one or update the existing one.</p>
+     *
+     * @param user       the {@link User} who owns the budget
+     * @param categoryId the ID of the {@link com.example.expensetracker.domain.expense.model.Category}
+     *                   for which the budget is set
+     * @return an {@link Optional} containing the matching {@link Budget},
+     *         or {@link Optional#empty()} if no budget exists for that pair
+     */
+    @Query("SELECT b FROM Budget b LEFT JOIN FETCH b.category WHERE b.user = :user AND b.category.id = :categoryId")
+    Optional<Budget> findByUserAndCategoryId(@Param("user") User user, @Param("categoryId") Long categoryId);
+
+    boolean existsByCategory_Id(Long categoryId);
+
+    void deleteByUserAndCategoryId(User user, Long categoryId);
+
+    void deleteByIdAndUser(Long id, User user);
+
+    /**
+     * Deletes all budgets owned by the specified user.
+     *
+     * @param userId the ID of the owning user
+     */
+    @Modifying
+    @Query("DELETE FROM Budget b WHERE b.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
+}

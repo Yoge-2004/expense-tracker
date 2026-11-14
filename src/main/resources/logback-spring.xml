@@ -2,7 +2,7 @@
 <configuration scan="false">
 
     <conversionRule conversionWord="mask"
-                    class="com.example.expensetracker.logging.MaskingPatternConverter" />
+                    class="com.example.expensetracker.infrastructure.logging.MaskingPatternConverter" />
 
     <property name="LOG_PATH" value="${LOG_PATH:-logs}" />
     <property name="LOG_FILE" value="${LOG_FILE:-${LOG_PATH}/application.log}" />

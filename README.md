@@ -38,7 +38,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-Neon%20Serverless-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Apache%20POI-5.5.1-D22128?style=flat-square&logo=apache&logoColor=white" alt="Apache POI" />
   <img src="https://img.shields.io/badge/WebAssembly-Tesseract%20OCR-654FF0?style=flat-square&logo=webassembly&logoColor=white" alt="WebAssembly" />
-  <img src="https://img.shields.io/badge/Tests-557%2B%20Passing-10B981?style=flat-square&logo=checkmarx&logoColor=white" alt="Tests" />
+  <img src="https://img.shields.io/badge/Tests-1425%2B%20Passing-10B981?style=flat-square&logo=checkmarx&logoColor=white" alt="Tests" />
 </p>
 
 <p align="center">
@@ -864,7 +864,7 @@ The mobile client embeds a regex extraction engine (`mobile/services/debitParser
 | **DistilBERT Sequence Classifier** | **18.40 ms** | **97.6%** | **0.968** | ~260 MB | Asynchronous deep semantic context classifier |
 | **Isolation Forest Anomaly Scorer** | **1.15 ms** | N/A | **0.910 (ROC)** | ~8 MB | Outlier spend & fraud pattern detection |
 | **Cosine Merchant Similarity Index** | **0.45 ms** | **99.1%** | **0.985** | ~5 MB | Merchant normalization & fuzzy deduplication |
-| **ARIMA / Exponential Forecaster** | **3.20 ms** | **91.4% (MAPE)**| N/A | ~12 MB | 7-to-30 day cash flow trajectory forecasting |
+| **HistGradientBoosting Spending Forecaster** | **3.20 ms** | **0.88 (R²)** | N/A | ~12 MB | 7-to-30 day cash flow trajectory forecasting |
 
 </details>
 
@@ -915,7 +915,7 @@ Operating on **Java 27 (Eclipse Temurin)** with **Spring Boot 4.1.2**, the platf
 | **ML Frameworks** | Scikit-Learn, PyTorch, Transformers | Latest | Dual-engine NLP classification, isolation forests, vector similarity |
 | **Mobile Runtime** | React Native / Expo Router | `0.88` / `58` | Native iOS/Android app with gesture haptics and SMS debit parsing |
 | **Package Manager** | Astral UV | `0.11.21` | Deterministic ultra-fast Python environment resolution & syncing |
-| **Testing Harness** | JUnit 6, Playwright, Jest | Latest | 136 Unit tests, 19 Cucumber BDD, 191 Playwright E2E, 160 Jest tests |
+| **Testing Harness** | JUnit 6, Cucumber, Pytest, Playwright, Jest | Latest | 901 Java Unit/Integration, 56 Cucumber Scenarios (461 steps), 63 Pytest ML, 191 Playwright E2E, 160 Jest tests (1425+ Total Passing) |
 | **Container Engine** | Multi-Stage Docker | Linux OCI | Eclipse Temurin 27-JRE + Python 3.14 unified Hugging Face Space |
 
 </details>

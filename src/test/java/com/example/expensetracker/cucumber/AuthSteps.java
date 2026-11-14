@@ -1,6 +1,7 @@
 package com.example.expensetracker.cucumber;
 
 import com.example.expensetracker.cucumber.CucumberSpringConfig.TestContext;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.Before;
@@ -11,12 +12,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+
+import com.example.expensetracker.domain.user.dto.AuthResponse;
+import com.example.expensetracker.domain.user.dto.UserDto;
+import com.example.expensetracker.domain.user.model.User;
+
+
+
 
 /**
  * Step definitions for the authentication feature.

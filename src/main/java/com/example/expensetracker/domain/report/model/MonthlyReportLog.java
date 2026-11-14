@@ -1,0 +1,58 @@
+package com.example.expensetracker.domain.report.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+import com.example.expensetracker.domain.report.service.MonthlyReportServiceImpl;
+import com.example.expensetracker.domain.user.model.User;
+
+
+
+/**
+ * Audit record of a monthly report email send attempt for one user/period.
+ *
+ * <p>The unique constraint on (user, year, month) means at most one log row
+ * ever exists per user per period — {@link
+ * com.example.expensetracker.domain.report.service.MonthlyReportServiceImpl} looks up
+ * any existing row before sending and updates it in place rather than
+ * inserting a duplicate, so this doubles as a record of whether a report was
+ * already sent for a given month (preventing accidental re-sends) as well as
+ * a log of whether the send succeeded.</p>
+ */
+@Entity
+@Table(name = "monthly_report_logs", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_user_report_period", columnNames = {"user_id", "report_year", "report_month"})
+})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class MonthlyReportLog {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(name = "report_year", nullable = false)
+    private int reportYear;
+
+    @Column(name = "report_month", nullable = false)
+    private int reportMonth;
+
+    @Column(name = "sent_at", nullable = false)
+    private LocalDateTime sentAt;
+
+    @Column(name = "sent_successfully", nullable = false)
+    private boolean sentSuccessfully;
+
+    @Column(name = "error_message")
+    private String errorMessage;
+
+
+}

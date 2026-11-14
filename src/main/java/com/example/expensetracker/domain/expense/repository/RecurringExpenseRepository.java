@@ -1,0 +1,86 @@
+package com.example.expensetracker.domain.expense.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import java.time.LocalDate;
+import java.util.List;
+
+import com.example.expensetracker.domain.expense.api.ExpenseController;
+import com.example.expensetracker.domain.expense.model.Expense;
+import com.example.expensetracker.domain.expense.model.RecurringExpense;
+import com.example.expensetracker.domain.expense.service.RecurringExpenseScheduler;
+import com.example.expensetracker.domain.user.model.User;
+
+
+
+/**
+ * Spring Data JPA repository for {@link RecurringExpense} entities.
+ *
+ * <p>Provides standard CRUD operations via {@link JpaRepository}, along with
+ * custom query methods used by the scheduler to identify due subscriptions
+ * and by the controller to list a user's active subscriptions.</p>
+ *
+ * <p>Used by:</p>
+ * <ul>
+ *   <li>{@link com.example.expensetracker.domain.expense.service.RecurringExpenseScheduler} —
+ *       to find and process all due recurring expenses each day.</li>
+ *   <li>{@link com.example.expensetracker.domain.expense.api.ExpenseController} —
+ *       to list, add, update, and cancel user subscriptions.</li>
+ * </ul>
+ *
+ * @author Yogeshwaran
+ * @version 1.0
+ * @see RecurringExpense
+ */
+public interface RecurringExpenseRepository extends JpaRepository<RecurringExpense, Long> {
+
+    /**
+     * Retrieves all recurring expenses whose {@code nextDueDate} is on or before
+     * the specified date.
+     * Uses LEFT JOIN FETCH to eagerly load category and user.
+     *
+     * <p>Called daily by the {@link com.example.expensetracker.domain.expense.service.RecurringExpenseScheduler}
+     * with today's date to find any subscriptions that are due to generate a new
+     * {@link com.example.expensetracker.domain.expense.model.Expense} record.</p>
+     *
+     * @param date the cutoff date; all recurring expenses with a due date on or before
+     *             this date are returned
+     * @return a list of {@link RecurringExpense} records due for processing;
+     *         empty list if none are due
+     */
+    @Query("SELECT r FROM RecurringExpense r LEFT JOIN FETCH r.category LEFT JOIN FETCH r.user WHERE r.nextDueDate <= :date")
+    List<RecurringExpense> findByNextDueDateLessThanEqual(@Param("date") LocalDate date);
+
+    /**
+     * Retrieves all recurring expense subscriptions belonging to a specific user.
+     * Uses LEFT JOIN FETCH to eagerly initialize category and avoid LazyInitializationException.
+     *
+     * <p>Used by the {@code GET /api/expenses/recurring/user/{userId}} endpoint\n     * to display all active subscriptions in the user's dashboard.</p>
+     *
+     * @param user the {@link User} whose recurring expenses are to be retrieved
+     * @return a list of {@link RecurringExpense} records owned by the user;
+     *         empty list if the user has no active subscriptions
+     */
+    @Query("SELECT r FROM RecurringExpense r LEFT JOIN FETCH r.category WHERE r.user = :user")
+    List<RecurringExpense> findByUser(@Param("user") User user);
+
+    /**
+     * Checks whether any recurring expense/subscription (for any user)
+     * currently references the given category — see
+     * {@link com.example.expensetracker.domain.expense.repository.ExpenseRepository#existsByCategory_Id}
+     * for the equivalent check on one-off expenses. Both must be checked
+     * before a category can be safely deleted.
+     */
+    boolean existsByCategory_Id(Long categoryId);
+
+    /**
+     * Deletes all recurring expenses owned by the specified user.
+     *
+     * @param userId the ID of the owning user
+     */
+    @Modifying
+    @Query("DELETE FROM RecurringExpense r WHERE r.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
+}

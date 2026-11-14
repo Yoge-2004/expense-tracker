@@ -1,0 +1,315 @@
+package com.example.expensetracker.domain.user.api;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import java.util.Optional;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import com.example.expensetracker.domain.user.model.User;
+import com.example.expensetracker.domain.user.repository.UserRepository;
+import com.example.expensetracker.domain.user.service.PasswordResetService;
+import com.example.expensetracker.domain.user.service.UserService;
+import com.example.expensetracker.infrastructure.exception.RateLimitExceededException;
+import com.example.expensetracker.infrastructure.security.CustomUserDetails;
+import com.example.expensetracker.infrastructure.security.CustomUserDetailsService;
+import com.example.expensetracker.infrastructure.security.GoogleIdTokenVerifier;
+import com.example.expensetracker.infrastructure.security.JwtService;
+import com.example.expensetracker.infrastructure.security.LoginAttemptGuard;
+
+
+
+
+@WebMvcTest(AuthController.class)
+@AutoConfigureMockMvc(addFilters = false)
+class AuthControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @MockitoBean AuthenticationManager authenticationManager;
+    @MockitoBean JwtService jwtService;
+    @MockitoBean UserService userService;
+    @MockitoBean GoogleIdTokenVerifier googleIdTokenVerifier;
+    @MockitoBean PasswordResetService passwordResetService;
+    @MockitoBean CustomUserDetailsService customUserDetailsService;
+    @MockitoBean UserRepository userRepository;
+    @MockitoBean LoginAttemptGuard loginAttemptGuard;
+
+    private User user;
+
+    @BeforeEach
+    void setUp() {
+        user = new User();
+        user.setId(42L);
+        user.setName("Jane Doe");
+        user.setUsername("jane_doe");
+        user.setEmail("jane@example.com");
+        user.setCurrency("INR");
+        user.setEnabled(true);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userService.ensureAdminRole(any(User.class), any())).thenAnswer(inv -> inv.getArgument(0));
+    }
+
+    @Test
+    void authConfigReturnsPublicVerificationFlag() throws Exception {
+        mockMvc.perform(get("/api/auth/config"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.emailVerificationEnabled").isBoolean());
+    }
+
+    @Test
+    void registerCreatesUserAndReturnsCreatedDto() throws Exception {
+        when(userService.registerUser(any(User.class))).thenReturn(user);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "name":"Jane Doe",
+                                  "username":"jane_doe",
+                                  "email":"jane@example.com",
+                                  "password":"secret123",
+                                  "currency":"INR"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(42))
+                .andExpect(jsonPath("$.name").value("Jane Doe"))
+                .andExpect(jsonPath("$.email").value("jane@example.com"));
+
+        verify(userService).registerUser(argThat(candidate ->
+                "Jane Doe".equals(candidate.getName())
+                        && "jane_doe".equals(candidate.getUsername())
+                        && "jane@example.com".equals(candidate.getEmail())
+                        && "secret123".equals(candidate.getPassword())
+                        && "INR".equals(candidate.getCurrency())));
+        verifyNoInteractions(passwordResetService);
+    }
+
+    @Test
+    void registerRejectsInvalidUsernameBeforeCallingService() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "name":"Jane Doe",
+                                  "username":"bad username!",
+                                  "email":"jane@example.com",
+                                  "password":"secret123"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userService, passwordResetService);
+    }
+
+    @Test
+    void registerRejectsShortPasswordBeforeCallingService() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "name":"Jane Doe",
+                                  "username":"jane_doe",
+                                  "email":"jane@example.com",
+                                  "password":"12345"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userService, passwordResetService);
+    }
+
+    @Test
+    void sendSignupOtpDelegatesEmailAndNameWithoutCreatingAccount() throws Exception {
+        mockMvc.perform(post("/api/auth/signup/send-otp")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"jane@example.com","name":"Jane Doe"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message")
+                        .value("If this email is eligible, a verification code has been dispatched."))
+                .andExpect(jsonPath("$.emailVerificationEnabled").isString());
+
+        verify(passwordResetService).sendSignupOtp("jane@example.com", "Jane Doe");
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void loginTrimsIdentifierAndReturnsJwtAndUserDetails() throws Exception {
+        Authentication authentication = mock(Authentication.class);
+        CustomUserDetails principal = mock(CustomUserDetails.class);
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(principal);
+        when(principal.getUser()).thenReturn(user);
+        when(jwtService.generateToken("jane@example.com")).thenReturn("signed.jwt.token");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"  jane@example.com  ","password":"secret123"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("signed.jwt.token"))
+                .andExpect(jsonPath("$.userId").value(42))
+                .andExpect(jsonPath("$.name").value("Jane Doe"))
+                .andExpect(jsonPath("$.username").value("jane_doe"))
+                .andExpect(jsonPath("$.email").value("jane@example.com"))
+                .andExpect(jsonPath("$.currency").value("INR"));
+
+        verify(authenticationManager).authenticate(argThat(token ->
+                "jane@example.com".equals(token.getName())
+                        && "secret123".equals(token.getCredentials())));
+        verify(jwtService).generateToken("jane@example.com");
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void oauthLoginRegistersNewUserWithDerivedUsernameAndCurrency() throws Exception {
+        when(googleIdTokenVerifier.verify("valid-oauth-token"))
+                .thenReturn(new GoogleIdTokenVerifier.VerifiedIdentity("jane.doe@gmail.com", "Jane Doe"));
+        when(userService.findByEmail("jane.doe@gmail.com")).thenReturn(Optional.empty());
+        when(userService.userExistsByUsername("jane.doe")).thenReturn(false);
+
+        User created = new User();
+        created.setId(99L);
+        created.setName("Jane Doe");
+        created.setUsername("jane.doe");
+        created.setEmail("jane.doe@gmail.com");
+        created.setCurrency("USD");
+        created.setEnabled(true);
+        when(userService.registerUser(any(User.class))).thenReturn(created);
+        when(jwtService.generateToken("jane.doe@gmail.com")).thenReturn("jwt-oauth-token");
+
+        mockMvc.perform(post("/api/auth/oauth/google")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "idToken": "valid-oauth-token",
+                                  "currency": "USD"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("jwt-oauth-token"))
+                .andExpect(jsonPath("$.userId").value(99))
+                .andExpect(jsonPath("$.name").value("Jane Doe"))
+                .andExpect(jsonPath("$.username").value("jane.doe"))
+                .andExpect(jsonPath("$.email").value("jane.doe@gmail.com"))
+                .andExpect(jsonPath("$.currency").value("USD"));
+
+        verify(userService).registerUser(argThat(candidate ->
+                "jane.doe".equals(candidate.getUsername())
+                        && "USD".equals(candidate.getCurrency())
+                        && "jane.doe@gmail.com".equals(candidate.getEmail())));
+    }
+
+    @Test
+    void oauthLoginAuthenticatesExistingUser() throws Exception {
+        when(googleIdTokenVerifier.verify("existing-token"))
+                .thenReturn(new GoogleIdTokenVerifier.VerifiedIdentity("jane@example.com", "Jane Doe"));
+        when(userService.findByEmail("jane@example.com")).thenReturn(Optional.of(user));
+        when(jwtService.generateToken("jane@example.com")).thenReturn("jwt-existing");
+
+        mockMvc.perform(post("/api/auth/oauth/google")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "idToken": "existing-token"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("jwt-existing"))
+                .andExpect(jsonPath("$.userId").value(42))
+                .andExpect(jsonPath("$.name").value("Jane Doe"))
+                .andExpect(jsonPath("$.username").value("jane_doe"))
+                .andExpect(jsonPath("$.email").value("jane@example.com"))
+                .andExpect(jsonPath("$.currency").value("INR"));
+
+        verify(userService, never()).registerUser(any());
+    }
+
+    @Test
+    void oauthLoginRejectsDisabledAccount() throws Exception {
+        user.setEnabled(false);
+        when(googleIdTokenVerifier.verify("token-disabled"))
+                .thenReturn(new GoogleIdTokenVerifier.VerifiedIdentity("jane@example.com", "Jane Doe"));
+        when(userService.findByEmail("jane@example.com")).thenReturn(Optional.of(user));
+
+        mockMvc.perform(post("/api/auth/oauth/google")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "idToken": "token-disabled"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void wrongPasswordIsCountedAgainstTheAccount() throws Exception {
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenThrow(new org.springframework.security.authentication.BadCredentialsException("bad"));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"  jane@example.com  ","password":"wrong"}
+                                """))
+                .andExpect(status().isUnauthorized());
+
+        verify(loginAttemptGuard).checkAllowed("jane@example.com");
+        verify(loginAttemptGuard).recordFailure("jane@example.com");
+        verify(loginAttemptGuard, never()).recordSuccess(any());
+    }
+
+    @Test
+    void lockedAccountIsRefusedBeforeThePasswordIsChecked() throws Exception {
+        doThrow(new RateLimitExceededException("Too many failed sign-in attempts", 600))
+                .when(loginAttemptGuard).checkAllowed("jane@example.com");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"jane@example.com","password":"anything"}
+                                """))
+                .andExpect(status().isTooManyRequests());
+
+        verifyNoInteractions(authenticationManager);
+    }
+
+    @Test
+    void successfulLoginClearsTheFailureCounter() throws Exception {
+        Authentication authentication = mock(Authentication.class);
+        CustomUserDetails principal = mock(CustomUserDetails.class);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(principal);
+        when(principal.getUser()).thenReturn(user);
+        when(jwtService.generateToken("jane@example.com")).thenReturn("signed.jwt.token");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"jane@example.com","password":"secret123"}
+                                """))
+                .andExpect(status().isOk());
+
+        verify(loginAttemptGuard).recordSuccess("jane@example.com");
+        verify(loginAttemptGuard, never()).recordFailure(any());
+    }
+}

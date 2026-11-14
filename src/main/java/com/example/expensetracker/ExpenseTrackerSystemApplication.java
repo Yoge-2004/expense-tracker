@@ -5,8 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
-
 import java.util.TimeZone;
+
+import com.example.expensetracker.domain.expense.model.Expense;
+import com.example.expensetracker.domain.expense.service.RecurringExpenseScheduler;
+
+
 
 /**
  * Entry point for the Expense Tracker System application.
@@ -16,7 +20,7 @@ import java.util.TimeZone;
  * It uses JWT-based authentication and a stateless session management strategy.</p>
  *
  * <p>Scheduling is enabled to support automatic processing of recurring expenses
- * on a daily cron basis via {@link com.example.expensetracker.service.RecurringExpenseScheduler}.</p>
+ * on a daily cron basis via {@link com.example.expensetracker.domain.expense.service.RecurringExpenseScheduler}.</p>
  *
  * @author Yogeshwaran
  * @version 1.0
