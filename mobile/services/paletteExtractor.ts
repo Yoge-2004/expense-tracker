@@ -36,7 +36,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
   {
     id: 'default',
     name: 'Imperial Gold & Onyx',
-    subtitle: 'Classic signature Ledger & Lumina luxury identity',
+    subtitle: 'Classic signature gold & onyx palette',
     previewPrimary: '#C79A3E',
     previewAccent: '#A23E32',
     previewBg: '#10120E',
@@ -176,7 +176,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
   {
     id: 'golden-champagne',
     name: 'Gilded Champagne',
-    subtitle: 'Radiant sparkling gold, warm silk and luxury archive',
+    subtitle: 'Warm gold and silk archive palette',
     previewPrimary: '#FBBF24',
     previewAccent: '#F43F5E',
     previewBg: '#1B170B',

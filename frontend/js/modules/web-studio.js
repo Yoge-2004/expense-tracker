@@ -17,7 +17,7 @@
         {
             id: 'default',
             name: 'Imperial Gold & Onyx',
-            subtitle: 'Classic signature luxury identity',
+            subtitle: 'Classic signature gold & onyx palette',
             primary: '#C79A3E',
             primaryGradientEnd: '#A97F2E',
             accent: '#A23E32',

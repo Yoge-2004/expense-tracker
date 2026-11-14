@@ -189,7 +189,7 @@ export function ensureColorContrast(color: string, background: string, minimum =
 }
 
 /**
- * 24 Curated luxury ink/stamp category palette + deterministic golden-ratio HSL generator.
+ * 24 Curated category palette with deterministic golden-ratio HSL generator.
  * Eliminates color collision across standard and custom user categories.
  */
 export const CategoryPalette = [

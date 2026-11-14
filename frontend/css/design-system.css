@@ -1,10 +1,67 @@
 /* ==========================================================================
-   Design System & Accessibility Layer (WCAG 2.1 AA, Fitts's Law, Nielsen Heuristics)
+   Design System & Human Interface Standards
+   Adheres to:
+   - Jakob's Law (Standard system cursors & familiar navigation patterns)
+   - Fitts's Law (Minimum 44x44px touch targets on all interactive controls)
+   - Hick's Law (Minimized cognitive load, clean hierarchy, progressive disclosure)
+   - Miller's Law (Structured chunking of information into digestible cards)
+   - Gestalt Principles (Proximity: tight label coupling; Common Region: bounded cards)
+   - WCAG 2.1 AA (Contrast >= 4.5:1 text, >= 3:1 non-text, :focus-visible outlines)
+   - Doherty Threshold (Visual feedback < 400ms, button state lock to prevent double-submit)
+   - Norman Error Prevention (Explicit validation indicators, undo patterns)
    ========================================================================== */
 
 @import url("feature-phone.css");
 
-/* 1. Screen Reader Only Utility (WCAG 2.1 AA Non-visual accessibility) */
+/* ── 1. Standard Cursors (Jakob's Law) ── */
+/* Suppress any non-standard cursor hijacking; preserve OS standard pointer feedback */
+*, *::before, *::after {
+  cursor: auto;
+}
+
+button,
+a,
+select,
+summary,
+[role="button"],
+[type="button"],
+[type="submit"],
+[type="reset"],
+.clickable,
+.tab-item,
+.pill-chip,
+.period-chip,
+.bi-slicer-pill,
+.loan-tab-btn,
+.custom-select-trigger,
+.cal-day-cell,
+.cal-nav-btn {
+  cursor: pointer !important;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  cursor: text !important;
+}
+
+[disabled],
+.disabled,
+[aria-disabled="true"],
+button:disabled {
+  cursor: not-allowed !important;
+}
+
+/* Deactivate any legacy custom cursor DOM elements */
+.executive-reticle,
+.executive-cursor,
+#executiveReticle {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* ── 2. Screen Reader Accessibility (WCAG 2.1 AA) ── */
 .sr-only {
   position: absolute !important;
   width: 1px !important;
@@ -17,7 +74,7 @@
   border: 0 !important;
 }
 
-/* 2. WCAG 2.1 AA High-Visibility Focus Ring (:focus-visible) */
+/* ── 3. High-Contrast Accessible Focus Rings (WCAG 2.4.7 & 1.4.11) ── */
 :focus-visible {
   outline: 2px solid #10B981 !important;
   outline-offset: 3px !important;
@@ -36,13 +93,13 @@ textarea:focus-visible,
   box-shadow: 0 0 0 4px rgba(199, 154, 62, 0.25) !important;
 }
 
-/* Remove default outline when focused via mouse click */
 :focus:not(:focus-visible) {
   outline: none;
 }
 
-/* 3. Fitts's Law Touch Target Minimums (>= 44x44px hitboxes) */
+/* ── 4. Touch Target Sizing (Fitts's Law & WCAG 2.5.5 >= 44x44px) ── */
 @media (max-width: 768px), (pointer: coarse) {
+  .btn,
   .btn-primary,
   .btn-secondary,
   .btn-icon,
@@ -51,7 +108,14 @@ textarea:focus-visible,
   .modal-close,
   .filter-pill,
   .tab-item,
-  .action-btn {
+  .action-btn,
+  .bi-slicer-pill,
+  .period-chip,
+  .pill-chip,
+  .cal-nav-btn,
+  .pagination-btn,
+  .page-btn,
+  .custom-select-trigger {
     min-height: 44px !important;
     min-width: 44px !important;
     display: inline-flex !important;
@@ -62,14 +126,119 @@ textarea:focus-visible,
   /* Table action hitboxes */
   .table-actions button,
   .stream-actions button,
-  .loan-actions button {
-    min-height: 44px;
-    min-width: 44px;
-    padding: 8px 12px;
+  .loan-actions button,
+  .tx-actions button,
+  td button {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    padding: 8px 12px !important;
+  }
+
+  /* Form input heights */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  select {
+    min-height: 44px !important;
   }
 }
 
-/* 4. Accessible Toast with Undo Action Support (Nielsen Heuristic #3) */
+/* ── 5. Standardized Spacing & Gestalt Proximity ── */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  
+  /* WCAG AA text contrast tokens */
+  --text-primary-contrast: #f8fafc;
+  --text-muted-contrast: #94a3b8;
+  --border-contrast: #334155;
+}
+
+/* Gestalt Law of Proximity: Form groups tightly couple label to input */
+.form-group,
+.form-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--space-5, 20px);
+}
+
+.form-group label,
+.form-field label,
+.form-label {
+  margin-bottom: var(--space-2, 6px);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted-contrast, #94a3b8);
+  letter-spacing: 0.3px;
+}
+
+/* Gestalt Law of Common Region: Cards encapsulate content cleanly */
+.card,
+.metric-card,
+.insight-card,
+.budget-card,
+.chart-card {
+  border-radius: 14px;
+  border: 1px solid var(--border-contrast, rgba(236, 231, 216, 0.12));
+  background: var(--card-bg, #171a14);
+  padding: var(--space-5, 20px);
+  box-sizing: border-box;
+}
+
+/* ── 6. Doherty Threshold Feedback & Double-Submit Protection ── */
+button:disabled,
+button.is-busy,
+button[aria-busy="true"],
+.btn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+button.is-busy::after {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 8px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: dsSpinner 0.6s linear infinite;
+}
+
+@keyframes dsSpinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── 7. Norman Error Prevention & Recovery ── */
+input:invalid:not(:placeholder-shown),
+.input-error,
+[aria-invalid="true"] {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+}
+
+.form-error-msg {
+  color: #EF4444;
+  font-size: 12px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.3;
+}
+
+/* ── 8. Accessible Toast Region & Notification Stack ── */
 .toast-region {
   position: fixed;
   bottom: 24px;
@@ -160,7 +329,7 @@ textarea:focus-visible,
   color: var(--text-main, #ece7d8);
 }
 
-/* 5. Accessible Dialog Modals */
+/* ── 9. Accessible Dialog Modals ── */
 .accessible-dialog-overlay {
   position: fixed;
   inset: 0;

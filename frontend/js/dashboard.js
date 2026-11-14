@@ -3742,7 +3742,7 @@ savingsDepositForm?.addEventListener("submit", async (e) => {
     }
 });
 
-// Initialize luxury custom calendar picker and custom select controls
+// Initialize custom calendar picker and accessible select controls
 function bindDatePickerAutoPopups() {
     if (window.initCustomCalendarDatePicker) {
         window.initCustomCalendarDatePicker();

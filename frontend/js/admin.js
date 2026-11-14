@@ -34,7 +34,7 @@
         setupInteractiveMockup();
         setupEventListeners();
 
-        // Enhance native select elements with luxury custom controls
+        // Enhance native select elements with custom select controls
         if (typeof window.initAllCustomSelects === "function") {
             window.initAllCustomSelects();
         }

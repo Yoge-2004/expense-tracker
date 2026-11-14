@@ -111,7 +111,7 @@ describe('paletteExtractor service', () => {
   });
 
   describe('Curated Preset Backgrounds', () => {
-    it('includes all 6 crafted luxury presets with valid palettes', () => {
+    it('includes all 6 curated presets with valid palettes', () => {
       expect(PRESET_BACKGROUNDS.length).toBeGreaterThanOrEqual(6);
 
       PRESET_BACKGROUNDS.forEach((preset) => {

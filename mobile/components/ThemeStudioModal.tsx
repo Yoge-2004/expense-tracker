@@ -4,7 +4,7 @@
  *
  * Allows users to customize:
  * 1. Typography: Modern Grotesk, Editorial Serif, Financial Monospace, and System default fonts.
- * 2. Atmospheric Backgrounds: Curated luxury mesh presets or custom user-uploaded wallpapers / GIFs.
+ * 2. Atmospheric Backgrounds: Curated background mesh presets or custom user-uploaded wallpapers / GIFs.
  * 3. Smart Palette Extraction: Zero-native-dependency client-side quantization extracting vibrant
  *    primary, accent, card surface tint, and border accents directly from background assets.
  * 4. Element Colors Customizer: Fine-tune or override individual UI element colors.
@@ -479,7 +479,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                       {
                         id: 'fraunces',
                         name: 'Editorial Serif',
-                        sub: 'Fraunces · High-contrast luxury boutique editorial',
+                        sub: 'Fraunces · High-contrast serif typography',
                         sample: '₹142,850.00 · Sovereign Wealth Reserve',
                         fontFamily: 'Fraunces_600SemiBold',
                       },
@@ -1146,7 +1146,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                       {isLight ? 'Light Theme Active' : 'Dark Theme Active'}
                     </Text>
                     <Text style={[styles.fontCardSub, { color: c.textMuted }]}>
-                      Switch between day clarity and midnight luxury
+                      Switch between light and dark appearance modes
                     </Text>
                   </View>
                   <TouchableOpacity

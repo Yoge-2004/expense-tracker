@@ -1,6 +1,6 @@
 /**
  * ExpenseTracker Pro - Custom UI Controls
- * Universal Custom Dropdown & Luxury Interactive Calendar Date Picker
+ * Accessible Custom Dropdown & Interactive Calendar Date Picker
  */
 
 (function () {
@@ -13,7 +13,7 @@
     const enhancedSelects = new Map();
 
     /**
-     * Enhances a native <select> element with luxury custom dropdown UI
+     * Enhances a native <select> element with accessible custom dropdown UI
      */
     function enhanceSelect(selectEl) {
         if (!selectEl) return null;
@@ -457,7 +457,7 @@
         const monthSel = document.getElementById("calMonthSelect");
         const yearSel = document.getElementById("calYearSelect");
 
-        // Enhance with custom luxury dropdowns
+        // Enhance with custom select dropdowns
         enhanceSelect(monthSel);
         enhanceSelect(yearSel);
 
