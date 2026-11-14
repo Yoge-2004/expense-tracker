@@ -43,23 +43,30 @@ Web browser / Android app
 
 The public application API is served by Spring Boot. Python ML routes are kept internal to the container; Spring Boot calls `http://127.0.0.1:8000` for inference.
 
-## 🤖 ML inference
+## 🤖 ML inference & Multi-Model Fleet
 
-Python exposes:
+Python exposes the complete 5-model intelligence fleet:
 
 ```text
-GET  /health
-POST /api/v1/classify
-POST /api/v1/analyze
+GET  /health                  # Fleet telemetry and runtime model status
+GET  /api/v1/logs             # In-memory circular log stream with secret redaction
+POST /api/v1/classify         # Real-time transaction categorization
+POST /api/v1/analyze          # Deep semantic analysis & top-k confidence scores
+POST /api/v1/merchants/match  # Char-WB TF-IDF + NearestNeighbors merchant matching
+POST /api/v1/duplicates/check # Sublinear TF-IDF cosine duplicate charge detection
+POST /api/v1/anomalies/score  # Isolation Forest unsupervised outlier spend scoring
+POST /api/v1/forecast/spending# HistGradientBoosting multi-lag spending forecaster
+POST /api/v1/reload           # Atomic hot-reload of model weights in memory
 ```
 
-The active model and administration variables are identified explicitly through Space variables:
+The active model fleet and administration variables are identified explicitly through Space variables:
 
 ```text
 ADMIN_EMAIL           # Platform Super Admin login email configured in Space Secrets/Variables
-MODEL_ID              # Hugging Face model repository ID
+MODEL_ID              # Hugging Face model repository ID (default: Yoge-2004/expense-intelligence-model)
 MODEL_REVISION        # Model tag / branch (e.g. production)
-MODEL_TYPE            # Model architecture (e.g. tfidf)
+MODEL_TYPE            # Primary model architecture (e.g. tfidf or transformer)
+AUXILIARY_MODEL_DIR   # Optional local path override for auxiliary fleet models
 ```
 
 The serving process fails clearly when a configured model cannot be loaded; it does not silently choose an unknown artifact.

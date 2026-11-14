@@ -170,3 +170,24 @@ def test_forecast_spending_endpoint():
     assert data["horizon_days"] == 5
     assert len(data["forecast"]) == 5
     assert "predicted_amount" in data["forecast"][0]
+
+
+def test_reload_endpoint():
+    response = client.post("/api/v1/reload")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "reloaded"
+    assert "model" in data
+    assert "fleet" in data["model"]
+    assert "timestamp" in data
+
+
+def test_health_reports_full_fleet():
+    response = client.get("/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert "auxiliary_models" in data
+    assert "merchant_similarity" in data["auxiliary_models"]
+    assert "duplicate_similarity" in data["auxiliary_models"]
+    assert "transaction_anomaly" in data["auxiliary_models"]
+    assert "spending_forecast" in data["auxiliary_models"]

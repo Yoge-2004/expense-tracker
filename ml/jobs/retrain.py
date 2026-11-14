@@ -51,6 +51,20 @@ def _copy_selected_model(run_dir: Path, model_name: str, candidate_dir: Path) ->
         raise FileNotFoundError(f"Selected model artifact does not exist: {source}")
     target = candidate_dir / "model"
     shutil.copytree(source, target)
+
+    # Bundle all auxiliary fleet models trained in the run
+    auxiliary_names = [
+        "merchant-similarity",
+        "duplicate-similarity",
+        "transaction-anomaly",
+        "spending-forecast",
+    ]
+    for aux_name in auxiliary_names:
+        aux_source = run_dir / "models" / aux_name
+        if aux_source.exists():
+            aux_target = target / aux_name
+            if not aux_target.exists():
+                shutil.copytree(aux_source, aux_target)
     return target
 
 

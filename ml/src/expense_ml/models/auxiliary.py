@@ -283,7 +283,7 @@ class SpendingForecastModel:
                 "date": next_date.strftime("%Y-%m-%d"),
                 "predicted_amount": round(pred_amount, 2),
             })
-            work.loc[next_date] = pred_amount
+            work.loc[next_date, "amount"] = pred_amount
         return forecasts
 
     @classmethod

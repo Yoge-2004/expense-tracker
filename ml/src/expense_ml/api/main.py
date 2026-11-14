@@ -224,6 +224,30 @@ def get_logs(
     return get_log_handler().get_logs(limit=lines, level=level, query=query)
 
 
+@app.post("/api/v1/reload")
+@app.post("/reload")
+def reload_models() -> dict[str, Any]:
+    global _registry, _load_error
+    with _registry_lock:
+        try:
+            _registry = ModelRegistry.from_environment()
+            _load_error = None
+            logger.info(
+                "Successfully reloaded ModelRegistry: type=%s, revision=%s",
+                _registry.loaded.model_type,
+                _registry.loaded.revision,
+            )
+            return {
+                "status": "reloaded",
+                "model": _registry.metadata(),
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+        except Exception as exc:
+            _load_error = f"{type(exc).__name__}: {exc}"
+            logger.error("Failed to reload ModelRegistry: %s", exc)
+            raise HTTPException(status_code=500, detail=f"Model reload failed: {exc}") from exc
+
+
 @app.post("/api/v1/classify", response_model=ClassificationResponse)
 def classify(request: ClassificationRequest) -> dict:
     return _service().classify(request.description, top_n=request.top_n)
