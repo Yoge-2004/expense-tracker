@@ -31,7 +31,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <tomcat.version>11.0.27</tomcat.version>
-        <jackson-bom.version>3.2.4</jackson-bom.version>
+        <jackson-bom.version>3.3.0</jackson-bom.version>
         <jackson-2-bom.version>2.22.4</jackson-2-bom.version>
         <jjwt.version>0.13.0</jjwt.version>
         <sqlite-jdbc.version>3.54.1.0</sqlite-jdbc.version>
@@ -42,6 +42,7 @@
         <!-- Spring Boot manages these; the properties raise them above the BOM defaults. -->
         <h2.version>2.5.252</h2.version>
         <postgresql.version>42.7.14</postgresql.version>
+        <snakeyaml.version>2.7</snakeyaml.version>
         <junit-jupiter.version>6.1.3</junit-jupiter.version>
         <cucumber.version>8.0.4</cucumber.version>
         <rest-assured.version>6.3.0</rest-assured.version>
@@ -52,7 +53,7 @@
         <logback.version>1.6.6</logback.version>
         <json-smart.version>2.6.1</json-smart.version>
         <asm.version>9.11.1</asm.version>
-        <org-json.version>20250107</org-json.version>
+        <org-json.version>20260814</org-json.version>
     </properties>
 
     <dependencies>
