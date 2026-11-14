@@ -57,11 +57,28 @@ export function isNewerVersion(current: string, candidate: string): boolean {
   return tPatch > cPatch;
 }
 
+export interface GitHubReleaseAsset {
+  name?: string;
+  browser_download_url?: string;
+  size?: number;
+}
+
+export interface GitHubReleaseResponse {
+  tag_name?: string;
+  name?: string;
+  body?: string;
+  draft?: boolean;
+  prerelease?: boolean;
+  html_url?: string;
+  published_at?: string;
+  assets?: GitHubReleaseAsset[];
+}
+
 /** Turns a GitHub "latest release" response into update info, judged against the installed version. */
-export function releaseInfoFromGitHub(data: any, currentVersion: string): AppReleaseInfo {
+export function releaseInfoFromGitHub(data: GitHubReleaseResponse | null | undefined, currentVersion: string): AppReleaseInfo {
   const latestTag: string = typeof data?.tag_name === 'string' ? data.tag_name : '';
   const apkAsset = Array.isArray(data?.assets)
-    ? data.assets.find((a: any) => typeof a?.name === 'string' && a.name.endsWith('.apk'))
+    ? data.assets.find((a) => typeof a?.name === 'string' && a.name.endsWith('.apk'))
     : null;
   const unfinished = data?.draft === true || data?.prerelease === true;
 

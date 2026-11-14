@@ -1,8 +1,7 @@
 /**
  * @file NotificationCaptureCard.tsx
- * @description Profile card for automatic bank / UPI notification capture (Android only).
- * Explains exactly what is read, then opens Android's Notification access screen on this app's own
- * switch. Shows the current state with Enable / Pause / Resume.
+ * @description Profile card for automatic bank / UPI notification & SMS capture (Android only).
+ * Explains exactly what is read, and enables both SMS Read and Android Notification access.
  */
 
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -14,16 +13,13 @@ import { useAlert } from '../../context/AlertContext';
 import {
   CaptureState,
   getCaptureState,
+  hasSmsPermission,
+  isNotificationAccessGranted,
   openCaptureAccessSettings,
   openCaptureAppInfo,
+  requestSmsPermission,
   setCapturePaused,
 } from '../../services/notificationCapture';
-
-const SUBTITLE: Record<Exclude<CaptureState, 'unsupported'>, string> = {
-  'needs-access': 'Off. Record bank and UPI debits automatically.',
-  paused: 'Paused. Nothing is being read.',
-  active: 'On. Recorded the next time you open the app.',
-};
 
 export const NotificationCaptureCard = memo(function NotificationCaptureCard({
   colors: c,
@@ -32,9 +28,19 @@ export const NotificationCaptureCard = memo(function NotificationCaptureCard({
 }) {
   const { showAlert } = useAlert();
   const [state, setState] = useState<CaptureState>(() => getCaptureState());
+  const [hasSms, setHasSms] = useState(false);
+  const [hasNotif, setHasNotif] = useState(false);
   const waitingForGrant = useRef(false);
 
-  const refresh = useCallback(() => setState(getCaptureState()), []);
+  const refresh = useCallback(async () => {
+    setState(getCaptureState());
+    setHasNotif(isNotificationAccessGranted());
+    setHasSms(await hasSmsPermission());
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const showRestrictedHelp = useCallback(() => {
     showAlert(
@@ -48,29 +54,35 @@ export const NotificationCaptureCard = memo(function NotificationCaptureCard({
     );
   }, [showAlert]);
 
-  // On return from Settings: re-check, and if access still is not on, offer the restricted-settings help.
+  // On return from Settings: re-check
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
       if (next !== 'active') return;
-      const now = getCaptureState();
-      setState(now);
-      if (waitingForGrant.current) {
-        waitingForGrant.current = false;
-        if (now === 'needs-access') showRestrictedHelp();
-        else if (now === 'active') {
-          showAlert('Capture is on', 'Bank and UPI debits will be recorded the next time you open the app.', undefined, 'success');
+      void refresh().then(() => {
+        const now = getCaptureState();
+        if (waitingForGrant.current) {
+          waitingForGrant.current = false;
+          if (now === 'needs-access') showRestrictedHelp();
+          else if (now === 'active') {
+            showAlert('Capture is on', 'Bank SMS and UPI debits will be recorded automatically.', undefined, 'success');
+          }
         }
-      }
+      });
     });
     return () => sub.remove();
-  }, [showAlert, showRestrictedHelp]);
+  }, [showAlert, showRestrictedHelp, refresh]);
 
-  const enable = useCallback(() => {
+  const enableAll = useCallback(async () => {
+    // 1. Request SMS permission
+    const smsOk = await requestSmsPermission();
+    setHasSms(smsOk);
+
+    // 2. Guide user to Notification Access for UPI apps
     showAlert(
-      'Record transactions automatically?',
-      'Android will ask you to switch on Notification access for this app. Only notifications that mention an amount and a payment (for example "Rs 450 debited") are kept. One-time codes, chat and social apps are ignored. Nothing else is stored and nothing leaves your phone.',
+      'Record UPI and Bank Debits?',
+      'Android will ask you to switch on Notification access so Google Pay, PhonePe, and Paytm alerts can also be read. Only money transactions are kept; OTPs and personal chats are completely ignored. Nothing leaves your phone.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel', onPress: () => void refresh() },
         {
           text: 'Open Settings',
           onPress: () => {
@@ -81,19 +93,28 @@ export const NotificationCaptureCard = memo(function NotificationCaptureCard({
       ],
       'info'
     );
-  }, [showAlert]);
+  }, [showAlert, refresh]);
 
   const togglePause = useCallback(() => {
     setCapturePaused(state === 'active');
-    refresh();
+    void refresh();
   }, [state, refresh]);
 
   if (state === 'unsupported') return null;
 
-  const action =
-    state === 'needs-access'
-      ? { label: 'Enable', onPress: enable }
-      : { label: state === 'active' ? 'Pause' : 'Resume', onPress: togglePause };
+  const isFullyActive = state === 'active' && hasSms;
+  const isPartiallyActive = state === 'active' || hasSms;
+
+  let subtitle = 'Off. Record bank SMS and UPI debits automatically.';
+  if (state === 'paused') {
+    subtitle = 'Paused. Detection is temporarily disabled.';
+  } else if (isFullyActive) {
+    subtitle = 'Active. Bank SMS and UPI payments are recorded automatically.';
+  } else if (isPartiallyActive) {
+    subtitle = hasNotif
+      ? 'UPI apps active · Grant SMS permission for bank text alerts.'
+      : 'Bank SMS active · Grant Notification access for UPI apps.';
+  }
 
   return (
     <View style={[styles.block, { backgroundColor: c.card, borderColor: c.border }]}>
@@ -104,19 +125,34 @@ export const NotificationCaptureCard = memo(function NotificationCaptureCard({
           </View>
           <View style={styles.texts}>
             <Text style={[styles.title, { color: c.text }]}>Automatic transaction capture</Text>
-            <Text style={[styles.sub, { color: c.textMuted }]}>{SUBTITLE[state]}</Text>
+            <Text style={[styles.sub, { color: c.textMuted }]}>{subtitle}</Text>
           </View>
         </View>
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={action.onPress}
+          onPress={!isPartiallyActive ? enableAll : togglePause}
           accessibilityRole="button"
-          accessibilityLabel={`${action.label} automatic transaction capture`}
+          accessibilityLabel="Automatic transaction capture action"
           style={[styles.button, { backgroundColor: c.primary + '18', borderColor: c.primary + '55' }]}
         >
-          <Text style={[styles.buttonText, { color: c.primary }]}>{action.label}</Text>
+          <Text style={[styles.buttonText, { color: c.primary }]}>
+            {!isPartiallyActive ? 'Enable' : state === 'active' ? 'Pause' : 'Resume'}
+          </Text>
         </TouchableOpacity>
       </View>
+      {isPartiallyActive && (!hasSms || !hasNotif) && (
+        <View style={[styles.secondaryRow, { borderTopColor: c.border }]}>
+          <Text style={[styles.partialNotice, { color: c.textMuted }]}>
+            {!hasSms ? '• Bank SMS permission is missing' : '• UPI Notification access is missing'}
+          </Text>
+          <TouchableOpacity
+            onPress={enableAll}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.completeBtnText, { color: c.primary }]}>Complete Setup</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 });
@@ -124,11 +160,14 @@ export const NotificationCaptureCard = memo(function NotificationCaptureCard({
 const styles = StyleSheet.create({
   block: { borderRadius: 18, borderWidth: 1, marginBottom: 20, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16, gap: 10 },
+  secondaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 16, borderTopWidth: StyleSheet.hairlineWidth },
   left: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   iconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   texts: { flex: 1 },
   title: { fontSize: 14, fontWeight: '700' },
   sub: { fontSize: 11.5, marginTop: 2 },
+  partialNotice: { fontSize: 11.5, fontWeight: '500' },
+  completeBtnText: { fontSize: 12, fontWeight: '700' },
   button: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10, borderWidth: 1 },
   buttonText: { fontSize: 12.5, fontWeight: '700' },
 });

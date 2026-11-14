@@ -23,17 +23,20 @@ public final class CaptureFilter {
       "com.twitter.android", "com.discord", "com.linkedin.android", "com.reddit.frontpage",
       "com.google.android.gm", "com.microsoft.office.outlook"));
 
-  /** An amount: Rs / Rs. / INR / the rupee sign before a number, or a number followed by Rs / INR. */
+  /** An amount: Rs / Rs. / INR / currencies ($, €, £, ₹) before a number, or a number followed by Rs / INR / USD. */
   private static final Pattern AMOUNT = Pattern.compile(
-      "(?:\\brs\\.?|\\binr|\u20B9)\\s*[0-9]|[0-9]\\s*(?:rs\\b|inr\\b)", Pattern.CASE_INSENSITIVE);
+      "(?:\\brs\\.?|\\binr|\\busd|\\beur|\\bgbp|[\u20B9$€£])\\s*[0-9]|[0-9]+\\s*(?:rs\\b|inr\\b|usd\\b|eur\\b|gbp\\b)",
+      Pattern.CASE_INSENSITIVE);
 
-  /** A transaction word. */
+  /** A transaction word used across UPI apps (GPay, PhonePe, Paytm, CRED), banks, and SMS. */
   private static final Pattern TRANSACTION_WORD = Pattern.compile(
-      "debit|credit|spent|paid|\\bupi\\b|a/c|\\bcard\\b|\\btxn\\b", Pattern.CASE_INSENSITIVE);
+      "debit|credit|spent|paid|payment|pay|sent|received|transfer|transferred|autopay|\\bupi\\b|a/c|acct|account|\\bcard\\b|\\btxn\\b|transaction|bill|vpa|remittance",
+      Pattern.CASE_INSENSITIVE);
 
   /** Words that show the money actually moved, as opposed to a code or an offer. */
   private static final Pattern MONEY_MOVED = Pattern.compile(
-      "debited|credited|spent|paid|withdrawn|received", Pattern.CASE_INSENSITIVE);
+      "debited|credited|spent|paid|withdrawn|received|sent|transferred|autopay|successful|completed",
+      Pattern.CASE_INSENSITIVE);
 
   private static final Pattern OTP = Pattern.compile(
       "\\botp\\b|one[- ]time password|verification code", Pattern.CASE_INSENSITIVE);

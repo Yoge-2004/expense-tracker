@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
-import { apiRequest } from '../services/api';
+import { categoryRepository } from '../services/repositories';
+import { Category } from '../types/domain';
 
-export interface Category {
-  id: number;
-  name: string;
-}
+export type { Category } from '../types/domain';
 
 export function useCategories(userId: string | number | null) {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -38,8 +36,8 @@ export function useCategories(userId: string | number | null) {
       }
 
       const [globalRes, userRes] = await Promise.allSettled([
-        apiRequest('/categories/global'),
-        apiRequest(`/categories/user/${userId}`),
+        categoryRepository.getGlobal(),
+        categoryRepository.getByUserId(userId),
       ]);
       const globalCats = globalRes.status === 'fulfilled' ? globalRes.value : null;
       const userCats = userRes.status === 'fulfilled' ? userRes.value : null;

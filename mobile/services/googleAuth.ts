@@ -17,6 +17,21 @@ const GOOGLE_DISCOVERY = {
  * for standalone EAS builds and avoids the deprecated auth.expo.io proxy.
  * Web uses OAuth through expo-auth-session with the web client ID.
  */
+interface GoogleSigninModule {
+  GoogleSignin: {
+    configure: (options: Record<string, unknown>) => void;
+    hasPlayServices: (options?: { showPlayServicesUpdateDialog?: boolean }) => Promise<boolean>;
+    signIn: () => Promise<{ data?: { idToken?: string } } | unknown>;
+  };
+  isSuccessResponse: (response: unknown) => response is { data?: { idToken?: string } };
+  isErrorWithCode: (error: unknown) => boolean;
+  statusCodes: {
+    SIGN_IN_CANCELLED: string | number;
+    IN_PROGRESS: string | number;
+    PLAY_SERVICES_NOT_AVAILABLE: string | number;
+  };
+}
+
 export async function performGoogleSignIn(): Promise<string | null> {
   if (Platform.OS === 'web') {
     return performWebGoogleSignIn();
@@ -60,9 +75,13 @@ export async function performGoogleSignIn(): Promise<string | null> {
     }
 
     return null;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    interface CodedError extends Error {
+      code?: number | string;
+    }
+    const err = error as CodedError;
     if (isErrorWithCode && isErrorWithCode(error)) {
-      const code = error.code;
+      const code = err.code;
 
       if (code === statusCodes?.SIGN_IN_CANCELLED) {
         return null;
@@ -82,14 +101,14 @@ export async function performGoogleSignIn(): Promise<string | null> {
         throw new Error('Google Sign-In is not configured for this Android build. Add the EAS release SHA-1 for com.yoge.expensetracker to the Android OAuth client in Google Cloud, then rebuild the APK.');
       }
 
-      throw new Error(`Google Sign-In failed (${code}): ${error.message || 'Unknown error'}`);
+      throw new Error(`Google Sign-In failed (${code}): ${err.message || 'Unknown error'}`);
     }
 
     throw error;
   }
 }
 
-function getNativeGoogleSigninModule(): any {
+function getNativeGoogleSigninModule(): GoogleSigninModule | null {
   try {
     // Dynamic require keeps Expo Go/web from loading the native TurboModule.
     return require('@react-native-google-signin/google-signin');

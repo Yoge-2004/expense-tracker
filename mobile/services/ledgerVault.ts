@@ -261,8 +261,9 @@ export function applyRestore(
         try {
           await run();
           created++;
-        } catch (e: any) {
-          failures.push({ kind, label, error: String(e?.message ?? e).slice(0, 160) });
+        } catch (e: unknown) {
+          const errMsg = e instanceof Error ? e.message : String(e);
+          failures.push({ kind, label, error: errMsg.slice(0, 160) });
         }
         done++;
         onProgress?.(done, total, kind);

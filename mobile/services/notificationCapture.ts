@@ -6,7 +6,7 @@
  * pipeline as pasted messages. Nothing leaves the device except the expense / income the user's own
  * account records. While the app is closed the service only queues; recording happens at the next open.
  */
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, PermissionsAndroid, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import native from '../modules/notification-capture';
 import { parseFinancialMessage } from './debitParser';
@@ -29,8 +29,44 @@ const SEEN_KEY = 'notifCapture.seen.v1';
 const RETRY_KEY = 'notifCapture.retry.v1';
 const POLL_MS = 20_000;
 
+export function isNotificationAccessGranted(): boolean {
+  if (!native || Platform.OS !== 'android') return false;
+  try {
+    return native.isAccessGranted();
+  } catch {
+    return false;
+  }
+}
+
+export async function hasSmsPermission(): Promise<boolean> {
+  if (Platform.OS !== 'android') return false;
+  try {
+    const hasReceive = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.RECEIVE_SMS);
+    const hasRead = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.READ_SMS);
+    return hasReceive || hasRead;
+  } catch {
+    return false;
+  }
+}
+
+export async function requestSmsPermission(): Promise<boolean> {
+  if (Platform.OS !== 'android') return false;
+  try {
+    const results = await PermissionsAndroid.requestMultiple([
+      PermissionsAndroid.PERMISSIONS.RECEIVE_SMS,
+      PermissionsAndroid.PERMISSIONS.READ_SMS,
+    ]);
+    return (
+      results[PermissionsAndroid.PERMISSIONS.RECEIVE_SMS] === PermissionsAndroid.RESULTS.GRANTED ||
+      results[PermissionsAndroid.PERMISSIONS.READ_SMS] === PermissionsAndroid.RESULTS.GRANTED
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function getCaptureState(): CaptureState {
-  if (!native) return 'unsupported';
+  if (!native || Platform.OS !== 'android') return 'unsupported';
   try {
     if (!native.isAccessGranted()) return 'needs-access';
     return native.isPaused() ? 'paused' : 'active';
@@ -90,7 +126,12 @@ let running = false;
  * A transaction that could not be recorded (offline, server error) is kept and retried later.
  */
 export async function processCapturedNotifications(userId?: string | null): Promise<number> {
-  if (running || !native || getCaptureState() !== 'active') return 0;
+  if (running || !native) return 0;
+  try {
+    if (native.isPaused()) return 0;
+  } catch {
+    return 0;
+  }
   running = true;
   let recorded = 0;
   try {

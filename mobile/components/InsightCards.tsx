@@ -170,8 +170,8 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
             });
 
             if (active && fRes && Array.isArray(fRes.forecast)) {
-              const points = fRes.forecast
-                .map((point: any) => ({
+              const points = (fRes.forecast as Array<{ date?: string; predicted_amount?: number | string }>)
+                .map((point) => ({
                   date: String(point.date || ''),
                   amount: Number(point.predicted_amount),
                 }))
@@ -228,12 +228,23 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
           body: JSON.stringify({ transactions: txs }),
         });
 
+        interface AnomalyCandidate {
+          id?: number | string;
+          is_anomaly?: boolean;
+          anomaly_score?: number;
+          description?: string;
+          amount?: number | string;
+          date?: string;
+          category?: string;
+        }
+
         if (active && aRes && Array.isArray(aRes.results)) {
-          const anoms = aRes.results.filter((r: any) => r.is_anomaly === true);
+          const rawResults = aRes.results as AnomalyCandidate[];
+          const anoms = rawResults.filter((r) => r.is_anomaly === true);
           const sortedAnoms = anoms
-            .sort((a: any, b: any) => (a.anomaly_score || 0) - (b.anomaly_score || 0))
-            .map((a: any) => ({
-              id: a.id,
+            .sort((a, b) => (Number(a.anomaly_score) || 0) - (Number(b.anomaly_score) || 0))
+            .map((a) => ({
+              id: typeof a.id === 'number' ? a.id : typeof a.id === 'string' ? Number.parseInt(a.id, 10) || undefined : undefined,
               desc: a.description || 'Irregular Outflow',
               amount: Number(a.amount) || 0,
               score: Number(a.anomaly_score) || 0,
@@ -447,9 +458,13 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
       : null;
 
     // Recurring Commitment Drag (Autonomy Index)
-    const recurringChitTotal = safeGoals
-      .filter((g: any) => g.isRecurring || (g.recurringAmount != null && Number(g.recurringAmount) > 0))
-      .reduce((s: number, g: any) => s + Math.max(0, Number(g.recurringAmount || 0)), 0);
+    interface GoalRecurringCandidate {
+      isRecurring?: boolean;
+      recurringAmount?: number | string | null;
+    }
+    const recurringChitTotal = (safeGoals as GoalRecurringCandidate[])
+      .filter((g) => g.isRecurring || (g.recurringAmount != null && Number(g.recurringAmount) > 0))
+      .reduce((s: number, g) => s + Math.max(0, Number(g.recurringAmount || 0)), 0);
     const totalCommittedOverhead = recurringTotal + recurringChitTotal;
     const commitmentAutonomyRatio = activeInflow > 0 ? Math.round((totalCommittedOverhead / activeInflow) * 100) : 0;
 

@@ -4,6 +4,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest, ApiError } from '../services/api';
+import { expenseRepository } from '../services/repositories';
+import { ExpenseRequest } from '../types/domain';
 import { notifyTransactionRecorded, parseFinancialMessage, formatNotificationAmount } from '../services/notifications';
 import { parseReceiptText, scanReceiptWithOcr, SAMPLE_RECEIPTS, ParsedReceipt } from '../services/receiptOcr';
 import { AlertButton, AlertType } from '../context/AlertContext';
@@ -500,20 +502,21 @@ export function useExpenseForm({
     }
 
     setErrors({});
+    if (!userId) {
+      showAlert('Error', 'User session missing.');
+      return;
+    }
     setIsSubmitting(true);
 
     try {
       const numAmount = Number.parseFloat(cleanAmount);
 
       if (isEditMode && editId) {
-        await apiRequest(`/expenses/${editId}/user/${userId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            description: cleanDesc,
-            amount: numAmount,
-            categoryId,
-            expenseDate: expenseDate.trim(),
-          }),
+        await expenseRepository.update(editId, userId, {
+          description: cleanDesc,
+          amount: numAmount,
+          categoryId: categoryId || undefined,
+          expenseDate: expenseDate.trim(),
         });
 
         if (aiSuggestion && aiSuggestion.category) {
@@ -565,10 +568,7 @@ export function useExpenseForm({
           }
         }
 
-        const savedExpense = (await apiRequest(`/expenses/user/${userId}`, {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        })) as { id?: number | string } | null;
+        const savedExpense = (await expenseRepository.create(userId, payload as ExpenseRequest)) as { id?: number | string } | null;
 
         if (aiSuggestion && aiSuggestion.category && savedExpense?.id) {
           const selectedCatName = categories.find((cat) => cat.id === categoryId)?.name || "";

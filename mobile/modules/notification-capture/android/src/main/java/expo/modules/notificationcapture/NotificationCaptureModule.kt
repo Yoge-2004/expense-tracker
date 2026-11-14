@@ -26,6 +26,14 @@ class NotificationCaptureModule : Module() {
       enabled.orEmpty().split(":").any { ComponentName.unflattenFromString(it)?.packageName == context.packageName }
     }
 
+    /** True when Android RECEIVE_SMS permission is granted to read debit messages. */
+    Function("hasSmsPermission") {
+      androidx.core.content.ContextCompat.checkSelfPermission(
+        context,
+        android.Manifest.permission.RECEIVE_SMS
+      ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
+
     /**
      * Opens Android's Notification access screen, as close to this app's own switch as the device allows.
      * Returns which screen opened: "detail" (our own switch), "list" (the list, our row highlighted) or "app".

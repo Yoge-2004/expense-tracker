@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
-import { apiRequest, ApiError } from '../services/api';
+import { ApiError } from '../services/api';
+import { budgetRepository } from '../services/repositories';
 import { AlertButton, AlertType } from '../context/AlertContext';
 
 export interface ExistingBudgetItem {
@@ -61,9 +62,9 @@ export function useBudgetForm({
     if (!userId) return;
     try {
       setIsLoadingBudgets(true);
-      const data = await apiRequest(`/expenses/budget/status/user/${userId}`);
+      const data = await budgetRepository.getStatusByUserId(userId);
       if (Array.isArray(data)) {
-        setExistingBudgets(data as ExistingBudgetItem[]);
+        setExistingBudgets(data as unknown as ExistingBudgetItem[]);
       }
     } catch {
       // ignore
@@ -75,10 +76,10 @@ export function useBudgetForm({
   useEffect(() => {
     let active = true;
     if (userId) {
-      apiRequest(`/expenses/budget/status/user/${userId}`)
+      budgetRepository.getStatusByUserId(userId)
         .then((data) => {
           if (active && Array.isArray(data)) {
-            setExistingBudgets(data as ExistingBudgetItem[]);
+            setExistingBudgets(data as unknown as ExistingBudgetItem[]);
           }
         })
         .catch(() => {});
@@ -97,6 +98,7 @@ export function useBudgetForm({
 
   const handleDeleteBudgetFromList = useCallback(
     (b: ExistingBudgetItem) => {
+      if (!userId) return;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       showAlert(
         'Delete Category Budget?',
@@ -109,12 +111,9 @@ export function useBudgetForm({
             onPress: async () => {
               try {
                 if (b.budgetId) {
-                  await apiRequest(`/expenses/budget/${b.budgetId}`, { method: 'DELETE' });
+                  await budgetRepository.deleteById(b.budgetId);
                 } else {
-                  await apiRequest(
-                    `/expenses/budget/user/${userId}/category/${b.categoryId}`,
-                    { method: 'DELETE' }
-                  );
+                  await budgetRepository.deleteByUserAndCategory(userId, b.categoryId);
                 }
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
                 showAlert(
@@ -172,23 +171,15 @@ export function useBudgetForm({
     }
 
     setErrors({});
+    if (!userId || budgetCategoryId == null) return;
     setIsSubmitting(true);
 
     try {
       const numLimit = Number.parseFloat(cleanLimit);
-      const customDays =
-        budgetPeriod === 'CUSTOM'
-          ? Number.parseInt(budgetIntervalDays.trim(), 10) || 30
-          : null;
-      await apiRequest(`/expenses/budget/user/${userId}`, {
-        method: 'POST',
-        body: JSON.stringify({
-          categoryId: budgetCategoryId,
-          limitAmount: numLimit,
-          limit: numLimit,
-          period: budgetPeriod,
-          intervalDays: customDays,
-        }),
+      await budgetRepository.setBudget(userId, {
+        categoryId: budgetCategoryId,
+        amount: numLimit,
+        period: budgetPeriod,
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

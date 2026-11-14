@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
-import { apiRequest, ApiError } from '../services/api';
+import { ApiError } from '../services/api';
+import { savingsGoalRepository } from '../services/repositories';
 import { AlertButton, AlertType } from '../context/AlertContext';
 
 export interface UseSavingsGoalFormOptions {
@@ -103,6 +104,10 @@ export function useSavingsGoalForm({
       return;
     }
 
+    if (!userId) {
+      showAlert('Error', 'User session missing.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const payload = {
@@ -121,19 +126,13 @@ export function useSavingsGoalForm({
       };
 
       if (isEditMode && editId) {
-        await apiRequest(`/savings/goals/${editId}/user/${userId}`, {
-          method: 'PUT',
-          body: JSON.stringify(payload),
-        });
+        await savingsGoalRepository.update(editId, userId, payload);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         showAlert('Goal Updated!', 'Savings milestone updated successfully.', [
           { text: 'View Dashboard', onPress: onSuccess },
         ]);
       } else {
-        await apiRequest(`/savings/goals/user/${userId}`, {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        });
+        await savingsGoalRepository.create(userId, payload);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         showAlert(
           'Goal Configured!',

@@ -116,8 +116,9 @@ export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
         setDownloadProgress(p);
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    } catch (err: any) {
-      setDownloadError(err.message || 'Download failed');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Download failed';
+      setDownloadError(msg);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
     } finally {
       setDownloading(false);

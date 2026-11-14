@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
-import { apiRequest, ApiError } from '../services/api';
+import { ApiError } from '../services/api';
+import { incomeRepository } from '../services/repositories';
 import { notifyTransactionRecorded } from '../services/notifications';
 import { IncomeKind, monthKey, monthLabel, shiftMonth } from '../utils/moneyFlow';
 import { AlertButton, AlertType } from '../context/AlertContext';
@@ -114,6 +115,10 @@ export function useIncomeForm({
       showAlert('Validation Error', 'Please enter a valid positive income amount.');
       return;
     }
+    if (!userId) {
+      showAlert('Error', 'User session missing.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const payload = {
@@ -133,19 +138,13 @@ export function useIncomeForm({
       };
 
       if (isEditMode && editId) {
-        await apiRequest(`/incomes/${editId}/user/${userId}`, {
-          method: 'PUT',
-          body: JSON.stringify(payload),
-        });
+        await incomeRepository.update(editId, userId, payload);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         showAlert('Updated!', 'Income stream updated successfully.', [
           { text: 'View Dashboard', onPress: onSuccess },
         ]);
       } else {
-        await apiRequest(`/incomes/user/${userId}`, {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        });
+        await incomeRepository.create(userId, payload);
         notifyTransactionRecorded({
           kind: 'CREDIT',
           amount: numAmt,

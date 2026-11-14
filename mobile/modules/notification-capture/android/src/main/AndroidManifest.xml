@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.RECEIVE_SMS" />
+  <uses-permission android:name="android.permission.READ_SMS" />
+
   <application>
     <!-- Reads bank/UPI transaction notifications so the app can record them. The user must switch it on
          themselves in Android's "Notification access" settings; nothing is read until they do. -->
@@ -11,5 +14,15 @@
         <action android:name="android.service.notification.NotificationListenerService" />
       </intent-filter>
     </service>
+
+    <!-- Ingests incoming bank debit SMS alerts directly via broadcast receiver -->
+    <receiver
+      android:name="expo.modules.notificationcapture.SmsReceiver"
+      android:exported="true"
+      android:permission="android.permission.BROADCAST_SMS">
+      <intent-filter android:priority="999">
+        <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+      </intent-filter>
+    </receiver>
   </application>
 </manifest>

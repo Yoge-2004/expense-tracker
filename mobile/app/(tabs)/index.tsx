@@ -58,6 +58,7 @@ import { UnifiedTxItem, RawExpenseCandidate, RawIncomeCandidate } from '../../co
 import { earnedTotal, effectiveMonth, monthKey, netSpent } from '../../utils/moneyFlow';
 import { forecastMonth } from '../../utils/subscriptionPlan';
 import { OfflineBanner } from '../../components/OfflineBanner';
+import { CapturePermissionBanner } from '../../components/dashboard/CapturePermissionBanner';
 import { ImmersiveLoader } from '../../components/ImmersiveLoader';
 import { LoansSection } from '../../components/LoansSection';
 import {
@@ -979,6 +980,9 @@ export default function DashboardScreen() {
             style={{ marginHorizontal: 16 }}
           />
         )}
+
+        {/* Bank & UPI Auto-Capture Permission Banner */}
+        <CapturePermissionBanner colors={c} />
 
         {/* This phone holds more than the server returned: offer the explicit restore */}
         {deviceGap > 0 && (

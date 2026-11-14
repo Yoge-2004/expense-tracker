@@ -321,9 +321,14 @@ type EntityRecord = ReconcileExpense | ReconcileIncome | ReconcileGoal | Reconci
 /** Adds to `base` every record of `extra` it does not already contain (used when importing a device-copy file). */
 export function mergeLedgers(base: LedgerData, extra: LedgerData): LedgerData {
   const merged: LedgerData = { ...base };
-  const sigs: Record<string, (t: any) => string> = {
-    expenses: signatures.expense, incomes: signatures.income, savingsGoals: signatures.goal, loans: signatures.loan,
-    budgets: signatures.budget, subscriptions: signatures.subscription, categories: (c: ReconcileCategory) => norm(c?.name),
+  const sigs: Record<string, (t: EntityRecord) => string> = {
+    expenses: signatures.expense as (t: EntityRecord) => string,
+    incomes: signatures.income as (t: EntityRecord) => string,
+    savingsGoals: signatures.goal as (t: EntityRecord) => string,
+    loans: signatures.loan as (t: EntityRecord) => string,
+    budgets: signatures.budget as (t: EntityRecord) => string,
+    subscriptions: signatures.subscription as (t: EntityRecord) => string,
+    categories: (c: EntityRecord) => norm((c as ReconcileCategory)?.name),
   };
   for (const [key, sig] of Object.entries(sigs)) {
     const prop = key as keyof LedgerData;

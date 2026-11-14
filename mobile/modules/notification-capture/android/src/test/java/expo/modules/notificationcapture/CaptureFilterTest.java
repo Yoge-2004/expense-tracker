@@ -20,6 +20,9 @@ public class CaptureFilterTest {
 
   @Test public void keepsRupeeSignUpiPayment() {
     assertTrue(keep("com.google.android.apps.nbu.paisa.user", "Paid \u20B9120 to Chai Point using UPI"));
+    assertTrue(keep("com.phonepe.app", "Money sent: \u20B9500 to Ramesh via UPI"));
+    assertTrue(keep("net.one97.paytm", "Payment of \u20B9250 to FreshMenu successful"));
+    assertTrue(keep("com.google.android.apps.nbu.paisa.user", "AutoPay of \u20B9499 for Netflix debited from A/c XX1234"));
   }
 
   @Test public void keepsCredit() {

@@ -52,10 +52,38 @@ public class TransactionListenerService extends NotificationListenerService {
     if (extras == null) return "";
     StringBuilder sb = new StringBuilder();
     append(sb, extras.getCharSequence(Notification.EXTRA_TITLE));
+    append(sb, extras.getCharSequence(Notification.EXTRA_TITLE_BIG));
     append(sb, extras.getCharSequence(Notification.EXTRA_TEXT));
     CharSequence big = extras.getCharSequence(Notification.EXTRA_BIG_TEXT);
     if (big != null && !big.toString().contentEquals(sb)) append(sb, big);
     append(sb, extras.getCharSequence(Notification.EXTRA_SUB_TEXT));
+    append(sb, extras.getCharSequence(Notification.EXTRA_INFO_TEXT));
+    append(sb, extras.getCharSequence(Notification.EXTRA_SUMMARY_TEXT));
+
+    // InboxStyle lines
+    CharSequence[] lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES);
+    if (lines != null) {
+      for (CharSequence line : lines) {
+        append(sb, line);
+      }
+    }
+
+    // MessagingStyle messages (Google Messages, Samsung Messages, and SMS apps)
+    Object messagesObj = extras.get("android.messages");
+    if (messagesObj instanceof Object[]) {
+      for (Object msg : (Object[]) messagesObj) {
+        if (msg instanceof Bundle) {
+          append(sb, ((Bundle) msg).getCharSequence("text"));
+        }
+      }
+    } else if (messagesObj instanceof java.util.List<?>) {
+      for (Object msg : (java.util.List<?>) messagesObj) {
+        if (msg instanceof Bundle) {
+          append(sb, ((Bundle) msg).getCharSequence("text"));
+        }
+      }
+    }
+
     return sb.toString();
   }
 

@@ -365,8 +365,8 @@ export async function scanReceiptWithOcr(
       body: formData,
       signal: controller.signal,
     });
-  } catch (err: any) {
-    if (err?.name === 'AbortError') {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
       throw new Error('The scan took too long and was stopped. Check your connection and try again.');
     }
     throw new Error("Couldn't reach the server to scan the receipt. Check your connection and try again.");
