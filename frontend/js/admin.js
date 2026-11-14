@@ -1073,70 +1073,73 @@
             if (!data) return;
 
             // Dynamically populate the 5 Production Models from backend fleet
-            if (Array.isArray(data.fleet) && data.fleet.length >= 5) {
-                const m1 = data.fleet[0];
+            const fleetList = Array.isArray(data.fleet) ? data.fleet : (Array.isArray(data.activeFleet) ? data.activeFleet : (Array.isArray(data.models) ? data.models : []));
+            window.ACTIVE_ML_FLEET = fleetList;
+
+            if (fleetList.length >= 5) {
+                const m1 = fleetList[0];
                 if (m1) {
                     const st = document.getElementById("mlModel1_status");
                     if (st) {
-                        st.textContent = m1.status === "ONLINE_ACTIVE" ? "● ONLINE" : "● STANDBY";
-                        st.className = m1.status === "ONLINE_ACTIVE" ? "status-badge badge-success" : "status-badge badge-warning";
+                        st.textContent = m1.status === "ONLINE_ACTIVE" ? "● ONLINE" : "● OFFLINE";
+                        st.className = m1.status === "ONLINE_ACTIVE" ? "status-badge badge-success" : "status-badge badge-secondary";
                     }
                     const activeModelEl = document.getElementById("mlActiveModel");
                     if (activeModelEl) activeModelEl.textContent = m1.modelName || m1.name;
                     const meta1 = document.getElementById("mlModel1_meta");
-                    if (meta1) meta1.textContent = `${m1.accuracy || "99.3%"} · ${m1.version || "v2.5.0"}`;
+                    if (meta1) meta1.textContent = `${m1.accuracy || "Real-time SGD"} · ${m1.version || "v2.5.0"}`;
                 }
 
-                const m2 = data.fleet[1];
+                const m2 = fleetList[1];
                 if (m2) {
                     const st = document.getElementById("mlModel2_status");
                     if (st) {
-                        st.textContent = m2.status === "ONLINE_ACTIVE" ? "● ONLINE" : "● STANDBY";
-                        st.className = m2.status === "ONLINE_ACTIVE" ? "status-badge badge-success" : "status-badge badge-warning";
+                        st.textContent = m2.status === "ONLINE_ACTIVE" ? "● ONLINE" : "● OFFLINE";
+                        st.className = m2.status === "ONLINE_ACTIVE" ? "status-badge badge-success" : "status-badge badge-secondary";
                     }
                     const name2 = document.getElementById("mlModel2_name");
                     if (name2) name2.textContent = m2.modelName || m2.name;
                     const meta2 = document.getElementById("mlModel2_meta");
-                    if (meta2) meta2.textContent = `${m2.accuracy || "98.1%"} · ${m2.version || "v1.4.0"}`;
+                    if (meta2) meta2.textContent = `${m2.accuracy || "N-Gram Matcher"} · ${m2.version || "v1.4.0"}`;
                 }
 
-                const m3 = data.fleet[2];
+                const m3 = fleetList[2];
                 if (m3) {
                     const st = document.getElementById("mlModel3_status");
                     if (st) {
-                        st.textContent = m3.status === "ONLINE_ACTIVE" ? "● ONLINE" : "● STANDBY";
-                        st.className = m3.status === "ONLINE_ACTIVE" ? "status-badge badge-success" : "status-badge badge-warning";
+                        st.textContent = m3.status === "ONLINE_ACTIVE" ? "● ONLINE" : "● OFFLINE";
+                        st.className = m3.status === "ONLINE_ACTIVE" ? "status-badge badge-success" : "status-badge badge-secondary";
                     }
                     const name3 = document.getElementById("mlModel3_name");
                     if (name3) name3.textContent = m3.modelName || m3.name;
                     const meta3 = document.getElementById("mlModel3_meta");
-                    if (meta3) meta3.textContent = `${m3.accuracy || "99.4%"} · ${m3.version || "v2.1.0"}`;
+                    if (meta3) meta3.textContent = `${m3.accuracy || "Cosine Sim"} · ${m3.version || "v2.1.0"}`;
                 }
 
-                const m4 = data.fleet[3];
+                const m4 = fleetList[3];
                 if (m4) {
                     const st = document.getElementById("mlModel4_status");
                     if (st) {
-                        st.textContent = m4.status === "ONLINE_ACTIVE" ? "● ONLINE" : "● STANDBY";
-                        st.className = m4.status === "ONLINE_ACTIVE" ? "status-badge badge-success" : "status-badge badge-warning";
+                        st.textContent = m4.status === "ONLINE_ACTIVE" ? "● ONLINE" : "● OFFLINE";
+                        st.className = m4.status === "ONLINE_ACTIVE" ? "status-badge badge-success" : "status-badge badge-secondary";
                     }
                     const name4 = document.getElementById("mlModel4_name");
                     if (name4) name4.textContent = m4.modelName || m4.name;
                     const meta4 = document.getElementById("mlModel4_meta");
-                    if (meta4) meta4.textContent = `${m4.accuracy || "93.7%"} · ${m4.version || "v1.2.0"}`;
+                    if (meta4) meta4.textContent = `${m4.accuracy || "Dynamic Z-Score"} · ${m4.version || "v1.2.0"}`;
                 }
 
-                const m5 = data.fleet[4];
+                const m5 = fleetList[4];
                 if (m5) {
                     const st = document.getElementById("mlModel5_status");
                     if (st) {
-                        st.textContent = m5.status === "ONLINE_ACTIVE" ? "● ONLINE" : "● STANDBY";
-                        st.className = m5.status === "ONLINE_ACTIVE" ? "status-badge badge-success" : "status-badge badge-warning";
+                        st.textContent = m5.status === "ONLINE_ACTIVE" ? "● ONLINE" : "● OFFLINE";
+                        st.className = m5.status === "ONLINE_ACTIVE" ? "status-badge badge-success" : "status-badge badge-secondary";
                     }
                     const name5 = document.getElementById("mlModel5_name");
                     if (name5) name5.textContent = m5.modelName || m5.name;
                     const meta5 = document.getElementById("mlModel5_meta");
-                    if (meta5) meta5.textContent = `${m5.accuracy || "89.4%"} · ${m5.version || "v1.3.0"}`;
+                    if (meta5) meta5.textContent = `${m5.accuracy || "Holt-Winters"} · ${m5.version || "v1.3.0"}`;
                 }
             }
 
@@ -1520,19 +1523,26 @@
         if (!spec) return;
         activeModelSpecIdx = String(idx);
 
+        const liveModel = window.ACTIVE_ML_FLEET ? window.ACTIVE_ML_FLEET[Number(idx) - 1] : null;
+        const isOnline = liveModel ? liveModel.status === "ONLINE_ACTIVE" : spec.status === "ONLINE";
+        const statusText = isOnline ? "ONLINE" : "STANDBY / OFFLINE";
+        const statusBadgeClass = isOnline ? "badge-success" : "badge-secondary";
+        const accuracyText = (liveModel && liveModel.accuracy) ? liveModel.accuracy : spec.accuracy;
+        const versionText = (liveModel && liveModel.version) ? liveModel.version : spec.version;
+
         const modal = document.getElementById("modelSpecsModal");
         const titleEl = document.getElementById("modelSpecTitle");
         const catEl = document.getElementById("modelSpecCategory");
         const bodyEl = document.getElementById("modelSpecBody");
 
-        if (titleEl) titleEl.textContent = spec.name;
-        if (catEl) catEl.textContent = `${spec.category} • ${spec.version}`;
+        if (titleEl) titleEl.textContent = (liveModel && liveModel.name) ? liveModel.name : spec.name;
+        if (catEl) catEl.textContent = `${spec.category} • ${versionText}`;
 
         if (bodyEl) {
             bodyEl.innerHTML = `
                 <div style="display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
-                    <span class="status-badge badge-success">● ${spec.status}</span>
-                    <span class="status-badge" style="background: rgba(var(--primary-rgb),0.12); color: var(--primary);">${spec.accuracy}</span>
+                    <span class="status-badge ${statusBadgeClass}">● ${statusText}</span>
+                    <span class="status-badge" style="background: rgba(var(--primary-rgb),0.12); color: var(--primary);">${accuracyText}</span>
                     <span class="status-badge" style="background: rgba(59,130,246,0.12); color: #3b82f6;">${spec.latency}</span>
                     <span class="status-badge" style="background: rgba(148,163,184,0.15); color: var(--text-muted);">${spec.memory}</span>
                 </div>
@@ -1995,20 +2005,28 @@
                     const res = await apiRequest("/ml/merchants/match", {
                         method: "POST",
                         body: JSON.stringify({ raw_merchant: raw, query: raw })
-                    }).catch(() => null);
+                    });
 
                     const stage = document.getElementById("merchantOutputStage");
                     if (stage) stage.style.display = "block";
 
-                    const resolved = res?.canonical_merchant || res?.merchant || (raw.toUpperCase().includes("UBER") ? "Uber" : (raw.toUpperCase().includes("AMZN") ? "Amazon" : raw.split(/\s+/)[0]));
-                    const score = res?.confidence ? Math.round(res.confidence * 100) : 98;
-                    const cat = res?.category || (resolved === "Uber" ? "Transportation & Ride-Hailing" : (resolved === "Amazon" ? "Shopping & Retail" : "General Expense"));
+                    const resolved = res?.canonical_merchant || res?.merchant || (res?.matches?.[0]?.merchant) || raw;
+                    const confidenceVal = res?.confidence ?? (res?.matches?.[0]?.similarity);
+                    const score = (confidenceVal != null) ? Math.round(Number(confidenceVal) * 100) : null;
+                    const cat = res?.category || "Spend Entity";
 
                     document.getElementById("merchantResolvedName").textContent = resolved;
-                    document.getElementById("merchantMatchScore").textContent = `${score}% Match Confidence`;
+                    document.getElementById("merchantMatchScore").textContent = (score !== null)
+                        ? `${score}% Match Confidence`
+                        : "Canonical Match Processed";
                     document.getElementById("merchantCleanDetails").textContent = `Canonical Entity: ${resolved} • Associated Category: ${cat}`;
                 } catch (err) {
-                    showToast(err.message || "Merchant match failed", "error");
+                    const stage = document.getElementById("merchantOutputStage");
+                    if (stage) stage.style.display = "block";
+                    document.getElementById("merchantResolvedName").textContent = "Service Offline / Unavailable";
+                    document.getElementById("merchantMatchScore").textContent = "0% Confidence";
+                    document.getElementById("merchantCleanDetails").textContent = `Entity Resolver failed: ${err.message}`;
+                    showToast("Merchant Matcher service is currently unavailable", "error");
                 }
             });
         });
@@ -2029,24 +2047,32 @@
                             candidate_a: { amount: parseFloat(amt1), description: desc1 },
                             candidate_b: { amount: parseFloat(amt2), description: desc2 }
                         })
-                    }).catch(() => null);
+                    });
 
                     const stage = document.getElementById("duplicateOutputStage");
                     if (stage) stage.style.display = "block";
 
-                    const isDup = res?.is_duplicate ?? (Math.abs(parseFloat(amt1) - parseFloat(amt2)) < 0.01 && (desc1.toLowerCase().includes(desc2.toLowerCase().slice(0, 5)) || desc2.toLowerCase().includes(desc1.toLowerCase().slice(0, 5))));
-                    const score = res?.similarity ? Math.round(res.similarity * 100) : (isDup ? 96 : 38);
+                    const isDup = Boolean(res?.is_duplicate);
+                    const simVal = res?.similarity != null ? Number(res.similarity) : 0;
+                    const score = Math.round(simVal * 100);
 
                     const badge = document.getElementById("duplicateResultBadge");
                     badge.textContent = isDup ? "● Likely Duplicate Transaction" : "● Distinct Transaction";
                     badge.className = isDup ? "admin-adm-34 text-warning" : "admin-adm-34 text-success";
 
-                    document.getElementById("duplicateScore").textContent = `${score}% Similarity`;
+                    document.getElementById("duplicateScore").textContent = `${score}% Vector Similarity`;
                     document.getElementById("duplicateExplanation").textContent = isDup
-                        ? "Identical amounts with high cosine semantic token overlap exceeding 0.70 threshold."
-                        : "Transactions show distinct amount or orthogonal semantic vector signatures.";
+                        ? `Vector cosine similarity of ${score}% exceeds the duplicate threshold (70%).`
+                        : `Vector cosine similarity of ${score}% indicates distinct transaction signatures.`;
                 } catch (err) {
-                    showToast(err.message || "Duplicate check failed", "error");
+                    const stage = document.getElementById("duplicateOutputStage");
+                    if (stage) stage.style.display = "block";
+                    const badge = document.getElementById("duplicateResultBadge");
+                    badge.textContent = "● Check Failed";
+                    badge.className = "admin-adm-34 text-danger";
+                    document.getElementById("duplicateScore").textContent = "N/A";
+                    document.getElementById("duplicateExplanation").textContent = `Duplicate check unavailable: ${err.message}`;
+                    showToast("Duplicate Detection engine is unreachable", "error");
                 }
             });
         });
@@ -2062,14 +2088,14 @@
                     const res = await apiRequest("/ml/anomalies/score", {
                         method: "POST",
                         body: JSON.stringify({ amount: amt, category: cat })
-                    }).catch(() => null);
+                    });
 
                     const stage = document.getElementById("anomalyOutputStage");
                     if (stage) stage.style.display = "block";
 
-                    const isAnom = res?.is_anomaly ?? (amt > 25000);
-                    const zScore = res?.z_score ? res.z_score.toFixed(1) : (isAnom ? "+4.6" : "+0.8");
-                    const score = res?.anomaly_score ? res.anomaly_score.toFixed(2) : (isAnom ? "0.93" : "0.12");
+                    const isAnom = Boolean(res?.is_anomaly);
+                    const zScore = res?.z_score != null ? Number(res.z_score).toFixed(1) : "0.0";
+                    const score = res?.anomaly_score != null ? Number(res.anomaly_score).toFixed(2) : "0.00";
 
                     const badge = document.getElementById("anomalyTierBadge");
                     badge.textContent = isAnom ? "● Outlier Anomaly Detected" : "● Normal Transaction Range";
@@ -2077,10 +2103,17 @@
 
                     document.getElementById("anomalyScoreVal").textContent = `Z-Score: ${zScore}σ (${score})`;
                     document.getElementById("anomalyDetails").textContent = isAnom
-                        ? `Amount ${formatCurrency(amt)} significantly exceeds category '${cat}' historical 3.5x standard deviation.`
-                        : `Amount ${formatCurrency(amt)} is within the expected spending distribution for '${cat}'.`;
+                        ? `Amount ${formatCurrency(amt)} exceeds category '${cat}' historical statistical threshold.`
+                        : `Amount ${formatCurrency(amt)} is within normal expected spending distribution for '${cat}'.`;
                 } catch (err) {
-                    showToast(err.message || "Anomaly check failed", "error");
+                    const stage = document.getElementById("anomalyOutputStage");
+                    if (stage) stage.style.display = "block";
+                    const badge = document.getElementById("anomalyTierBadge");
+                    badge.textContent = "● Outlier Engine Offline";
+                    badge.className = "admin-adm-34 text-danger";
+                    document.getElementById("anomalyScoreVal").textContent = "N/A";
+                    document.getElementById("anomalyDetails").textContent = `Statistical scoring unavailable: ${err.message}`;
+                    showToast("Anomaly Scorer is currently unreachable", "error");
                 }
             });
         });
@@ -2096,19 +2129,24 @@
                     const res = await apiRequest("/ml/forecast/spending", {
                         method: "POST",
                         body: JSON.stringify({ horizon_days: days, historical_base: base })
-                    }).catch(() => null);
+                    });
 
                     const stage = document.getElementById("forecastOutputStage");
                     if (stage) stage.style.display = "block";
 
-                    const projected = res?.projected_total ?? Math.round(base * (days / 30) * 1.05);
-                    const trend = res?.trend ?? "+5.0% Upward Drift";
+                    const projected = Number(res?.projected_total || (base * (days / 30)));
+                    const trend = res?.trend || "Neutral Trajectory";
 
                     document.getElementById("forecastProjectedTotal").textContent = `${formatCurrency(projected)} Projected (${days}d)`;
                     document.getElementById("forecastTrendDir").textContent = `Trend: ${trend}`;
-                    document.getElementById("forecastConfidence").textContent = `Holt-Winters multiplicative forecast with 95% confidence interval [${formatCurrency(projected * 0.92)} – ${formatCurrency(projected * 1.08)}].`;
+                    document.getElementById("forecastConfidence").textContent = `Holt-Winters time-series forecast generated across ${days} forward days.`;
                 } catch (err) {
-                    showToast(err.message || "Forecast failed", "error");
+                    const stage = document.getElementById("forecastOutputStage");
+                    if (stage) stage.style.display = "block";
+                    document.getElementById("forecastProjectedTotal").textContent = "Forecast Unavailable";
+                    document.getElementById("forecastTrendDir").textContent = "N/A";
+                    document.getElementById("forecastConfidence").textContent = `Predictive engine is offline: ${err.message}`;
+                    showToast("Spending Forecaster is currently unreachable", "error");
                 }
             });
         });
@@ -2298,8 +2336,8 @@
 
         // Audit CSV Export
         document.getElementById("exportAuditCsvBtn")?.addEventListener("click", () => {
-            const token = localStorage.getItem("token");
-            const url = `${window.API_BASE_URL || "http://localhost:8080/api"}/admin/audit-logs/export`;
+            const apiBase = window.API_BASE_URL || (typeof window !== "undefined" && window.location.protocol !== "file:" ? `${window.location.origin}/api` : "http://localhost:8080/api");
+            const url = `${apiBase}/admin/audit-logs/export`;
 
             fetch(url, {
                 headers: { "Authorization": `Bearer ${token}` }

@@ -1,7 +1,10 @@
-// Automatically detect local development or the deployed API.
-const API_BASE_URL = (["localhost", "127.0.0.1", ""].includes(window.location.hostname) || window.location.protocol === "file:")
-    ? "http://localhost:8080/api"
-    : "https://yoge-2004-expense-tracker-backend.hf.space/api";
+// Dynamically resolve API URL: origin-relative when served over HTTP/HTTPS,
+// supports explicit localStorage configuration, with safe file:// protocol fallback.
+const API_BASE_URL = (typeof window !== "undefined" && window.API_BASE_URL)
+    || (typeof localStorage !== "undefined" && localStorage.getItem("expense_api_url"))
+    || (typeof window !== "undefined" && window.location.protocol !== "file:"
+        ? `${window.location.origin}/api`
+        : "http://localhost:8080/api");
 if (typeof window !== "undefined") {
     window.API_BASE_URL = API_BASE_URL;
 }

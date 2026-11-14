@@ -33,9 +33,9 @@
         if (typeof window !== "undefined" && window.API_BASE_URL) {
             return window.API_BASE_URL;
         }
-        return (["localhost", "127.0.0.1", ""].includes(window.location.hostname) || window.location.protocol === "file:")
-            ? "http://localhost:8080/api"
-            : "https://yoge-2004-expense-tracker-backend.hf.space/api";
+        return (typeof window !== "undefined" && window.location.protocol !== "file:")
+            ? `${window.location.origin}/api`
+            : "http://localhost:8080/api";
     }
 
     function getAuthHeaders() {

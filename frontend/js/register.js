@@ -415,9 +415,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     `${randomAdj}_${prefix}`
                 ];
 
-                try {
-                    const apiUrl = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:8080';
-                    const res = await fetch(`${apiUrl}/api/users/suggest-usernames?base=${encodeURIComponent(prefix)}`);
+                    const apiUrl = (typeof window !== 'undefined' && window.API_BASE_URL)
+                        ? window.API_BASE_URL
+                        : (typeof window !== 'undefined' && window.location.protocol !== 'file:' ? `${window.location.origin}/api` : 'http://localhost:8080/api');
+                    const res = await fetch(`${apiUrl}/users/suggest-usernames?base=${encodeURIComponent(prefix)}`);
                     if (res.ok) {
                         const data = await res.json();
                         if (data.suggestions && data.suggestions.length >= 3) {

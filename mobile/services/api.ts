@@ -14,6 +14,39 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const REMOTE_API_URL = 'https://yoge-2004-expense-tracker-backend.hf.space/api';
+const CUSTOM_SERVER_KEY = 'custom_server_base_url';
+
+let memoryCustomServerUrl: string | null = null;
+
+export async function getCustomServerUrl(): Promise<string | null> {
+  if (memoryCustomServerUrl !== null) return memoryCustomServerUrl;
+  try {
+    memoryCustomServerUrl = await AsyncStorage.getItem(CUSTOM_SERVER_KEY);
+    return memoryCustomServerUrl;
+  } catch {
+    return null;
+  }
+}
+
+export async function setCustomServerUrl(url: string | null): Promise<void> {
+  const sanitized = url ? url.trim().replace(/\/+$/, '') : null;
+  memoryCustomServerUrl = sanitized;
+  try {
+    if (sanitized) {
+      await AsyncStorage.setItem(CUSTOM_SERVER_KEY, sanitized);
+    } else {
+      await AsyncStorage.removeItem(CUSTOM_SERVER_KEY);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+export function getEffectiveApiBaseUrl(): string {
+  if (memoryCustomServerUrl) return memoryCustomServerUrl;
+  return process.env.EXPO_PUBLIC_API_URL || REMOTE_API_URL;
+}
+
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || REMOTE_API_URL;
 
 /**
@@ -25,7 +58,7 @@ export function resolveAvatarUrl(url?: string | null): string | null {
   const clean = url.trim();
   if (!clean) return null;
   if (clean.startsWith("http://") || clean.startsWith("https://") || clean.startsWith("data:")) return clean;
-  const base = API_BASE_URL.replace(/\/api\/?$/, "");
+  const base = getEffectiveApiBaseUrl().replace(/\/api\/?$/, "");
   const path = clean.startsWith("/") ? clean : "/" + clean;
   return `${base}${path}`;
 }
@@ -390,8 +423,9 @@ export async function apiRequest<T = any>(
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   let response: Response;
+  const effectiveBaseUrl = getEffectiveApiBaseUrl();
   try {
-    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    response = await fetch(`${effectiveBaseUrl}${endpoint}`, {
       ...options,
       signal: controller.signal,
       headers,
@@ -411,7 +445,7 @@ export async function apiRequest<T = any>(
     }
 
     const devMessage = __DEV__
-      ? `Cannot reach backend at ${API_BASE_URL}. Ensure server is running.`
+      ? `Cannot reach backend at ${effectiveBaseUrl}. Ensure server is running.`
       : 'Unable to connect to server. Please check your internet connection.';
 
     throw new ApiError({
@@ -480,7 +514,7 @@ export async function checkServerHealth(): Promise<boolean> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
-    const res = await fetch(`${API_BASE_URL}/health`, {
+    const res = await fetch(`${getEffectiveApiBaseUrl()}/health`, {
       method: "GET",
       headers: { Accept: "application/json" },
       signal: controller.signal,
@@ -514,7 +548,7 @@ export async function fetchSystemArchitecture(): Promise<SystemArchitectureSpec>
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(`${API_BASE_URL}/health/architecture`, {
+    const res = await fetch(`${getEffectiveApiBaseUrl()}/health/architecture`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
       signal: controller.signal,

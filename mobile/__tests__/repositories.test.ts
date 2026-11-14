@@ -9,6 +9,7 @@ import {
   categoryRepository,
   budgetRepository,
   savingsGoalRepository,
+  mlRepository,
 } from '../services/repositories';
 import { apiRequest } from '../services/api';
 
@@ -146,4 +147,58 @@ describe('Domain Repositories (DIP)', () => {
       expect(updated.currentAmount).toBe(25000);
     });
   });
+
+  describe('mlRepository', () => {
+    it('fetches live ML health status', async () => {
+      const mockHealth = {
+        status: 'healthy',
+        active_model: 'DualGram_SGD',
+        model_revision: 'v2.5.0',
+        auxiliary_models: {
+          merchant_matcher: { status: 'ready', metrics: { accuracy: 0.981 } },
+        },
+      };
+      mockApiRequest.mockResolvedValueOnce(mockHealth);
+
+      const result = await mlRepository.getHealth();
+      expect(mockApiRequest).toHaveBeenCalledWith('/ml/health');
+      expect(result.status).toBe('healthy');
+      expect(result.auxiliary_models?.merchant_matcher?.status).toBe('ready');
+    });
+
+    it('falls back gracefully to offline state when health check throws', async () => {
+      mockApiRequest.mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await mlRepository.getHealth();
+      expect(result.status).toBe('offline');
+      expect(result.active_model).toContain('Offline');
+    });
+
+    it('classifies expense description', async () => {
+      const mockResp = {
+        predictions: [{ category: 'Food & Dining', confidence: 0.92 }],
+      };
+      mockApiRequest.mockResolvedValueOnce(mockResp);
+
+      const result = await mlRepository.classify('Starbucks Latte', 3);
+      expect(mockApiRequest).toHaveBeenCalledWith('/ml/classify', {
+        method: 'POST',
+        body: JSON.stringify({ description: 'Starbucks Latte', top_n: 3 }),
+      });
+      expect(result.predictions[0].category).toBe('Food & Dining');
+    });
+
+    it('matches merchant string to canonical brand', async () => {
+      const mockResp = { canonical_merchant: 'Uber', confidence: 0.97 };
+      mockApiRequest.mockResolvedValueOnce(mockResp);
+
+      const result = await mlRepository.matchMerchant('UBER *TRIP 123');
+      expect(mockApiRequest).toHaveBeenCalledWith('/ml/merchants/match', {
+        method: 'POST',
+        body: JSON.stringify({ raw_merchant: 'UBER *TRIP 123', top_k: 5 }),
+      });
+      expect(result.canonical_merchant).toBe('Uber');
+    });
+  });
 });
+
