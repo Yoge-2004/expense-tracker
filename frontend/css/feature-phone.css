@@ -1,0 +1,542 @@
+/* ==========================================================================
+   FEATURE PHONE & BUTTON MOBILE DESIGN LAYER
+   Optimized for KaiOS, JioPhone, Nokia 8110/2720, Symbian, Opera Mini,
+   and ultra-compact viewports (240x320 QVGA, 320x240, down to 200px width).
+   Features:
+   - 0-Horizontal-Overflow strict guarantee (fits 240px wide without clipping).
+   - Single-column responsive layout collapsing for multi-column grids and tabs.
+   - Elimination of heavy GPU blur orbs and memory-intensive canvas animations.
+   - Physical D-Pad / directional arrow high-contrast focus rings.
+   - Contextual bottom Softkey Bar (LSK / Center OK / RSK) for feature phone navigation.
+   ========================================================================== */
+
+/* ── Always-active safeguards for small viewports (<= 360px) and KaiOS/Feature devices ── */
+@media (max-width: 360px), (max-height: 360px) {
+  :root {
+    --fp-font-base: 12px;
+    --fp-font-sm: 10px;
+    --fp-radius: 6px;
+    --fp-spacing: 6px;
+  }
+
+  html {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    font-size: var(--fp-font-base) !important;
+  }
+
+  body {
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+  }
+
+  /* 1. Strip heavy GPU background elements, cursors, and floating widgets causing horizontal bleed */
+  .hero-orb,
+  .hero-orb-1,
+  .hero-orb-2,
+  .hero-orb-3,
+  .hero-bg,
+  .mesh-gradient,
+  .decorative-canvas,
+  .floating-calc-fx-convert-btn,
+  .floating-calc-widget,
+  .executive-reticle,
+  .executive-cursor,
+  .studio-dock,
+  .admin-nav-scroll-btn {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: static !important;
+  }
+
+  .immersive-loader-card {
+    min-width: 0 !important;
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    padding: 12px 14px !important;
+    border-radius: var(--fp-radius) !important;
+    box-sizing: border-box !important;
+    margin: 8px auto !important;
+  }
+
+  .subs-tabs-wrap,
+  .subs-tabs-bar,
+  .subs-tabs-nav {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    gap: 4px !important;
+  }
+
+  .subs-tab-btn {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 4px 6px !important;
+    font-size: var(--fp-font-sm) !important;
+    white-space: normal !important;
+  }
+
+  .custom-select-wrapper,
+  .loan-select-input,
+  .custom-select-native,
+  .custom-select-trigger,
+  .loan-form-select {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 2. Container & Page Layout */
+  .dashboard-container,
+  .admin-container,
+  .admin-main,
+  .auth-card,
+  .auth-wrapper,
+  .auth-container,
+  .auth-page-container,
+  .main-content {
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    padding: var(--fp-spacing) !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .auth-card {
+    border-radius: var(--fp-radius) !important;
+    padding: 10px 8px !important;
+    box-shadow: none !important;
+  }
+
+  .auth-top-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 6px !important;
+  }
+
+  .hero-brand {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .auth-top-bar,
+  .auth-top-actions-right,
+  .hero-back-link {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    justify-content: flex-start !important;
+  }
+
+  .filter-toolbar:not(.active) {
+    display: none !important;
+    max-height: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* 3. Collapse all CSS Grids into 1-Column Stacks */
+  .powerbi-grid,
+  .insights-cards-grid,
+  .savings-grid-matrix,
+  .insights-metric-triplet,
+  .admin-grid,
+  .admin-summary-grid,
+  .stats-row,
+  .stat-grid,
+  .filter-grid,
+  .form-row,
+  .kpi-row,
+  .row-2col,
+  .row-3col,
+  .grid-4-metrics,
+  .grid-analytics {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    gap: 8px !important;
+  }
+
+  .grid-analytics > *,
+  .grid-4-metrics > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 4. Cards and Metric Panels */
+  .card,
+  .stat-card,
+  .metric-card,
+  .insight-card,
+  .trend-card,
+  .powerbi-card,
+  .admin-card,
+  .insights-intelligence-panel,
+  .transactions-section,
+  .budget-section,
+  .savings-section,
+  .unified-ledger-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 8px !important;
+    border-radius: var(--fp-radius) !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+    box-sizing: border-box !important;
+  }
+
+  .card-header,
+  .section-header,
+  .panel-header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .card-header-actions,
+  .section-actions {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+
+  /* 5. Top Bar & Action Headers */
+  .top-bar,
+  .admin-topbar-root {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 4px 6px !important;
+    gap: 6px !important;
+    box-sizing: border-box !important;
+  }
+
+  .brand-badge,
+  .dashboard-heading,
+  .admin-brand-badge {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .brand-title,
+  .admin-brand-title {
+    font-size: 14px !important;
+    letter-spacing: -0.02em !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .top-bar-actions,
+  .admin-top-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 4px !important;
+    justify-content: flex-start !important;
+  }
+
+  /* 6. Tabs, Pill Bars & Segment Controls (Strict Wrapping) */
+  .stream-pills-wrap,
+  .bi-slicers-bar,
+  .loan-tab-bar,
+  .admin-nav-pills,
+  .filter-pills,
+  .tab-group,
+  .admin-stream-tabs-wrapper {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    gap: 4px !important;
+    overflow-x: hidden !important;
+    margin: 0 0 8px 0 !important;
+    padding: 2px !important;
+    box-sizing: border-box !important;
+  }
+
+  .admin-nav-stream,
+  .ledger-stream-tabs {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: visible !important;
+    gap: 4px !important;
+    box-sizing: border-box !important;
+  }
+
+  .stream-pill-btn,
+  .bi-slicer-pill,
+  .loan-tab-btn,
+  .admin-nav-item,
+  .filter-pill,
+  .tab-item,
+  .studio-tab-btn {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 4px 6px !important;
+    font-size: var(--fp-font-sm) !important;
+    height: auto !important;
+    min-height: 28px !important;
+    text-align: center !important;
+    justify-content: center !important;
+    white-space: normal !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 7. Filter Toolbar & Inputs */
+  .filter-toolbar {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 8px !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .filter-date-group,
+  .date-input-wrap,
+  .filter-quick-presets {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    gap: 4px !important;
+    box-sizing: border-box !important;
+  }
+
+  .date-input-wrap {
+    flex: 1 1 100% !important;
+  }
+
+  .date-input-wrap input,
+  .filter-date-group input,
+  .filter-select {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    font-size: 11px !important;
+    box-sizing: border-box !important;
+  }
+
+  .preset-btn {
+    flex: 1 1 45% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 8. Buttons & Form Controls */
+  input,
+  select,
+  textarea,
+  button,
+  .btn-primary,
+  .btn-secondary,
+  .btn-icon,
+  .header-action-btn,
+  .theme-toggle-btn {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    font-size: 12.5px !important;
+    box-sizing: border-box !important;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .submit-btn,
+  .action-btn {
+    width: 100% !important;
+    min-height: 34px !important;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* 9. Fullscreen Accessible Modals on Micro Viewports */
+  .modal-overlay:not(.active),
+  .modal:not(.active),
+  .modal:not(.show):not(.active) {
+    display: none !important;
+  }
+
+  .modal,
+  .modal-dialog,
+  .accessible-dialog-card,
+  .modal-content {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: 100vh !important;
+    top: 0 !important;
+    left: 0 !important;
+    margin: 0 !important;
+    padding: 8px !important;
+    border-radius: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important;
+  }
+
+  .modal-overlay,
+  .accessible-dialog-overlay {
+    padding: 0 !important;
+    align-items: flex-start !important;
+  }
+
+  /* 10. Tables: Smooth Scroll without Document Overflow */
+  .table-responsive,
+  .data-table-wrapper,
+  .transactions-table-wrap,
+  .admin-table-container,
+  .admin-table-scroll-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  table {
+    min-width: 100% !important;
+    width: 100% !important;
+  }
+
+  th, td {
+    padding: 4px 6px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+}
+
+/* ── Physical D-Pad / Directional Button Navigation Focus Highlighting ── */
+:focus,
+:focus-visible,
+.fp-focused {
+  outline: 2px solid #F59E0B !important;
+  outline-offset: 1px !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.45) !important;
+  background-color: rgba(245, 158, 11, 0.08) !important;
+  transition: outline 0.1s ease, box-shadow 0.1s ease;
+}
+
+/* ── Native-Style Feature Phone Softkey Bar ── */
+.feature-phone-softkeys {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 28px;
+  background: #11140e;
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px;
+  z-index: 999999;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #ECE7D8;
+  box-sizing: border-box;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.fp-lsk,
+.fp-rsk {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #A8A395;
+  cursor: pointer;
+  max-width: 32%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fp-csk {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #F59E0B;
+  font-weight: 800;
+  cursor: pointer;
+  max-width: 36%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.has-softkey-bar {
+  padding-bottom: 32px !important;
+}
+
+@media (min-width: 480px) and (hover: hover) and (pointer: fine) {
+  /* On large desktop pointer screens, hide softkey bar unless forced by query or small window */
+  .feature-phone-softkeys.fp-auto-hidden {
+    display: none !important;
+  }
+}

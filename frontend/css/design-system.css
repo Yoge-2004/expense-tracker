@@ -2,6 +2,8 @@
    Design System & Accessibility Layer (WCAG 2.1 AA, Fitts's Law, Nielsen Heuristics)
    ========================================================================== */
 
+@import url("feature-phone.css");
+
 /* 1. Screen Reader Only Utility (WCAG 2.1 AA Non-visual accessibility) */
 .sr-only {
   position: absolute !important;
