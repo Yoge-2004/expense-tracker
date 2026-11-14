@@ -11,6 +11,8 @@ LONG = re.compile(r"\b[A-Za-z0-9_\-]{28,}\b")
 IPV4 = re.compile(r"\b\d{1,3}(?:\.\d{1,3}){3}\b")
 KEYVAL = re.compile(r"Key \([^)]*\)=\([^)]*\)")
 URLQ = re.compile(r"(https?://[^\s?]+)\?[^\s]*")
+HOST = re.compile(r"[\w.-]+\.(?:neon\.tech|hf\.space|huggingface\.co|netlify\.app)")
+JDBC = re.compile(r"jdbc:[^\s,;]+")
 UUID = re.compile(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b")
 
 def clean(text, limit=230):
@@ -19,6 +21,8 @@ def clean(text, limit=230):
     text = BEARER.sub("Bearer [x]", text)
     text = KEYVAL.sub("Key [x]", text)
     text = URLQ.sub(r"\1?[q]", text)
+    text = JDBC.sub("jdbc:[redacted]", text)
+    text = HOST.sub("[host]", text)
     text = UUID.sub("[uuid]", text)
     text = IPV4.sub("[ip]", text)
     text = LONG.sub("[long]", text)
@@ -132,3 +136,7 @@ for l in lines:
     if m:
         warn[m.group(1) + " " + re.sub(r"\d+", "N", clean(re.sub(r"^.*?\b(WARN|ERROR)\b\s*(?:\d+\s*---)?\s*", "", l), 200))] += 1
 notice("hf-logs 7 warn and error lines", "\n".join(f"{n:>4} x {k}" for k, n in warn.most_common(14)) or "none")
+
+tail = [clean(re.sub(r"^\d{4}-\d\d-\d\dT[\d:.]+(?:Z|[+-]\d\d:?\d\d)?\s*", "", l), 175) for l in lines if l.strip()]
+notice("hf-logs 8 first startup lines", "\n".join(tail[:22]))
+notice("hf-logs 9 latest lines", "\n".join(tail[-18:]))

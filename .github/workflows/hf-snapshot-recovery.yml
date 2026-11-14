@@ -43,7 +43,7 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_RECOVERY_TOKEN }}
         run: |
-          curl -sS -N --max-time 780 \
+          curl -sS -N --max-time 75 \
             -H "Authorization: Bearer $HF_TOKEN" \
             "https://huggingface.co/api/spaces/Yoge-2004/expense-tracker-backend/logs/run" > raw.sse 2> curl.err || true
           echo "bytes: $(wc -c < raw.sse)"; head -c 300 curl.err | sed 's/Bearer [^ ]*/Bearer [x]/'
