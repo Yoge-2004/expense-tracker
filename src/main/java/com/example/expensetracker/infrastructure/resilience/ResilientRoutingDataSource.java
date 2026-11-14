@@ -180,9 +180,7 @@ public class ResilientRoutingDataSource implements DataSource {
             mode.set(Mode.PRIMARY);
             return;
         }
-        Thread worker = new Thread(() -> runRecovery(handler), "fallback-recovery");
-        worker.setDaemon(true);
-        worker.start();
+        Thread.ofVirtual().name("fallback-recovery").start(() -> runRecovery(handler));
     }
 
     private void runRecovery(RecoveryHandler handler) {

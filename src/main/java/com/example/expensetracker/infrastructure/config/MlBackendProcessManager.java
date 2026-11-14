@@ -68,8 +68,8 @@ public class MlBackendProcessManager implements SmartLifecycle {
 
             mlProcess = pb.start();
 
-            // Pipe output in background daemon thread
-            Thread logDrainer = new Thread(() -> {
+            // Pipe output in background virtual thread
+            Thread.ofVirtual().name("ml-log-drainer").start(() -> {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(mlProcess.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
@@ -77,9 +77,7 @@ public class MlBackendProcessManager implements SmartLifecycle {
                     }
                 } catch (Exception ignored) {
                 }
-            }, "ml-log-drainer");
-            logDrainer.setDaemon(true);
-            logDrainer.start();
+            });
 
             // Wait up to 10 seconds for ML service to become healthy
             boolean healthy = waitForHealthCheck(10_000);
