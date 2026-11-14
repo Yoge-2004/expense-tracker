@@ -415,6 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     `${randomAdj}_${prefix}`
                 ];
 
+                try {
                     const apiUrl = (typeof window !== 'undefined' && window.API_BASE_URL)
                         ? window.API_BASE_URL
                         : (typeof window !== 'undefined' && window.location.protocol !== 'file:' ? `${window.location.origin}/api` : 'http://localhost:8080/api');

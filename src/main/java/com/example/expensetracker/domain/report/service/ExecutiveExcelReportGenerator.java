@@ -30,7 +30,30 @@ import com.example.expensetracker.domain.income.model.Income;
  */
 @Slf4j
 @Component
-public class ExecutiveExcelReportGenerator {
+public class ExecutiveExcelReportGenerator implements ReportExportStrategy {
+
+    private static final org.springframework.http.MediaType XLSX =
+            org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+    @Override
+    public String format() {
+        return "excel";
+    }
+
+    @Override
+    public org.springframework.http.MediaType mediaType() {
+        return XLSX;
+    }
+
+    @Override
+    public String filename(ExecutiveReportDateRange range) {
+        return "ExpenseTracker_Executive_Dashboard.xlsx";
+    }
+
+    @Override
+    public byte[] generate(ExecutiveReportData data, ExecutiveReportDateRange range, String currency, String userName) {
+        return generate(data, range, currency);
+    }
 
     public byte[] generate(ExecutiveReportData d, ExecutiveReportDateRange range, String currency) {
         String symbol = symbol(currency);

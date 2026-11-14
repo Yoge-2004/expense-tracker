@@ -39,8 +39,24 @@ import com.example.expensetracker.domain.income.model.Income;
  */
 @Slf4j
 @Component
-public class ExecutivePdfReportGenerator {
+public class ExecutivePdfReportGenerator implements ReportExportStrategy {
 
+    @Override
+    public String format() {
+        return "pdf";
+    }
+
+    @Override
+    public org.springframework.http.MediaType mediaType() {
+        return org.springframework.http.MediaType.APPLICATION_PDF;
+    }
+
+    @Override
+    public String filename(ExecutiveReportDateRange range) {
+        return "ExpenseTracker_Executive_Statement.pdf";
+    }
+
+    @Override
     public byte[] generate(ExecutiveReportData d, ExecutiveReportDateRange range, String currency, String name) {
         String cleanCurr = cleanCurrency(currency);
         String s = symbol(cleanCurr);

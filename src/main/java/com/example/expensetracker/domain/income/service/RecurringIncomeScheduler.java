@@ -100,17 +100,8 @@ public class RecurringIncomeScheduler {
     }
 
     private LocalDate nextOccurrence(Income rec) {
-        String freq = rec.getFrequency();
-        if (freq == null || freq.isBlank()) freq = "MONTHLY";
-        return switch (freq.toUpperCase()) {
-            case "DAILY"   -> rec.getNextDueDate().plusDays(1);
-            case "WEEKLY"  -> rec.getNextDueDate().plusWeeks(1);
-            case "YEARLY"  -> rec.getNextDueDate().plusYears(1);
-            case "CUSTOM"  -> {
-                int days = rec.getIntervalDays() != null && rec.getIntervalDays() > 0 ? rec.getIntervalDays() : 30;
-                yield rec.getNextDueDate().plusDays(days);
-            }
-            default        -> rec.getNextDueDate().plusMonths(1);
-        };
+        return com.example.expensetracker.common.RecurrenceFrequency
+                .fromString(rec.getFrequency())
+                .nextOccurrence(rec.getNextDueDate(), rec.getIntervalDays());
     }
 }

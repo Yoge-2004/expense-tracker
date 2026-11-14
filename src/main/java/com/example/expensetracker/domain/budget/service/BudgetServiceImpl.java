@@ -117,45 +117,14 @@ public class BudgetServiceImpl implements BudgetService {
         Map<DateRange, List<Income>> incomeCache = new HashMap<>();
 
         List<BudgetStatusDto> statusList = budgets.stream().map(b -> {
-            LocalDate start;
-            LocalDate end;
-            String period = b.getPeriod() != null ? b.getPeriod() : "MONTHLY";
-
-            switch (period.toUpperCase(Locale.ROOT)) {
-                case "WEEKLY" -> {
-                    start = now.with(java.time.DayOfWeek.MONDAY);
-                    end = now.with(java.time.DayOfWeek.SUNDAY);
-                }
-                case "YEARLY" -> {
-                    start = now.withDayOfYear(1);
-                    end = now.withDayOfYear(now.lengthOfYear());
-                }
-                case "CUSTOM" -> {
-                    if (b.getStartDate() != null && b.getEndDate() != null) {
-                        start = b.getStartDate();
-                        end = b.getEndDate();
-                    } else if (b.getStartDate() != null && b.getIntervalDays() != null && b.getIntervalDays() > 0) {
-                        start = b.getStartDate();
-                        end = b.getStartDate().plusDays(b.getIntervalDays());
-                    } else if (b.getIntervalDays() != null && b.getIntervalDays() > 0) {
-                        start = now;
-                        end = now.plusDays(b.getIntervalDays());
-                    } else {
-                        start = b.getStartDate() != null ? b.getStartDate() : now.withDayOfMonth(1);
-                        end = b.getEndDate() != null ? b.getEndDate() : now;
-                    }
-                }
-                default -> { // MONTHLY
-                    start = now.withDayOfMonth(1);
-                    end = now.plusMonths(1).withDayOfMonth(1).minusDays(1);
-                }
-            }
-
-            final LocalDate periodStart = start;
-            final LocalDate periodEnd = end;
+            LocalDate[] window = com.example.expensetracker.domain.budget.model.BudgetPeriod
+                    .fromString(b.getPeriod())
+                    .calculateWindow(b, now);
+            final LocalDate periodStart = window[0];
+            final LocalDate periodEnd = window[1];
 
             List<Expense> periodExpenses = expenseCache.computeIfAbsent(
-                    new DateRange(start, end),
+                    new DateRange(periodStart, periodEnd),
                     r -> expenseRepository.findByUserAndExpenseDateBetween(user, r.start(), r.end())
             );
 
@@ -165,8 +134,8 @@ public class BudgetServiceImpl implements BudgetService {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             DateRange reimbursementRange = new DateRange(
-                    start.minusMonths(IncomeRules.MAX_MONTH_SHIFT),
-                    end.plusMonths(IncomeRules.MAX_MONTH_SHIFT)
+                    periodStart.minusMonths(IncomeRules.MAX_MONTH_SHIFT),
+                    periodEnd.plusMonths(IncomeRules.MAX_MONTH_SHIFT)
             );
             List<Income> periodIncomes = incomeCache.computeIfAbsent(
                     reimbursementRange,
@@ -194,10 +163,10 @@ public class BudgetServiceImpl implements BudgetService {
                     b.getLimitAmount(),
                     spent,
                     pct,
-                    period,
+                    b.getPeriod() != null ? b.getPeriod() : "MONTHLY",
                     b.getIntervalDays(),
-                    start,
-                    end
+                    periodStart,
+                    periodEnd
             );
         }).toList();
 

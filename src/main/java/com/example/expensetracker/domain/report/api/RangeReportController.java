@@ -58,6 +58,39 @@ public class RangeReportController {
     private final UserSecurity security;
     private final ExecutiveExcelReportGenerator excelReportGenerator;
     private final ExecutivePdfReportGenerator pdfReportGenerator;
+    private final com.example.expensetracker.domain.report.service.ReportExportRegistry exportRegistry;
+
+    /**
+     * Polymorphic range export endpoint following the Open/Closed Principle (OCP).
+     * Any registered ReportExportStrategy can be invoked dynamically without code changes.
+     */
+    @GetMapping("/user/{userId}/export/range/{format}")
+    public ResponseEntity<byte[]> exportByFormat(@PathVariable Long userId,
+                                                 @PathVariable String format,
+                                                 @RequestParam(required = false) String from,
+                                                 @RequestParam(required = false) String to,
+                                                 @RequestParam(defaultValue = "INR") String currency) {
+        security.validateUserAccess(userId);
+        User user = user(userId);
+        ExecutiveReportDateRange range = ExecutiveReportDateRange.of(from, to);
+        com.example.expensetracker.domain.report.service.ReportExportStrategy strategy = exportRegistry
+                .findStrategy(format)
+                .orElseThrow(() -> new IllegalArgumentException("Unsupported report format: " + format));
+
+        log.info("Generating executive {} report via strategy for userId={}, range='{}', currency='{}'",
+                format, userId, range.label(), currency);
+        ExecutiveReportData data = data(user, range);
+        byte[] bytes = strategy.generate(data, range, currency, user.getName());
+
+        return ResponseEntity.ok()
+                .contentType(strategy.mediaType())
+                .contentLength(bytes.length)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename(strategy.filename(range))
+                                .build().toString())
+                .body(bytes);
+    }
 
     @GetMapping("/user/{userId}/export/range/excel")
     public ResponseEntity<byte[]> excel(@PathVariable Long userId,

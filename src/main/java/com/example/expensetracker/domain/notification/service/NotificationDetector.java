@@ -130,21 +130,15 @@ public class NotificationDetector {
     /** The period a budget applies to right now, or null when it cannot be worked out. */
     static LocalDate[] budgetWindow(Budget budget, LocalDate today) {
         String period = budget.getPeriod() == null ? "MONTHLY" : budget.getPeriod().toUpperCase(Locale.ROOT);
-        return switch (period) {
-            case "WEEKLY" -> {
-                LocalDate start = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-                yield new LocalDate[]{start, start.plusDays(6)};
+        if ("CUSTOM".equalsIgnoreCase(period)) {
+            if (budget.getStartDate() == null || budget.getEndDate() == null
+                    || today.isBefore(budget.getStartDate()) || today.isAfter(budget.getEndDate())) {
+                return null;
             }
-            case "YEARLY" -> new LocalDate[]{today.withDayOfYear(1), today.with(TemporalAdjusters.lastDayOfYear())};
-            case "CUSTOM" -> {
-                if (budget.getStartDate() == null || budget.getEndDate() == null
-                        || today.isBefore(budget.getStartDate()) || today.isAfter(budget.getEndDate())) {
-                    yield null;
-                }
-                yield new LocalDate[]{budget.getStartDate(), budget.getEndDate()};
-            }
-            default -> new LocalDate[]{today.withDayOfMonth(1), today.with(TemporalAdjusters.lastDayOfMonth())};
-        };
+        }
+        return com.example.expensetracker.domain.budget.model.BudgetPeriod
+                .fromString(budget.getPeriod())
+                .calculateWindow(budget, today);
     }
 
     // ------------------------------------------------------------------ bills

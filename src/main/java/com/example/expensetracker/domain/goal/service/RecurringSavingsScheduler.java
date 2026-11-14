@@ -107,17 +107,8 @@ public class RecurringSavingsScheduler {
     }
 
     private LocalDate nextOccurrence(SavingsGoal goal) {
-        String freq = goal.getFrequency();
-        if (freq == null || freq.isBlank()) freq = "MONTHLY";
-        return switch (freq.toUpperCase()) {
-            case "DAILY"   -> goal.getNextDueDate().plusDays(1);
-            case "WEEKLY"  -> goal.getNextDueDate().plusWeeks(1);
-            case "YEARLY"  -> goal.getNextDueDate().plusYears(1);
-            case "CUSTOM"  -> {
-                int days = goal.getIntervalDays() != null && goal.getIntervalDays() > 0 ? goal.getIntervalDays() : 30;
-                yield goal.getNextDueDate().plusDays(days);
-            }
-            default        -> goal.getNextDueDate().plusMonths(1);
-        };
+        return com.example.expensetracker.common.RecurrenceFrequency
+                .fromString(goal.getFrequency())
+                .nextOccurrence(goal.getNextDueDate(), goal.getIntervalDays());
     }
 }

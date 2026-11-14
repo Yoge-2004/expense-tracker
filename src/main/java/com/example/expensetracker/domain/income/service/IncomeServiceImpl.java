@@ -338,13 +338,8 @@ public class IncomeServiceImpl implements IncomeService {
     }
 
     private LocalDate calculateNextOccurrence(LocalDate date, String freq, Integer intervalDays) {
-        if (freq == null) freq = FREQUENCY_MONTHLY;
-        return switch (freq.toUpperCase(java.util.Locale.ROOT)) {
-            case "DAILY" -> date.plusDays(1);
-            case "WEEKLY" -> date.plusWeeks(1);
-            case "YEARLY" -> date.plusYears(1);
-            case "CUSTOM" -> date.plusDays(intervalDays != null && intervalDays > 0 ? intervalDays : 1);
-            default -> date.plusMonths(1);
-        };
+        return com.example.expensetracker.common.RecurrenceFrequency
+                .fromString(freq)
+                .nextOccurrence(date, intervalDays != null && intervalDays > 0 ? intervalDays : 1);
     }
 }

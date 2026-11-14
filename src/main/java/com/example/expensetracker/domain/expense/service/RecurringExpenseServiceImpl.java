@@ -187,12 +187,8 @@ public class RecurringExpenseServiceImpl implements RecurringExpenseService {
     }
 
     private LocalDate nextOccurrence(LocalDate date, String frequency, Integer intervalDays) {
-        return switch (frequency) {
-            case "DAILY" -> date.plusDays(1);
-            case "WEEKLY" -> date.plusWeeks(1);
-            case "YEARLY" -> date.plusYears(1);
-            case "CUSTOM" -> date.plusDays(intervalDays);
-            default -> date.plusMonths(1);
-        };
+        return com.example.expensetracker.common.RecurrenceFrequency
+                .fromString(frequency)
+                .nextOccurrence(date, intervalDays);
     }
 }
