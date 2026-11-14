@@ -298,7 +298,7 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
         try {
             File dir = new File("artifacts/automation-runs");
             if (!dir.exists() && !dir.mkdirs()) {
-                log.warn("Directory could not be created: {}", dir);
+                log.warn("Automation execution directory could not be created: {}", dir);
             }
             File logFile = new File(dir, "retrain-execution.log");
             Files.writeString(logFile.toPath(), executionLogs.toString(), StandardCharsets.UTF_8,
@@ -522,7 +522,7 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
         try {
             File dir = new File("artifacts/automation-runs");
             if (!dir.exists() && !dir.mkdirs()) {
-                log.warn("Directory could not be created: {}", dir);
+                log.warn("Run history storage directory could not be created: {}", dir);
             }
             File file = new File(dir, "runs-history.json");
             List<Map<String, Object>> runs = new ArrayList<>();

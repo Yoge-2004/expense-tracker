@@ -143,6 +143,7 @@ public class MlBackendProcessManager implements SmartLifecycle {
         }
     }
 
+    @SuppressWarnings("BusyWait")
     private boolean waitForHealthCheck(long timeoutMillis) {
         long start = System.currentTimeMillis();
         while (System.currentTimeMillis() - start < timeoutMillis) {
@@ -154,7 +155,7 @@ public class MlBackendProcessManager implements SmartLifecycle {
                 return false;
             }
             try {
-                Thread.sleep(400);
+                TimeUnit.MILLISECONDS.sleep(400);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return false;

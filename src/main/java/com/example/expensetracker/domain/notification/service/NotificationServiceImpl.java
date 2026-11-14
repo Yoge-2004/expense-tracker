@@ -131,7 +131,7 @@ public class NotificationServiceImpl implements NotificationService {
     public List<NotificationPreferenceDto> updatePreferences(User user, List<String> disabledTypes) {
         Set<NotificationType> disabled = EnumSet.noneOf(NotificationType.class);
         for (String name : disabledTypes == null ? List.<String>of() : disabledTypes) {
-            if (name == null || name.isBlank()) {
+            if (name.isBlank()) {
                 continue;
             }
             NotificationType type;
