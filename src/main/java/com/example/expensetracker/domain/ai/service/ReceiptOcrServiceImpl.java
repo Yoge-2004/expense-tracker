@@ -245,26 +245,25 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
     }
 
     private String runTesseractCommand(List<String> command) {
-        Process process = null;
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
             // Tesseract spawns one OpenMP thread per visible core; on a shared container that oversubscribes the CPU.
             pb.environment().put("OMP_THREAD_LIMIT", "1");
             pb.redirectError(ProcessBuilder.Redirect.DISCARD);
-            process = pb.start();
+            try (Process process = pb.start()) {
+                String text;
+                try (InputStream is = process.getInputStream()) {
+                    text = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                }
 
-            String text;
-            try (InputStream is = process.getInputStream()) {
-                text = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                boolean finished = process.waitFor(15, TimeUnit.SECONDS);
+                if (!finished) {
+                    process.destroyForcibly();
+                    log.warn("Tesseract OCR process timed out for command: {}", command);
+                    return "";
+                }
+                return text.trim();
             }
-
-            boolean finished = process.waitFor(15, TimeUnit.SECONDS);
-            if (!finished) {
-                process.destroyForcibly();
-                log.warn("Tesseract OCR process timed out for command: {}", command);
-                return "";
-            }
-            return text.trim();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Tesseract command was interrupted: {}", e.getMessage());
@@ -272,10 +271,6 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
         } catch (Exception e) {
             log.warn("Tesseract command execution failed: {} - {}", command, e.getMessage());
             return "";
-        } finally {
-            if (process != null && process.isAlive()) {
-                process.destroyForcibly();
-            }
         }
     }
 
@@ -364,8 +359,8 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
                     String rawNum = curMatcher.group(1).replaceAll("[\\s,]", "");
                     double val = Double.parseDouble(rawNum);
                     if (val > maxVal) maxVal = val;
-                } catch (Exception ignored) {
-                    log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+                } catch (Exception ex) {
+                    log.debug("Notice parsing currency pattern: {}", ex.getMessage());
                 }
             }
             if (maxVal > 0) {
@@ -389,8 +384,8 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
                         parsedDate = String.format("%04d-%02d-%02d", yr, mNum, day);
                         break;
                     }
-                } catch (Exception ignored) {
-                    log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+                } catch (Exception ex) {
+                    log.debug("Notice parsing textual date in line: {}", ex.getMessage());
                 }
             }
             Matcher dm = DATE_REGEX.matcher(line);
@@ -423,8 +418,8 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
                             }
                         }
                     }
-                } catch (Exception ignored) {
-                    log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+                } catch (Exception ex) {
+                    log.debug("Notice parsing numeric date pattern: {}", ex.getMessage());
                 }
             }
         }
@@ -461,7 +456,7 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
         // Augment or refine with ML inference client if available and category is Miscellaneous or low confidence
         if (mlInferenceClient != null && ("Miscellaneous".equals(category) || maxMatches <= 1)) {
             try {
-                String query = (merchant != null && !"Receipt Purchase".equals(merchant))
+                String query = !"Receipt Purchase".equals(merchant)
                         ? merchant
                         : text.substring(0, Math.min(text.length(), 200));
                 MlClassificationResponse mlResp = mlInferenceClient.classify(new MlClassificationRequest(query, 1));

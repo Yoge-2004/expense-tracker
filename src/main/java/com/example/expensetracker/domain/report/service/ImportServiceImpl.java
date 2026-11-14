@@ -245,9 +245,7 @@ public class ImportServiceImpl implements ImportService {
                 expensesToSave.add(expense);
             }
 
-            if (!expensesToSave.isEmpty()) {
-                expenseService.createExpenses(expensesToSave, user);
-            }
+            expenseService.createExpenses(expensesToSave, user);
             int count = expensesToSave.size();
 
             Map<String, Object> result = new LinkedHashMap<>();
@@ -523,9 +521,7 @@ public class ImportServiceImpl implements ImportService {
                 requestsToSave.add(req);
             }
 
-            if (!requestsToSave.isEmpty()) {
-                incomeService.createIncomes(requestsToSave, user);
-            }
+            incomeService.createIncomes(requestsToSave, user);
             int count = requestsToSave.size();
 
             Map<String, Object> result = new LinkedHashMap<>();
@@ -791,7 +787,6 @@ public class ImportServiceImpl implements ImportService {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
 
-            String headerLine = null;
             String line;
             int lineNum = 0;
 
@@ -807,7 +802,6 @@ public class ImportServiceImpl implements ImportService {
 
                 if (dCol != null && nCol != null) {
                     col = candidateCol;
-                    headerLine = line;
                     break;
                 }
             }
@@ -818,6 +812,11 @@ public class ImportServiceImpl implements ImportService {
 
             Integer dateIdx = findColumn(col, "date", "txndate", "transactiondate", "valuedate", "trandate", "postingdate");
             Integer narrIdx = findColumn(col, "narration", "description", "remarks", "particulars", "transactiondetails", "details");
+            if (dateIdx == null || narrIdx == null) {
+                throw new IllegalArgumentException("Bank statement must contain Date and Narration/Description headers");
+            }
+            int dIdx = dateIdx;
+            int nIdx = narrIdx;
             Integer debitIdx = findColumn(col, "debit", "withdrawal", "withdrawalamt", "withdrawalamount", "dr", "debitamount");
             Integer creditIdx = findColumn(col, "credit", "deposit", "depositamt", "depositamount", "cr", "creditamount");
             Integer refIdx = findColumn(col, "refno", "chqrefno", "chequenumber", "reference", "utr", "txnid", "transactionid", "chequeno", "chqno");
@@ -834,10 +833,10 @@ public class ImportServiceImpl implements ImportService {
 
                 try {
                     List<String> parts = parseCsvLine(line);
-                    if (parts.size() <= Math.max(dateIdx, narrIdx)) continue;
+                    if (parts.size() <= Math.max(dIdx, nIdx)) continue;
 
-                    String dateStr = parts.get(dateIdx).replace("\"", "").trim();
-                    String narration = parts.get(narrIdx).replace("\"", "").trim();
+                    String dateStr = parts.get(dIdx).replace("\"", "").trim();
+                    String narration = parts.get(nIdx).replace("\"", "").trim();
                     if (dateStr.isEmpty() || narration.isEmpty()) continue;
 
                     LocalDate date = parseDateString(dateStr);
@@ -928,6 +927,11 @@ public class ImportServiceImpl implements ImportService {
 
             Integer dateCol = findColumn(colMap, "date", "txndate", "transactiondate", "valuedate", "trandate", "postingdate");
             Integer narrCol = findColumn(colMap, "narration", "description", "remarks", "particulars", "transactiondetails", "details");
+            if (dateCol == null || narrCol == null) {
+                throw new IllegalArgumentException("Bank statement must contain Date and Narration/Description headers");
+            }
+            int dCol = dateCol;
+            int nCol = narrCol;
             Integer debitCol = findColumn(colMap, "debit", "withdrawal", "withdrawalamt", "withdrawalamount", "dr", "debitamount");
             Integer creditCol = findColumn(colMap, "credit", "deposit", "depositamt", "depositamount", "cr", "creditamount");
             Integer refCol = findColumn(colMap, "refno", "chqrefno", "chequenumber", "reference", "utr", "txnid", "transactionid", "chequeno", "chqno");
@@ -939,11 +943,11 @@ public class ImportServiceImpl implements ImportService {
                 if (row == null || isRowEmpty(row)) continue;
 
                 try {
-                    Cell dateCell = row.getCell(dateCol);
+                    Cell dateCell = row.getCell(dCol);
                     String dateStr = getCellValueAsString(dateCell);
                     LocalDate date = parseCellDate(dateCell, dateStr);
 
-                    String narration = getCellValueAsString(row.getCell(narrCol)).trim();
+                    String narration = getCellValueAsString(row.getCell(nCol)).trim();
                     if (narration.isBlank()) continue;
 
                     BigDecimal debit = debitCol != null ? parseCellAmount(row.getCell(debitCol)) : null;

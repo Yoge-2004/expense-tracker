@@ -86,7 +86,7 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
 
         String engineName = "PostgreSQL";
         String dbUrl = "";
-        long latencyMs = 2;
+        long latencyMs;
         String catalog = "expensetracker";
 
         try {
@@ -138,7 +138,7 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
         // 2. Inspect Neon Cloud PostgreSQL Cluster State
         boolean isNeon = dbUrl.toLowerCase().contains("neon") || dbUrl.toLowerCase().contains("postgres");
         String neonHost = extractHost(dbUrl, "ep-summer-frost-a2.eu-central-1.aws.neon.tech");
-        long neonLatency = 0;
+        long neonLatency;
         String neonProbeStatus;
 
         try {
@@ -166,7 +166,7 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
         // 3. Inspect Hugging Face Space Backup & Cipher State
         Map<String, Object> hfDiag = failoverService.getDiagnostics();
         boolean isConfigured = Boolean.TRUE.equals(hfDiag.get("isConfigured"));
-        long hfLatency = 0;
+        long hfLatency;
         try {
             long hStart = System.currentTimeMillis();
             InetAddress hfAddr = InetAddress.getByName("huggingface.co");
@@ -239,8 +239,8 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
                 int end = (colon != -1) ? colon : (endSlash != -1 ? endSlash : sub.length());
                 return sub.substring(0, end);
             }
-        } catch (Exception ignored) {
-            log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+        } catch (Exception ex) {
+            log.debug("Notice parsing host {}: {}", ex.getClass().getSimpleName(), ex.getMessage());
         }
         return defaultHost;
     }

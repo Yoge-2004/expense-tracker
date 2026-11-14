@@ -57,9 +57,9 @@ public class MlFeedbackService {
             throw new IllegalArgumentException("ML feedback categories must use the canonical taxonomy");
         }
 
-        Long expenseId;
+        long expenseId;
         try {
-            expenseId = Long.valueOf(request.transactionId().trim());
+            expenseId = Long.parseLong(request.transactionId().trim());
         } catch (NumberFormatException exception) {
             throw new IllegalArgumentException("ML feedback transactionId must reference an expense id");
         }
@@ -95,9 +95,9 @@ public class MlFeedbackService {
         if (after == null || after.isBlank()) {
             feedback = repository.findByTrainingStatusInOrderByIdAsc(TRAINING_READY_STATUSES, PageRequest.of(0, safeLimit));
         } else {
-            Long afterId;
+            long afterId;
             try {
-                afterId = Long.valueOf(after);
+                afterId = Long.parseLong(after);
             } catch (NumberFormatException exception) {
                 throw new IllegalArgumentException("ML feedback cursor must be a numeric id");
             }

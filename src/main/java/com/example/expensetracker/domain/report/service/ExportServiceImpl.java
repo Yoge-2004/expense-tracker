@@ -634,7 +634,7 @@ public class ExportServiceImpl implements ExportService {
             try {
                 XSSFFormulaEvaluator.evaluateAllFormulaCells(workbook);
             } catch (Exception evalEx) {
-                log.debug("Formula evaluation note: {}", evalEx.getMessage());
+                log.debug("Expense export formula evaluation note: {}", evalEx.getMessage());
             }
 
             workbook.write(out);
@@ -984,7 +984,7 @@ public class ExportServiceImpl implements ExportService {
             try {
                 XSSFFormulaEvaluator.evaluateAllFormulaCells(workbook);
             } catch (Exception evalEx) {
-                log.debug("Formula evaluation note: {}", evalEx.getMessage());
+                log.debug("Income export formula evaluation note: {}", evalEx.getMessage());
             }
 
             workbook.write(out);

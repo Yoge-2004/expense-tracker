@@ -75,8 +75,8 @@ public final class ClientIpSelector {
         }
         if (value.indexOf(':') >= 0 && IPV6_CHARS.matcher(value).matches()) {
             try {
-                InetAddress.getByName(value); // an IP literal: never triggers a DNS lookup
-                return true;
+                var addr = InetAddress.getByName(value); // an IP literal: never triggers a DNS lookup
+                return addr != null;
             } catch (Exception e) {
                 return false;
             }

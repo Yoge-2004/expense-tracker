@@ -75,7 +75,7 @@ public class UserAvatarServiceImpl implements UserAvatarService {
                 try {
                     Files.deleteIfExists(avatarDir.resolve("user_" + userId + oldExt));
                 } catch (Exception ex) {
-                    log.debug("Notice while removing old avatar extension {} for userId={}: {}", oldExt, userId, ex.getMessage());
+                    log.debug("Notice while replacing previous avatar extension {} during upload for userId={}: {}", oldExt, userId, ex.getMessage());
                 }
             }
 
@@ -156,7 +156,7 @@ public class UserAvatarServiceImpl implements UserAvatarService {
             try {
                 Files.deleteIfExists(avatarDir.resolve("user_" + userId + ext));
             } catch (Exception ex) {
-                log.debug("Notice while removing old avatar extension {} for userId={}: {}", ext, userId, ex.getMessage());
+                log.debug("Notice while purging avatar file extension {} during deletion for userId={}: {}", ext, userId, ex.getMessage());
             }
         }
         userService.updateProfilePicture(userId, null);

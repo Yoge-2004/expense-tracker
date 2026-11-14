@@ -701,7 +701,10 @@ public final class FallbackSyncEngine {
         }
         List<String> parts = new ArrayList<>();
         for (String p : target.pk()) {
-            parts.add("CAST(" + q(target.col(p.toLowerCase(Locale.ROOT)).name()) + " AS VARCHAR(1000))");
+            Col c = target.col(p.toLowerCase(Locale.ROOT));
+            if (c != null) {
+                parts.add("CAST(" + q(c.name()) + " AS VARCHAR(1000))");
+            }
         }
         String expression = String.join(" || CHR(31) || ", parts);
         try (PreparedStatement ps = primary.prepareStatement("DELETE FROM " + q(target.name()) + " WHERE " + expression + " = ?")) {
@@ -744,7 +747,11 @@ public final class FallbackSyncEngine {
         if (t.pk().size() != 1 || !isAuto(t, t.pk().get(0))) {
             return;
         }
-        String column = t.col(t.pk().get(0).toLowerCase(Locale.ROOT)).name();
+        Col c = t.col(t.pk().get(0).toLowerCase(Locale.ROOT));
+        if (c == null) {
+            return;
+        }
+        String column = c.name();
         try {
             Savepoint sp = primary.setSavepoint();
             try (PreparedStatement ps = primary.prepareStatement("SELECT setval(pg_get_serial_sequence(?, ?), "
@@ -755,10 +762,10 @@ public final class FallbackSyncEngine {
                 primary.releaseSavepoint(sp);
             } catch (SQLException e) {
                 primary.rollback(sp);
-                log.warn("Fallback sync: could not advance the id sequence of {}.", t.name());
+                log.warn("Fallback sync: savepoint query failed to advance id sequence of {}: {}", t.name(), e.getMessage());
             }
         } catch (SQLException e) {
-            log.warn("Fallback sync: could not advance the id sequence of {}.", t.name());
+            log.warn("Fallback sync: savepoint setup failed for id sequence of {}: {}", t.name(), e.getMessage());
         }
     }
 
@@ -1011,9 +1018,8 @@ public final class FallbackSyncEngine {
         String pattern = name.replace(md.getSearchStringEscape(), md.getSearchStringEscape() + md.getSearchStringEscape())
                 .replace("_", md.getSearchStringEscape() + "_")
                 .replace("%", md.getSearchStringEscape() + "%");
-        List<Col> cols = new ArrayList<>();
+        Map<Integer, Col> byPosition = new java.util.TreeMap<>();
         try (ResultSet rs = md.getColumns(c.getCatalog(), c.getSchema(), pattern, "%")) {
-            Map<Integer, Col> byPosition = new java.util.TreeMap<>();
             while (rs.next()) {
                 if (!name.equalsIgnoreCase(rs.getString("TABLE_NAME"))) {
                     continue;
@@ -1024,8 +1030,8 @@ public final class FallbackSyncEngine {
                         rs.getInt("COLUMN_SIZE"), rs.getInt("DECIMAL_DIGITS"),
                         rs.getInt("NULLABLE") != DatabaseMetaData.columnNoNulls, "YES".equalsIgnoreCase(auto)));
             }
-            cols.addAll(byPosition.values());
         }
+        List<Col> cols = new ArrayList<>(byPosition.values());
         Map<Integer, String> pkBySeq = new java.util.TreeMap<>();
         try (ResultSet rs = md.getPrimaryKeys(c.getCatalog(), c.getSchema(), name)) {
             while (rs.next()) {

@@ -233,7 +233,7 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
 
         boolean success = false;
         String status = "FAILED";
-        String runMessage = "";
+        String runMessage;
         long feedbackCount = feedbackRepository.countByTrainingStatus("approved");
 
         try {
@@ -250,42 +250,43 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
             env.put("EXPENSE_ML_OUTPUT", "artifacts/automation-runs");
             pb.redirectErrorStream(true);
 
-            Process process = pb.start();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    appendProcessLine(executionLogs, line);
+            try (Process process = pb.start()) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        appendProcessLine(executionLogs, line);
+                    }
                 }
-            }
 
-            boolean finished = process.waitFor(120, TimeUnit.SECONDS);
-            int exitCode = finished ? process.exitValue() : -1;
-            if (!finished) {
-                process.destroyForcibly();
-                executionLogs.append(String.format("[%s] [ERROR] Retraining process timed out after 120s.\n", Instant.now()));
-                runMessage = "Retraining evaluation timed out after 120 seconds";
-            } else if (exitCode == 0) {
-                success = true;
-                File summaryFile = new File("artifacts/automation-runs/latest-summary.json");
-                if (summaryFile.exists()) {
-                    JsonNode summary = objectMapper.readTree(summaryFile);
-                    String summaryStatus = summary.path("status").asText();
-                    if ("skipped".equalsIgnoreCase(summaryStatus)) {
-                        status = "SKIPPED_INSUFFICIENT_FEEDBACK";
-                        feedbackCount = summary.path("feedback_count").asLong(feedbackCount);
-                        runMessage = String.format("Evaluated feedback threshold: %d / %d approved corrections. Insufficient new samples; production baseline maintained.",
-                                feedbackCount, summary.path("threshold").asLong(500));
+                boolean finished = process.waitFor(120, TimeUnit.SECONDS);
+                int exitCode = finished ? process.exitValue() : -1;
+                if (!finished) {
+                    process.destroyForcibly();
+                    executionLogs.append(String.format("[%s] [ERROR] Retraining process timed out after 120s.\n", Instant.now()));
+                    runMessage = "Retraining evaluation timed out after 120 seconds";
+                } else if (exitCode == 0) {
+                    success = true;
+                    File summaryFile = new File("artifacts/automation-runs/latest-summary.json");
+                    if (summaryFile.exists()) {
+                        JsonNode summary = objectMapper.readTree(summaryFile);
+                        String summaryStatus = summary.path("status").asText();
+                        if ("skipped".equalsIgnoreCase(summaryStatus)) {
+                            status = "SKIPPED_INSUFFICIENT_FEEDBACK";
+                            feedbackCount = summary.path("feedback_count").asLong(feedbackCount);
+                            runMessage = String.format("Evaluated feedback threshold: %d / %d approved corrections. Insufficient new samples; production baseline maintained.",
+                                    feedbackCount, summary.path("threshold").asLong(500));
+                        } else {
+                            status = "COMPLETED_PROMOTED";
+                            runMessage = "Retraining completed successfully and candidate models passed validation gates.";
+                        }
                     } else {
-                        status = "COMPLETED_PROMOTED";
-                        runMessage = "Retraining completed successfully and candidate models passed validation gates.";
+                        status = "EVALUATED";
+                        runMessage = "Retraining evaluation exited normally (code 0).";
                     }
                 } else {
-                    status = "EVALUATED";
-                    runMessage = "Retraining evaluation exited normally (code 0).";
+                    status = "FAILED_EXIT_" + exitCode;
+                    runMessage = "Retraining process failed with exit code " + exitCode;
                 }
-            } else {
-                status = "FAILED_EXIT_" + exitCode;
-                runMessage = "Retraining process failed with exit code " + exitCode;
             }
         } catch (Exception e) {
             log.error("Failed to execute ML retraining process: {}", e.getMessage(), e);
@@ -296,7 +297,9 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
         // Persist terminal logs to disk
         try {
             File dir = new File("artifacts/automation-runs");
-            if (!dir.exists()) dir.mkdirs();
+            if (!dir.exists() && !dir.mkdirs()) {
+                log.warn("Directory could not be created: {}", dir);
+            }
             File logFile = new File(dir, "retrain-execution.log");
             Files.writeString(logFile.toPath(), executionLogs.toString(), StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
@@ -382,7 +385,7 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
         List<Map<String, Object>> fleet = new ArrayList<>();
 
         // Model 1: Classifier
-        boolean clfActive = isOnline && (new File("ml/models/category-tfidf/model.joblib").exists() || isOnline);
+        boolean clfActive = isOnline && new File("ml/models/category-tfidf/model.joblib").exists();
         double clfAcc = readRealModelAccuracy();
         fleet.add(Map.of(
                 "id", "clf",
@@ -518,8 +521,8 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
     private synchronized void recordRunHistory(Map<String, Object> runRecord) {
         try {
             File dir = new File("artifacts/automation-runs");
-            if (!dir.exists()) {
-                dir.mkdirs();
+            if (!dir.exists() && !dir.mkdirs()) {
+                log.warn("Directory could not be created: {}", dir);
             }
             File file = new File(dir, "runs-history.json");
             List<Map<String, Object>> runs = new ArrayList<>();
@@ -566,8 +569,8 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
                         Instant.ofEpochMilli(summaryFile.lastModified()), summary.path("feedback_count").asLong(), summary.path("threshold").asLong(),
                         Instant.ofEpochMilli(summaryFile.lastModified())
                 );
-            } catch (Exception ignored) {
-                log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+            } catch (Exception ex) {
+                log.debug("Notice reading summary file {}: {}", ex.getClass().getSimpleName(), ex.getMessage());
             }
         }
 

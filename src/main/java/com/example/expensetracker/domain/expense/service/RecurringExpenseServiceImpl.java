@@ -139,7 +139,7 @@ public class RecurringExpenseServiceImpl implements RecurringExpenseService {
                 Integer intervalDays = "CUSTOM".equals(frequency)
                         ? numberValue(updates.get("intervalDays")) : null;
                 if ("CUSTOM".equals(frequency) && (intervalDays == null || intervalDays < 1)) {
-                    log.warn("Invalid intervalDays for custom frequency on subscription id={}", recId);
+                    log.warn("Invalid intervalDays for updated custom frequency on subscription id={}", recId);
                     throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
                 }
                 rec.setFrequency(frequency);
@@ -147,7 +147,7 @@ public class RecurringExpenseServiceImpl implements RecurringExpenseService {
             } else if (updates.containsKey("intervalDays") && "CUSTOM".equals(rec.getFrequency())) {
                 Integer intervalDays = numberValue(updates.get("intervalDays"));
                 if (intervalDays == null || intervalDays < 1) {
-                    log.warn("Invalid intervalDays for custom frequency on subscription id={}", recId);
+                    log.warn("Invalid intervalDays for existing custom subscription id={}", recId);
                     throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
                 }
                 rec.setIntervalDays(intervalDays);

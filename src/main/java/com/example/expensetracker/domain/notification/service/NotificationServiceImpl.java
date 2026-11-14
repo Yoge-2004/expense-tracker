@@ -131,9 +131,12 @@ public class NotificationServiceImpl implements NotificationService {
     public List<NotificationPreferenceDto> updatePreferences(User user, List<String> disabledTypes) {
         Set<NotificationType> disabled = EnumSet.noneOf(NotificationType.class);
         for (String name : disabledTypes == null ? List.<String>of() : disabledTypes) {
+            if (name == null || name.isBlank()) {
+                continue;
+            }
             NotificationType type;
             try {
-                type = NotificationType.valueOf(name == null ? "" : name.trim().toUpperCase(Locale.ROOT));
+                type = NotificationType.valueOf(name.trim().toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Unknown notification type '" + name + "'");
             }

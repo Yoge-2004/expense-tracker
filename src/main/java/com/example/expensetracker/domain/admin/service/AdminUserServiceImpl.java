@@ -499,14 +499,14 @@ public class AdminUserServiceImpl implements AdminUserService {
                 actor.getId(),
                 actor.getUsername() != null ? actor.getUsername() : actor.getEmail(),
                 r.name(),
-                isAdmin || isSuper,                          // canManageUsers
+                isAdmin,                                      // canManageUsers
                 isSuper,                                      // canModifyRoles
-                isAdmin || isSuper || isSupport,              // canUnlockSecurityPin
-                isAdmin || isSuper,                          // canBroadcastNotifications
-                isAdmin || isSuper,                          // canModerateMl
+                isAdmin || isSupport,                         // canUnlockSecurityPin
+                isAdmin,                                      // canBroadcastNotifications
+                isAdmin,                                      // canModerateMl
                 isSuper,                                      // canTriggerFailover
-                isAdmin || isSuper,                          // canClearCache
-                isAdmin || isSuper                           // canExportAudit
+                isAdmin,                                      // canClearCache
+                isAdmin                                       // canExportAudit
         );
     }
 

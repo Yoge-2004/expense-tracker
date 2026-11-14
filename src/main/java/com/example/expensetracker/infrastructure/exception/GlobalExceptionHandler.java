@@ -311,7 +311,7 @@ public class GlobalExceptionHandler {
             org.springframework.http.converter.HttpMessageNotReadableException ex,
             HttpServletRequest request) {
         Throwable root = ex.getMostSpecificCause();
-        String detail = root != null && root.getMessage() != null ? root.getMessage().split("\r?\n")[0].trim() : ex.getMessage();
+        String detail = (root.getMessage() != null) ? root.getMessage().split("\r?\n")[0].trim() : ex.getMessage();
         log.warn("Message not readable at '{}': {}", request.getRequestURI(), detail);
         return buildResponse(HttpStatus.BAD_REQUEST, "Malformed JSON request body.", request);
     }

@@ -239,8 +239,11 @@ public class FallbackRecoveryCoordinator implements ResilientRoutingDataSource.R
             } catch (UnsupportedOperationException | SecurityException e) {
                 export = Files.createTempFile("fallback-refresh-", ".sqlite");
                 java.io.File f = export.toFile();
-                f.setReadable(true, true);
-                f.setWritable(true, true);
+                boolean rOk = f.setReadable(true, true);
+                boolean wOk = f.setWritable(true, true);
+                if (!rOk || !wOk) {
+                    log.debug("Notice: strict file permissions could not be fully enforced on temp fallback export");
+                }
             }
             int rows = snapshotService.exportCurrentDatabase(export);
             if (rows > 0) {

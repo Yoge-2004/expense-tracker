@@ -112,7 +112,7 @@ public class SavingsGoalController {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<SavingsGoalDto> goals = savingsGoalService.getUserGoals(user);
-        log.info("Retrieved {} savings goals for userId={}", goals.size(), userId);
+        log.info("Successfully fetched {} total savings goals for userId={}", goals.size(), userId);
         return ResponseEntity.ok(goals);
     }
 
@@ -243,7 +243,7 @@ public class SavingsGoalController {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<SavingsGoalDto> goals = savingsGoalService.getRecurringGoals(user);
-        log.info("Retrieved {} recurring savings goals for userId={}", goals.size(), userId);
+        log.info("Successfully fetched {} recurring commitment goals for userId={}", goals.size(), userId);
         return ResponseEntity.ok(goals);
     }
 }

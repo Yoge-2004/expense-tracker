@@ -126,7 +126,7 @@ public class HealthController {
     public ResponseEntity<Map<String, Object>> getArchitecture() {
         Map<String, Object> arch = new HashMap<>();
         String springBootVer = SpringBootVersion.getVersion();
-        if (springBootVer == null || springBootVer.isBlank()) {
+        if (springBootVer.isBlank()) {
             springBootVer = "4.1.2";
         }
         String javaVer = System.getProperty("java.version", "27");

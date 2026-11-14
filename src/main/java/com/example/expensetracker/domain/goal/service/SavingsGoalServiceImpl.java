@@ -75,7 +75,7 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
                 .stream()
                 .map(SavingsGoalMapper::toDto)
                 .toList();
-        log.debug("Loaded {} savings goals for userId={}", goals.size(), user.getId());
+        log.debug("Loaded {} user savings goals for userId={}", goals.size(), user.getId());
         return goals;
     }
 
@@ -103,7 +103,7 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
                 .orElseThrow(() -> new IllegalArgumentException("Savings goal not found"));
 
         if (!existing.getUser().getId().equals(user.getId())) {
-            log.warn("Ownership mismatch: savings goal id={} does not belong to userId={}", goalId, user.getId());
+            log.warn("Update denied - ownership mismatch: savings goal id={} does not belong to userId={}", goalId, user.getId());
             throw new IllegalArgumentException("Savings goal does not belong to this user");
         }
 
@@ -182,7 +182,7 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
                 .orElseThrow(() -> new IllegalArgumentException("Savings goal not found"));
 
         if (!goal.getUser().getId().equals(user.getId())) {
-            log.warn("Ownership mismatch: savings goal id={} does not belong to userId={}", goalId, user.getId());
+            log.warn("Deposit rejected - ownership mismatch: savings goal id={} does not belong to userId={}", goalId, user.getId());
             throw new IllegalArgumentException("Savings goal does not belong to this user");
         }
 
@@ -234,7 +234,7 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
                 .orElseThrow(() -> new IllegalArgumentException("Savings goal not found"));
 
         if (!goal.getUser().getId().equals(user.getId())) {
-            log.warn("Ownership mismatch: savings goal id={} does not belong to userId={}", goalId, user.getId());
+            log.warn("Deletion rejected - ownership mismatch: savings goal id={} does not belong to userId={}", goalId, user.getId());
             throw new IllegalArgumentException("Savings goal does not belong to this user");
         }
 
@@ -255,7 +255,7 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
                 .stream()
                 .map(SavingsGoalMapper::toDto)
                 .toList();
-        log.debug("Loaded {} recurring savings goals for userId={}", list.size(), user.getId());
+        log.debug("Loaded {} recurring savings commitments for userId={}", list.size(), user.getId());
         return list;
     }
 }

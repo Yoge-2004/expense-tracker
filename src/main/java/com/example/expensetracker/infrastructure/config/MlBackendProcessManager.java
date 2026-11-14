@@ -83,11 +83,10 @@ public class MlBackendProcessManager implements SmartLifecycle {
             boolean healthy = waitForHealthCheck(10_000);
             if (healthy) {
                 log.info("[MlBackendProcessManager] Python ML backend successfully started and verified healthy at {}", mlInferenceUrl);
-                isRunning = true;
             } else {
                 log.warn("[MlBackendProcessManager] Python ML backend process started (PID: {}) but health endpoint did not respond within timeout.", mlProcess.pid());
-                isRunning = true;
             }
+            isRunning = true;
         } catch (Exception e) {
             log.error("[MlBackendProcessManager] Failed to start Python ML backend process: {}", e.getMessage(), e);
         }
@@ -129,10 +128,9 @@ public class MlBackendProcessManager implements SmartLifecycle {
     }
 
     private boolean isMlServiceHealthy() {
-        try {
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofMillis(800))
-                    .build();
+        try (HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(800))
+                .build()) {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(mlInferenceUrl + "/health"))
                     .timeout(Duration.ofMillis(800))

@@ -75,8 +75,8 @@ public class AdminSystemOpsServiceImpl implements AdminSystemOpsService {
                 totalPhysRam = sunOs.getTotalMemorySize() / (1024 * 1024);
                 freePhysRam = sunOs.getFreeMemorySize() / (1024 * 1024);
             }
-        } catch (Exception ignored) {
-            log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+        } catch (Exception ex) {
+            log.debug("Notice reading OS physical memory: {}", ex.getMessage());
         }
 
         if (totalPhysRam <= 0) totalPhysRam = maxMb * 2;
@@ -88,16 +88,16 @@ public class AdminSystemOpsServiceImpl implements AdminSystemOpsService {
             File root = new File(".");
             diskTotalGb = root.getTotalSpace() / (1024 * 1024 * 1024);
             diskFreeGb = root.getUsableSpace() / (1024 * 1024 * 1024);
-        } catch (Exception ignored) {
-            log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+        } catch (Exception ex) {
+            log.debug("Notice probing disk space: {}", ex.getMessage());
         }
         long diskUsedGb = Math.max(0, diskTotalGb - diskFreeGb);
 
         long nonHeapMb = 0;
         try {
             nonHeapMb = ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage().getUsed() / (1024 * 1024);
-        } catch (Exception ignored) {
-            log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+        } catch (Exception ex) {
+            log.debug("Notice reading non-heap memory: {}", ex.getMessage());
         }
 
         String dbProduct = "PostgreSQL";
@@ -105,8 +105,8 @@ public class AdminSystemOpsServiceImpl implements AdminSystemOpsService {
         try (Connection conn = dataSource.getConnection()) {
             dbProduct = conn.getMetaData().getDatabaseProductName();
             dbUrl = maskJdbcUrl(conn.getMetaData().getURL());
-        } catch (Exception ignored) {
-            log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+        } catch (Exception ex) {
+            log.debug("Notice checking database metadata: {}", ex.getMessage());
         }
 
         int activeConns = 1;
@@ -121,7 +121,6 @@ public class AdminSystemOpsServiceImpl implements AdminSystemOpsService {
                 totalConns = hikari.getHikariPoolMXBean().getTotalConnections();
             } else {
                 totalConns = Math.max(1, hikari.getHikariConfigMXBean() != null ? hikari.getHikariConfigMXBean().getMaximumPoolSize() : 10);
-                activeConns = 1;
                 idleConns = totalConns - activeConns;
             }
         }

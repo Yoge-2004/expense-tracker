@@ -205,7 +205,7 @@ public class ExecutiveExcelReportGenerator implements ReportExportStrategy {
             resilienceScore = Math.max(15, Math.min(99, resilienceScore));
 
             // Daily Burn Calculation
-            int activeDays = Math.max(1, d.expenses.isEmpty() ? 1 : 30);
+            int activeDays = d.expenses.isEmpty() ? 1 : 30;
             BigDecimal dailyBurn = spend.divide(BigDecimal.valueOf(activeDays), 2, RoundingMode.HALF_UP);
 
             // Total liquid savings

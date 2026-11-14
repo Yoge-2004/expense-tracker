@@ -203,18 +203,18 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
                         String email = null;
                         try {
                             email = rs.getString("email");
-                        } catch (Exception ignored) {
+                        } catch (Exception e1) {
                             try {
                                 email = rs.getString("EMAIL");
-                            } catch (Exception ignored2) {
-                                log.debug("Ignored {}: {}", ignored2.getClass().getSimpleName(), ignored2.getMessage());
+                            } catch (Exception e2) {
+                                log.debug("Notice reading uppercase EMAIL column: {}", e2.getMessage());
                             }
                         }
                         if (email != null && adminEmail != null && email.trim().equalsIgnoreCase(adminEmail.trim())) {
                             return "ROLE_SUPER_ADMIN";
                         }
-                    } catch (Exception ignored) {
-                        log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+                    } catch (Exception ex) {
+                        log.debug("Notice evaluating default super admin email: {}", ex.getMessage());
                     }
                     return "ROLE_USER";
                 }));

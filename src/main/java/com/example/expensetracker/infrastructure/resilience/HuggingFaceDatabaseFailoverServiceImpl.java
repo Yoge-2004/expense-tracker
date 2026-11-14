@@ -416,9 +416,12 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             } catch (UnsupportedOperationException e) {
                 Files.createDirectories(tempDir);
                 File dirFile = tempDir.toFile();
-                dirFile.setReadable(true, true);
-                dirFile.setWritable(true, true);
-                dirFile.setExecutable(true, true);
+                boolean rOk = dirFile.setReadable(true, true);
+                boolean wOk = dirFile.setWritable(true, true);
+                boolean xOk = dirFile.setExecutable(true, true);
+                if (!rOk || !wOk || !xOk) {
+                    log.debug("Notice: strict directory permissions could not be fully enforced on temp dir");
+                }
             }
         }
 
@@ -430,9 +433,12 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         } catch (UnsupportedOperationException e) {
             Path file = Files.createTempFile(tempDir, prefix, suffix);
             File f = file.toFile();
-            f.setReadable(true, true);
-            f.setWritable(true, true);
-            f.setExecutable(false, false);
+            boolean rOk = f.setReadable(true, true);
+            boolean wOk = f.setWritable(true, true);
+            boolean xOk = f.setExecutable(false, false);
+            if (!rOk || !wOk || !xOk) {
+                log.debug("Notice: strict file permissions could not be fully enforced on temp file");
+            }
             return file;
         }
     }
