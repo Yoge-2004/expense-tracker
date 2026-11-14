@@ -29,4 +29,12 @@ public interface BankStatementParser {
      * @return true if this parser can process the statement
      */
     boolean canParse(String filename, List<String> headerTokens);
+
+    /**
+     * Parses the bank statement file into normalized {@link StatementRow} records.
+     *
+     * @param file uploaded statement file
+     * @return list of parsed rows
+     */
+    List<StatementRow> parseStatement(org.springframework.web.multipart.MultipartFile file);
 }

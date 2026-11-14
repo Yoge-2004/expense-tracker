@@ -74,7 +74,14 @@ public class ImportServiceImpl implements ImportService {
     private final ExpenseService expenseService;
     private final IncomeService incomeService;
     private final CategoryRepository categoryRepository;
+    private final List<BankStatementParser> statementParsers;
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    public ImportServiceImpl(ExpenseService expenseService,
+                             IncomeService incomeService,
+                             CategoryRepository categoryRepository) {
+        this(expenseService, incomeService, categoryRepository, Collections.emptyList());
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // EXPENSE IMPORTS
@@ -646,15 +653,6 @@ public class ImportServiceImpl implements ImportService {
     // BANK STATEMENT RECONCILIATION ENGINE
     // ─────────────────────────────────────────────────────────────────────────
 
-    public record StatementRow(
-            LocalDate date,
-            String narration,
-            BigDecimal debit,
-            BigDecimal credit,
-            String reference,
-            int rowNum
-    ) {}
-
     @Override
     @Transactional
     public Map<String, Object> reconcileBankStatement(MultipartFile file, User user) {
@@ -668,11 +666,21 @@ public class ImportServiceImpl implements ImportService {
         String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase(Locale.ROOT) : "";
         boolean isExcel = filename.endsWith(".xlsx") || filename.endsWith(".xls");
 
-        List<StatementRow> rows;
-        if (isExcel) {
-            rows = parseExcelStatement(file);
-        } else {
-            rows = parseCsvStatement(file);
+        List<StatementRow> rows = null;
+        if (statementParsers != null) {
+            for (BankStatementParser parser : statementParsers) {
+                if (parser.canParse(filename, Collections.emptyList())) {
+                    rows = parser.parseStatement(file);
+                    break;
+                }
+            }
+        }
+        if (rows == null) {
+            if (isExcel) {
+                rows = parseExcelStatement(file);
+            } else {
+                rows = parseCsvStatement(file);
+            }
         }
 
         if (rows.isEmpty()) {
