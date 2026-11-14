@@ -65,7 +65,6 @@ import com.example.expensetracker.infrastructure.exception.ImportException;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ImportServiceImpl implements ImportService {
 
@@ -76,6 +75,17 @@ public class ImportServiceImpl implements ImportService {
     private final CategoryRepository categoryRepository;
     private final List<BankStatementParser> statementParsers;
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ImportServiceImpl(ExpenseService expenseService,
+                             IncomeService incomeService,
+                             CategoryRepository categoryRepository,
+                             @org.springframework.beans.factory.annotation.Autowired(required = false) List<BankStatementParser> statementParsers) {
+        this.expenseService = expenseService;
+        this.incomeService = incomeService;
+        this.categoryRepository = categoryRepository;
+        this.statementParsers = (statementParsers != null) ? statementParsers : Collections.emptyList();
+    }
 
     public ImportServiceImpl(ExpenseService expenseService,
                              IncomeService incomeService,
