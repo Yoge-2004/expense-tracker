@@ -40,8 +40,17 @@ public class CategoryInitializer {
     @Transactional
     public void initGlobalCategories() {
         List<String> defaultCategories = List.of(
+                // Baseline categories
                 "Food", "Transport", "Utilities", "Entertainment",
-                "Health", "Shopping", "Finance", "Savings", "Loan"
+                "Health", "Shopping", "Finance", "Savings", "Loan",
+                // Canonical ML taxonomy display categories
+                "Food & Dining", "Transportation", "Shopping & Retail",
+                "Entertainment & Recreation", "Healthcare & Medical",
+                "Utilities & Services", "Financial Services", "Income",
+                "Government & Legal", "Charity & Donations",
+                // Extended financial taxonomy categories
+                "Housing", "Groceries", "Education", "Personal Care",
+                "Travel", "Insurance", "Investments", "General"
         );
         for (String catName : defaultCategories) {
             try {

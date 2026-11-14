@@ -498,10 +498,14 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
         return switch (canonical.toLowerCase(Locale.ROOT)) {
             case "food_dining" -> "Food & Dining";
             case "transportation" -> "Transportation";
-            case "shopping_retail" -> "Shopping";
-            case "entertainment_recreation" -> "Entertainment";
-            case "healthcare_medical" -> "Health & Medical";
-            case "utilities_services" -> "Utilities";
+            case "shopping_retail" -> "Shopping & Retail";
+            case "entertainment_recreation" -> "Entertainment & Recreation";
+            case "healthcare_medical" -> "Healthcare & Medical";
+            case "utilities_services" -> "Utilities & Services";
+            case "financial_services" -> "Financial Services";
+            case "income" -> "Income";
+            case "government_legal" -> "Government & Legal";
+            case "charity_donations" -> "Charity & Donations";
             default -> {
                 String[] words = canonical.replace("_", " ").split("\\s+");
                 StringBuilder sb = new StringBuilder();
