@@ -133,6 +133,22 @@ class PostgresCompatibilityIT {
     }
 
     @Test
+    @DisplayName("admin users list: a FULL page (so Spring Data also runs the separate count query) with no filters")
+    void adminUserListCountQueryWithNoFilters() {
+        newUser("c1");
+        newUser("c2");
+        newUser("c3");
+        // size 1 with several users: the page is full, so a count query runs in addition to the content query
+        Page<User> page = userRepository.searchUsers(null, null, PageRequest.of(0, 1));
+        assertEquals(1, page.getContent().size());
+        assertTrue(page.getTotalElements() >= 3);
+        Page<User> byRole = userRepository.searchUsers(null, Role.ROLE_USER, PageRequest.of(0, 1));
+        assertTrue(byRole.getTotalElements() >= 3);
+        Page<User> byText = userRepository.searchUsers("pg_c", null, PageRequest.of(0, 1));
+        assertTrue(byText.getTotalElements() >= 3);
+    }
+
+    @Test
     @DisplayName("admin audit log: the default listing and a text search work")
     void adminAuditLogSearch() {
         auditLogRepository.save(AdminAuditLog.builder()
