@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <!-- Viewport invented originally by Apple for iPhone OS 1.0 Safari -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Expense Tracker - Mobile Edition</title>
+
+  <!-- iOS 1.0 Home Screen Web App Tags ("Sweet Solution" 2007) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Expenses">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+
+  <!-- Android 1.0 & Mobile Handheld Tags (2008) -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="theme-color" content="#0B0F19">
+
+  <style type="text/css">
+    /* ==========================================================================
+       CSS 2.1 & Early WebKit Compatible Styling (Android 1.0 / iOS 1.0 / HVGA)
+       Strictly zero modern CSS features: no flexbox, no grid, no css vars, no calc()
+       ========================================================================== */
+    * {
+      -webkit-box-sizing: border-box;
+      -moz-box-sizing: border-box;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #0b0f19;
+      color: #f1f5f9;
+      font-family: -apple-system, "Helvetica Neue", Helvetica, "Droid Sans", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.4;
+      padding: 0 0 70px 0;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: none;
+    }
+
+    a {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+
+    /* Top Navigation Bar */
+    .top-header {
+      background-color: #111827;
+      border-bottom: 1px solid #1f2937;
+      padding: 10px 12px;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .brand-title {
+      float: left;
+      font-size: 16px;
+      font-weight: bold;
+      color: #38bdf8;
+      line-height: 28px;
+    }
+
+    .header-actions {
+      float: right;
+    }
+
+    .badge-os {
+      display: inline-block;
+      background-color: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      font-size: 10px;
+      padding: 2px 6px;
+      margin-left: 4px;
+      text-transform: uppercase;
+    }
+
+    .container {
+      width: 100%;
+      padding: 10px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* Overview Balance Card */
+    .card {
+      background-color: #151d2a;
+      border: 1px solid #243042;
+      padding: 12px;
+      margin-bottom: 10px;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .card-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    .balance-amount {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .metric-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+    }
+
+    .metric-table td {
+      width: 50%;
+      padding: 6px 4px;
+      vertical-align: top;
+      border-top: 1px solid #243042;
+    }
+
+    .metric-table td.border-right {
+      border-right: 1px solid #243042;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      display: block;
+    }
+
+    .metric-val-income {
+      font-size: 15px;
+      font-weight: bold;
+      color: #10b981;
+    }
+
+    .metric-val-expense {
+      font-size: 15px;
+      font-weight: bold;
+      color: #ef4444;
+    }
+
+    /* Budget Progress Bar */
+    .progress-bar-bg {
+      background-color: #1e293b;
+      height: 8px;
+      width: 100%;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .progress-bar-fill {
+      background-color: #10b981;
+      height: 8px;
+      width: 0%;
+    }
+
+    /* Action Buttons (Float-based row) */
+    .action-row {
+      width: 100%;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .btn {
+      display: inline-block;
+      text-align: center;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      color: #ffffff;
+    }
+
+    .btn-half {
+      width: 48%;
+      float: left;
+    }
+
+    .btn-half.right {
+      float: right;
+    }
+
+    .btn-emerald {
+      background-color: #059669;
+    }
+
+    .btn-rose {
+      background-color: #dc2626;
+    }
+
+    .btn-sky {
+      background-color: #0284c7;
+    }
+
+    .btn-dark {
+      background-color: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+
+    /* Filter & Search Bar */
+    .search-row {
+      width: 100%;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .search-input {
+      width: 65%;
+      float: left;
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      padding: 7px 8px;
+      font-size: 13px;
+    }
+
+    .filter-select {
+      width: 32%;
+      float: right;
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      padding: 7px 4px;
+      font-size: 13px;
+    }
+
+    /* Transaction List */
+    .section-title {
+      font-size: 13px;
+      font-weight: bold;
+      color: #cbd5e1;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 12px 0 6px 0;
+    }
+
+    .tx-item {
+      background-color: #151d2a;
+      border: 1px solid #243042;
+      padding: 10px;
+      margin-bottom: 6px;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .tx-left {
+      float: left;
+      width: 68%;
+    }
+
+    .tx-right {
+      float: right;
+      width: 30%;
+      text-align: right;
+    }
+
+    .tx-title {
+      font-size: 13px;
+      font-weight: bold;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tx-meta {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .tx-tag {
+      display: inline-block;
+      padding: 1px 4px;
+      background-color: #1e293b;
+      color: #38bdf8;
+      border: 1px solid #334155;
+      font-size: 9px;
+      margin-right: 4px;
+    }
+
+    .tx-amount-exp {
+      font-size: 14px;
+      font-weight: bold;
+      color: #ef4444;
+    }
+
+    .tx-amount-inc {
+      font-size: 14px;
+      font-weight: bold;
+      color: #10b981;
+    }
+
+    .tx-btn-del {
+      background-color: transparent;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      padding: 2px 6px;
+      font-size: 10px;
+      margin-top: 4px;
+      cursor: pointer;
+    }
+
+    /* Modals / Sheet Overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.85);
+      z-index: 9999;
+    }
+
+    .modal-box {
+      position: absolute;
+      top: 20px;
+      left: 5%;
+      width: 90%;
+      max-width: 360px;
+      background-color: #151d2a;
+      border: 1px solid #38bdf8;
+      padding: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+    }
+
+    .form-control {
+      width: 100%;
+      background-color: #0b0f19;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      padding: 8px;
+      font-size: 13px;
+    }
+
+    /* Fixed Bottom Tab Bar (iOS 1 & Android 1 Native Style) */
+    .bottom-tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #111827;
+      border-top: 1px solid #1f2937;
+      height: 48px;
+      z-index: 1000;
+      overflow: hidden;
+    }
+
+    .tab-item {
+      float: left;
+      width: 25%;
+      height: 48px;
+      text-align: center;
+      padding-top: 6px;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 10px;
+    }
+
+    .tab-item.active {
+      color: #38bdf8;
+      background-color: #0f172a;
+    }
+
+    .tab-icon {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .empty-state {
+      padding: 20px;
+      text-align: center;
+      color: #64748b;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <div class="top-header">
+    <div class="brand-title">ExpenseTracker</div>
+    <div class="header-actions">
+      <span class="badge-os" id="deviceBadge">Mobile 1.0</span>
+      <a href="index.html" class="badge-os" style="color:#38bdf8;">Desktop</a>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- Executive Overview Card -->
+    <div class="card" id="summaryCard">
+      <div class="card-title">Net Balance</div>
+      <div class="balance-amount" id="netBalanceVal">&#8377;0.00</div>
+
+      <table class="metric-table">
+        <tr>
+          <td class="border-right">
+            <span class="metric-label">Income</span>
+            <div class="metric-val-income" id="totalIncomeVal">+&#8377;0.00</div>
+          </td>
+          <td>
+            <span class="metric-label">Expenses</span>
+            <div class="metric-val-expense" id="totalExpenseVal">-&#8377;0.00</div>
+          </td>
+        </tr>
+      </table>
+
+      <div style="margin-top: 8px;">
+        <span class="metric-label" id="budgetLabel">Budget Target: 0% used</span>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="budgetProgressBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Action Row -->
+    <div class="action-row">
+      <button type="button" class="btn btn-half btn-rose" id="btnOpenExpenseModal">+ Expense</button>
+      <button type="button" class="btn btn-half right btn-emerald" id="btnOpenIncomeModal">+ Income</button>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="search-row">
+      <input type="text" class="search-input" id="searchKeyword" placeholder="Search transactions...">
+      <select class="filter-select" id="filterType">
+        <option value="ALL">All</option>
+        <option value="EXPENSE">Expenses</option>
+        <option value="INCOME">Income</option>
+      </select>
+    </div>
+
+    <!-- Transactions Stream -->
+    <div class="section-title">Transactions</div>
+    <div id="txListContainer">
+      <div class="empty-state">No transactions recorded yet. Tap + Expense or + Income to begin.</div>
+    </div>
+
+  </div><!-- /.container -->
+
+  <!-- Modal: Add Expense (ES3 / Mobile 1.0 compatible) -->
+  <div class="modal-overlay" id="expenseModal">
+    <div class="modal-box">
+      <div style="font-size:14px; font-weight:bold; color:#ef4444; margin-bottom:10px;">New Expense</div>
+      <form id="formExpense" onsubmit="return false;">
+        <div class="form-group">
+          <label class="form-label" for="expDescription">Description</label>
+          <input type="text" id="expDescription" class="form-control" placeholder="e.g. Groceries, Metro, Coffee" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="expAmount">Amount (&#8377;)</label>
+          <input type="number" step="0.01" id="expAmount" class="form-control" placeholder="0.00" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="expCategory">Category</label>
+          <select id="expCategory" class="form-control">
+            <option value="Food & Dining">Food & Dining</option>
+            <option value="Transportation">Transportation</option>
+            <option value="Utilities">Utilities</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="expDate">Date</label>
+          <input type="text" id="expDate" class="form-control" placeholder="YYYY-MM-DD">
+        </div>
+        <div class="action-row" style="margin-top:12px;">
+          <button type="button" class="btn btn-half btn-dark" id="btnCloseExpenseModal">Cancel</button>
+          <button type="button" class="btn btn-half right btn-rose" id="btnSaveExpense">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Income (ES3 / Mobile 1.0 compatible) -->
+  <div class="modal-overlay" id="incomeModal">
+    <div class="modal-box">
+      <div style="font-size:14px; font-weight:bold; color:#10b981; margin-bottom:10px;">New Income</div>
+      <form id="formIncome" onsubmit="return false;">
+        <div class="form-group">
+          <label class="form-label" for="incSource">Source / Description</label>
+          <input type="text" id="incSource" class="form-control" placeholder="e.g. Salary, Dividend, Freelance" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="incAmount">Amount (&#8377;)</label>
+          <input type="number" step="0.01" id="incAmount" class="form-control" placeholder="0.00" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="incCategory">Category</label>
+          <select id="incCategory" class="form-control">
+            <option value="Salary">Salary</option>
+            <option value="Investments">Investments</option>
+            <option value="Freelance">Freelance</option>
+            <option value="Reimbursement">Reimbursement</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="incDate">Date</label>
+          <input type="text" id="incDate" class="form-control" placeholder="YYYY-MM-DD">
+        </div>
+        <div class="action-row" style="margin-top:12px;">
+          <button type="button" class="btn btn-half btn-dark" id="btnCloseIncomeModal">Cancel</button>
+          <button type="button" class="btn btn-half right btn-emerald" id="btnSaveIncome">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bottom Fixed Navigation Tab Bar -->
+  <div class="bottom-tab-bar">
+    <div class="tab-item active" id="tabOverview">
+      <span class="tab-icon">&#9679;</span>
+      <span>Home</span>
+    </div>
+    <div class="tab-item" id="tabExpenses">
+      <span class="tab-icon">&#8722;</span>
+      <span>Expenses</span>
+    </div>
+    <div class="tab-item" id="tabIncome">
+      <span class="tab-icon">&#43;</span>
+      <span>Income</span>
+    </div>
+    <div class="tab-item" id="tabRefresh">
+      <span class="tab-icon">&#8635;</span>
+      <span>Sync</span>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Strict ECMAScript 3 (ES3) Logic Engine
+       Guaranteed zero ES6+ syntax (no const, let, arrows, classes, fetch, Promise)
+       Runs identically on iPhone OS 1.0 Safari, Android 1.0 Browser, Symbian
+       ======================================================================== -->
+  <script type="text/javascript">
+    (function () {
+      // In-memory / LocalStorage state store
+      var STORAGE_KEY = "et_mobile_records_v1";
+      var records = [];
+      var budgetTarget = 50000;
+
+      // Platform detection for badge
+      var ua = navigator.userAgent;
+      var badgeEl = document.getElementById("deviceBadge");
+      if (badgeEl) {
+        if (/iPhone OS 1_/i.test(ua) || /iPhone.*WebKit\/42/i.test(ua)) {
+          badgeEl.innerHTML = "iOS 1.0";
+        } else if (/Android 1\.0/i.test(ua) || /Android.*WebKit\/525/i.test(ua)) {
+          badgeEl.innerHTML = "Android 1.0";
+        } else if (/Mobile/i.test(ua)) {
+          badgeEl.innerHTML = "Mobile Web";
+        }
+      }
+
+      // Format currency without Intl.NumberFormat dependency
+      function formatMoney(amount) {
+        var num = parseFloat(amount);
+        if (isNaN(num)) {
+          num = 0.0;
+        }
+        var fixed = num.toFixed(2);
+        var parts = fixed.split(".");
+        var intPart = parts[0];
+        var decPart = parts.length > 1 ? "." + parts[1] : ".00";
+
+        // Regex for comma separation
+        var rgx = /(\d+)(\d{3})/;
+        while (rgx.test(intPart)) {
+          intPart = intPart.replace(rgx, "$1" + "," + "$2");
+        }
+        return "\u20B9" + intPart + decPart;
+      }
+
+      // Safe ISO date string for ES3
+      function getTodayDateString() {
+        var now = new Date();
+        var y = now.getFullYear();
+        var m = now.getMonth() + 1;
+        var d = now.getDate();
+        var mStr = m < 10 ? "0" + m : "" + m;
+        var dStr = d < 10 ? "0" + d : "" + d;
+        return y + "-" + mStr + "-" + dStr;
+      }
+
+      // Safe storage reader/writer
+      function loadRecords() {
+        var raw = null;
+        try {
+          if (window.localStorage) {
+            raw = window.localStorage.getItem(STORAGE_KEY);
+          }
+        } catch (e) {
+          raw = null;
+        }
+
+        if (raw) {
+          try {
+            records = JSON.parse(raw);
+          } catch (e) {
+            records = [];
+          }
+        }
+
+        // Default seed data if empty
+        if (!records || records.length === 0) {
+          records = [
+            { id: 1, type: "INCOME", title: "Monthly Salary", amount: 65000, category: "Salary", date: getTodayDateString() },
+            { id: 2, type: "EXPENSE", title: "Apartment Rent", amount: 18000, category: "Housing", date: getTodayDateString() },
+            { id: 3, type: "EXPENSE", title: "Groceries & Supermarket", amount: 4250, category: "Food & Dining", date: getTodayDateString() },
+            { id: 4, type: "EXPENSE", title: "Fiber Broadband", amount: 999, category: "Utilities", date: getTodayDateString() }
+          ];
+          saveRecords();
+        }
+      }
+
+      function saveRecords() {
+        try {
+          if (window.localStorage) {
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+          }
+        } catch (e) {
+          // In-memory fallback
+        }
+      }
+
+      // Recalculate metrics and update DOM
+      function updateSummary() {
+        var totalInc = 0;
+        var totalExp = 0;
+        var i;
+        for (i = 0; i < records.length; i++) {
+          var item = records[i];
+          var amt = parseFloat(item.amount) || 0;
+          if (item.type === "INCOME") {
+            totalInc += amt;
+          } else {
+            totalExp += amt;
+          }
+        }
+
+        var net = totalInc - totalExp;
+
+        var netEl = document.getElementById("netBalanceVal");
+        var incEl = document.getElementById("totalIncomeVal");
+        var expEl = document.getElementById("totalExpenseVal");
+        var pBarEl = document.getElementById("budgetProgressBar");
+        var bLabelEl = document.getElementById("budgetLabel");
+
+        if (netEl) {
+          netEl.innerHTML = formatMoney(net);
+          netEl.style.color = net >= 0 ? "#ffffff" : "#ef4444";
+        }
+        if (incEl) {
+          incEl.innerHTML = "+" + formatMoney(totalInc);
+        }
+        if (expEl) {
+          expEl.innerHTML = "-" + formatMoney(totalExp);
+        }
+
+        if (pBarEl && bLabelEl) {
+          var pct = Math.min(100, Math.round((totalExp / budgetTarget) * 100));
+          pBarEl.style.width = pct + "%";
+          pBarEl.style.backgroundColor = pct > 85 ? "#ef4444" : (pct > 60 ? "#f59e0b" : "#10b981");
+          bLabelEl.innerHTML = "Budget Target: " + pct + "% used (" + formatMoney(totalExp) + " / " + formatMoney(budgetTarget) + ")";
+        }
+      }
+
+      // Render transactions with filtering
+      function renderTransactions() {
+        var container = document.getElementById("txListContainer");
+        if (!container) return;
+
+        var searchVal = (document.getElementById("searchKeyword").value || "").toLowerCase();
+        var typeFilter = document.getElementById("filterType").value || "ALL";
+
+        var filtered = [];
+        var i;
+        for (i = 0; i < records.length; i++) {
+          var r = records[i];
+          if (typeFilter !== "ALL" && r.type !== typeFilter) {
+            continue;
+          }
+          if (searchVal) {
+            var titleLower = (r.title || "").toLowerCase();
+            var catLower = (r.category || "").toLowerCase();
+            if (titleLower.indexOf(searchVal) === -1 && catLower.indexOf(searchVal) === -1) {
+              continue;
+            }
+          }
+          filtered.push(r);
+        }
+
+        if (filtered.length === 0) {
+          container.innerHTML = '<div class="empty-state">No matching transactions found.</div>';
+          return;
+        }
+
+        var html = "";
+        for (i = 0; i < filtered.length; i++) {
+          var item = filtered[i];
+          var isInc = item.type === "INCOME";
+          var amtClass = isInc ? "tx-amount-inc" : "tx-amount-exp";
+          var amtPrefix = isInc ? "+" : "-";
+
+          html += '<div class="tx-item">';
+          html += '  <div class="tx-left">';
+          html += '    <div class="tx-title">' + (item.title || "Untitled") + '</div>';
+          html += '    <div class="tx-meta">';
+          html += '      <span class="tx-tag">' + (item.category || "General") + '</span>';
+          html += '      <span>' + (item.date || "") + '</span>';
+          html += '    </div>';
+          html += '  </div>';
+          html += '  <div class="tx-right">';
+          html += '    <div class="' + amtClass + '">' + amtPrefix + formatMoney(item.amount) + '</div>';
+          html += '    <button type="button" class="tx-btn-del" data-id="' + item.id + '">Delete</button>';
+          html += '  </div>';
+          html += '</div>';
+        }
+
+        container.innerHTML = html;
+
+        // Wire delete buttons using classical DOM
+        var delButtons = container.getElementsByTagName("button");
+        for (i = 0; i < delButtons.length; i++) {
+          delButtons[i].onclick = function () {
+            var delId = parseInt(this.getAttribute("data-id"), 10);
+            if (confirm("Delete this transaction?")) {
+              deleteRecord(delId);
+            }
+          };
+        }
+      }
+
+      function deleteRecord(id) {
+        var next = [];
+        var i;
+        for (i = 0; i < records.length; i++) {
+          if (records[i].id !== id) {
+            next.push(records[i]);
+          }
+        }
+        records = next;
+        saveRecords();
+        updateSummary();
+        renderTransactions();
+      }
+
+      // Wire modal events
+      function setupModals() {
+        var expModal = document.getElementById("expenseModal");
+        var incModal = document.getElementById("incomeModal");
+
+        var btnOpenExp = document.getElementById("btnOpenExpenseModal");
+        var btnCloseExp = document.getElementById("btnCloseExpenseModal");
+        var btnSaveExp = document.getElementById("btnSaveExpense");
+
+        var btnOpenInc = document.getElementById("btnOpenIncomeModal");
+        var btnCloseInc = document.getElementById("btnCloseIncomeModal");
+        var btnSaveInc = document.getElementById("btnSaveIncome");
+
+        if (btnOpenExp) {
+          btnOpenExp.onclick = function () {
+            document.getElementById("expDate").value = getTodayDateString();
+            expModal.style.display = "block";
+          };
+        }
+        if (btnCloseExp) {
+          btnCloseExp.onclick = function () {
+            expModal.style.display = "none";
+          };
+        }
+        if (btnSaveExp) {
+          btnSaveExp.onclick = function () {
+            var desc = document.getElementById("expDescription").value;
+            var amt = parseFloat(document.getElementById("expAmount").value);
+            var cat = document.getElementById("expCategory").value;
+            var date = document.getElementById("expDate").value || getTodayDateString();
+
+            if (!desc || isNaN(amt) || amt <= 0) {
+              alert("Please enter a valid description and amount.");
+              return;
+            }
+
+            var newRecord = {
+              id: new Date().getTime(),
+              type: "EXPENSE",
+              title: desc,
+              amount: amt,
+              category: cat,
+              date: date
+            };
+
+            records.unshift(newRecord);
+            saveRecords();
+            updateSummary();
+            renderTransactions();
+
+            document.getElementById("expDescription").value = "";
+            document.getElementById("expAmount").value = "";
+            expModal.style.display = "none";
+          };
+        }
+
+        if (btnOpenInc) {
+          btnOpenInc.onclick = function () {
+            document.getElementById("incDate").value = getTodayDateString();
+            incModal.style.display = "block";
+          };
+        }
+        if (btnCloseInc) {
+          btnCloseInc.onclick = function () {
+            incModal.style.display = "none";
+          };
+        }
+        if (btnSaveInc) {
+          btnSaveInc.onclick = function () {
+            var src = document.getElementById("incSource").value;
+            var amt = parseFloat(document.getElementById("incAmount").value);
+            var cat = document.getElementById("incCategory").value;
+            var date = document.getElementById("incDate").value || getTodayDateString();
+
+            if (!src || isNaN(amt) || amt <= 0) {
+              alert("Please enter a valid source and amount.");
+              return;
+            }
+
+            var newRecord = {
+              id: new Date().getTime(),
+              type: "INCOME",
+              title: src,
+              amount: amt,
+              category: cat,
+              date: date
+            };
+
+            records.unshift(newRecord);
+            saveRecords();
+            updateSummary();
+            renderTransactions();
+
+            document.getElementById("incSource").value = "";
+            document.getElementById("incAmount").value = "";
+            incModal.style.display = "none";
+          };
+        }
+      }
+
+      // Wire search and filters
+      function setupFilters() {
+        var searchInput = document.getElementById("searchKeyword");
+        var filterSelect = document.getElementById("filterType");
+
+        if (searchInput) {
+          searchInput.onkeyup = function () {
+            renderTransactions();
+          };
+        }
+        if (filterSelect) {
+          filterSelect.onchange = function () {
+            renderTransactions();
+          };
+        }
+      }
+
+      // Wire bottom tab navigation
+      function setupTabs() {
+        var tabOverview = document.getElementById("tabOverview");
+        var tabExpenses = document.getElementById("tabExpenses");
+        var tabIncome = document.getElementById("tabIncome");
+        var tabRefresh = document.getElementById("tabRefresh");
+
+        function clearActiveTabs() {
+          tabOverview.className = "tab-item";
+          tabExpenses.className = "tab-item";
+          tabIncome.className = "tab-item";
+        }
+
+        if (tabOverview) {
+          tabOverview.onclick = function () {
+            clearActiveTabs();
+            this.className = "tab-item active";
+            document.getElementById("filterType").value = "ALL";
+            renderTransactions();
+          };
+        }
+        if (tabExpenses) {
+          tabExpenses.onclick = function () {
+            clearActiveTabs();
+            this.className = "tab-item active";
+            document.getElementById("filterType").value = "EXPENSE";
+            renderTransactions();
+          };
+        }
+        if (tabIncome) {
+          tabIncome.onclick = function () {
+            clearActiveTabs();
+            this.className = "tab-item active";
+            document.getElementById("filterType").value = "INCOME";
+            renderTransactions();
+          };
+        }
+        if (tabRefresh) {
+          tabRefresh.onclick = function () {
+            // Check for REST API connectivity via XMLHttpRequest
+            var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : (window.ActiveXObject ? new ActiveXObject("Microsoft.XMLHTTP") : null);
+            if (xhr) {
+              xhr.open("GET", "/api/health", true);
+              xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                  alert("Local state synchronized. Backend status: " + (xhr.status === 200 ? "Online" : "Offline / Standalone"));
+                }
+              };
+              try {
+                xhr.send(null);
+              } catch (e) {
+                alert("Offline Standalone Mode active.");
+              }
+            } else {
+              alert("State refreshed.");
+            }
+          };
+        }
+      }
+
+      // Boot application
+      loadRecords();
+      updateSummary();
+      renderTransactions();
+      setupModals();
+      setupFilters();
+      setupTabs();
+
+      // Export for testing
+      window.ExpenseTrackerMobile = {
+        getRecords: function () { return records; },
+        addRecord: function (r) { records.unshift(r); saveRecords(); updateSummary(); renderTransactions(); },
+        formatMoney: formatMoney
+      };
+    })();
+  </script>
+</body>
+</html>

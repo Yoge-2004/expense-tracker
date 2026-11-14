@@ -3,6 +3,18 @@
 
 <head>
     <meta charset="UTF-8">
+    <!-- Legacy Mobile (Android 1.0 / iOS 1.0) Auto-Redirect / Fallback Check -->
+    <script type="text/javascript">
+      (function() {
+        var ua = navigator.userAgent || "";
+        var isLegacy = /iPhone OS [123]_/i.test(ua) || 
+                       /Android [12]\./i.test(ua) || 
+                       (/Mobile/i.test(ua) && (!window.fetch || !window.Promise || !window.Symbol));
+        if (isLegacy && window.location.href.indexOf("legacy-mobile.html") === -1) {
+          window.location.replace("legacy-mobile.html");
+        }
+      })();
+    </script>
     <!-- Unified Theme-Adaptive Brand Favicons -->
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <link rel="icon" type="image/x-icon" href="favicon.ico">

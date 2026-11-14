@@ -3,6 +3,18 @@
 
 <head>
     <meta charset="UTF-8">
+    <!-- Legacy Mobile (Android 1.0 / iOS 1.0) Auto-Redirect / Fallback Check -->
+    <script type="text/javascript">
+      (function() {
+        var ua = navigator.userAgent || "";
+        var isLegacy = /iPhone OS [123]_/i.test(ua) || 
+                       /Android [12]\./i.test(ua) || 
+                       (/Mobile/i.test(ua) && (!window.fetch || !window.Promise || !window.Symbol));
+        if (isLegacy && window.location.href.indexOf("legacy-mobile.html") === -1) {
+          window.location.replace("legacy-mobile.html");
+        }
+      })();
+    </script>
     <!-- Unified Theme-Adaptive Brand Favicons -->
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -327,6 +339,9 @@
                 <p class="auth-footer-text">
                     Don't have an account?
                     <a href="register.html" class="auth-footer-link">Create one free</a>
+                </p>
+                <p style="text-align: center; margin-top: 10px;">
+                    <a href="legacy-mobile.html" style="font-size: 11px; color: var(--color-text-muted, #94a3b8); text-decoration: underline;">Retro / Legacy Mobile Web Edition (Android 1.0 / iOS 1.0)</a>
                 </p>
             </div>
         </section>
