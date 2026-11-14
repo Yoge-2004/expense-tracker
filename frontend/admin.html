@@ -709,8 +709,8 @@
                         </button>
                         <div class="admin-input-6" id="sandboxOutputStage" style="display:none; margin-top: 14px;">
                             <div class="admin-flex-between">
-                                <strong class="admin-adm-34" id="sandboxTopCategory">Food & Dining</strong>
-                                <span class="admin-adm-35" id="sandboxTopScore">98.5% confidence</span>
+                                <strong class="admin-adm-34" id="sandboxTopCategory">--</strong>
+                                <span class="admin-adm-35" id="sandboxTopScore">--</span>
                             </div>
                             <div class="admin-flex-5" id="sandboxCandidateBars"></div>
                         </div>
@@ -720,17 +720,17 @@
                     <div id="utilTabMerchant" class="ml-util-panel d-none">
                         <div class="admin-flex-10">
                             <label class="admin-adm-5" for="merchantTestInput">Raw Bank Narration / Merchant String:</label>
-                            <input type="text" id="merchantTestInput" class="command-search-input admin-input-3" placeholder="e.g. POS 4921 UBER *TRIP AID82 SAN FRANCISCO CA" value="POS 4921 UBER *TRIP AID82 SAN FRANCISCO CA">
+                            <input type="text" id="merchantTestInput" class="command-search-input admin-input-3" placeholder="e.g. POS 4921 UBER *TRIP AID82 SAN FRANCISCO CA">
                         </div>
                         <button id="runMerchantMatcherBtn" class="btn-primary admin-flex-btn-5 mt-2">
                             <span>Resolve Merchant Entity</span>
                         </button>
                         <div id="merchantOutputStage" class="admin-input-6" style="display:none; margin-top: 14px;">
                             <div class="admin-flex-between">
-                                <strong class="admin-adm-34" id="merchantResolvedName">Uber</strong>
-                                <span class="admin-adm-35" id="merchantMatchScore">99.1% match</span>
+                                <strong class="admin-adm-34" id="merchantResolvedName">--</strong>
+                                <span class="admin-adm-35" id="merchantMatchScore">--</span>
                             </div>
-                            <p class="text-xs text-muted mt-1" id="merchantCleanDetails">Canonical Entity: Transportation & Ride-hailing &bull; Confidence: High</p>
+                            <p class="text-xs text-muted mt-1" id="merchantCleanDetails">Awaiting merchant resolution...</p>
                         </div>
                     </div>
 
@@ -739,13 +739,13 @@
                         <div class="admin-grid-1" style="border-top:none; padding-top:0;">
                             <div>
                                 <label class="admin-adm-5" for="dupAmount1">Transaction 1:</label>
-                                <input type="number" id="dupAmount1" class="command-search-input admin-input-3 mb-1" placeholder="Amount" value="450.00">
-                                <input type="text" id="dupDesc1" class="command-search-input admin-input-3" placeholder="Description" value="Olive Garden Dinner">
+                                <input type="number" id="dupAmount1" class="command-search-input admin-input-3 mb-1" placeholder="Amount (e.g. 450.00)">
+                                <input type="text" id="dupDesc1" class="command-search-input admin-input-3" placeholder="Description (e.g. Dining)">
                             </div>
                             <div>
                                 <label class="admin-adm-5" for="dupAmount2">Transaction 2:</label>
-                                <input type="number" id="dupAmount2" class="command-search-input admin-input-3 mb-1" placeholder="Amount" value="450.00">
-                                <input type="text" id="dupDesc2" class="command-search-input admin-input-3" placeholder="Description" value="Olive Garden Italian Rest">
+                                <input type="number" id="dupAmount2" class="command-search-input admin-input-3 mb-1" placeholder="Amount (e.g. 450.00)">
+                                <input type="text" id="dupDesc2" class="command-search-input admin-input-3" placeholder="Description (e.g. Dining)">
                             </div>
                         </div>
                         <button id="runDuplicateCheckBtn" class="btn-primary admin-flex-btn-5 mt-2">
@@ -753,10 +753,10 @@
                         </button>
                         <div id="duplicateOutputStage" class="admin-input-6" style="display:none; margin-top: 14px;">
                             <div class="admin-flex-between">
-                                <strong class="admin-adm-34" id="duplicateResultBadge">● Likely Duplicate</strong>
-                                <span class="admin-adm-35" id="duplicateScore">96.8% Similarity</span>
+                                <strong class="admin-adm-34" id="duplicateResultBadge">--</strong>
+                                <span class="admin-adm-35" id="duplicateScore">--</span>
                             </div>
-                            <p class="text-xs text-muted mt-1" id="duplicateExplanation">Identical amounts with high cosine semantic token overlap exceeding 0.70 threshold.</p>
+                            <p class="text-xs text-muted mt-1" id="duplicateExplanation">Awaiting duplicate detection analysis...</p>
                         </div>
                     </div>
 
@@ -765,11 +765,11 @@
                         <div class="admin-grid-1" style="border-top:none; padding-top:0;">
                             <div>
                                 <label class="admin-adm-5" for="anomalyCategory">Expense Category:</label>
-                                <input type="text" id="anomalyCategory" class="command-search-input admin-input-3" placeholder="Category" value="Food & Dining">
+                                <input type="text" id="anomalyCategory" class="command-search-input admin-input-3" placeholder="Category (e.g. Food & Dining)">
                             </div>
                             <div>
                                 <label class="admin-adm-5" for="anomalyAmount">Expense Amount (₹):</label>
-                                <input type="number" id="anomalyAmount" class="command-search-input admin-input-3" placeholder="Amount" value="75000">
+                                <input type="number" id="anomalyAmount" class="command-search-input admin-input-3" placeholder="Amount (e.g. 7500)">
                             </div>
                         </div>
                         <button id="runAnomalyScoreBtn" class="btn-primary admin-flex-btn-5 mt-2">
@@ -777,10 +777,10 @@
                         </button>
                         <div id="anomalyOutputStage" class="admin-input-6" style="display:none; margin-top: 14px;">
                             <div class="admin-flex-between">
-                                <strong class="admin-adm-34" id="anomalyTierBadge">● Severe Outlier Anomaly</strong>
-                                <span class="admin-adm-35" id="anomalyScoreVal">Z-Score: +4.6σ (0.93)</span>
+                                <strong class="admin-adm-34" id="anomalyTierBadge">--</strong>
+                                <span class="admin-adm-35" id="anomalyScoreVal">--</span>
                             </div>
-                            <p class="text-xs text-muted mt-1" id="anomalyDetails">Amount significantly exceeds 3.5x standard deviation above historical category mean.</p>
+                            <p class="text-xs text-muted mt-1" id="anomalyDetails">Awaiting anomaly analysis...</p>
                         </div>
                     </div>
 
@@ -797,7 +797,7 @@
                             </div>
                             <div>
                                 <label class="admin-adm-5" for="forecastBase">Historical Monthly Run-Rate (₹):</label>
-                                <input type="number" id="forecastBase" class="command-search-input admin-input-3" placeholder="e.g. 45000" value="45000">
+                                <input type="number" id="forecastBase" class="command-search-input admin-input-3" placeholder="e.g. 45000">
                             </div>
                         </div>
                         <button id="runForecastBtn" class="btn-primary admin-flex-btn-5 mt-2">
@@ -805,11 +805,12 @@
                         </button>
                         <div id="forecastOutputStage" class="admin-input-6" style="display:none; margin-top: 14px;">
                             <div class="admin-flex-between">
-                                <strong class="admin-adm-34" id="forecastProjectedTotal">₹47,250.00 Projected</strong>
-                                <span class="admin-adm-35" id="forecastTrendDir">Trending +5.0% Upward</span>
+                                <strong class="admin-adm-34" id="forecastProjectedTotal">--</strong>
+                                <span class="admin-adm-35" id="forecastTrendDir">--</span>
                             </div>
-                            <p class="text-xs text-muted mt-1" id="forecastConfidence">Holt-Winters Multiplicative seasonality with 95% confidence bounds (₹43,100 – ₹51,400).</p>
+                            <p class="text-xs text-muted mt-1" id="forecastConfidence">Awaiting trend forecast generation...</p>
                         </div>
+                    </div>
                     </div>
                 </div>
 

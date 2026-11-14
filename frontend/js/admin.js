@@ -2034,18 +2034,30 @@
         // Utility 3: Duplicate Detector
         document.getElementById("runDuplicateCheckBtn")?.addEventListener("click", async () => {
             const btn = document.getElementById("runDuplicateCheckBtn");
-            const amt1 = document.getElementById("dupAmount1")?.value || "0";
-            const desc1 = document.getElementById("dupDesc1")?.value || "";
-            const amt2 = document.getElementById("dupAmount2")?.value || "0";
-            const desc2 = document.getElementById("dupDesc2")?.value || "";
+            const amt1Str = document.getElementById("dupAmount1")?.value?.trim();
+            const desc1 = document.getElementById("dupDesc1")?.value?.trim() || "";
+            const amt2Str = document.getElementById("dupAmount2")?.value?.trim();
+            const desc2 = document.getElementById("dupDesc2")?.value?.trim() || "";
+
+            if (!amt1Str || isNaN(parseFloat(amt1Str)) || !amt2Str || isNaN(parseFloat(amt2Str))) {
+                showToast("Please enter valid amounts for both transactions", "warning");
+                return;
+            }
+            if (!desc1 && !desc2) {
+                showToast("Please enter transaction descriptions to compare", "warning");
+                return;
+            }
+
+            const amt1 = parseFloat(amt1Str);
+            const amt2 = parseFloat(amt2Str);
 
             await withButtonLoading(btn, async () => {
                 try {
                     const res = await apiRequest("/ml/duplicates/check", {
                         method: "POST",
                         body: JSON.stringify({
-                            candidate_a: { amount: parseFloat(amt1), description: desc1 },
-                            candidate_b: { amount: parseFloat(amt2), description: desc2 }
+                            candidate_a: { amount: amt1, description: desc1 },
+                            candidate_b: { amount: amt2, description: desc2 }
                         })
                     });
 
@@ -2080,8 +2092,18 @@
         // Utility 4: Anomaly Scorer
         document.getElementById("runAnomalyScoreBtn")?.addEventListener("click", async () => {
             const btn = document.getElementById("runAnomalyScoreBtn");
-            const cat = document.getElementById("anomalyCategory")?.value || "General";
-            const amt = parseFloat(document.getElementById("anomalyAmount")?.value || "0");
+            const cat = document.getElementById("anomalyCategory")?.value?.trim();
+            const amtStr = document.getElementById("anomalyAmount")?.value?.trim();
+
+            if (!cat) {
+                showToast("Please enter an expense category", "warning");
+                return;
+            }
+            if (!amtStr || isNaN(parseFloat(amtStr))) {
+                showToast("Please enter a valid expense amount", "warning");
+                return;
+            }
+            const amt = parseFloat(amtStr);
 
             await withButtonLoading(btn, async () => {
                 try {
@@ -2122,7 +2144,13 @@
         document.getElementById("runForecastBtn")?.addEventListener("click", async () => {
             const btn = document.getElementById("runForecastBtn");
             const days = parseInt(document.getElementById("forecastHorizon")?.value || "30", 10);
-            const base = parseFloat(document.getElementById("forecastBase")?.value || "45000");
+            const baseStr = document.getElementById("forecastBase")?.value?.trim();
+
+            if (!baseStr || isNaN(parseFloat(baseStr))) {
+                showToast("Please enter a historical monthly run-rate amount", "warning");
+                return;
+            }
+            const base = parseFloat(baseStr);
 
             await withButtonLoading(btn, async () => {
                 try {

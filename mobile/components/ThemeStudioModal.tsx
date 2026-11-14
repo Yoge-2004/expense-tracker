@@ -473,28 +473,28 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                         id: 'grotesk',
                         name: 'Modern Grotesk',
                         sub: 'Hanken Grotesk · Clean, crisp, high-density sans-serif',
-                        sample: '₹142,850.00 · Portfolio Growth +14.2%',
+                        sample: '₹1,234.50 · Grotesk sans-serif typography preview',
                         fontFamily: 'HankenGrotesk_600SemiBold',
                       },
                       {
                         id: 'fraunces',
                         name: 'Editorial Serif',
                         sub: 'Fraunces · High-contrast serif typography',
-                        sample: '₹142,850.00 · Sovereign Wealth Reserve',
+                        sample: '₹1,234.50 · Editorial serif typography preview',
                         fontFamily: 'Fraunces_600SemiBold',
                       },
                       {
                         id: 'mono',
                         name: 'Financial Monospace',
                         sub: 'IBM Plex Mono · Columnar accounting & tabular digits',
-                        sample: '₹142,850.00 · TX_94821 [RECONCILED]',
+                        sample: '₹1,234.50 · 0123456789 monospace digits',
                         fontFamily: 'IBMPlexMono_600SemiBold',
                       },
                       {
                         id: 'system',
                         name: 'System Default',
                         sub: 'Platform Standard · Native iOS SF Pro / Android Roboto',
-                        sample: '₹142,850.00 · Lightning native performance',
+                        sample: '₹1,234.50 · System default font family',
                         fontFamily: Platform.select({ ios: 'System', android: 'Roboto' }),
                       },
                     ] as const
@@ -581,7 +581,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                       </View>
                       <View style={[styles.sampleBox, { backgroundColor: c.card }]}>
                         <Text style={[styles.sampleText, { color: c.text, fontFamily: customFontFamily || undefined }]}>
-                          ₹142,850.00 · Custom outsourced font rendered live
+                          ₹1,234.50 · Custom font typography preview
                         </Text>
                       </View>
                     </TouchableOpacity>

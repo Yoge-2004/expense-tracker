@@ -565,8 +565,9 @@
     (function () {
       // In-memory / LocalStorage state store
       var STORAGE_KEY = "et_mobile_records_v1";
+      var BUDGET_KEY = "et_mobile_budget_v1";
       var records = [];
-      var budgetTarget = 50000;
+      var budgetTarget = 0;
 
       // Platform detection for badge
       var ua = navigator.userAgent;
@@ -617,6 +618,10 @@
         try {
           if (window.localStorage) {
             raw = window.localStorage.getItem(STORAGE_KEY);
+            var rawBudget = window.localStorage.getItem(BUDGET_KEY);
+            if (rawBudget) {
+              budgetTarget = parseFloat(rawBudget) || 0;
+            }
           }
         } catch (e) {
           raw = null;
@@ -629,16 +634,8 @@
             records = [];
           }
         }
-
-        // Default seed data if empty
-        if (!records || records.length === 0) {
-          records = [
-            { id: 1, type: "INCOME", title: "Monthly Salary", amount: 65000, category: "Salary", date: getTodayDateString() },
-            { id: 2, type: "EXPENSE", title: "Apartment Rent", amount: 18000, category: "Housing", date: getTodayDateString() },
-            { id: 3, type: "EXPENSE", title: "Groceries & Supermarket", amount: 4250, category: "Food & Dining", date: getTodayDateString() },
-            { id: 4, type: "EXPENSE", title: "Fiber Broadband", amount: 999, category: "Utilities", date: getTodayDateString() }
-          ];
-          saveRecords();
+        if (!records) {
+          records = [];
         }
       }
 
@@ -687,10 +684,15 @@
         }
 
         if (pBarEl && bLabelEl) {
-          var pct = Math.min(100, Math.round((totalExp / budgetTarget) * 100));
-          pBarEl.style.width = pct + "%";
-          pBarEl.style.backgroundColor = pct > 85 ? "#ef4444" : (pct > 60 ? "#f59e0b" : "#10b981");
-          bLabelEl.innerHTML = "Budget Target: " + pct + "% used (" + formatMoney(totalExp) + " / " + formatMoney(budgetTarget) + ")";
+          if (budgetTarget > 0) {
+            var pct = Math.min(100, Math.round((totalExp / budgetTarget) * 100));
+            pBarEl.style.width = pct + "%";
+            pBarEl.style.backgroundColor = pct > 85 ? "#ef4444" : (pct > 60 ? "#f59e0b" : "#10b981");
+            bLabelEl.innerHTML = "Budget Target: " + pct + "% used (" + formatMoney(totalExp) + " / " + formatMoney(budgetTarget) + ")";
+          } else {
+            pBarEl.style.width = "0%";
+            bLabelEl.innerHTML = "Budget Target: No limit set (" + formatMoney(totalExp) + " spent)";
+          }
         }
       }
 
