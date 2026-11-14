@@ -19,9 +19,14 @@ public interface AdminAuditLogRepository extends JpaRepository<AdminAuditLog, Lo
     Page<AdminAuditLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     @Query("SELECT a FROM AdminAuditLog a WHERE " +
-           "(:query IS NULL OR LOWER(a.actorUsername) LIKE LOWER(CONCAT('%', :query, '%')) " +
-           "OR LOWER(a.action) LIKE LOWER(CONCAT('%', :query, '%')) " +
-           "OR LOWER(a.targetResource) LIKE LOWER(CONCAT('%', :query, '%'))) " +
+           "(:hasQuery = false OR LOWER(a.actorUsername) LIKE :pattern " +
+           "OR LOWER(a.action) LIKE :pattern " +
+           "OR LOWER(a.targetResource) LIKE :pattern) " +
            "ORDER BY a.createdAt DESC")
-    Page<AdminAuditLog> searchLogs(@Param("query") String query, Pageable pageable);
+    Page<AdminAuditLog> searchLogsFiltered(@Param("hasQuery") boolean hasQuery, @Param("pattern") String pattern,
+                                           Pageable pageable);
+
+    default Page<AdminAuditLog> searchLogs(String query, Pageable pageable) {
+        return searchLogsFiltered(SearchPatterns.hasText(query), SearchPatterns.contains(query), pageable);
+    }
 }

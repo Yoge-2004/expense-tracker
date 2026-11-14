@@ -79,13 +79,24 @@ public interface UserRepository extends JpaRepository<User, Long> {
     /**
      * Paginated search for users across name, email, and username with optional role filter.
      */
+    /**
+     * Admin search. Parameters are never null (see {@link SearchPatterns}): {@code hasQuery} / {@code hasRole}
+     * say whether a filter applies, {@code pattern} is always a real LIKE pattern and {@code role} always a real
+     * value (ignored when {@code hasRole} is false).
+     */
     @Query("SELECT u FROM User u WHERE " +
-           "(:query IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
-           "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) " +
-           "OR LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%'))) " +
-           "AND (:role IS NULL OR u.role = :role) " +
+           "(:hasQuery = false OR LOWER(u.name) LIKE :pattern " +
+           "OR LOWER(u.email) LIKE :pattern " +
+           "OR LOWER(u.username) LIKE :pattern) " +
+           "AND (:hasRole = false OR u.role = :role) " +
            "ORDER BY u.id DESC")
-    Page<User> searchUsers(@Param("query") String query, @Param("role") Role role, Pageable pageable);
+    Page<User> searchUsersFiltered(@Param("hasQuery") boolean hasQuery, @Param("pattern") String pattern,
+                                   @Param("hasRole") boolean hasRole, @Param("role") Role role, Pageable pageable);
+
+    default Page<User> searchUsers(String query, Role role, Pageable pageable) {
+        return searchUsersFiltered(SearchPatterns.hasText(query), SearchPatterns.contains(query),
+                role != null, role != null ? role : Role.ROLE_USER, pageable);
+    }
 
     long countByRole(Role role);
 
