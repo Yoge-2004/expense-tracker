@@ -895,50 +895,55 @@
         async function doClassify(text) {
             if (!text || !text.trim()) return;
             const query = text.trim();
+            if (cBtn) { cBtn.disabled = true; cBtn.classList.add("btn-loading"); }
             if (cResult) cResult.innerHTML = '<span class="ml-loading-msg">Classifying with TF-IDF model...</span>';
-            const response = await classifyDescription(query, 3);
-            if (!response || !response.category) {
-                if (cResult) cResult.innerHTML = '<span class="ml-empty-msg">No confident classification match found.</span>';
-                return;
-            }
+            try {
+                const response = await classifyDescription(query, 3);
+                if (!response || !response.category) {
+                    if (cResult) cResult.innerHTML = '<span class="ml-empty-msg">No confident classification match found.</span>';
+                    return;
+                }
 
-            const pct = Math.round((response.confidence || 0) * 100);
-            const taxonomyItem = getTaxonomyItem(response.category);
-            const icon = getCategoryIcon(taxonomyItem, 16);
-            const rawTopK = Array.isArray(response.top_k) ? response.top_k : (Array.isArray(response.topK) ? response.topK : []);
-            const alts = rawTopK.filter(p => p.category !== response.category).map(p => {
-                const altItem = getTaxonomyItem(p.category);
-                const altConf = Math.round((p.confidence || 0) * 100);
-                return `<span class="ml-alt-chip">${getCategoryIcon(altItem, 12)} ${escapeHtml(altItem.name)} (${altConf}%)</span>`;
-            }).join("");
+                const pct = Math.round((response.confidence || 0) * 100);
+                const taxonomyItem = getTaxonomyItem(response.category);
+                const icon = getCategoryIcon(taxonomyItem, 16);
+                const rawTopK = Array.isArray(response.top_k) ? response.top_k : (Array.isArray(response.topK) ? response.topK : []);
+                const alts = rawTopK.filter(p => p.category !== response.category).map(p => {
+                    const altItem = getTaxonomyItem(p.category);
+                    const altConf = Math.round((p.confidence || 0) * 100);
+                    return `<span class="ml-alt-chip">${getCategoryIcon(altItem, 12)} ${escapeHtml(altItem.name)} (${altConf}%)</span>`;
+                }).join("");
 
-            cResult.innerHTML = `
-                <div class="ml-result-card">
-                    <div class="ml-result-header">
-                        <div>
-                            <span class="ml-model-tag">Predicted Category (Model 1)</span>
-                            <div class="ml-pred-cat-row">
-                                ${icon} <span>${escapeHtml(taxonomyItem.name)}</span>
-                                <span class="ml-confidence-text">(${pct}% Confidence)</span>
+                cResult.innerHTML = `
+                    <div class="ml-result-card">
+                        <div class="ml-result-header">
+                            <div>
+                                <span class="ml-model-tag">Predicted Category (Model 1)</span>
+                                <div class="ml-pred-cat-row">
+                                    ${icon} <span>${escapeHtml(taxonomyItem.name)}</span>
+                                    <span class="ml-confidence-text">(${pct}% Confidence)</span>
+                                </div>
                             </div>
+                            <button type="button" id="mlAddExpenseFromSuite" class="btn-primary btn-small ml-use-cat-btn">
+                                + Record as Expense
+                            </button>
                         </div>
-                        <button type="button" id="mlAddExpenseFromSuite" class="btn-primary btn-small ml-use-cat-btn">
-                            + Record as Expense
-                        </button>
+                        ${alts ? `<div class="ml-alternatives-row">Alternatives: ${alts}</div>` : ""}
                     </div>
-                    ${alts ? `<div class="ml-alternatives-row">Alternatives: ${alts}</div>` : ""}
-                </div>
-            `;
+                `;
 
-            card.querySelector("#mlAddExpenseFromSuite")?.addEventListener("click", () => {
-                document.getElementById("openModalBtn")?.click();
-                setTimeout(() => {
-                    const d = document.getElementById("desc");
-                    if (d) { d.value = query; d.dispatchEvent(new Event("input", { bubbles: true })); }
-                    const catSelect = document.getElementById("categorySelect");
-                    if (catSelect) ensureAndSelectCategory(response.category, catSelect);
-                }, 150);
-            });
+                card.querySelector("#mlAddExpenseFromSuite")?.addEventListener("click", () => {
+                    document.getElementById("openModalBtn")?.click();
+                    setTimeout(() => {
+                        const d = document.getElementById("desc");
+                        if (d) { d.value = query; d.dispatchEvent(new Event("input", { bubbles: true })); }
+                        const catSelect = document.getElementById("categorySelect");
+                        if (catSelect) ensureAndSelectCategory(response.category, catSelect);
+                    }, 150);
+                });
+            } finally {
+                if (cBtn) { cBtn.disabled = false; cBtn.classList.remove("btn-loading"); }
+            }
         }
 
         cBtn?.addEventListener("click", () => doClassify(cInput?.value));
@@ -958,29 +963,34 @@
         async function doMerchantMatch(text) {
             if (!text || !text.trim()) return;
             const query = text.trim();
+            if (mBtn) { mBtn.disabled = true; mBtn.classList.add("btn-loading"); }
             if (mResult) mResult.innerHTML = '<span class="ml-loading-msg">Searching merchant vector index...</span>';
-            const response = await matchMerchant(query, 5);
-            if (!response || !response.matches || response.matches.length === 0) {
-                if (mResult) mResult.innerHTML = '<span class="ml-empty-msg">No merchant vector matches found.</span>';
-                return;
-            }
+            try {
+                const response = await matchMerchant(query, 5);
+                if (!response || !response.matches || response.matches.length === 0) {
+                    if (mResult) mResult.innerHTML = '<span class="ml-empty-msg">No merchant vector matches found.</span>';
+                    return;
+                }
 
-            mResult.innerHTML = `
-                <div class="ml-result-card">
-                    <span class="ml-model-tag">Vector Similarity Matches (Model 2)</span>
-                    <div class="ml-match-list">
-                        ${response.matches.map(m => {
-                            const clean = cleanMerchantName(m.merchant);
-                            const sim = Math.round((m.similarity || 0) * 100);
-                            const isHigh = sim >= 60;
-                            return `<div class="ml-match-row">
-                                <span class="ml-match-name">${escapeHtml(clean)}</span>
-                                <span class="ml-match-pct ${isHigh ? 'text-positive' : 'text-caution'}">${sim}% Match</span>
-                            </div>`;
-                        }).join("")}
+                mResult.innerHTML = `
+                    <div class="ml-result-card">
+                        <span class="ml-model-tag">Vector Similarity Matches (Model 2)</span>
+                        <div class="ml-match-list">
+                            ${response.matches.map(m => {
+                                const clean = cleanMerchantName(m.merchant);
+                                const sim = Math.round((m.similarity || 0) * 100);
+                                const isHigh = sim >= 60;
+                                return `<div class="ml-match-row">
+                                    <span class="ml-match-name">${escapeHtml(clean)}</span>
+                                    <span class="ml-match-pct ${isHigh ? 'text-positive' : 'text-caution'}">${sim}% Match</span>
+                                </div>`;
+                            }).join("")}
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            } finally {
+                if (mBtn) { mBtn.disabled = false; mBtn.classList.remove("btn-loading"); }
+            }
         }
 
         mBtn?.addEventListener("click", () => doMerchantMatch(mInput?.value));
@@ -1004,29 +1014,34 @@
             const candidates = cStr.split(",").map(s => s.trim()).filter(Boolean);
             if (candidates.length === 0) return;
 
+            if (dBtn) { dBtn.disabled = true; dBtn.classList.add("btn-loading"); }
             if (dResult) dResult.innerHTML = '<span class="ml-loading-msg">Computing vector cosine similarity...</span>';
-            const res = await checkDuplicatesWithML(q, candidates, 0.40);
+            try {
+                const res = await checkDuplicatesWithML(q, candidates, 0.40);
 
-            if (!res || !res.matches || res.matches.length === 0) {
-                if (dResult) dResult.innerHTML = '<span class="text-positive ml-msg-text">✓ No duplicates detected above threshold. Unique transaction.</span>';
-                return;
-            }
+                if (!res || !res.matches || res.matches.length === 0) {
+                    if (dResult) dResult.innerHTML = '<span class="text-positive ml-msg-text">✓ No duplicates detected above threshold. Unique transaction.</span>';
+                    return;
+                }
 
-            dResult.innerHTML = `
-                <div class="ml-result-card">
-                    <span class="ml-model-tag">Semantic Duplicate Matches (Model 3)</span>
-                    <div class="ml-match-list">
-                        ${res.matches.map(m => {
-                            const sim = Math.round((m.similarity || 0) * 100);
-                            const isHigh = sim >= 70;
-                            return `<div class="ml-match-row ${isHigh ? 'border-l-danger' : 'border-l-caution'}">
-                                <span class="ml-dup-text">"${escapeHtml(m.text)}"</span>
-                                <span class="ml-dup-sim ${isHigh ? 'text-danger' : 'text-caution'}">${sim}% Similarity</span>
-                            </div>`;
-                        }).join("")}
+                dResult.innerHTML = `
+                    <div class="ml-result-card">
+                        <span class="ml-model-tag">Semantic Duplicate Matches (Model 3)</span>
+                        <div class="ml-match-list">
+                            ${res.matches.map(m => {
+                                const sim = Math.round((m.similarity || 0) * 100);
+                                const isHigh = sim >= 70;
+                                return `<div class="ml-match-row ${isHigh ? 'border-l-danger' : 'border-l-caution'}">
+                                    <span class="ml-dup-text">"${escapeHtml(m.text)}"</span>
+                                    <span class="ml-dup-sim ${isHigh ? 'text-danger' : 'text-caution'}">${sim}% Similarity</span>
+                                </div>`;
+                            }).join("")}
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            } finally {
+                if (dBtn) { dBtn.disabled = false; dBtn.classList.remove("btn-loading"); }
+            }
         }
 
         dBtn?.addEventListener("click", doDupCheck);
@@ -1036,6 +1051,7 @@
         const aResult = card.querySelector("#mlAnomalyResult");
 
         async function doScoreAnomalies() {
+            if (aBtn) { aBtn.disabled = true; aBtn.classList.add("btn-loading"); }
             if (aResult) aResult.innerHTML = '<span class="ml-loading-msg">Executing Isolation Forest outlier scoring on transactions...</span>';
             const expenses = window.cachedExpenses || (window.DashboardUtils && window.DashboardUtils.getSafeExpenses && window.DashboardUtils.getSafeExpenses()) || [];
 
@@ -1058,41 +1074,45 @@
                 ];
             }
 
-            const response = await scoreAnomalies(txs);
-            if (!response || !response.results) {
-                if (aResult) aResult.innerHTML = '<span class="ml-empty-msg">Anomaly check returned no results.</span>';
-                return;
+            try {
+                const response = await scoreAnomalies(txs);
+                if (!response || !response.results) {
+                    if (aResult) aResult.innerHTML = '<span class="ml-empty-msg">Anomaly check returned no results.</span>';
+                    return;
+                }
+
+                const anomalies = response.results.filter(r => r.is_anomaly === true);
+                const total = response.results.length;
+
+                aResult.innerHTML = `
+                    <div class="ml-result-card">
+                        <div class="ml-result-header">
+                            <span class="ml-model-tag">Isolation Forest Results (Model 4)</span>
+                            <span class="ml-anom-count ${anomalies.length > 0 ? 'text-danger' : 'text-positive'}">
+                                ${anomalies.length} Anomaly / Outlier${anomalies.length === 1 ? '' : 's'} Flagged (from ${total} analyzed)
+                            </span>
+                        </div>
+                        <div class="ml-match-list">
+                            ${response.results.slice(0, 5).map(r => {
+                                const isAnom = r.is_anomaly === true;
+                                const score = typeof r.anomaly_score === "number" ? r.anomaly_score.toFixed(4) : "N/A";
+                                const amt = window.DashboardUtils?.formatCurrency ? window.DashboardUtils.formatCurrency(r.amount) : `$${r.amount}`;
+                                return `<div class="ml-match-row ${isAnom ? 'border-l-danger' : 'border-l-positive'}">
+                                    <div>
+                                        <span class="ml-anom-name">${escapeHtml(r.description || r.category || 'Transaction')} (${amt})</span>
+                                        <div class="ml-anom-score">Anomaly score: ${score}</div>
+                                    </div>
+                                    <span class="ml-anom-badge ${isAnom ? 'badge-danger-soft' : 'badge-positive-soft'}">
+                                        ${isAnom ? 'Outlier Flagged' : 'Normal Pattern'}
+                                    </span>
+                                </div>`;
+                            }).join("")}
+                        </div>
+                    </div>
+                `;
+            } finally {
+                if (aBtn) { aBtn.disabled = false; aBtn.classList.remove("btn-loading"); }
             }
-
-            const anomalies = response.results.filter(r => r.is_anomaly === true);
-            const total = response.results.length;
-
-            aResult.innerHTML = `
-                <div class="ml-result-card">
-                    <div class="ml-result-header">
-                        <span class="ml-model-tag">Isolation Forest Results (Model 4)</span>
-                        <span class="ml-anom-count ${anomalies.length > 0 ? 'text-danger' : 'text-positive'}">
-                            ${anomalies.length} Anomaly / Outlier${anomalies.length === 1 ? '' : 's'} Flagged (from ${total} analyzed)
-                        </span>
-                    </div>
-                    <div class="ml-match-list">
-                        ${response.results.slice(0, 5).map(r => {
-                            const isAnom = r.is_anomaly === true;
-                            const score = typeof r.anomaly_score === "number" ? r.anomaly_score.toFixed(4) : "N/A";
-                            const amt = window.DashboardUtils?.formatCurrency ? window.DashboardUtils.formatCurrency(r.amount) : `$${r.amount}`;
-                            return `<div class="ml-match-row ${isAnom ? 'border-l-danger' : 'border-l-positive'}">
-                                <div>
-                                    <span class="ml-anom-name">${escapeHtml(r.description || r.category || 'Transaction')} (${amt})</span>
-                                    <div class="ml-anom-score">Anomaly score: ${score}</div>
-                                </div>
-                                <span class="ml-anom-badge ${isAnom ? 'badge-danger-soft' : 'badge-positive-soft'}">
-                                    ${isAnom ? 'Outlier Flagged' : 'Normal Pattern'}
-                                </span>
-                            </div>`;
-                        }).join("")}
-                    </div>
-                </div>
-            `;
         }
 
         aBtn?.addEventListener("click", doScoreAnomalies);
@@ -1114,6 +1134,7 @@
         });
 
         async function doForecast() {
+            if (fBtn) { fBtn.disabled = true; fBtn.classList.add("btn-loading"); }
             if (fResult) fResult.innerHTML = '<span class="ml-loading-msg">Running time-series projection model...</span>';
             const expenses = window.cachedExpenses || (window.DashboardUtils && window.DashboardUtils.getSafeExpenses && window.DashboardUtils.getSafeExpenses()) || [];
 
@@ -1142,64 +1163,68 @@
                 }
             }
 
-            const response = await forecastSpending(history, selectedHorizon);
-            if (!response || !response.forecast || response.forecast.length === 0) {
-                if (fResult) fResult.innerHTML = '<span class="ml-empty-msg">Unable to produce forecast projection.</span>';
-                return;
-            }
+            try {
+                const response = await forecastSpending(history, selectedHorizon);
+                if (!response || !response.forecast || response.forecast.length === 0) {
+                    if (fResult) fResult.innerHTML = '<span class="ml-empty-msg">Unable to produce forecast projection.</span>';
+                    return;
+                }
 
-            const forecastPoints = response.forecast
-                .map(f => ({ date: String(f.date || ""), amount: Number(f.predicted_amount) }))
-                .filter(f => Number.isFinite(f.amount));
-            if (!forecastPoints.length) {
-                if (fResult) fResult.innerHTML = '<span class="ml-empty-msg">Forecast output was empty.</span>';
-                return;
-            }
-            const totalProjected = forecastPoints.reduce((acc, f) => acc + f.amount, 0);
-            const formattedTotal = window.DashboardUtils?.formatCurrency ? window.DashboardUtils.formatCurrency(totalProjected) : `$${totalProjected.toFixed(2)}`;
-            const chartWidth = 320;
-            const chartBaseline = 76;
-            const amounts = forecastPoints.map(f => f.amount);
-            const minAmount = Math.min(...amounts);
-            const maxAmount = Math.max(...amounts);
-            const amountRange = maxAmount - minAmount || Math.max(maxAmount, 1);
-            const chartPoints = forecastPoints.map((f, index) => ({
-                x: forecastPoints.length === 1 ? chartWidth / 2 : 12 + (index / (forecastPoints.length - 1)) * (chartWidth - 24),
-                y: chartBaseline - ((f.amount - minAmount) / amountRange) * 54
-            }));
-            const linePath = chartPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(" ");
-            const areaPath = `${linePath} L ${chartPoints[chartPoints.length - 1].x.toFixed(1)} ${chartBaseline} L ${chartPoints[0].x.toFixed(1)} ${chartBaseline} Z`;
+                const forecastPoints = response.forecast
+                    .map(f => ({ date: String(f.date || ""), amount: Number(f.predicted_amount) }))
+                    .filter(f => Number.isFinite(f.amount));
+                if (!forecastPoints.length) {
+                    if (fResult) fResult.innerHTML = '<span class="ml-empty-msg">Forecast output was empty.</span>';
+                    return;
+                }
+                const totalProjected = forecastPoints.reduce((acc, f) => acc + f.amount, 0);
+                const formattedTotal = window.DashboardUtils?.formatCurrency ? window.DashboardUtils.formatCurrency(totalProjected) : `$${totalProjected.toFixed(2)}`;
+                const chartWidth = 320;
+                const chartBaseline = 76;
+                const amounts = forecastPoints.map(f => f.amount);
+                const minAmount = Math.min(...amounts);
+                const maxAmount = Math.max(...amounts);
+                const amountRange = maxAmount - minAmount || Math.max(maxAmount, 1);
+                const chartPoints = forecastPoints.map((f, index) => ({
+                    x: forecastPoints.length === 1 ? chartWidth / 2 : 12 + (index / (forecastPoints.length - 1)) * (chartWidth - 24),
+                    y: chartBaseline - ((f.amount - minAmount) / amountRange) * 54
+                }));
+                const linePath = chartPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(" ");
+                const areaPath = `${linePath} L ${chartPoints[chartPoints.length - 1].x.toFixed(1)} ${chartBaseline} L ${chartPoints[0].x.toFixed(1)} ${chartBaseline} Z`;
 
-            fResult.innerHTML = `
-                <div class="ml-result-card">
-                    <div class="ml-forecast-header">
-                        <div>
-                            <span class="ml-model-tag">Time-Series Forecast (Model 5)</span>
-                            <div class="ml-forecast-total">
-                                ${formattedTotal} <span class="ml-forecast-sub">projected for next ${response.horizon_days} days</span>
+                fResult.innerHTML = `
+                    <div class="ml-result-card">
+                        <div class="ml-forecast-header">
+                            <div>
+                                <span class="ml-model-tag">Time-Series Forecast (Model 5)</span>
+                                <div class="ml-forecast-total">
+                                    ${formattedTotal} <span class="ml-forecast-sub">projected for next ${response.horizon_days} days</span>
+                                </div>
                             </div>
                         </div>
+                        <div class="ml-forecast-chart-wrap">
+                            <svg viewBox="0 0 ${chartWidth} 88" preserveAspectRatio="none" role="img" aria-label="Daily projected spending for the next ${forecastPoints.length} days" class="ml-forecast-chart-svg">
+                                <line x1="0" y1="${chartBaseline}" x2="${chartWidth}" y2="${chartBaseline}" stroke="var(--border)" stroke-width="1" />
+                                <path d="${areaPath}" fill="var(--primary)" fill-opacity="0.14"></path>
+                                <path d="${linePath}" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                                ${chartPoints.map(point => `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="3" fill="var(--primary)"></circle>`).join("")}
+                            </svg>
+                        </div>
+                        <div class="ml-forecast-grid">
+                            ${forecastPoints.map(f => {
+                                const dayName = new Date(f.date).toLocaleDateString(undefined, { weekday: 'short', month: 'numeric', day: 'numeric' });
+                                const amt = window.DashboardUtils?.formatCurrency ? window.DashboardUtils.formatCurrency(f.amount) : `$${f.amount.toFixed(2)}`;
+                                return `<div class="ml-forecast-card">
+                                    <div class="ml-forecast-day">${dayName}</div>
+                                    <div class="ml-forecast-amt">${amt}</div>
+                                </div>`;
+                            }).join("")}
+                        </div>
                     </div>
-                    <div class="ml-forecast-chart-wrap">
-                        <svg viewBox="0 0 ${chartWidth} 88" preserveAspectRatio="none" role="img" aria-label="Daily projected spending for the next ${forecastPoints.length} days" class="ml-forecast-chart-svg">
-                            <line x1="0" y1="${chartBaseline}" x2="${chartWidth}" y2="${chartBaseline}" stroke="var(--border)" stroke-width="1" />
-                            <path d="${areaPath}" fill="var(--primary)" fill-opacity="0.14"></path>
-                            <path d="${linePath}" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
-                            ${chartPoints.map(point => `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="3" fill="var(--primary)"></circle>`).join("")}
-                        </svg>
-                    </div>
-                    <div class="ml-forecast-grid">
-                        ${forecastPoints.map(f => {
-                            const dayName = new Date(f.date).toLocaleDateString(undefined, { weekday: 'short', month: 'numeric', day: 'numeric' });
-                            const amt = window.DashboardUtils?.formatCurrency ? window.DashboardUtils.formatCurrency(f.amount) : `$${f.amount.toFixed(2)}`;
-                            return `<div class="ml-forecast-card">
-                                <div class="ml-forecast-day">${dayName}</div>
-                                <div class="ml-forecast-amt">${amt}</div>
-                            </div>`;
-                        }).join("")}
-                    </div>
-                </div>
-            `;
+                `;
+            } finally {
+                if (fBtn) { fBtn.disabled = false; fBtn.classList.remove("btn-loading"); }
+            }
         }
 
         fBtn?.addEventListener("click", doForecast);

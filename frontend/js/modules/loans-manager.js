@@ -601,7 +601,8 @@
     }
 
     async function deleteLoan(id) {
-        if (!confirm("Are you sure you want to delete this loan / adjustment record?")) return;
+        const canConfirm = typeof window.appConfirm === "function" ? window.appConfirm : (msg) => Promise.resolve(confirm(msg));
+        if (!(await canConfirm("Are you sure you want to delete this loan / adjustment record?"))) return;
 
         const userId = getUserId();
         if (!userId) return;

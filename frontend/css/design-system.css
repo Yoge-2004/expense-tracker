@@ -1,0 +1,202 @@
+/* ==========================================================================
+   Design System & Accessibility Layer (WCAG 2.1 AA, Fitts's Law, Nielsen Heuristics)
+   ========================================================================== */
+
+/* 1. Screen Reader Only Utility (WCAG 2.1 AA Non-visual accessibility) */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* 2. WCAG 2.1 AA High-Visibility Focus Ring (:focus-visible) */
+:focus-visible {
+  outline: 2px solid #10B981 !important;
+  outline-offset: 3px !important;
+  transition: outline-offset 0.15s ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--primary, #c79a3e) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(199, 154, 62, 0.25) !important;
+}
+
+/* Remove default outline when focused via mouse click */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* 3. Fitts's Law Touch Target Minimums (>= 44x44px hitboxes) */
+@media (max-width: 768px), (pointer: coarse) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-icon,
+  .header-action-btn,
+  .theme-toggle-btn,
+  .modal-close,
+  .filter-pill,
+  .tab-item,
+  .action-btn {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Table action hitboxes */
+  .table-actions button,
+  .stream-actions button,
+  .loan-actions button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 8px 12px;
+  }
+}
+
+/* 4. Accessible Toast with Undo Action Support (Nielsen Heuristic #3) */
+.toast-region {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 420px;
+  width: calc(100vw - 32px);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--card-bg, #171a14);
+  color: var(--text-main, #ece7d8);
+  border: 1px solid var(--border, rgba(236, 231, 216, 0.12));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+  line-height: 1.4;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(12px) scale(0.96);
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast.toast-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.toast.toast-hiding {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.96);
+}
+
+.toast-success {
+  border-left: 4px solid var(--success, #5b8c5a);
+}
+
+.toast-error {
+  border-left: 4px solid var(--accent, #a23e32);
+}
+
+.toast-warning {
+  border-left: 4px solid var(--warning, #c9932e);
+}
+
+.toast-info {
+  border-left: 4px solid var(--highlight, #4c7a78);
+}
+
+.toast-action-btn {
+  background: rgba(199, 154, 62, 0.15);
+  color: var(--primary, #c79a3e);
+  border: 1px solid rgba(199, 154, 62, 0.3);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.toast-action-btn:hover {
+  background: var(--primary, #c79a3e);
+  color: #10120e;
+}
+
+.toast-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #a8a395);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.toast-close-btn:hover {
+  color: var(--text-main, #ece7d8);
+}
+
+/* 5. Accessible Dialog Modals */
+.accessible-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.accessible-dialog-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.accessible-dialog-card {
+  width: 90%;
+  max-width: 440px;
+  background: var(--card-bg, #171a14);
+  border: 1px solid var(--border, rgba(236, 231, 216, 0.15));
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  animation: dialogScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dialogScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

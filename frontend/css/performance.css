@@ -247,23 +247,33 @@ html.page-hidden *::after {
   }
 }
 
-/* 4. Lite: backdrop blur on the many in-flow cards is re-computed on every scroll frame. Modals,
- *    overlays, popovers, toasts and the top bar keep theirs. */
+/* 4. Lite: in-flow cards use a lightweight blur to preserve glassmorphic aesthetic without scroll lag */
 html.perf-lite :is(
   .metric-card, .card, .unified-ledger-card, .insight-card-item, .savings-goal-card, .budget-item,
   .recent-transactions, .insight-card, .trend-card, .budget-section, .savings-section, .loans-section,
   .table-wrapper, .money-flow, .insights-intelligence-panel, .ai-assistant-container,
   .ai-intelligence-panel, .float-card, .perk-item, .empty-state-compact
 ) {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-/* 5. Transaction rows: the browser skips layout and paint for rows that are off screen (a long ledger
- *    is thousands of nodes), and only the first screenful slides in on first paint; a rebuilt list
- *    (filter change) appears at once. */
-#expenseList .expense-item {
+/* Hardware-composited cards across all viewports */
+.card, .metric-card, .unified-ledger-card, .insight-card-item {
+  transform: translateZ(0);
+}
+
+/* 5. Transaction & Admin rows: the browser skips layout and paint for rows that are off screen
+ *    (preventing layout thrashing and CLS across long paginated data). */
+#expenseList .expense-item,
+#usersTableBody tr,
+#auditTableBody tr,
+#dbTableBody tr {
   content-visibility: auto;
+  contain-intrinsic-size: auto 54px;
+}
+
+#expenseList .expense-item {
   contain-intrinsic-size: auto 76px;
 }
 

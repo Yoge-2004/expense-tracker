@@ -49,7 +49,6 @@
         if (override === "lite") return true;
         if (override === "full") return false;
         return !!(reduceQuery && reduceQuery.matches) ||
-            !!(smallQuery && smallQuery.matches) ||
             measuredSlow ||
             lowEndHardware();
     }
@@ -68,11 +67,10 @@
     });
 
     apply();
-    [reduceQuery, smallQuery].forEach((query) => {
-        if (!query) return;
-        if (typeof query.addEventListener === "function") query.addEventListener("change", apply);
-        else if (typeof query.addListener === "function") query.addListener(apply);
-    });
+    if (reduceQuery) {
+        if (typeof reduceQuery.addEventListener === "function") reduceQuery.addEventListener("change", apply);
+        else if (typeof reduceQuery.addListener === "function") reduceQuery.addListener(apply);
+    }
 
     // ---- Nothing animates while the tab is in the background ------------------------------------
     function syncHidden() {

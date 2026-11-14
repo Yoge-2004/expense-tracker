@@ -4865,7 +4865,8 @@ async function handleEnrollBiometrics() {
 }
 
 async function handleDisableBiometrics() {
-    const confirmed = window.confirm("Are you sure you want to remove all registered passkeys and disable biometric unlock for your account?");
+    const canConfirm = typeof window.appConfirm === "function" ? window.appConfirm : (msg) => Promise.resolve(window.confirm(msg));
+    const confirmed = await canConfirm("Are you sure you want to remove all registered passkeys and disable biometric unlock for your account?");
     if (!confirmed) return;
 
     const btn = document.getElementById("removePasskeyBtn");

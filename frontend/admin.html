@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="css/admin.css">
     <link rel="stylesheet" href="css/web-studio.css">
     <link rel="stylesheet" href="css/performance.css">
+    <link rel="stylesheet" href="css/design-system.css">
     <script src="js/perf-guard.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="theme-color" content="#10120E">
@@ -25,7 +26,7 @@
     <meta name="description" content="ExpenseTracker Pro Executive Admin Command Center. High-governance financial telemetry, live application logs, and multi-cloud database administration.">
     <meta name="robots" content="noindex, nofollow">
     <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22ExpenseTracker%20Pro%22%2C%22short_name%22%3A%22ExpenseTracker%22%2C%22description%22%3A%22Smart%2C%20privacy-first%20personal%20finance%20and%20expense%20intelligence%20platform.%22%2C%22start_url%22%3A%22index.html%22%2C%22scope%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%2310120E%22%2C%22theme_color%22%3A%22%2310120E%22%2C%22orientation%22%3A%22portrait-primary%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22assets%2Ficon-192.png%22%2C%22type%22%3A%22image%2Fpng%22%2C%22sizes%22%3A%22192x192%22%2C%22purpose%22%3A%22any%20maskable%22%7D%2C%7B%22src%22%3A%22assets%2Ficon-512.png%22%2C%22type%22%3A%22image%2Fpng%22%2C%22sizes%22%3A%22512x512%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%2C%22categories%22%3A%5B%22finance%22%2C%22productivity%22%2C%22utilities%22%5D%7D">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 </head>
 
 <body>
@@ -496,68 +497,73 @@
             </div>
 
             <section class="grid-4-metrics animate-cascade delay-2 admin-grid-2">
-                <div class="metric-card metric-card-netflow">
+                <div class="metric-card metric-card-netflow ml-model-fleet-card" data-model-idx="1" style="cursor: pointer;">
                     <div class="metric-header">
                         <span class="card-label">1. Category Classifier</span>
-                        <span class="status-badge badge-success">Production</span>
+                        <span class="status-badge badge-success" id="mlModel1_status">● ONLINE</span>
                     </div>
                     <div class="metric-value-row">
                         <span class="metric-value admin-adm-1" id="mlActiveModel">Dual-Gram TF-IDF</span>
                     </div>
-                    <div class="metric-footer">
-                        <span class="text-muted">99.8% precision · Rev: production</span>
+                    <div class="metric-footer admin-flex-between">
+                        <span class="text-muted" id="mlModel1_meta">99.3% accuracy · v2.5.0</span>
+                        <span class="text-xs text-primary font-bold">Inspect Specs ➔</span>
                     </div>
                 </div>
 
-                <div class="metric-card metric-card-netflow">
+                <div class="metric-card metric-card-netflow ml-model-fleet-card" data-model-idx="2" style="cursor: pointer;">
                     <div class="metric-header">
                         <span class="card-label">2. Merchant Matcher</span>
-                        <span class="status-badge badge-success">Production</span>
+                        <span class="status-badge badge-success" id="mlModel2_status">● ONLINE</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value admin-adm-1">Vector Index (SBERT)</span>
+                        <span class="metric-value admin-adm-1" id="mlModel2_name">N-Gram Token Matcher</span>
                     </div>
-                    <div class="metric-footer">
-                        <span class="text-muted">Semantic entity matching · 5,400+ vectors</span>
+                    <div class="metric-footer admin-flex-between">
+                        <span class="text-muted" id="mlModel2_meta">98.1% accuracy · v1.4.0</span>
+                        <span class="text-xs text-primary font-bold">Inspect Specs ➔</span>
                     </div>
                 </div>
 
-                <div class="metric-card metric-card-netflow">
+                <div class="metric-card metric-card-netflow ml-model-fleet-card" data-model-idx="3" style="cursor: pointer;">
                     <div class="metric-header">
                         <span class="card-label">3. Duplicate Detector</span>
-                        <span class="status-badge badge-success">Production</span>
+                        <span class="status-badge badge-success" id="mlModel3_status">● ONLINE</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value admin-adm-1">Cosine Vector Sim</span>
+                        <span class="metric-value admin-adm-1" id="mlModel3_name">Cosine Vector Sim</span>
                     </div>
-                    <div class="metric-footer">
-                        <span class="text-muted">Semantic threshold: 0.70</span>
+                    <div class="metric-footer admin-flex-between">
+                        <span class="text-muted" id="mlModel3_meta">99.4% accuracy · v2.1.0</span>
+                        <span class="text-xs text-primary font-bold">Inspect Specs ➔</span>
                     </div>
                 </div>
 
-                <div class="metric-card metric-card-netflow">
+                <div class="metric-card metric-card-netflow ml-model-fleet-card" data-model-idx="4" style="cursor: pointer;">
                     <div class="metric-header">
                         <span class="card-label">4. Anomaly Scorer</span>
-                        <span class="status-badge badge-success">Production</span>
+                        <span class="status-badge badge-success" id="mlModel4_status">● ONLINE</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value admin-adm-1">Isolation Forest</span>
+                        <span class="metric-value admin-adm-1" id="mlModel4_name">Dynamic Z-Score Filter</span>
                     </div>
-                    <div class="metric-footer">
-                        <span class="text-muted">Outlier contamination: 0.05</span>
+                    <div class="metric-footer admin-flex-between">
+                        <span class="text-muted" id="mlModel4_meta">93.7% accuracy · v1.2.0</span>
+                        <span class="text-xs text-primary font-bold">Inspect Specs ➔</span>
                     </div>
                 </div>
 
-                <div class="metric-card metric-card-netflow">
+                <div class="metric-card metric-card-netflow ml-model-fleet-card" data-model-idx="5" style="cursor: pointer;">
                     <div class="metric-header">
                         <span class="card-label">5. Spending Forecaster</span>
-                        <span class="status-badge badge-success">Production</span>
+                        <span class="status-badge badge-success" id="mlModel5_status">● ONLINE</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value admin-adm-1">Time-Series Model</span>
+                        <span class="metric-value admin-adm-1" id="mlModel5_name">Holt-Winters Forecaster</span>
                     </div>
-                    <div class="metric-footer">
-                        <span class="text-muted">Forward horizon: 7-30 days</span>
+                    <div class="metric-footer admin-flex-between">
+                        <span class="text-muted" id="mlModel5_meta">89.4% accuracy · v1.3.0</span>
+                        <span class="text-xs text-primary font-bold">Inspect Specs ➔</span>
                     </div>
                 </div>
 
@@ -570,7 +576,7 @@
                         <span class="metric-value" id="mlTotalFeedback">0</span>
                     </div>
                     <div class="metric-footer">
-                        <span class="text-muted">Total user category corrections</span>
+                        <span class="text-muted" id="mlReviewedFeedback">0 reviewed corrections</span>
                     </div>
                 </div>
             </section>
@@ -616,6 +622,16 @@
                     <div>
                         <span class="admin-adm-4">Model Repository</span>
                         <div class="admin-adm-29">hf://Yoge-2004/expense-intelligence-model</div>
+                </div>
+
+                <!-- Retraining Feedback Threshold Progress -->
+                <div class="retrain-progress-container" style="margin-top: 16px; padding: 14px; background: rgba(var(--primary-rgb), 0.05); border: 1px solid rgba(var(--primary-rgb), 0.15); border-radius: 10px;">
+                    <div class="admin-flex-between" style="margin-bottom: 6px;">
+                        <span class="text-xs" style="font-weight: 600;">Continuous Training Dataset Accumulation</span>
+                        <span class="text-xs font-mono font-bold" id="mlRetrainProgressLabel">0 / 500 Approved Samples (0%)</span>
+                    </div>
+                    <div class="sandbox-bar-track" style="height: 8px; border-radius: 4px; background: rgba(148, 163, 184, 0.2);">
+                        <div id="mlRetrainProgressBar" class="sandbox-bar-fill" style="width: 0%; height: 8px; border-radius: 4px; background: var(--primary); transition: width 0.4s ease;"></div>
                     </div>
                 </div>
 
@@ -662,31 +678,137 @@
 
             <!-- Inference Sandbox & Feedback Moderation Grid -->
             <div class="admin-grid-2col admin-ml-grid admin-grid-3">
-                <!-- Interactive Inference Sandbox -->
-                <div class="card">
+                <!-- Interactive Multi-Model Evaluation Console -->
+                <div class="card" id="mlEvaluationSection">
                     <div class="section-heading admin-adm-3">
-                        <span class="card-label">Evaluation Environment</span>
-                        <h3 class="section-title">Live Model Inference Sandbox</h3>
+                        <span class="card-label">Interactive AI Evaluation Console</span>
+                        <h3 class="section-title">Live Model Fleet Testing Utilities</h3>
                     </div>
                     <p class="admin-adm-6">
-                        Test the active NLP classification pipeline in real-time. Verify category extraction confidence before production deployment.
+                        Inspect live model behaviors, verify predictions, match merchant tokens, evaluate duplicate vectors, and run anomaly detections against production models.
                     </p>
 
-                    <div class="admin-flex-10">
-                        <label class="admin-adm-5" for="sandboxTextInput">Sample Transaction Description:</label>
-                        <input type="text" id="sandboxTextInput" class="command-search-input admin-input-3" placeholder="e.g. Starbucks cold brew & blueberry muffin">
+                    <!-- Utility Tabs Selector -->
+                    <div class="admin-flex-17 mb-3" style="flex-wrap: wrap; gap: 6px;">
+                        <button type="button" class="btn-secondary active admin-btn-pill-sm ml-util-tab-btn" data-target="utilTabClassifier">1. Classifier</button>
+                        <button type="button" class="btn-secondary admin-btn-pill-sm ml-util-tab-btn" data-target="utilTabMerchant">2. Merchant Matcher</button>
+                        <button type="button" class="btn-secondary admin-btn-pill-sm ml-util-tab-btn" data-target="utilTabDuplicates">3. Duplicate Detector</button>
+                        <button type="button" class="btn-secondary admin-btn-pill-sm ml-util-tab-btn" data-target="utilTabAnomaly">4. Anomaly Scorer</button>
+                        <button type="button" class="btn-secondary admin-btn-pill-sm ml-util-tab-btn" data-target="utilTabForecast">5. Forecaster</button>
                     </div>
 
-                    <button id="runSandboxInferenceBtn" class="btn-primary admin-flex-btn-5">
-                        <span>Run Test Inference</span>
-                    </button>
-
-                    <div class="admin-input-6" id="sandboxOutputStage">
-                        <div class="admin-flex-between">
-                            <strong class="admin-adm-34"  id="sandboxTopCategory">Food & Dining</strong>
-                            <span class="admin-adm-35"  id="sandboxTopScore">98.5% confidence</span>
+                    <!-- Utility 1: Category Classifier -->
+                    <div id="utilTabClassifier" class="ml-util-panel">
+                        <div class="admin-flex-10">
+                            <label class="admin-adm-5" for="sandboxTextInput">Sample Transaction Description:</label>
+                            <input type="text" id="sandboxTextInput" class="command-search-input admin-input-3" placeholder="e.g. Starbucks cold brew & blueberry muffin">
                         </div>
-                        <div class="admin-flex-5" id="sandboxCandidateBars"></div>
+                        <button id="runSandboxInferenceBtn" class="btn-primary admin-flex-btn-5 mt-2">
+                            <span>Run Category Classification</span>
+                        </button>
+                        <div class="admin-input-6" id="sandboxOutputStage" style="display:none; margin-top: 14px;">
+                            <div class="admin-flex-between">
+                                <strong class="admin-adm-34" id="sandboxTopCategory">Food & Dining</strong>
+                                <span class="admin-adm-35" id="sandboxTopScore">98.5% confidence</span>
+                            </div>
+                            <div class="admin-flex-5" id="sandboxCandidateBars"></div>
+                        </div>
+                    </div>
+
+                    <!-- Utility 2: Merchant Matcher -->
+                    <div id="utilTabMerchant" class="ml-util-panel d-none">
+                        <div class="admin-flex-10">
+                            <label class="admin-adm-5" for="merchantTestInput">Raw Bank Narration / Merchant String:</label>
+                            <input type="text" id="merchantTestInput" class="command-search-input admin-input-3" placeholder="e.g. POS 4921 UBER *TRIP AID82 SAN FRANCISCO CA" value="POS 4921 UBER *TRIP AID82 SAN FRANCISCO CA">
+                        </div>
+                        <button id="runMerchantMatcherBtn" class="btn-primary admin-flex-btn-5 mt-2">
+                            <span>Resolve Merchant Entity</span>
+                        </button>
+                        <div id="merchantOutputStage" class="admin-input-6" style="display:none; margin-top: 14px;">
+                            <div class="admin-flex-between">
+                                <strong class="admin-adm-34" id="merchantResolvedName">Uber</strong>
+                                <span class="admin-adm-35" id="merchantMatchScore">99.1% match</span>
+                            </div>
+                            <p class="text-xs text-muted mt-1" id="merchantCleanDetails">Canonical Entity: Transportation & Ride-hailing &bull; Confidence: High</p>
+                        </div>
+                    </div>
+
+                    <!-- Utility 3: Duplicate Detector -->
+                    <div id="utilTabDuplicates" class="ml-util-panel d-none">
+                        <div class="admin-grid-1" style="border-top:none; padding-top:0;">
+                            <div>
+                                <label class="admin-adm-5" for="dupAmount1">Transaction 1:</label>
+                                <input type="number" id="dupAmount1" class="command-search-input admin-input-3 mb-1" placeholder="Amount" value="450.00">
+                                <input type="text" id="dupDesc1" class="command-search-input admin-input-3" placeholder="Description" value="Olive Garden Dinner">
+                            </div>
+                            <div>
+                                <label class="admin-adm-5" for="dupAmount2">Transaction 2:</label>
+                                <input type="number" id="dupAmount2" class="command-search-input admin-input-3 mb-1" placeholder="Amount" value="450.00">
+                                <input type="text" id="dupDesc2" class="command-search-input admin-input-3" placeholder="Description" value="Olive Garden Italian Rest">
+                            </div>
+                        </div>
+                        <button id="runDuplicateCheckBtn" class="btn-primary admin-flex-btn-5 mt-2">
+                            <span>Check Vector & Temporal Similarity</span>
+                        </button>
+                        <div id="duplicateOutputStage" class="admin-input-6" style="display:none; margin-top: 14px;">
+                            <div class="admin-flex-between">
+                                <strong class="admin-adm-34" id="duplicateResultBadge">● Likely Duplicate</strong>
+                                <span class="admin-adm-35" id="duplicateScore">96.8% Similarity</span>
+                            </div>
+                            <p class="text-xs text-muted mt-1" id="duplicateExplanation">Identical amounts with high cosine semantic token overlap exceeding 0.70 threshold.</p>
+                        </div>
+                    </div>
+
+                    <!-- Utility 4: Anomaly Scorer -->
+                    <div id="utilTabAnomaly" class="ml-util-panel d-none">
+                        <div class="admin-grid-1" style="border-top:none; padding-top:0;">
+                            <div>
+                                <label class="admin-adm-5" for="anomalyCategory">Expense Category:</label>
+                                <input type="text" id="anomalyCategory" class="command-search-input admin-input-3" placeholder="Category" value="Food & Dining">
+                            </div>
+                            <div>
+                                <label class="admin-adm-5" for="anomalyAmount">Expense Amount (₹):</label>
+                                <input type="number" id="anomalyAmount" class="command-search-input admin-input-3" placeholder="Amount" value="75000">
+                            </div>
+                        </div>
+                        <button id="runAnomalyScoreBtn" class="btn-primary admin-flex-btn-5 mt-2">
+                            <span>Score Transaction Anomaly</span>
+                        </button>
+                        <div id="anomalyOutputStage" class="admin-input-6" style="display:none; margin-top: 14px;">
+                            <div class="admin-flex-between">
+                                <strong class="admin-adm-34" id="anomalyTierBadge">● Severe Outlier Anomaly</strong>
+                                <span class="admin-adm-35" id="anomalyScoreVal">Z-Score: +4.6σ (0.93)</span>
+                            </div>
+                            <p class="text-xs text-muted mt-1" id="anomalyDetails">Amount significantly exceeds 3.5x standard deviation above historical category mean.</p>
+                        </div>
+                    </div>
+
+                    <!-- Utility 5: Spending Forecaster -->
+                    <div id="utilTabForecast" class="ml-util-panel d-none">
+                        <div class="admin-grid-1" style="border-top:none; padding-top:0;">
+                            <div>
+                                <label class="admin-adm-5" for="forecastHorizon">Forecast Window:</label>
+                                <select id="forecastHorizon" class="form-select admin-input-11">
+                                    <option value="7">7 Days Ahead</option>
+                                    <option value="14">14 Days Ahead</option>
+                                    <option value="30" selected>30 Days Ahead (Monthly Outlook)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="admin-adm-5" for="forecastBase">Historical Monthly Run-Rate (₹):</label>
+                                <input type="number" id="forecastBase" class="command-search-input admin-input-3" placeholder="e.g. 45000" value="45000">
+                            </div>
+                        </div>
+                        <button id="runForecastBtn" class="btn-primary admin-flex-btn-5 mt-2">
+                            <span>Generate Trend Forecast</span>
+                        </button>
+                        <div id="forecastOutputStage" class="admin-input-6" style="display:none; margin-top: 14px;">
+                            <div class="admin-flex-between">
+                                <strong class="admin-adm-34" id="forecastProjectedTotal">₹47,250.00 Projected</strong>
+                                <span class="admin-adm-35" id="forecastTrendDir">Trending +5.0% Upward</span>
+                            </div>
+                            <p class="text-xs text-muted mt-1" id="forecastConfidence">Holt-Winters Multiplicative seasonality with 95% confidence bounds (₹43,100 – ₹51,400).</p>
+                        </div>
                     </div>
                 </div>
 
@@ -1097,12 +1219,14 @@
                         <strong class="admin-adm-47"  id="drawerFailedPin">0 / 5</strong>
                     </div>
                 </div>
-                <div class="admin-flex-1">
-                    <button id="drawerResetPinLockoutBtn" class="btn-secondary admin-flex-btn-9">
-                        Unlock PIN
+                <div class="admin-drawer-actions-row">
+                    <button id="drawerResetPinLockoutBtn" class="btn-secondary admin-drawer-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-1"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        <span>Unlock PIN</span>
                     </button>
-                    <button id="drawerToggleLockBtn" class="btn-danger admin-flex-btn-10">
-                        Lock Account
+                    <button id="drawerToggleLockBtn" class="btn-danger admin-drawer-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-1"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <span>Lock Account</span>
                     </button>
                 </div>
             </div>
@@ -1345,10 +1469,31 @@
                 <button id="stepUpConfirmBtn" class="btn-primary admin-btn-9">Verify & Execute</button>
             </div>
         </div>
+    <!-- ── MODEL SPECIFICATIONS & ML TELEMETRY MODAL ─────────────────── -->
+    <div id="modelSpecsModal" class="modal-overlay">
+        <div class="modal modal-card admin-table-14" style="max-width: 620px;">
+            <div class="modal-header">
+                <div>
+                    <span class="card-label" id="modelSpecCategory">Machine Learning Operations</span>
+                    <h3 class="admin-title-1" id="modelSpecTitle">Model Specifications</h3>
+                </div>
+                <button id="closeModelSpecsBtn" class="modal-close" aria-label="Close modal">✕</button>
+            </div>
+            <div class="modal-body admin-adm-54" id="modelSpecBody" style="font-size: 13px; line-height: 1.6;">
+                <!-- Dynamically populated by admin.js showModelSpecsModal(index) -->
+            </div>
+            <div class="modal-footer admin-flex-19">
+                <button id="modelSpecCloseBtn2" class="btn-secondary admin-btn-1">Close</button>
+                <button id="modelSpecTestInSandboxBtn" class="btn-primary admin-btn-9">Open in Evaluation Sandbox ➔</button>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
     <script src="js/api.js"></script>
+    <script src="js/modules/currency-service.js"></script>
+    <script src="js/modules/ui-feedback.js"></script>
+    <script src="js/modules/accessible-dialog.js"></script>
     <script src="js/theme-performance.js"></script>
     <script src="js/custom-controls.js"></script>
     <script src="js/admin.js"></script>

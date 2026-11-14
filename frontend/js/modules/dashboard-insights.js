@@ -21,6 +21,9 @@
                 </div>
             `;
             if (healthBadge) healthBadge.textContent = "--% Financial Health";
+            if (window.DashboardML && typeof window.DashboardML.renderMlIntelligenceCard === "function") {
+                window.DashboardML.renderMlIntelligenceCard();
+            }
             return;
         }
     
