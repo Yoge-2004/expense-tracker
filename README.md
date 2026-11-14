@@ -810,35 +810,42 @@ The mobile client embeds a regex extraction engine (`mobile/services/debitParser
 
 ## 🔌 REST API Specification
 
+A complete, production-grade specification of all endpoints, request bodies, headers, and error codes is documented in [docs/api-specification.md](docs/api-specification.md).
+
 <details open>
-<summary><b>🔌 OpenAPI REST Specification Table (22 Endpoints)</b></summary>
+<summary><b>🔌 Core REST API Routes & Services</b></summary>
 
 <br/>
 
-| Method | Endpoint Route | Auth Scope | Description & Key Parameters |
+| Method | Endpoint Route | Auth Scope | Description |
 |---|---|:---:|---|
-| `POST` | `/api/auth/register` | Public | Register new user account with display name and 6-digit recovery PIN |
+| `POST` | `/api/auth/register` | Public | Register new user account with username, email, and password |
 | `POST` | `/api/auth/login` | Public | Authenticate user credentials and receive stateless JWT token |
 | `POST` | `/api/auth/google` | Public | Authenticate Google OAuth 2.0 credential token |
-| `POST` | `/api/auth/passkey/register-request` | `Bearer` | Initiate WebAuthn hardware passkey registration challenge |
-| `POST` | `/api/auth/passkey/register-verify` | `Bearer` | Verify biometric credential attestation response |
-| `GET` | `/api/expenses` | `Bearer` | Query expenses with pagination, category filter, and search queries |
-| `POST` | `/api/expenses` | `Bearer` | Create new expense outflow record with optional tax breakdown JSON |
-| `PUT` | `/api/expenses/{id}` | `Bearer` | Update existing expense title, amount, category, or tags |
-| `DELETE` | `/api/expenses/{id}` | `Bearer` | Delete expense record with safety confirmation |
-| `POST` | `/api/expenses/feedback` | `Bearer` | Submit user ground-truth category correction for ML retraining |
-| `GET` | `/api/incomes` | `Bearer` | List user income inflows with frequency cadence metadata |
-| `POST` | `/api/incomes` | `Bearer` | Record new income inflow (Salary, Freelance, Staking, Rental) |
-| `GET` | `/api/budgets` | `Bearer` | List category budget envelopes, limits, and real-time spent figures |
-| `POST` | `/api/budgets` | `Bearer` | Set monthly category budget allocation and alert threshold |
-| `GET` | `/api/savings` | `Bearer` | Retrieve active savings goals and target milestone progress |
-| `POST` | `/api/savings/{id}/deposit` | `Bearer` | Execute incremental deposit contribution into savings goal vault |
-| `GET` | `/api/reports/excel` | `Bearer` | Generate 5-sheet Power BI-styled formatted `.xlsx` workbook |
-| `GET` | `/api/reports/pdf` | `Bearer` | Generate corporate vector PDF statement with summary analytics |
-| `GET` | `/api/admin/metrics` | `Admin` | Fetch live system telemetry, thread pools, and database connection stats |
-| `POST` | `/api/admin/ml/retrain` | `Admin + PIN` | Trigger automated ML fleet retraining with 6-digit Step-Up PIN |
-| `POST` | `/api/v1/predict` | Internal | Fast ML inference predicting category with confidence probability |
-| `GET` | `/health` | Public | Returns health telemetry across Spring Boot and Python ML subsystems |
+| `POST` | `/api/webauthn/register/options` | `Bearer` | Initiate WebAuthn FIDO2 passkey registration challenge |
+| `POST` | `/api/webauthn/register/verify` | `Bearer` | Verify biometric credential attestation response |
+| `POST` | `/api/webauthn/login/options` | Public | Initiate WebAuthn passkey authentication challenge |
+| `POST` | `/api/webauthn/login/verify` | Public | Verify signed biometric assertion and issue session JWT |
+| `GET` | `/api/expenses/user/{userId}` | `Bearer` | Query expenses with date-range filters and pagination |
+| `POST` | `/api/expenses/user/{userId}` | `Bearer` | Record new expense; validates budgets and generates alerts |
+| `PUT` | `/api/expenses/{id}/user/{userId}` | `Bearer` | Update existing expense entry |
+| `DELETE` | `/api/expenses/{id}/user/{userId}` | `Bearer` | Delete expense entry |
+| `GET` | `/api/expenses/recurring/user/{userId}` | `Bearer` | List active recurring expense schedules |
+| `POST` | `/api/expenses/recurring/user/{userId}` | `Bearer` | Schedule recurring expense commitment |
+| `GET` | `/api/incomes/user/{userId}` | `Bearer` | List recorded income entries |
+| `POST` | `/api/incomes/user/{userId}` | `Bearer` | Record new income inflow |
+| `GET` | `/api/expenses/budget/user/{userId}` | `Bearer` | List category budget envelopes and limits |
+| `POST` | `/api/expenses/budget/user/{userId}` | `Bearer` | Create budget allocation for category and period |
+| `GET` | `/api/expenses/budget/status/user/{userId}` | `Bearer` | Compute real-time spent figures and % utilization per budget |
+| `GET` | `/api/savings/goals/user/{userId}` | `Bearer` | Retrieve active savings goals and target milestone progress |
+| `POST` | `/api/savings/goals/user/{userId}` | `Bearer` | Create new target savings goal |
+| `PUT` | `/api/savings/goals/{id}/user/{userId}` | `Bearer` | Update savings goal or deposit incremental contribution |
+| `GET` | `/api/loans/user/{userId}` | `Bearer` | List debt obligations and loans |
+| `GET` | `/api/reports/user/{userId}/export/range/{format}` | `Bearer` | Polymorphic range export (format: `excel`, `pdf`) |
+| `POST` | `/api/reports/user/{userId}/import/statement` | `Bearer` | Pluggable bank statement import (CSV, XLSX) |
+| `POST` | `/api/ml/categorize` | `Bearer` | ML inference predicting category with confidence probability |
+| `GET` | `/api/admin/metrics` | `Admin` | Fetch live system telemetry and database connection pool stats |
+| `GET` | `/api/health` | Public | System and database heartbeat status |
 
 </details>
 
