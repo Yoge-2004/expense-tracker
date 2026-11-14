@@ -278,7 +278,6 @@
     gap: 4px !important;
   }
 
-  .top-bar-actions,
   .admin-top-actions {
     display: flex !important;
     flex-wrap: wrap !important;
@@ -400,8 +399,8 @@
     box-sizing: border-box !important;
   }
 
-  .btn-primary,
-  .btn-secondary,
+  .btn-primary:not(.top-bar-actions > button),
+  .btn-secondary:not(.top-bar-actions > button),
   .submit-btn,
   .action-btn {
     width: 100% !important;
