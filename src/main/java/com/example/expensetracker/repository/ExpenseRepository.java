@@ -48,6 +48,14 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     long countByUser(User user);
 
+    /**
+     * Expense counts for a whole page of users in ONE query: rows of {userId, count}. Users with no expenses
+     * are absent from the result. The admin users list used to call countByUser once per row (15 extra round
+     * trips to a remote database for every page, for every admin that opened the tab).
+     */
+    @Query("SELECT e.user.id, COUNT(e) FROM Expense e WHERE e.user.id IN :userIds GROUP BY e.user.id")
+    List<Object[]> countByUserIds(@Param("userIds") java.util.Collection<Long> userIds);
+
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.user = :user")
     BigDecimal sumTotalExpensesAmountByUser(@Param("user") User user);
 

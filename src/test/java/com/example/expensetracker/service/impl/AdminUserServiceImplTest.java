@@ -2,6 +2,7 @@ package com.example.expensetracker.service.impl;
 
 import com.example.expensetracker.dto.AdminPermissionsDto;
 import com.example.expensetracker.dto.AdminUserCreateRequest;
+import com.example.expensetracker.dto.AdminUserDto;
 import com.example.expensetracker.dto.AdminUserDetailDto;
 import com.example.expensetracker.dto.AdminUserRoleUpdateRequest;
 import com.example.expensetracker.dto.AdminUserStatusUpdateRequest;
@@ -23,9 +24,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -318,5 +324,30 @@ class AdminUserServiceImplTest {
 
         assertEquals(0, normalUser.getFailedPinAttempts());
         verify(userRepository).save(normalUser);
+    }
+
+    @Test
+    void getUsersCountsExpensesForTheWholePageInOneQuery() {
+        User first = User.builder().id(11L).name("A").username("a").email("a@test.com").role(Role.ROLE_USER).enabled(true).build();
+        User second = User.builder().id(12L).name("B").username("b").email("b@test.com").role(Role.ROLE_USER).enabled(true).build();
+        Pageable pageable = PageRequest.of(0, 15);
+        when(userRepository.searchUsers(null, null, pageable)).thenReturn(new PageImpl<>(List.of(first, second), pageable, 2));
+        when(expenseRepository.countByUserIds(List.of(11L, 12L))).thenReturn(List.<Object[]>of(new Object[]{11L, 7L}));
+
+        Page<AdminUserDto> page = adminUserService.getUsers("   ", null, pageable);
+
+        assertEquals(7L, page.getContent().get(0).expenseCount());
+        assertEquals(0L, page.getContent().get(1).expenseCount(), "a user with no expenses is absent from the grouped result");
+        verify(expenseRepository, times(1)).countByUserIds(any());
+        verify(expenseRepository, never()).countByUser(any());
+    }
+
+    @Test
+    void getUsersWithAnEmptyPageSkipsTheCountQuery() {
+        Pageable pageable = PageRequest.of(0, 15);
+        when(userRepository.searchUsers(null, null, pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        assertTrue(adminUserService.getUsers(null, null, pageable).isEmpty());
+        verify(expenseRepository, never()).countByUserIds(any());
     }
 }

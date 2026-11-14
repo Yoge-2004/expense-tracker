@@ -151,4 +151,21 @@ class PostgresCompatibilityIT {
         }
         assertEquals(3L, expenseRepository.countByUser(user));
     }
+
+    @Test
+    @DisplayName("grouped expense counts for a page of users in one query (users without expenses are absent)")
+    void groupedExpenseCounts() {
+        User busy = newUser("busy");
+        User idle = newUser("idle");
+        for (int i = 0; i < 4; i++) {
+            expenseRepository.save(Expense.builder().amount(new BigDecimal("5.00")).description("g " + i)
+                    .expenseDate(LocalDate.now()).user(busy).build());
+        }
+        java.util.Map<Long, Long> counts = new java.util.HashMap<>();
+        for (Object[] row : expenseRepository.countByUserIds(java.util.List.of(busy.getId(), idle.getId()))) {
+            counts.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+        }
+        assertEquals(4L, counts.get(busy.getId()));
+        assertEquals(null, counts.get(idle.getId()));
+    }
 }

@@ -59,6 +59,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     public Page<AdminUserDto> getUsers(String query, Role role, Pageable pageable) {
         String cleanQuery = (query != null && !query.isBlank()) ? query.trim() : null;
         Page<User> page = userRepository.searchUsers(cleanQuery, role, pageable);
+        java.util.Map<Long, Long> expenseCounts = expenseCountsFor(page.getContent());
 
         return page.map(u -> new AdminUserDto(
                 u.getId(),
@@ -70,8 +71,20 @@ public class AdminUserServiceImpl implements AdminUserService {
                 u.isAccountLocked(),
                 u.getCurrency(),
                 u.getCreatedAt(),
-                expenseRepository.countByUser(u)
+                expenseCounts.getOrDefault(u.getId(), 0L)
         ));
+    }
+
+    /** One grouped query for the whole page instead of one count per user. */
+    private java.util.Map<Long, Long> expenseCountsFor(java.util.List<User> users) {
+        if (users.isEmpty()) {
+            return java.util.Map.of();
+        }
+        java.util.Map<Long, Long> counts = new java.util.HashMap<>();
+        for (Object[] row : expenseRepository.countByUserIds(users.stream().map(User::getId).toList())) {
+            counts.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+        }
+        return counts;
     }
 
     @Override
