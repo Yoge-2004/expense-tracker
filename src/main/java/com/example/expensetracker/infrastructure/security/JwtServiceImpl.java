@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Map;
 import java.util.function.Function;
@@ -112,7 +114,27 @@ public class JwtServiceImpl implements JwtService {
                 && userDetails.isEnabled()
                 && userDetails.isAccountNonExpired()
                 && userDetails.isAccountNonLocked()
-                && userDetails.isCredentialsNonExpired();
+                && userDetails.isCredentialsNonExpired()
+                && !isRevoked(token, userDetails);
+    }
+
+    /**
+     * Whether the token predates the user's session cut-off ({@code tokensValidAfter}).
+     *
+     * <p>Token issue times have one-second precision, so the cut-off is compared at second
+     * precision too: a token issued in the same second as the revocation is still accepted,
+     * which keeps a login made right after a password reset working.</p>
+     */
+    private boolean isRevoked(String token, UserDetails userDetails) {
+        if (!(userDetails instanceof CustomUserDetails details) || details.getUser() == null) {
+            return false;
+        }
+        Instant cutoff = details.getUser().getTokensValidAfter();
+        if (cutoff == null) {
+            return false;
+        }
+        Date issuedAt = extractClaim(token, Claims::getIssuedAt);
+        return issuedAt == null || issuedAt.toInstant().isBefore(cutoff.truncatedTo(ChronoUnit.SECONDS));
     }
 
     private boolean isTokenExpired(String token) {

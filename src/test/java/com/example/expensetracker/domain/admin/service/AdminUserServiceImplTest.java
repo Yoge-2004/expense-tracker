@@ -123,6 +123,20 @@ class AdminUserServiceImplTest {
     }
 
     @Test
+    void revokeUserSessionsSetsTokenCutoffAndAudits() {
+        when(userRepository.findById(3L)).thenReturn(Optional.of(normalUser));
+        assertNull(normalUser.getTokensValidAfter());
+
+        java.time.Instant before = java.time.Instant.now();
+        adminUserService.revokeUserSessions(3L, superAdmin, "127.0.0.1", "test-ua");
+
+        assertNotNull(normalUser.getTokensValidAfter());
+        assertFalse(normalUser.getTokensValidAfter().isBefore(before));
+        verify(userRepository).save(normalUser);
+        verify(auditService).recordAction(eq(1L), any(), eq("REVOKE_SESSIONS"), eq("USER"), eq("3"), any(), any(), any());
+    }
+
+    @Test
     void getPermissionsReflectsExactCapabilities() {
         AdminPermissionsDto superPerm = adminUserService.getPermissions(superAdmin);
         assertTrue(superPerm.canModifyRoles());

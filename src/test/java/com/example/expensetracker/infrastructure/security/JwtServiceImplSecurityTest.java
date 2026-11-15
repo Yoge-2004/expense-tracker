@@ -260,4 +260,53 @@ class JwtServiceImplSecurityTest {
             assertEquals(ONE_HOUR / 1000, (expMs - iatMs) / 1000);
         }
     }
+
+    @Nested
+    @DisplayName("session revocation (tokensValidAfter)")
+    class SessionRevocation {
+
+        private UserDetails account(String email, java.time.Instant cutoff) {
+            com.example.expensetracker.domain.user.model.User entity =
+                    new com.example.expensetracker.domain.user.model.User();
+            entity.setEmail(email);
+            entity.setEnabled(true);
+            entity.setTokensValidAfter(cutoff);
+            return new CustomUserDetails(entity);
+        }
+
+        @Test
+        @DisplayName("a user who never revoked sessions keeps working tokens")
+        void noCutoffMeansValid() {
+            JwtServiceImpl s = service(b64(32), ONE_HOUR);
+            String token = s.generateToken("a@b.com");
+            assertTrue(s.isTokenValid(token, account("a@b.com", null)));
+        }
+
+        @Test
+        @DisplayName("a token issued before the cut-off is rejected")
+        void tokenBeforeCutoffRejected() {
+            JwtServiceImpl s = service(b64(32), ONE_HOUR);
+            String token = s.generateToken("a@b.com");
+            java.time.Instant later = java.time.Instant.now().plusSeconds(3600);
+            assertFalse(s.isTokenValid(token, account("a@b.com", later)));
+        }
+
+        @Test
+        @DisplayName("a token issued after the cut-off is accepted")
+        void tokenAfterCutoffAccepted() {
+            JwtServiceImpl s = service(b64(32), ONE_HOUR);
+            String token = s.generateToken("a@b.com");
+            java.time.Instant earlier = java.time.Instant.now().minusSeconds(3600);
+            assertTrue(s.isTokenValid(token, account("a@b.com", earlier)));
+        }
+
+        @Test
+        @DisplayName("a token issued in the same second as the cut-off is accepted (second precision)")
+        void sameSecondAccepted() {
+            JwtServiceImpl s = service(b64(32), ONE_HOUR);
+            String token = s.generateToken("a@b.com");
+            java.time.Instant issuedAt = s.extractClaim(token, c -> c.getIssuedAt()).toInstant();
+            assertTrue(s.isTokenValid(token, account("a@b.com", issuedAt.plusMillis(500))));
+        }
+    }
 }

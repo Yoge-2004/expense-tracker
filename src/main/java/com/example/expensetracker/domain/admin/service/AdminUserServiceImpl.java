@@ -239,6 +239,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 throw new BadRequestException("New password must be at least 8 characters long");
             }
             target.setPassword(passwordEncoder.encode(request.newPassword()));
+            target.setTokensValidAfter(java.time.Instant.now());
         }
 
         if (request.newPin() != null && !request.newPin().isBlank()) {
@@ -470,6 +471,10 @@ public class AdminUserServiceImpl implements AdminUserService {
     public void revokeUserSessions(Long targetUserId, User actor, String ipAddress, String userAgent) {
         User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + targetUserId));
+
+        // Every login token issued before now stops working on its next request.
+        target.setTokensValidAfter(java.time.Instant.now());
+        userRepository.save(target);
 
         auditService.recordAction(
                 actor.getId(),
