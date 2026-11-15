@@ -15,6 +15,9 @@ import com.example.expensetracker.domain.notification.model.NotificationType;
 import com.example.expensetracker.domain.notification.repository.AppNotificationRepository;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 
 
@@ -45,7 +48,7 @@ class NotificationSchedulerTest {
     @DisplayName("counts only the notifications that were actually created, skipping duplicates")
     void countsCreated() {
         User user = user(1);
-        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(user)));
         when(detector.detectDaily(user, TODAY)).thenReturn(List.of(pending("a"), pending("b")));
         // First notification is created, the second one was already sent before.
         when(notificationService.notify(eq(user), any())).thenReturn(true, false);
@@ -58,7 +61,7 @@ class NotificationSchedulerTest {
     void isolatesFailures() {
         User broken = user(1);
         User fine = user(2);
-        when(userRepository.findAll()).thenReturn(List.of(broken, fine));
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(broken, fine)));
         when(detector.detectDaily(broken, TODAY)).thenThrow(new IllegalStateException("bad data"));
         when(detector.detectDaily(fine, TODAY)).thenReturn(List.of(pending("a")));
         when(notificationService.notify(eq(fine), any())).thenReturn(true);
@@ -68,10 +71,29 @@ class NotificationSchedulerTest {
     }
 
     @Test
+    @DisplayName("walks every page of users, not just the first")
+    void readsEveryPageOfUsers() {
+        User first = user(1);
+        User second = user(2);
+        // 201 users at 200 per page means two pages.
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(
+                new PageImpl<>(List.of(first), PageRequest.of(0, 200), 201),
+                new PageImpl<>(List.of(second), PageRequest.of(1, 200), 201));
+        when(detector.detectDaily(any(), eq(TODAY))).thenReturn(List.of(pending("a")));
+        when(notificationService.notify(any(), any())).thenReturn(true);
+
+        assertEquals(2, scheduler.process(TODAY, false));
+
+        verify(userRepository, times(2)).findAll(any(Pageable.class));
+        verify(detector).detectDaily(first, TODAY);
+        verify(detector).detectDaily(second, TODAY);
+    }
+
+    @Test
     @DisplayName("the weekly run asks for the digest, not the daily alerts")
     void weeklyUsesDigest() {
         User user = user(1);
-        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(user)));
         when(detector.detectWeeklyDigest(user, TODAY)).thenReturn(List.of());
 
         assertEquals(0, scheduler.process(TODAY, true));

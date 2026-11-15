@@ -9,6 +9,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import com.example.expensetracker.domain.notification.repository.AppNotificationRepository;
 import com.example.expensetracker.domain.user.model.User;
@@ -27,6 +31,11 @@ import com.example.expensetracker.domain.user.repository.UserRepository;
 public class NotificationScheduler {
 
     private static final int KEEP_DAYS = 90;
+
+
+    /** Users read per query by the scheduled runs. */
+
+    private static final int USER_PAGE_SIZE = 200;
 
     private final UserRepository userRepository;
     private final NotificationDetector detector;
@@ -67,22 +76,28 @@ public class NotificationScheduler {
     /** @return how many notifications were created */
     int process(LocalDate today, boolean weekly) {
         int created = 0;
-        List<User> users = userRepository.findAll();
-        for (User user : users) {
-            try {
-                List<PendingNotification> due = weekly
-                        ? detector.detectWeeklyDigest(user, today)
-                        : detector.detectDaily(user, today);
-                for (PendingNotification notification : due) {
-                    if (notificationService.notify(user, notification)) {
-                        created++;
+        // Users are read a page at a time so memory and query size stay flat as the user base grows.
+        Pageable pageable = PageRequest.of(0, USER_PAGE_SIZE, Sort.by("id"));
+        Page<User> page;
+        do {
+            page = userRepository.findAll(pageable);
+            for (User user : page) {
+                try {
+                    List<PendingNotification> due = weekly
+                            ? detector.detectWeeklyDigest(user, today)
+                            : detector.detectDaily(user, today);
+                    for (PendingNotification notification : due) {
+                        if (notificationService.notify(user, notification)) {
+                            created++;
+                        }
                     }
+                } catch (Exception e) {
+                    // One account's problem must never stop everyone else's notifications.
+                    log.warn("Notification run failed for userId={}: {}", user.getId(), e.getMessage());
                 }
-            } catch (Exception e) {
-                // One account's problem must never stop everyone else's notifications.
-                log.warn("Notification run failed for userId={}: {}", user.getId(), e.getMessage());
             }
-        }
+            pageable = page.nextPageable();
+        } while (page.hasNext());
         return created;
     }
 

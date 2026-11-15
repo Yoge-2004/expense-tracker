@@ -28,6 +28,8 @@ import com.example.expensetracker.domain.notification.service.NotificationServic
 import com.example.expensetracker.domain.notification.service.PendingNotification;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 
 
@@ -65,7 +67,7 @@ class AppUpdateNotifierTest {
         User user = user(1);
         DeviceToken behind = device(10, "1.0.4", null);
         DeviceToken current = device(11, "1.0.5", null);
-        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(user)));
         when(deviceTokenRepository.findByUser(user)).thenReturn(List.of(behind, current));
         when(notificationService.notifyDevices(eq(user), any(), any())).thenReturn(true);
 
@@ -92,7 +94,7 @@ class AppUpdateNotifierTest {
     void notifiesPhonesWithUnknownVersion() {
         User user = user(1);
         DeviceToken unknown = device(10, null, null);
-        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(user)));
         when(deviceTokenRepository.findByUser(user)).thenReturn(List.of(unknown));
         when(notificationService.notifyDevices(eq(user), any(), any())).thenReturn(true);
 
@@ -103,7 +105,7 @@ class AppUpdateNotifierTest {
     @DisplayName("does not bother phones that are already up to date")
     void skipsUpToDatePhones() {
         User user = user(1);
-        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(user)));
         when(deviceTokenRepository.findByUser(user)).thenReturn(List.of(device(10, "1.0.5", null), device(11, "1.1.0", null)));
 
         assertEquals(0, notifier.announce(RELEASE));
@@ -115,7 +117,7 @@ class AppUpdateNotifierTest {
     @DisplayName("announces a release to a phone only once")
     void announcesOncePerRelease() {
         User user = user(1);
-        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(user)));
         when(deviceTokenRepository.findByUser(user)).thenReturn(List.of(device(10, "1.0.4", "1.0.5")));
 
         assertEquals(0, notifier.announce(RELEASE));
@@ -128,7 +130,7 @@ class AppUpdateNotifierTest {
     void respectsPreferences() {
         User user = user(1);
         DeviceToken behind = device(10, "1.0.4", null);
-        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(user)));
         when(deviceTokenRepository.findByUser(user)).thenReturn(List.of(behind));
         when(notificationService.notifyDevices(eq(user), any(), any())).thenReturn(false);
 
@@ -143,7 +145,7 @@ class AppUpdateNotifierTest {
     void isolatesFailures() {
         User broken = user(1);
         User fine = user(2);
-        when(userRepository.findAll()).thenReturn(List.of(broken, fine));
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(broken, fine)));
         when(deviceTokenRepository.findByUser(broken)).thenThrow(new IllegalStateException("db hiccup"));
         when(deviceTokenRepository.findByUser(fine)).thenReturn(List.of(device(20, "1.0.4", null)));
         when(notificationService.notifyDevices(eq(fine), any(), any())).thenReturn(true);

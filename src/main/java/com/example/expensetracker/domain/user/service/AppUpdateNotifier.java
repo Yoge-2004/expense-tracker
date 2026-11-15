@@ -18,6 +18,10 @@ import com.example.expensetracker.domain.notification.service.NotificationServic
 import com.example.expensetracker.domain.notification.service.PendingNotification;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 
 
@@ -38,6 +42,9 @@ public class AppUpdateNotifier {
     private final UserRepository userRepository;
     private final DeviceTokenRepository deviceTokenRepository;
     private final NotificationService notificationService;
+
+    /** Users read per query when announcing a release. */
+    private static final int USER_PAGE_SIZE = 200;
 
     @Value("${app.release.notify.enabled:true}")
     private boolean enabled;
@@ -64,32 +71,39 @@ public class AppUpdateNotifier {
 
     int announce(AppReleaseService.Release release) {
         int notified = 0;
-        for (User user : userRepository.findAll()) {
-            try {
-                List<DeviceToken> due = deviceTokenRepository.findByUser(user).stream()
-                        .filter(device -> needsNotice(device, release))
-                        .toList();
-                if (due.isEmpty()) {
-                    continue;
-                }
-                Set<Long> dueIds = new HashSet<>();
-                due.forEach(device -> dueIds.add(device.getId()));
+        // Users are read a page at a time so memory and query size stay flat as the user base grows.
+        Pageable pageable = PageRequest.of(0, USER_PAGE_SIZE, Sort.by("id"));
+        Page<User> page;
+        do {
+            page = userRepository.findAll(pageable);
+            for (User user : page) {
+                try {
+                    List<DeviceToken> due = deviceTokenRepository.findByUser(user).stream()
+                            .filter(device -> needsNotice(device, release))
+                            .toList();
+                    if (due.isEmpty()) {
+                        continue;
+                    }
+                    Set<Long> dueIds = new HashSet<>();
+                    due.forEach(device -> dueIds.add(device.getId()));
 
-                PendingNotification notice = new PendingNotification(
-                        NotificationType.APP_UPDATE,
-                        "Update available",
-                        "Expense Tracker " + release.tag() + " is ready. Open the app to update.",
-                        "app-update",
-                        "app-update:" + release.version());
-                if (notificationService.notifyDevices(user, notice, device -> dueIds.contains(device.getId()))) {
-                    due.forEach(device -> device.setUpdateAnnouncedVersion(release.version()));
-                    deviceTokenRepository.saveAll(due);
-                    notified++;
+                    PendingNotification notice = new PendingNotification(
+                            NotificationType.APP_UPDATE,
+                            "Update available",
+                            "Expense Tracker " + release.tag() + " is ready. Open the app to update.",
+                            "app-update",
+                            "app-update:" + release.version());
+                    if (notificationService.notifyDevices(user, notice, device -> dueIds.contains(device.getId()))) {
+                        due.forEach(device -> device.setUpdateAnnouncedVersion(release.version()));
+                        deviceTokenRepository.saveAll(due);
+                        notified++;
+                    }
+                } catch (RuntimeException e) {
+                    log.warn("Could not send the app update notice for userId={}: {}", user.getId(), e.getMessage());
                 }
-            } catch (RuntimeException e) {
-                log.warn("Could not send the app update notice for userId={}: {}", user.getId(), e.getMessage());
             }
-        }
+            pageable = page.nextPageable();
+        } while (page.hasNext());
         return notified;
     }
 
