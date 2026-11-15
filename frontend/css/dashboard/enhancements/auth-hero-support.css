@@ -63,7 +63,7 @@
 }
 .float-card,
 .perk-item {
-  background: rgba(23, 26, 20, 0.52);
+  background: var(--card-bg, rgba(23, 26, 20, 0.78));
   border-radius: 18px;
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);

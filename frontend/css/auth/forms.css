@@ -1,3 +1,45 @@
+
+/* ── Auth Card Top Return Navigation ── */
+
+/* ── Light Theme Auth Card Contrast Guarantees ── */
+[data-theme="light"] .auth-card {
+  background: #ffffff !important;
+  border-color: rgba(var(--primary-rgb), 0.22) !important;
+  box-shadow:
+    0 24px 60px -15px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(var(--primary-rgb), 0.15) !important;
+}
+[data-theme="light"] .form-input,
+[data-theme="light"] select.form-input {
+  background: #ffffff !important;
+  border: 1.5px solid rgba(15, 23, 42, 0.16) !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .form-input:focus,
+[data-theme="light"] select.form-input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.25) !important;
+}
+[data-theme="light"] .form-input::placeholder {
+  color: #94a3b8 !important;
+}
+[data-theme="light"] .form-label {
+  color: #1e293b !important;
+  font-weight: 600 !important;
+}
+[data-theme="light"] .auth-title {
+  color: #0f172a !important;
+}
+[data-theme="light"] .auth-subtitle {
+  color: #475569 !important;
+}
+[data-theme="light"] .auth-footer-text {
+  color: #475569 !important;
+}
+[data-theme="light"] .auth-footer-link {
+  color: var(--primary) !important;
+}
+
 /* ── Right Form Panel ── */
 .auth-form-section {
   display: flex;
@@ -295,9 +337,10 @@
   color: var(--text-muted);
 }
 .auth-footer-link {
-  color: var(--text-main);
+  color: var(--primary);
   font-weight: 700;
-  text-decoration: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   margin-left: 4px;
   transition: color 0.2s;
   white-space: nowrap;

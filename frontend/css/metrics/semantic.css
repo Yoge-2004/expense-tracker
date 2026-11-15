@@ -4,13 +4,14 @@
    ========================================================================== */
 
 /* 5 Primary KPI Cards - Signature 4px Left Color Strips (Guaranteed in Light & Dark Themes, Idle & Hover) */
+/* 5 Primary KPI Cards - Signature Refined Accent Strips (Minimalist Elevation, Crisp Hierarchy) */
 :is(
   .metric-card,
   [data-theme="light"] .metric-card,
   [data-theme="dark"] .metric-card
 ).metric-card-inflow,
 #metricCardInflow {
-  border-left: 4px solid var(--metric-inflow) !important;
+  border-left: 3px solid var(--metric-inflow) !important;
 }
 
 :is(
@@ -19,19 +20,11 @@
     [data-theme="dark"] .metric-card
   ).metric-card-inflow:hover,
 #metricCardInflow:hover {
-  border-left: 4px solid var(--metric-inflow) !important;
+  border-left: 3px solid var(--metric-inflow) !important;
   box-shadow:
-    0 14px 34px -6px var(--metric-inflow-glow),
-    0 0 24px rgba(16, 185, 129, 0.15);
-}
-
-.metric-card.metric-card-inflow .card-label,
-.metric-card.metric-card-inflow .metric-value {
-  color: var(--metric-inflow);
-}
-
-.metric-card.metric-card-inflow .card-label {
-  font-weight: 700;
+    0 10px 24px -4px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(var(--metric-inflow-rgb), 0.25);
+  transform: translateY(-2px);
 }
 
 :is(
@@ -40,7 +33,7 @@
   [data-theme="dark"] .metric-card
 ).metric-card-outflow,
 #metricCardOutflow {
-  border-left: 4px solid var(--metric-outflow) !important;
+  border-left: 3px solid var(--metric-outflow) !important;
 }
 
 :is(
@@ -49,19 +42,11 @@
     [data-theme="dark"] .metric-card
   ).metric-card-outflow:hover,
 #metricCardOutflow:hover {
-  border-left: 4px solid var(--metric-outflow) !important;
+  border-left: 3px solid var(--metric-outflow) !important;
   box-shadow:
-    0 14px 34px -6px var(--metric-outflow-glow),
-    0 0 24px rgba(239, 68, 68, 0.15);
-}
-
-.metric-card.metric-card-outflow .card-label,
-.metric-card.metric-card-outflow .metric-value {
-  color: var(--metric-outflow);
-}
-
-.metric-card.metric-card-outflow .card-label {
-  font-weight: 700;
+    0 10px 24px -4px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(var(--metric-outflow-rgb), 0.25);
+  transform: translateY(-2px);
 }
 
 :is(
@@ -70,7 +55,7 @@
   [data-theme="dark"] .metric-card
 ).metric-card-netflow,
 #metricCardNetflow {
-  border-left: 4px solid var(--metric-netflow) !important;
+  border-left: 3px solid var(--metric-netflow) !important;
 }
 
 :is(
@@ -79,19 +64,11 @@
     [data-theme="dark"] .metric-card
   ).metric-card-netflow:hover,
 #metricCardNetflow:hover {
-  border-left: 4px solid var(--metric-netflow) !important;
+  border-left: 3px solid var(--metric-netflow) !important;
   box-shadow:
-    0 14px 34px -6px var(--metric-netflow-glow),
-    0 0 24px rgba(59, 130, 246, 0.18);
-}
-
-.metric-card.metric-card-netflow .card-label,
-.metric-card.metric-card-netflow .metric-value {
-  color: var(--metric-netflow);
-}
-
-.metric-card.metric-card-netflow .card-label {
-  font-weight: 700;
+    0 10px 24px -4px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(var(--metric-netflow-rgb), 0.25);
+  transform: translateY(-2px);
 }
 
 :is(
@@ -100,7 +77,7 @@
   [data-theme="dark"] .metric-card
 ).metric-card-savings,
 #metricCardSavings {
-  border-left: 4px solid var(--metric-savings) !important;
+  border-left: 3px solid var(--metric-savings) !important;
 }
 
 :is(
@@ -109,19 +86,11 @@
     [data-theme="dark"] .metric-card
   ).metric-card-savings:hover,
 #metricCardSavings:hover {
-  border-left: 4px solid var(--metric-savings) !important;
+  border-left: 3px solid var(--metric-savings) !important;
   box-shadow:
-    0 14px 34px -6px var(--metric-savings-glow),
-    0 0 24px rgba(245, 158, 11, 0.15);
-}
-
-.metric-card.metric-card-savings .card-label,
-.metric-card.metric-card-savings .metric-value {
-  color: var(--metric-savings);
-}
-
-.metric-card.metric-card-savings .card-label {
-  font-weight: 700;
+    0 10px 24px -4px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(var(--metric-savings-rgb), 0.25);
+  transform: translateY(-2px);
 }
 
 :is(
@@ -130,7 +99,7 @@
   [data-theme="dark"] .metric-card
 ).metric-card-subs,
 #metricCardSubs {
-  border-left: 4px solid var(--metric-subs) !important;
+  border-left: 3px solid var(--metric-subs) !important;
 }
 
 :is(
@@ -139,19 +108,39 @@
     [data-theme="dark"] .metric-card
   ).metric-card-subs:hover,
 #metricCardSubs:hover {
-  border-left: 4px solid var(--metric-subs) !important;
+  border-left: 3px solid var(--metric-subs) !important;
   box-shadow:
-    0 14px 34px -6px var(--metric-subs-glow),
-    0 0 24px rgba(192, 86, 94, 0.15);
+    0 10px 24px -4px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(var(--metric-subs-rgb), 0.25);
+  transform: translateY(-2px);
 }
 
-.metric-card.metric-card-subs .card-label {
-  color: var(--metric-subs-text);
-  font-weight: 700;
+.metric-card.metric-card-inflow .metric-value {
+  color: var(--metric-inflow);
+}
+
+.metric-card.metric-card-outflow .metric-value {
+  color: var(--metric-outflow);
+}
+
+.metric-card.metric-card-netflow .metric-value {
+  color: var(--metric-netflow);
+}
+
+.metric-card.metric-card-savings .metric-value {
+  color: var(--metric-savings);
 }
 
 .metric-card.metric-card-subs .metric-value {
   color: var(--metric-subs);
+}
+
+.metric-card .card-label {
+  color: var(--text-muted) !important;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .badge-subs {

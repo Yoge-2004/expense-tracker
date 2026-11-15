@@ -5098,6 +5098,7 @@ button[type="submit"]:hover {
     overflow: hidden;
   }
 }
+
 /* --- End of dashboard/layout.css --- */
 
 /* --- Content from dashboard/motion.css --- */
@@ -9486,36 +9487,32 @@ body.modal-open {
 /* ================== 7. BUDGET PROGRESS BARS ================== */
 /* Avoid fill-mode: both so the entrance animation does not block hover transforms. */
 .budget-item {
-  margin-bottom: 16px;
-  border-radius: 14px;
-  padding: 16px;
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  transition:
-    transform 0.25s var(--ease),
-    background-color 0.25s var(--ease),
-    border-color 0.25s var(--ease),
-    box-shadow 0.25s var(--ease);
-  position: relative;
-  overflow: hidden;
-  animation: expenseSlideIn 0.4s var(--ease);
+    margin-bottom: 16px;
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    transition: transform 0.25s var(--ease), background-color 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+    position: relative;
+    overflow: hidden;
+    animation: expenseSlideIn 0.4s var(--ease);
 }
 
 .budget-info {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 6px;
-  font-size: 13px;
-  color: var(--text-main);
-  font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--text-main);
+    font-weight: 500;
 }
 
 .progress-track {
-  width: 100%;
-  height: 8px;
-  background: var(--input-bg);
-  border-radius: 4px;
-  overflow: hidden;
+    width: 100%;
+    height: 8px;
+    background: var(--input-bg);
+    border-radius: 4px;
+    overflow: hidden;
 }
 
 /* (.progress-fill removed — merged into .budget-bar-fill, the real class
@@ -18609,6 +18606,12 @@ body.stealth-mode .insight-card:hover div[style*="font-size:18px"] {
 
 /* --- End of aesthetics.css --- */
 
+/* --- Content from consolidated-overrides.css --- */
+/* Overrides adopted from hand edits that lived only in the generated style.css.
+   They are kept here, unchanged and in the same cascade position, so the bundle can be
+   regenerated without losing them. Many repeat rules found in other modules: merge or
+   delete them module by module, then rebuild. */
+
 /* ==========================================================================
    GLOBAL PRINT MEDIA & PREVIEW RULES
    ========================================================================== */
@@ -21924,3 +21927,5 @@ select option {
   color: var(--text-main);
   border-color: var(--border);
 }
+
+/* --- End of consolidated-overrides.css --- */

@@ -118,7 +118,7 @@
   position: relative;
   overflow: hidden;
   border-radius: 0 0 20px 20px;
-  background: #080a07;
+  background: var(--card-bg);
   scrollbar-width: thin;
 }
 

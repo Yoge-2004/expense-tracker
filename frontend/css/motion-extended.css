@@ -829,6 +829,7 @@
 
 /* --- End of motion-extended/feedback.css --- */
 
+
 /* ==========================================================================
    CROSS-PAGE VIEW TRANSITIONS
    This app is a set of separate .html documents (index -> register ->
@@ -842,59 +843,45 @@
    of the same motion language as everything else on the site. */
 
 @view-transition {
-  navigation: auto;
+    navigation: auto;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  ::view-transition-old(root) {
-    animation: motion-page-out var(--motion-base, 280ms)
-      var(--ease-spring-soft, ease) both;
-  }
+    ::view-transition-old(root) {
+        animation: motion-page-out var(--motion-base, 280ms) var(--ease-spring-soft, ease) both;
+    }
 
-  ::view-transition-new(root) {
-    animation: motion-page-in var(--motion-slow, 420ms)
-      var(--ease-spring-soft, ease) both;
-  }
+    ::view-transition-new(root) {
+        animation: motion-page-in var(--motion-slow, 420ms) var(--ease-spring-soft, ease) both;
+    }
 }
 
 @keyframes motion-page-out {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.99);
-  }
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(0.99); }
 }
 
 @keyframes motion-page-in {
-  from {
-    opacity: 0;
-    transform: scale(1.01) translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+    from { opacity: 0; transform: scale(1.01) translateY(6px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
-  }
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
+    }
 }
 
 /* Theme-specific card motion was removed from the critical theme-switch path.
    Pointer/interaction motion remains owned by the existing motion modules. */
 
-/* ==========================================================================
-   ENHANCED MICRO-INTERACTIONS & DOHERTY THRESHOLD FEEDBACK
-   ========================================================================== */
+/* --- Content from motion-extended-overrides.css --- */
+/* Rules adopted from hand edits that lived only in the generated motion-extended.css.
+   Kept unchanged and in the same cascade position so the bundle can be regenerated without
+   losing them. Move each rule into the module that owns it, then rebuild. */
 
-/* Tactile button press compression */
 .btn:active,
 .btn-primary:active,
 .btn-secondary:active,
@@ -1006,3 +993,4 @@
   color: transparent !important;
 }
 
+/* --- End of motion-extended-overrides.css --- */

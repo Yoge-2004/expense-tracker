@@ -50,6 +50,11 @@
 
 .income-table-container .income-table {
   width: 100%;
+  border-collapse: collapse;
+}
+
+.income-table-container .income-table {
+  width: 100%;
   min-width: 580px;
   border-collapse: collapse;
 }

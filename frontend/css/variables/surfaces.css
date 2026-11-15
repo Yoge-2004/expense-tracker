@@ -111,8 +111,8 @@ body {
 [data-theme="light"] .hero-orb-2 {
   background: radial-gradient(
     circle,
-    rgba(41, 128, 185, 0.32) 0%,
-    rgba(41, 128, 185, 0.1) 50%,
+    rgba(var(--highlight-rgb), 0.32) 0%,
+    rgba(var(--highlight-rgb), 0.1) 50%,
     transparent 70%
   );
 }
@@ -120,8 +120,8 @@ body {
 [data-theme="light"] .hero-orb-3 {
   background: radial-gradient(
     circle,
-    rgba(231, 76, 60, 0.28) 0%,
-    rgba(231, 76, 60, 0.08) 50%,
+    rgba(var(--accent-rgb), 0.28) 0%,
+    rgba(var(--accent-rgb), 0.08) 50%,
     transparent 70%
   );
 }
@@ -154,7 +154,7 @@ body {
 [data-theme="light"] .command-kbd {
   background: rgba(15, 23, 42, 0.08);
   color: var(--text-muted);
-  border: 1px solid var(--border-accent, rgba(var(--primary-rgb), 0.2));
+  border: 1px solid rgba(var(--primary-rgb), 0.2);
 }
 
 [data-theme="light"] .command-search-input,

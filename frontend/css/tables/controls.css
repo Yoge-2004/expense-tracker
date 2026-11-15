@@ -77,7 +77,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 13px 6px 10px;
-  background: rgba(23, 26, 20, 0.92);
+  background: var(--card-bg, rgba(23, 26, 20, 0.92));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--border-accent);
