@@ -11,7 +11,14 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -71,6 +78,10 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     private final MonthlyReportLogRepository reportLogRepository;
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
     private final MonthlyHtmlReportGenerator monthlyHtmlReportGenerator;
+    private final PlatformTransactionManager transactionManager;
+
+    /** Users read per query by the automated catch-up job. */
+    private static final int USER_PAGE_SIZE = 200;
 
     @Value("${spring.mail.host:}")
     private String configuredMailHost;
@@ -432,10 +443,16 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
 
     /**
      * {@inheritDoc}
+     *
+     * <p>This job deliberately does <em>not</em> run inside one transaction. Each user's email and its
+     * log row get their own transaction (see {@link #sendInOwnTransaction}), so a report that has been
+     * sent is recorded straight away. With a single transaction around the whole run, a restart or one
+     * failed log write would roll back every record, and the next run (it also fires at startup) would
+     * email the same people again. Users are read a page at a time so memory stays flat.</p>
      */
     @EventListener(ApplicationReadyEvent.class)
     @Scheduled(cron = "0 0 6 1-3 * ?")
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     @Override
     public void sendAutomatedMonthlyReports() {
         if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank()
@@ -450,23 +467,49 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
 
         int sentCount = 0;
         try {
-            List<User> users = userRepository.findAll();
-            for (User u : users) {
-                try {
-                    boolean alreadySent = reportLogRepository
-                            .existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(u, year, month);
-                    if (!alreadySent) {
-                        sendMonthlyReportEmail(u.getId(), year, month);
-                        sentCount++;
+            Pageable pageable = PageRequest.of(0, USER_PAGE_SIZE, Sort.by("id"));
+            Page<User> page;
+            do {
+                page = userRepository.findAll(pageable);
+                for (User u : page) {
+                    try {
+                        boolean alreadySent = reportLogRepository
+                                .existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(u, year, month);
+                        if (!alreadySent && sendInOwnTransaction(u.getId(), year, month)) {
+                            sentCount++;
+                        }
+                    } catch (Exception e) {
+                        log.error("Error processing automated monthly report catch-up for user {}", u.getId(), e);
                     }
-                } catch (Exception e) {
-                    log.error("Error processing automated monthly report catch-up for user {}", u.getId(), e);
                 }
-            }
+                pageable = page.nextPageable();
+            } while (page.hasNext());
         } catch (Exception e) {
             log.warn("Could not query users for automated monthly reports: {}", e.getMessage());
         }
         log.info("Automated monthly report check complete. Dispatched {} pending reports for {}/{}.",
                 sentCount, month, year);
+    }
+
+    /**
+     * Sends one user's report in a transaction of its own and commits the outcome record immediately.
+     *
+     * <p>A delivery failure is already recorded by {@link #sendMonthlyReportEmail}; it is caught here so
+     * that record commits instead of being rolled back with the exception. Any other exception rolls
+     * this user's transaction back and is left to the caller to log.</p>
+     *
+     * @return {@code true} if the email was sent
+     */
+    private boolean sendInOwnTransaction(Long userId, int year, int month) {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        return Boolean.TRUE.equals(template.execute(status -> {
+            try {
+                sendMonthlyReportEmail(userId, year, month);
+                return true;
+            } catch (EmailDeliveryException e) {
+                log.warn("Monthly report not delivered to userId={}: {}", userId, e.getMessage());
+                return false;
+            }
+        }));
     }
 }
