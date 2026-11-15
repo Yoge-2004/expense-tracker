@@ -25,11 +25,37 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          mvn -B test 2>&1 | tee backend-test.log
+          mvn -B test -Pcoverage-gate 2>&1 | tee backend-test.log
       - name: Annotate Maven failures
         if: failure()
         shell: bash
         run: python3 .github/scripts/annotate_maven_failures.py backend-test.log
+      - name: Coverage summary
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import csv, os, sys
+          path = 'target/site/jacoco/jacoco.csv'
+          if not os.path.exists(path):
+              print('Backend coverage report was not produced.')
+          else:
+              rows = list(csv.DictReader(open(path, encoding='utf-8')))
+              def pct(kind):
+                  missed = sum(int(r[kind + '_MISSED']) for r in rows)
+                  covered = sum(int(r[kind + '_COVERED']) for r in rows)
+                  total = missed + covered
+                  return f'{100 * covered / total:.1f}% ({covered}/{total})' if total else 'n/a'
+              print('### Backend test coverage (JaCoCo)')
+              print('')
+              print('| Measure | Covered |')
+              print('|---|---|')
+              measures = (('Lines', 'LINE'), ('Branches', 'BRANCH'), ('Methods', 'METHOD'), ('Instructions', 'INSTRUCTION'))
+              for label, kind in measures:
+                  print(f'| {label} | {pct(kind)} |')
+              # Also show the numbers as a build annotation so they are visible without opening the summary.
+              print('::notice title=Backend coverage::' + '; '.join(f'{label} {pct(kind)}' for label, kind in measures), file=sys.stderr)
+          PY
       - name: Upload backend test log and reports
         if: always()
         uses: actions/upload-artifact@v7
@@ -39,6 +65,7 @@ jobs:
             backend-test.log
             target/surefire-reports/**
             target/failsafe-reports/**
+            target/site/jacoco/**
           if-no-files-found: warn
           retention-days: 7
 
