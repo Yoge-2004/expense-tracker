@@ -1,27 +1,32 @@
 package com.example.expensetracker.domain.admin.service;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 
 import com.example.expensetracker.domain.expense.dto.ExpenseDto;
 import com.example.expensetracker.domain.expense.mapper.ExpenseMapper;
 import com.example.expensetracker.domain.expense.model.Category;
-import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.expense.repository.CategoryRepository;
 import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
 import com.example.expensetracker.domain.income.dto.IncomeDto;
 import com.example.expensetracker.domain.income.mapper.IncomeMapper;
-import com.example.expensetracker.domain.income.model.Income;
 import com.example.expensetracker.domain.income.repository.IncomeRepository;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
@@ -48,6 +53,10 @@ public class AdminDataServiceImpl implements AdminDataService {
     private final CategoryRepository categoryRepository;
     private final DatabaseSnapshotService snapshotService;
     private final HuggingFaceDatabaseFailoverService failoverService;
+    private final ObjectMapper objectMapper;
+
+    /** Rows read per query when streaming the platform ledger. */
+    private static final int LEDGER_PAGE_SIZE = 500;
 
     @Override
     @Transactional(readOnly = true)
@@ -72,44 +81,75 @@ public class AdminDataServiceImpl implements AdminDataService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Map<String, Object> exportPlatformLedger() {
-        Map<String, Object> dump = new LinkedHashMap<>();
-        dump.put("timestamp", Instant.now().toString());
+    public void writePlatformLedger(OutputStream out) throws IOException {
+        // No wrapping transaction on purpose: each repository call below runs in its own short one,
+        // so loaded rows are released after every page instead of piling up in memory.
+        try (JsonGenerator json = objectMapper.getFactory().createGenerator(out, JsonEncoding.UTF8)) {
+            json.writeStartObject();
+            json.writeStringField("timestamp", Instant.now().toString());
 
-        List<User> users = userRepository.findAll();
-        dump.put("totalUsers", users.size());
+            long users = writePaged(json, "users", Sort.by("id"),
+                    userRepository::findAll, AdminDataServiceImpl::toLedgerUser);
+            json.writeNumberField("totalUsers", users);
 
-        List<Map<String, Object>> userList = users.stream().map(u -> {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("id", u.getId());
-            map.put("name", u.getName());
-            map.put("email", u.getEmail());
-            map.put("role", u.getRole() != null ? u.getRole().name() : "ROLE_USER");
-            map.put("currency", u.getCurrency());
-            map.put("enabled", u.isEnabled());
-            map.put("createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : null);
-            return map;
-        }).toList();
-        dump.put("users", userList);
+            // These two queries already define their own ORDER BY, so no extra sort is applied.
+            long expenses = writePaged(json, "expenses", Sort.unsorted(),
+                    expenseRepository::findAllWithCategory, ExpenseMapper::toDto);
+            json.writeNumberField("totalExpensesCount", expenses);
 
-        List<Expense> expenses = expenseRepository.findAll();
-        dump.put("totalExpensesCount", expenses.size());
-        dump.put("expenses", expenses.stream().map(ExpenseMapper::toDto).toList());
+            long incomes = writePaged(json, "incomes", Sort.unsorted(),
+                    incomeRepository::findAllIncomes, IncomeMapper::toDto);
+            json.writeNumberField("totalIncomesCount", incomes);
 
-        List<Income> incomes = incomeRepository.findAll();
-        dump.put("totalIncomesCount", incomes.size());
-        dump.put("incomes", incomes.stream().map(IncomeMapper::toDto).toList());
+            long categories = writePaged(json, "categories", Sort.by("id"),
+                    categoryRepository::findAll, AdminDataServiceImpl::toLedgerCategory);
+            json.writeNumberField("totalCategoriesCount", categories);
 
-        List<Category> categories = categoryRepository.findAll();
-        dump.put("totalCategoriesCount", categories.size());
-        dump.put("categories", categories.stream().map(c -> Map.of(
-                "id", c.getId(),
-                "name", c.getName(),
-                "isGlobal", c.getUser() == null
-        )).toList());
+            json.writeEndObject();
+        }
+    }
 
-        return dump;
+    /**
+     * Writes one JSON array named {@code field}, reading {@link #LEDGER_PAGE_SIZE} rows at a time.
+     *
+     * @return how many rows were written
+     */
+    private <T, R> long writePaged(JsonGenerator json, String field, Sort sort,
+                                   Function<Pageable, Page<T>> source,
+                                   Function<T, R> mapper) throws IOException {
+        json.writeArrayFieldStart(field);
+        long written = 0;
+        int pageIndex = 0;
+        Page<T> page;
+        do {
+            page = source.apply(PageRequest.of(pageIndex++, LEDGER_PAGE_SIZE, sort));
+            for (T row : page.getContent()) {
+                objectMapper.writeValue(json, mapper.apply(row));
+                written++;
+            }
+        } while (page.hasNext());
+        json.writeEndArray();
+        return written;
+    }
+
+    private static Map<String, Object> toLedgerUser(User u) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", u.getId());
+        map.put("name", u.getName());
+        map.put("email", u.getEmail());
+        map.put("role", u.getRole() != null ? u.getRole().name() : "ROLE_USER");
+        map.put("currency", u.getCurrency());
+        map.put("enabled", u.isEnabled());
+        map.put("createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : null);
+        return map;
+    }
+
+    private static Map<String, Object> toLedgerCategory(Category c) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", c.getId());
+        map.put("name", c.getName());
+        map.put("isGlobal", c.getUser() == null);
+        return map;
     }
 
     @Override

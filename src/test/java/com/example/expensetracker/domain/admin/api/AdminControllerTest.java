@@ -320,11 +320,16 @@ class AdminControllerTest {
     }
 
     @Test
-    void exportPlatformLedgerJsonReturnsDump() throws Exception {
-        when(adminDataService.exportPlatformLedger()).thenReturn(Map.of("totalUsers", 12));
+    void exportPlatformLedgerJsonStreamsDump() throws Exception {
+        org.mockito.Mockito.doAnswer(invocation -> {
+            java.io.OutputStream out = invocation.getArgument(0);
+            out.write("{\"totalUsers\":12}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return null;
+        }).when(adminDataService).writePlatformLedger(any());
 
         mockMvc.perform(get("/api/admin/database/export/json"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$.totalUsers").value(12));
     }
 
