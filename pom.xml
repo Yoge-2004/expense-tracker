@@ -38,6 +38,9 @@
         <openpdf.version>3.0.5</openpdf.version>
         <poi.version>6.0.0</poi.version>
         <springdoc.version>3.2.0</springdoc.version>
+        <jacoco.version>0.8.16</jacoco.version>
+        <!-- JaCoCo prepends its agent here; surefire reads it back through @{argLine}. -->
+        <argLine></argLine>
         <webauthn.version>2.10.1</webauthn.version>
         <!-- Spring Boot manages these; the properties raise them above the BOM defaults. -->
         <h2.version>2.5.252</h2.version>
@@ -293,8 +296,30 @@
                         <include>**/*Tests.java</include>
                         <include>**/CucumberTestRunner.java</include>
                     </includes>
-                    <argLine>-XX:+EnableDynamicAgentLoading -Dfile.encoding=UTF-8</argLine>
+                    <argLine>@{argLine} -XX:+EnableDynamicAgentLoading -Dfile.encoding=UTF-8</argLine>
                 </configuration>
+            </plugin>
+            <!-- Coverage is measured and reported, not enforced (no minimum is set yet).
+                 Declared after surefire so its report runs after the tests in the same phase. -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
