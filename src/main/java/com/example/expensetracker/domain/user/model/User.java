@@ -3,6 +3,7 @@ package com.example.expensetracker.domain.user.model;
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
 import lombok.*;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -155,6 +156,14 @@ public class User {
      */
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    /**
+     * Session cut-off. A login token issued before this instant is rejected, which is how
+     * "sign out everywhere" works after a password reset or an administrator revoking sessions.
+     * {@code null} means no token has ever been revoked.
+     */
+    @Column(name = "tokens_valid_after")
+    private Instant tokensValidAfter;
 
     /**
      * The list of all expense records owned by this user.

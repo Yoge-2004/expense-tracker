@@ -247,6 +247,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setTokensValidAfter(java.time.Instant.now());
         userRepository.save(user);
         log.info("Password reset successfully applied for email={}", LoggingUtils.maskEmail(email));
     }
@@ -273,6 +274,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         clearRecoveryFailures(user);
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setTokensValidAfter(java.time.Instant.now());
         userRepository.save(user);
         log.info("Password reset applied via verified passkey for email={}", LoggingUtils.maskEmail(user.getEmail()));
     }
