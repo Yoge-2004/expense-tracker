@@ -25,7 +25,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          mvn -B test 2>&1 | tee backend-test.log
+          mvn -B test -Pcoverage-gate 2>&1 | tee backend-test.log
       - name: Annotate Maven failures
         if: failure()
         shell: bash
