@@ -54,6 +54,7 @@ import com.example.expensetracker.infrastructure.security.RateLimited;
         After a successful login the server returns a signed **JWT Bearer token**.
 
         **Signup flow (email-verified):**
+
         1. Call `POST /api/auth/signup/send-otp` with name + email — a 6-digit code is emailed.
         2. Call `POST /api/auth/register` with all fields + the OTP — account is created.
         """

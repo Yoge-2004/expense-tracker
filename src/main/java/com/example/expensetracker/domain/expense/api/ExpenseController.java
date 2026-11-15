@@ -45,16 +45,19 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
         Central resource of the Expense Tracker — covers three sub-domains:
 
         **1. Expense Records** (`/api/expenses/user/{userId}`)
+
         Full CRUD for individual expense entries. Each expense has an amount,
         description, date, and a category (global or personal). Ownership is
         enforced — a user can only view, edit, or delete their own records.
 
         **2. Budgets** (`/api/expenses/budget/...`)
+
         Set a monthly spending cap per category. Query real-time utilisation
         (spent vs limit, percentage consumed) for the current calendar month.
         A percentage > 100 means the user is over budget for that category.
 
         **3. Recurring Expenses** (`/api/expenses/recurring/...`)
+
         Register subscription-style charges (e.g. Netflix, Spotify). Adding a
         recurring expense immediately creates the first `Expense` occurrence and
         stores a `RecurringExpense` record with `frequency=MONTHLY` and
@@ -94,6 +97,7 @@ public class ExpenseController {
             - `description` — a short note about the expense (no length limit enforced).
 
             **Category ownership validation:**
+
             The referenced category must be either:
             - A **global** category (e.g. Food = 1, Transport = 2), or
             - A **personal** category created by the same user.
@@ -250,11 +254,13 @@ public class ExpenseController {
             retain their current values.
 
             **Ownership validation:**
+
             The expense identified by `expenseId` must belong to the user identified
             by `userId`. If the expense exists but belongs to a different user,
             the request is rejected.
 
             **Category change:**
+
             If `categoryId` is provided, the new category must exist in the database.
             The same ownership rules apply — global or the user's own personal categories only.
             """
@@ -354,6 +360,7 @@ public class ExpenseController {
             Permanently deletes a single expense record.
 
             **Ownership validation:**
+
             The expense identified by `expenseId` must belong to the user identified
             by `userId`. If ownership does not match, the request is rejected with `400`
             and the record is **not** deleted.
@@ -362,6 +369,7 @@ public class ExpenseController {
             soft-delete or undo mechanism.
 
             **Recurring expenses:**
+
             Deleting an expense record created by a recurring subscription does NOT
             cancel the subscription itself. Use `DELETE /api/expenses/recurring/{recId}`
             to cancel the recurring schedule.

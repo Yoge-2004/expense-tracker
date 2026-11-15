@@ -63,6 +63,7 @@ public class RecurringExpenseController {
             Registers a new monthly subscription and records the first payment.
 
             **What this endpoint does in a single call:**
+
             1. Creates a `RecurringExpense` record with:
                - `frequency = MONTHLY`
                - `nextDueDate = expenseDate + 1 month`
@@ -71,11 +72,13 @@ public class RecurringExpenseController {
                dated at `expenseDate`.
 
             **Supported frequency:**
+
             Currently only `MONTHLY` recurring expenses are supported.
             The `nextDueDate` is informational — the system does not auto-charge.
             Use `GET /api/expenses/recurring/user/{userId}` to list upcoming due dates.
 
             **Cancelling:**
+
             Use `DELETE /api/expenses/recurring/{recId}` to cancel the subscription.
             Historical expense records created by the subscription are **not** deleted.
             """

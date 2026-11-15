@@ -69,6 +69,7 @@ public class BudgetController {
             - `categoryId` must reference an existing category.
 
             **Budget tracking:**
+
             The budget limit is not enforced at the point of expense creation — users can
             always record an expense even if a budget has been exceeded. The budget is purely
             for monitoring purposes via `GET /api/expenses/budget/status/user/{userId}`.

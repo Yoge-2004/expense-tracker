@@ -12,6 +12,11 @@ import java.util.Map;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
 import com.example.expensetracker.domain.user.service.WebAuthnService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 
@@ -28,6 +33,21 @@ import com.example.expensetracker.domain.user.service.WebAuthnService;
  *       the signature and generates a JWT.</li>
  * </ul>
  */
+@Tag(
+    name = "Passkeys (WebAuthn)",
+    description = """
+        Passwordless sign-in with a device passkey (fingerprint, face or security key).
+
+        **Registering** (signed-in user): call `register/options`, pass the returned options to the
+        browser or device, then send the result to `register/finish`.
+
+        **Signing in** (no token needed): call `login/options`, complete the device prompt, then
+        send the result to `login/finish` to receive a JWT.
+
+        `status` and `credentials` manage the passkey on the signed-in account.
+        """
+)
+@SecurityRequirement(name = "BearerAuth")
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -37,6 +57,9 @@ public class WebAuthnController {
     private final WebAuthnService webAuthnService;
     private final UserRepository users;
 
+    @Operation(summary = "Passkey status",
+            description = "Tells whether the signed-in user has a passkey registered.")
+    @ApiResponse(responseCode = "200", description = "`enabled` flag and the user id")
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> status(Authentication authentication) {
         User user = currentUser(authentication);
@@ -45,6 +68,10 @@ public class WebAuthnController {
         return ResponseEntity.ok(Map.of("enabled", enabled, "userId", user.getId()));
     }
 
+    @Operation(summary = "Start passkey registration",
+            description = "Returns the WebAuthn creation options for the signed-in user. "
+                    + "Pass them to the browser or device, then call `register/finish`.")
+    @ApiResponse(responseCode = "200", description = "Registration options")
     @PostMapping("/register/options")
     public ResponseEntity<Map<String, String>> registrationOptions(Authentication authentication) {
         User user = currentUser(authentication);
@@ -52,6 +79,10 @@ public class WebAuthnController {
         return ResponseEntity.ok(webAuthnService.startRegistration(user));
     }
 
+    @Operation(summary = "Finish passkey registration",
+            description = "Verifies the device's response and stores the new passkey.")
+    @ApiResponse(responseCode = "200", description = "Passkey registered")
+    @ApiResponse(responseCode = "400", description = "Missing or invalid registration response")
     @PostMapping("/register/finish")
     public ResponseEntity<Map<String, String>> registrationFinish(
         Authentication authentication,
@@ -66,12 +97,22 @@ public class WebAuthnController {
         return ResponseEntity.ok(Map.of("message", "Biometric sign-in is now enabled on this device."));
     }
 
+    @Operation(summary = "Start passkey sign-in",
+            description = "Returns the WebAuthn request options. Public endpoint, no token needed.")
+    @SecurityRequirements
+    @ApiResponse(responseCode = "200", description = "Sign-in options")
     @PostMapping("/login/options")
     public ResponseEntity<Map<String, String>> loginOptions() {
         log.info("Initiating WebAuthn biometric login options");
         return ResponseEntity.ok(webAuthnService.startAuthentication());
     }
 
+    @Operation(summary = "Finish passkey sign-in",
+            description = "Verifies the device's response and, on success, returns a JWT. "
+                    + "Public endpoint, no token needed.")
+    @SecurityRequirements
+    @ApiResponse(responseCode = "200", description = "Authenticated; token returned")
+    @ApiResponse(responseCode = "401", description = "Passkey could not be verified")
     @PostMapping("/login/finish")
     public ResponseEntity<Map<String, Object>> loginFinish(
             @Valid @RequestBody(required = false) WebAuthnFinishRequest request) {
@@ -83,6 +124,9 @@ public class WebAuthnController {
         return ResponseEntity.ok(result);
     }
 
+    @Operation(summary = "Remove passkey",
+            description = "Disables passkey sign-in for the signed-in user.")
+    @ApiResponse(responseCode = "204", description = "Passkey removed")
     @DeleteMapping("/credentials")
     public ResponseEntity<Void> disable(Authentication authentication) {
         User user = currentUser(authentication);

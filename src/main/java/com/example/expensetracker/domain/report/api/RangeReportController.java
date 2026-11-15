@@ -31,6 +31,11 @@ import com.example.expensetracker.domain.report.service.ExecutiveReportDateRange
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.service.UserService;
 import com.example.expensetracker.infrastructure.security.UserSecurity;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 
@@ -39,6 +44,17 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
  * Orchestrates ledger extraction and delegates document rendering
  * to specialized Excel and PDF generators.
  */
+@Tag(
+    name = "Range Reports",
+    description = """
+        Executive dashboard reports for a chosen date range, downloaded as a file.
+
+        Leave `from` and `to` empty for all time, or give either or both as `yyyy-MM-dd`.
+        Users can only export their own data. Every path is available under both `/api/reports`
+        and `/api/expenses`.
+        """
+)
+@SecurityRequirement(name = "BearerAuth")
 @Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -64,12 +80,18 @@ public class RangeReportController {
      * Polymorphic range export endpoint following the Open/Closed Principle (OCP).
      * Any registered ReportExportStrategy can be invoked dynamically without code changes.
      */
+    @Operation(summary = "Export a range report in any supported format",
+            description = "Looks up the export strategy for `format` (`excel` or `pdf`) and returns "
+                    + "the report as a file download.")
+    @ApiResponse(responseCode = "200", description = "Report file")
+    @ApiResponse(responseCode = "400", description = "Unsupported format, bad date or end before start")
+    @ApiResponse(responseCode = "403", description = "Not the owner of this data")
     @GetMapping("/user/{userId}/export/range/{format}")
-    public ResponseEntity<byte[]> exportByFormat(@PathVariable Long userId,
-                                                 @PathVariable String format,
-                                                 @RequestParam(required = false) String from,
-                                                 @RequestParam(required = false) String to,
-                                                 @RequestParam(defaultValue = "INR") String currency) {
+    public ResponseEntity<byte[]> exportByFormat(@Parameter(description = "Id of the user whose data is exported.") @PathVariable Long userId,
+                                                 @Parameter(description = "Export format: `excel` or `pdf`.") @PathVariable String format,
+                                                 @Parameter(description = "Start date (yyyy-MM-dd). Omit for no lower bound.") @RequestParam(required = false) String from,
+                                                 @Parameter(description = "End date (yyyy-MM-dd). Omit for no upper bound.") @RequestParam(required = false) String to,
+                                                 @Parameter(description = "ISO currency code used in the report.") @RequestParam(defaultValue = "INR") String currency) {
         security.validateUserAccess(userId);
         User user = user(userId);
         ExecutiveReportDateRange range = ExecutiveReportDateRange.of(from, to);
@@ -92,11 +114,16 @@ public class RangeReportController {
                 .body(bytes);
     }
 
+    @Operation(summary = "Export a range report as Excel",
+            description = "Executive dashboard workbook (.xlsx) for the chosen date range.")
+    @ApiResponse(responseCode = "200", description = "Excel workbook")
+    @ApiResponse(responseCode = "400", description = "Bad date or end before start")
+    @ApiResponse(responseCode = "403", description = "Not the owner of this data")
     @GetMapping("/user/{userId}/export/range/excel")
-    public ResponseEntity<byte[]> excel(@PathVariable Long userId,
-                                        @RequestParam(required = false) String from,
-                                        @RequestParam(required = false) String to,
-                                        @RequestParam(defaultValue = "INR") String currency) {
+    public ResponseEntity<byte[]> excel(@Parameter(description = "Id of the user whose data is exported.") @PathVariable Long userId,
+                                        @Parameter(description = "Start date (yyyy-MM-dd). Omit for no lower bound.") @RequestParam(required = false) String from,
+                                        @Parameter(description = "End date (yyyy-MM-dd). Omit for no upper bound.") @RequestParam(required = false) String to,
+                                        @Parameter(description = "ISO currency code used in the report.") @RequestParam(defaultValue = "INR") String currency) {
         security.validateUserAccess(userId);
         User user = user(userId);
         ExecutiveReportDateRange range = ExecutiveReportDateRange.of(from, to);
@@ -115,11 +142,16 @@ public class RangeReportController {
                 .body(bytes);
     }
 
+    @Operation(summary = "Export a range report as PDF",
+            description = "Executive dashboard PDF for the chosen date range.")
+    @ApiResponse(responseCode = "200", description = "PDF document")
+    @ApiResponse(responseCode = "400", description = "Bad date or end before start")
+    @ApiResponse(responseCode = "403", description = "Not the owner of this data")
     @GetMapping("/user/{userId}/export/range/pdf")
-    public ResponseEntity<byte[]> pdf(@PathVariable Long userId,
-                                      @RequestParam(required = false) String from,
-                                      @RequestParam(required = false) String to,
-                                      @RequestParam(defaultValue = "INR") String currency) {
+    public ResponseEntity<byte[]> pdf(@Parameter(description = "Id of the user whose data is exported.") @PathVariable Long userId,
+                                      @Parameter(description = "Start date (yyyy-MM-dd). Omit for no lower bound.") @RequestParam(required = false) String from,
+                                      @Parameter(description = "End date (yyyy-MM-dd). Omit for no upper bound.") @RequestParam(required = false) String to,
+                                      @Parameter(description = "ISO currency code used in the report.") @RequestParam(defaultValue = "INR") String currency) {
         security.validateUserAccess(userId);
         User user = user(userId);
         ExecutiveReportDateRange range = ExecutiveReportDateRange.of(from, to);

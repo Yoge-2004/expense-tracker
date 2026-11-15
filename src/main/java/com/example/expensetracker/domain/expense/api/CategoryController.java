@@ -78,6 +78,7 @@ public class CategoryController {
             - Personal categories are **not visible** to other users.
 
             **Use case:**
+
             Create custom categories that don't exist in the global list, for example
             "Petrol", "Gym Membership", or "Pet Food". These can then be referenced
             by `categoryId` when creating expenses.
@@ -153,6 +154,7 @@ public class CategoryController {
             Returns all personal expense categories created by the specified user.
 
             **What is included:**
+
             Only categories explicitly created by this user via
             `POST /api/categories/user/{userId}`. Global (system-seeded) categories
             are **excluded** from this response.
@@ -162,10 +164,12 @@ public class CategoryController {
             - Categories created by other users.
 
             **Empty list:**
+
             A new user who has not yet created any personal categories will receive
             an empty JSON array `[]`. This is a valid, non-error response.
 
             **Ordering:**
+
             Categories are returned in insertion order (no explicit sort applied).
             """
     )

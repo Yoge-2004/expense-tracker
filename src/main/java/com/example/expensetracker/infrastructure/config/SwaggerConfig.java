@@ -13,10 +13,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import java.util.List;
 
-import com.example.expensetracker.domain.expense.model.Expense;
-
-
-
 /**
  * Swagger / OpenAPI 3.0 configuration for the Expense Tracker System.
  *
@@ -46,7 +42,8 @@ public class SwaggerConfig {
      *   <li>A {@code BearerAuth} HTTP security scheme for JWT-protected endpoints.</li>
      *   <li>A global security requirement that applies the scheme to all operations
      *       (individual public endpoints override this via {@code @SecurityRequirements({})}).</li>
-     *   <li>A default server entry pointing to localhost.</li>
+     *   <li>Server entries: the address the docs are served from first (so "Try it out"
+     *       works on any deployment), then localhost.</li>
      * </ul>
      *
      * @return the fully configured {@link OpenAPI} instance
@@ -60,8 +57,11 @@ public class SwaggerConfig {
                         .url("https://github.com/Yoge-2004/expense-tracker"))
                 .servers(List.of(
                         new Server()
+                                .url("/")
+                                .description("This server (current address)"),
+                        new Server()
                                 .url("http://localhost:8080")
-                                .description("Local Development Server")
+                                .description("Local development")
                 ))
                 .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
                 .components(new Components()
@@ -77,23 +77,39 @@ public class SwaggerConfig {
         return new Info()
                 .title("Expense Tracker System API")
                 .description("""
-                        REST API for the **Expense Tracker System** — a personal finance management \
-                        application that lets users track expenses, manage categories, set monthly \
-                        budgets, and configure recurring (subscription-style) expenses.
+                        REST API for the **Expense Tracker** — personal finance management for expenses, \
+                        income, budgets, savings goals, loans, reports and smart (ML) suggestions.
 
                         ## Authentication
-                        All endpoints except `/api/auth/**` require a valid **JWT Bearer token**.
+
+                        Most endpoints need a **JWT Bearer token**.
+
                         1. Call `POST /api/auth/login` with your credentials.
                         2. Copy the `token` from the response.
-                        3. Click **Authorize** and paste: `<your-token>` (without `Bearer ` prefix — \
-                        the UI adds it automatically).
+                        3. Click **Authorize** and paste the token. Leave out the `Bearer ` prefix, the \
+                        UI adds it.
 
-                        ## Features
-                        - **Authentication** — register, login, and reset password.
-                        - **Expenses** — full CRUD for expense records.
-                        - **Categories** — user-specific and global category management.
-                        - **Budgets** — set monthly spending limits and track utilisation.
-                        - **Recurring Expenses** — manage auto-renewing monthly subscriptions.
+                        A few routes are public: registration, sign-in, passkey sign-in and recovery, and \
+                        health. Operator routes (`/api/sync/**`, `/api/internal/ml/**`) use their own \
+                        shared-secret header instead of a JWT.
+
+                        ## API areas
+
+                        Use the **Select a definition** list at the top right to focus on one area:
+
+                        - **Auth & Account**: registration, login, profile and passkeys.
+                        - **Expenses & Categories**: expense records, budgets and recurring charges.
+                        - **Income, Savings & Loans**: money coming in, goals and loan tracking.
+                        - **Reports**: range and monthly exports.
+                        - **ML & Insights**: category suggestions and feedback.
+                        - **Notifications & Sync**: in-app alerts and data sync.
+                        - **Admin & Operations**: admin tools and service health.
+
+                        ## Errors
+
+                        Errors share one JSON shape with a `message` and, for validation failures, \
+                        per-field details. Typical codes: `400` invalid input, `401` missing or expired \
+                        token, `403` not allowed, `404` not found, `429` rate limited.
                         """)
                 .version("1.0.0")
                 .contact(new Contact()
