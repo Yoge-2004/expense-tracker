@@ -2,6 +2,7 @@ package com.example.expensetracker.domain.report.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -62,6 +63,9 @@ class MonthlyReportServiceImplTest {
     @Mock
     private ObjectProvider<JavaMailSender> mailSenderProvider;
 
+    @Mock
+    private org.springframework.transaction.PlatformTransactionManager transactionManager;
+
     private MonthlyReportServiceImpl reportService;
 
     private User testUser;
@@ -80,7 +84,8 @@ class MonthlyReportServiceImplTest {
                 budgetRepository,
                 reportLogRepository,
                 mailSenderProvider,
-                new MonthlyHtmlReportGenerator()
+                new MonthlyHtmlReportGenerator(),
+                transactionManager
         );
 
         testUser = new User();
@@ -296,5 +301,77 @@ class MonthlyReportServiceImplTest {
 
         assertEquals(0, report.totalOutflow().signum());
         assertEquals(new BigDecimal("500.00"), report.totalReimbursed());
+    }
+
+    @Nested
+    @DisplayName("sendAutomatedMonthlyReports")
+    class AutomatedReports {
+
+        private User user(long id) {
+            User u = new User();
+            u.setId(id);
+            u.setEmail("user" + id + "@example.com");
+            return u;
+        }
+
+        private void enableMail() {
+            org.springframework.test.util.ReflectionTestUtils.setField(reportService, "mailEnabled", true);
+            org.springframework.test.util.ReflectionTestUtils.setField(reportService, "configuredMailHost", "smtp.test");
+            when(mailSenderProvider.getIfAvailable()).thenReturn(mock(JavaMailSender.class));
+        }
+
+        @Test
+        @DisplayName("does nothing when mail is not configured")
+        void skippedWhenMailDisabled() {
+            reportService.sendAutomatedMonthlyReports();
+
+            verifyNoInteractions(userRepository);
+        }
+
+        @Test
+        @DisplayName("emails only users whose report was not already sent, across all pages")
+        void sendsOnlyPendingReports() {
+            enableMail();
+            User sent = user(1);
+            User pending = user(2);
+            when(userRepository.findAll(any(org.springframework.data.domain.Pageable.class))).thenReturn(
+                    new org.springframework.data.domain.PageImpl<>(List.of(sent),
+                            org.springframework.data.domain.PageRequest.of(0, 200), 201),
+                    new org.springframework.data.domain.PageImpl<>(List.of(pending),
+                            org.springframework.data.domain.PageRequest.of(1, 200), 201));
+            when(reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(
+                    eq(sent), anyInt(), anyInt())).thenReturn(true);
+            when(reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(
+                    eq(pending), anyInt(), anyInt())).thenReturn(false);
+
+            MonthlyReportServiceImpl spy = spy(reportService);
+            doNothing().when(spy).sendMonthlyReportEmail(anyLong(), anyInt(), anyInt());
+
+            spy.sendAutomatedMonthlyReports();
+
+            verify(spy, never()).sendMonthlyReportEmail(eq(1L), anyInt(), anyInt());
+            verify(spy).sendMonthlyReportEmail(eq(2L), anyInt(), anyInt());
+        }
+
+        @Test
+        @DisplayName("one user's delivery failure does not stop the others")
+        void failureDoesNotStopTheRun() {
+            enableMail();
+            User first = user(1);
+            User second = user(2);
+            when(userRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+                    .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(first, second)));
+            when(reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(
+                    any(User.class), anyInt(), anyInt())).thenReturn(false);
+
+            MonthlyReportServiceImpl spy = spy(reportService);
+            doThrow(new EmailDeliveryException("smtp down")).when(spy).sendMonthlyReportEmail(eq(1L), anyInt(), anyInt());
+            doNothing().when(spy).sendMonthlyReportEmail(eq(2L), anyInt(), anyInt());
+
+            spy.sendAutomatedMonthlyReports();
+
+            verify(spy).sendMonthlyReportEmail(eq(1L), anyInt(), anyInt());
+            verify(spy).sendMonthlyReportEmail(eq(2L), anyInt(), anyInt());
+        }
     }
 }
