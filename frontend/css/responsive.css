@@ -346,7 +346,7 @@ body {
 /* ── Extra small screens (phones < 480px) ── */
 @media (max-width: 480px) {
   .dashboard-container {
-    padding: 10px 10px 32px !important;
+    padding: 10px 10px 96px !important;
     gap: 12px !important;
   }
 
@@ -1097,8 +1097,8 @@ body {
     padding: 0 4px !important;
   }
   .top-bar-actions > #openModalBtn {
-    grid-column: var(--record-expense-column, 1) !important;
-    grid-row: var(--record-expense-row, 2) !important;
+    grid-column: 1 !important;
+    grid-row: 2 !important;
     width: 100% !important;
     height: 36px !important;
     min-height: 36px !important;
@@ -1115,8 +1115,8 @@ body {
     white-space: nowrap !important;
   }
   .top-bar-actions > #openIncomeModalBtn {
-    grid-column: var(--record-income-column, 2) !important;
-    grid-row: var(--record-income-row, 2) !important;
+    grid-column: 2 !important;
+    grid-row: 2 !important;
     width: 100% !important;
     height: 36px !important;
     min-height: 36px !important;
@@ -1171,7 +1171,7 @@ body {
   }
   .top-bar-actions > .top-bar-utility-group {
     grid-column: 1 !important;
-    grid-row: var(--top-bar-footer-row, 3) !important;
+    grid-row: 3 !important;
     justify-self: start !important;
     display: inline-flex !important;
     align-items: center !important;
@@ -1196,7 +1196,7 @@ body {
   }
   .top-bar-actions > .user-profile {
     grid-column: 2 !important;
-    grid-row: var(--top-bar-footer-row, 3) !important;
+    grid-row: 3 !important;
     justify-self: end !important;
     margin: 0 !important;
   }
@@ -1250,19 +1250,6 @@ body {
   .savings-section .card-header {
     flex-wrap: wrap;
     gap: 10px;
-  }
-}
-
-/* ── Very narrow phones (below 340px, e.g. a folded foldable) ──
-   Two columns leave each record button about 120px, which clips "Record Expense".
-   Give each button its own full-width row instead; the utility row moves down one. */
-@media (max-width: 339.98px) {
-  .top-bar-actions {
-    --record-expense-column: 1 / -1;
-    --record-expense-row: 2;
-    --record-income-column: 1 / -1;
-    --record-income-row: 3;
-    --top-bar-footer-row: 4;
   }
 }
 
@@ -1395,14 +1382,5 @@ body {
 @media (max-width: 480px) {
   .loans-metrics-grid {
     grid-template-columns: 1fr !important;
-  }
-}
-
-
-/* Hide desktop keyboard shortcuts on mobile and tablet touch devices */
-@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-  .gesture-shortcuts-desktop,
-  #gestureShortcutsDesktop {
-    display: none !important;
   }
 }

@@ -65,19 +65,8 @@
 
 .top-bar .add-expense-button,
 .top-bar .add-income-button {
-  width: auto;
-  height: 42px;
-  padding: 0 18px;
-  font-size: 13.5px;
   white-space: nowrap;
   flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: var(--cursor-pointer, pointer);
-  border-radius: 10px;
-  box-sizing: border-box;
   transition:
     transform 0.2s var(--ease),
     box-shadow 0.2s var(--ease),
@@ -189,7 +178,7 @@
   min-width: 260px;
   max-width: 320px;
   width: max-content;
-  background: rgba(23, 26, 20, 0.95);
+  background: var(--card-bg, rgba(23, 26, 20, 0.95));
   backdrop-filter: var(--glass);
   -webkit-backdrop-filter: var(--glass);
   border: 1px solid rgba(var(--ink-rgb), 0.08);
@@ -361,6 +350,24 @@
   font-size: 36px;
   font-weight: 500;
   color: var(--text-main);
+}
+
+/* Top Bar Action Buttons */
+.top-bar .add-expense-button,
+.top-bar .add-income-button {
+  width: auto;
+  height: 42px;
+  padding: 0 18px;
+  font-size: 13.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: var(--cursor-pointer, pointer);
+  border-radius: 10px;
+  box-sizing: border-box;
 }
 
 /* Income Action Buttons — Emerald theme with high-contrast white text */
@@ -551,25 +558,33 @@
    ========================================================================== */
 
 /* Theme Toggle Sun / Moon Visibility */
+[data-theme="dark"] .theme-toggle-btn .sun-icon,
+[data-theme="dark"] #themeToggle .sun-icon,
 html[data-theme="dark"] .theme-toggle-btn .sun-icon,
 html[data-theme="dark"] #themeToggle .sun-icon {
-  display: block;
-  visibility: visible;
+  display: block !important;
+  visibility: visible !important;
 }
+[data-theme="dark"] .theme-toggle-btn .moon-icon,
+[data-theme="dark"] #themeToggle .moon-icon,
 html[data-theme="dark"] .theme-toggle-btn .moon-icon,
 html[data-theme="dark"] #themeToggle .moon-icon {
-  display: none;
-  visibility: hidden;
+  display: none !important;
+  visibility: hidden !important;
 }
+[data-theme="light"] .theme-toggle-btn .sun-icon,
+[data-theme="light"] #themeToggle .sun-icon,
 html[data-theme="light"] .theme-toggle-btn .sun-icon,
 html[data-theme="light"] #themeToggle .sun-icon {
-  display: none;
-  visibility: hidden;
+  display: none !important;
+  visibility: hidden !important;
 }
+[data-theme="light"] .theme-toggle-btn .moon-icon,
+[data-theme="light"] #themeToggle .moon-icon,
 html[data-theme="light"] .theme-toggle-btn .moon-icon,
 html[data-theme="light"] #themeToggle .moon-icon {
-  display: block;
-  visibility: visible;
+  display: block !important;
+  visibility: visible !important;
 }
 
 /* Desktop Command Palette Search & Keyboard Shortcut Badge */
@@ -747,12 +762,10 @@ html[data-theme="light"] #themeToggle .moon-icon {
   padding: 12px 18px;
   margin: 12px 0 18px 0;
   border-radius: 12px;
-  background: linear-gradient(
-    135deg,
-    rgba(var(--primary-rgb), 0.14) 0%,
-    rgba(var(--primary-rgb), 0.04) 100%
-  );
-  border: 1px solid rgba(var(--primary-rgb), 0.35);
+  background: rgba(23, 26, 20, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(var(--primary-rgb), 0.4);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   animation: fadeInBanner 0.3s ease-out both;
 }
@@ -813,9 +826,9 @@ html[data-theme="light"] #themeToggle .moon-icon {
 }
 
 .notif-banner-text span {
-  font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.4;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.45;
 }
 
 .notif-banner-actions {
@@ -835,20 +848,20 @@ html[data-theme="light"] #themeToggle .moon-icon {
   font-weight: 700;
   border-radius: 8px;
   white-space: nowrap !important;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer) !important;
   flex-shrink: 0 !important;
 }
 
 .notif-dismiss-btn {
   width: auto !important;
   min-width: max-content !important;
-  padding: 7px 12px;
-  font-size: 12px;
+  padding: 8px 14px;
+  font-size: 12.5px;
   font-weight: 600;
   border-radius: 8px;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
   white-space: nowrap !important;
   cursor: pointer;
   flex-shrink: 0 !important;

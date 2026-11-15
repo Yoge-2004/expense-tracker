@@ -65,9 +65,11 @@
 /* 2. Expanded Floating Calculator Panel */
 .floating-calc-panel {
   position: fixed;
-  bottom: 28px;
-  right: 28px;
-  width: 296px;
+  bottom: 24px;
+  right: 24px;
+  width: 332px;
+  max-width: calc(100vw - 28px);
+  box-sizing: border-box;
   background: var(--card-bg, #171a14);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -75,7 +77,7 @@
   border-radius: 20px;
   box-shadow:
     0 28px 70px rgba(0, 0, 0, 0.6),
-    0 0 24px rgba(var(--primary-rgb), 0.16);
+    0 0 24px rgba(var(--primary-rgb, 199, 154, 62), 0.16);
   z-index: 10000;
   overflow: hidden;
   user-select: none;
@@ -102,7 +104,7 @@
   justify-content: space-between;
   padding: 12px 14px 8px;
   cursor: grab;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .floating-calc-header:active,
@@ -144,7 +146,7 @@
 .floating-calc-screen {
   margin: 10px 12px 8px;
   padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.32);
+  background: var(--inset-bg);
   border: 1px solid var(--border);
   border-radius: 12px;
   display: flex;
@@ -187,6 +189,8 @@
   justify-content: space-between;
   padding: 0 12px 8px;
   gap: 6px;
+  flex-wrap: wrap;
+  box-sizing: border-box;
 }
 
 .floating-calc-splits {
@@ -202,7 +206,7 @@
   font-family: var(--font-mono, monospace);
   border-radius: 6px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--fill-subtle);
   color: var(--text-muted, #a8a395);
   cursor: pointer;
   transition: all 0.12s ease;
@@ -216,7 +220,7 @@
 
 .floating-calc-split-chip.is-active {
   background: var(--primary, #c79a3e);
-  color: var(--on-primary, #ffffff);
+  color: var(--on-primary, #10120e);
   border-color: var(--primary, #c79a3e);
   font-weight: 700;
 }
@@ -232,13 +236,9 @@
   border: none;
   background: var(
     --primary-gradient,
-    linear-gradient(
-      135deg,
-      var(--primary, #c79a3e) 0%,
-      var(--primary, #a97f2e) 100%
-    )
+    linear-gradient(135deg, #c79a3e 0%, #a97f2e 100%)
   );
-  color: var(--on-primary, #ffffff);
+  color: var(--on-primary, #10120e);
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   transition:
@@ -269,6 +269,7 @@
   align-items: center;
   gap: 4px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .floating-calc-fx-label {
@@ -279,12 +280,12 @@
 }
 
 .floating-calc-fx-select {
-  flex: 0 1 68px;
-  min-width: 54px;
-  max-width: 72px;
-  height: 25px;
-  padding: 0 18px 0 6px;
-  font-size: 10.5px;
+  flex: 0 1 76px;
+  min-width: 64px;
+  max-width: 80px;
+  height: 28px;
+  padding: 0 22px 0 8px;
+  font-size: 11px;
   font-weight: 700;
   font-family: var(--font-mono, monospace);
   background-color: var(--input-bg, rgba(23, 26, 20, 0.88));
@@ -306,7 +307,7 @@
 
 .floating-calc-fx-select:hover {
   border-color: rgba(var(--primary-rgb), 0.65);
-  background-color: rgba(32, 36, 28, 0.95);
+  background-color: var(--card-bg-hover);
   box-shadow: 0 2px 10px rgba(var(--primary-rgb), 0.22);
 }
 
@@ -316,30 +317,30 @@
 }
 
 .floating-calc-fx-select option {
-  background: #171a14;
-  color: #ece7d8;
+  background: var(--card-bg, #171a14);
+  color: var(--text-main, #ece7d8);
   padding: 6px;
   font-size: 11px;
   font-weight: 600;
 }
 
 [data-theme="light"] .floating-calc-fx-select {
-  background-color: #ffffff;
+  background-color: var(--input-bg);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  border-color: rgba(var(--primary-rgb), 0.45);
-  color: #0f172a;
+  border-color: rgba(var(--primary-rgb, 212, 175, 55), 0.45);
+  color: var(--text-main);
   box-shadow: 0 1px 4px rgba(var(--primary-rgb), 0.12);
 }
 
 [data-theme="light"] .floating-calc-fx-select:hover {
-  border-color: var(--border-accent, var(--primary));
-  background-color: #fafafa;
-  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.24);
+  border-color: var(--primary);
+  background-color: var(--card-bg-hover);
+  box-shadow: 0 2px 8px var(--primary-glow);
 }
 
 [data-theme="light"] .floating-calc-fx-select option {
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--card-bg);
+  color: var(--text-main);
 }
 
 .floating-calc-fx-swap {
@@ -353,7 +354,7 @@
   font-weight: 700;
   border-radius: 6px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--fill-subtle);
   color: var(--primary, #c79a3e);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -381,7 +382,7 @@
 
 .floating-calc-fx-convert-btn:hover {
   background: var(--primary, #c79a3e);
-  color: var(--on-primary, #ffffff);
+  color: var(--on-primary, #10120e);
 }
 
 .floating-calc-fx-convert-btn.is-loading {
@@ -409,7 +410,7 @@
   font-family: var(--font-mono, monospace);
   border-radius: 6px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--fill-subtle);
   color: var(--text-muted, #a8a395);
   cursor: pointer;
   transition: all 0.12s ease;
@@ -436,8 +437,6 @@
 }
 
 .floating-calc-key {
-  width: 100%;
-  box-sizing: border-box;
   height: 38px;
   border-radius: 8px;
   border: 1px solid var(--border);
@@ -453,23 +452,26 @@
     background 0.1s ease,
     transform 0.08s ease,
     border-color 0.1s ease;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--fill-subtle);
   color: var(--text-main, #ece7d8);
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
 }
 
 .floating-calc-key:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--fill-strong);
   border-color: rgba(255, 255, 255, 0.18);
 }
 
 .floating-calc-key:active {
   transform: scale(0.93);
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--fill-active);
 }
 
 /* Function keys (Clear, Sign, Modulo, Backspace) */
 .floating-calc-key.is-func {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--fill-medium);
   color: var(--text-muted, #a8a395);
   font-size: 13.5px;
 }
@@ -494,20 +496,16 @@
 
 .floating-calc-key.is-op.is-active {
   background: var(--primary, #c79a3e);
-  color: var(--on-primary, #ffffff);
+  color: var(--on-primary, #10120e);
 }
 
 /* Equal key */
 .floating-calc-key.is-eq {
   background: var(
     --primary-gradient,
-    linear-gradient(
-      135deg,
-      var(--primary, #c79a3e) 0%,
-      var(--primary, #a97f2e) 100%
-    )
+    linear-gradient(135deg, #c79a3e 0%, #a97f2e 100%)
   );
-  color: var(--on-primary, #ffffff);
+  color: var(--on-primary, #10120e);
   font-weight: 800;
   font-size: 18px;
   border: none;
@@ -520,48 +518,65 @@
 
 /* Light Theme Overrides */
 [data-theme="light"] .floating-calc-trigger {
-  background: #ffffff;
-  border-color: rgba(var(--primary-rgb), 0.45);
+  background: var(--card-bg);
+  border-color: rgba(var(--primary-rgb, 212, 175, 55), 0.45);
   box-shadow:
     0 10px 28px rgba(0, 0, 0, 0.12),
-    0 0 18px rgba(var(--primary-rgb), 0.2);
+    0 0 18px rgba(var(--primary-rgb, 212, 175, 55), 0.2);
 }
 
 [data-theme="light"] .floating-calc-panel {
-  background: rgba(255, 255, 255, 0.96);
-  border-color: rgba(var(--primary-rgb), 0.35);
+  background: var(--card-bg);
+  border-color: rgba(var(--primary-rgb, 212, 175, 55), 0.35);
   box-shadow:
     0 28px 70px rgba(0, 0, 0, 0.18),
-    0 0 20px rgba(var(--primary-rgb), 0.15);
+    0 0 20px rgba(var(--primary-rgb, 212, 175, 55), 0.15);
 }
 
 [data-theme="light"] .floating-calc-screen {
-  background: #f1f5f9;
+  background: var(--inset-bg);
   border-color: rgba(15, 23, 42, 0.08);
 }
 
 [data-theme="light"] .floating-calc-key {
-  background: #f8fafc;
+  background: var(--fill-subtle);
   border-color: rgba(15, 23, 42, 0.08);
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 [data-theme="light"] .floating-calc-key:hover {
-  background: #e2e8f0;
+  background: var(--fill-strong);
 }
 
 [data-theme="light"] .floating-calc-key.is-func {
-  background: #edf2f7;
-  color: #475569;
+  background: var(--fill-medium);
+  color: var(--text-muted);
+}
+
+/* Keys that sit on the primary colour keep the readable on-primary label in the light theme too. Without this the
+   generic light key colour above has equal specificity, comes later, and wins, leaving dark text on a dark primary. */
+[data-theme="light"] .floating-calc-key.is-eq,
+[data-theme="light"] .floating-calc-key.is-op.is-active {
+  color: var(--on-primary, #10120e);
 }
 
 /* Responsive adjustments for narrow screens */
 @media (max-width: 600px) {
   .floating-calc-trigger {
-    bottom: 74px;
-    right: 18px;
-    width: 48px;
-    height: 48px;
+    bottom: 68px;
+    right: 14px;
+    width: 44px;
+    height: 44px;
+    opacity: 0.88;
+    transition:
+      opacity 0.2s ease,
+      transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.18s ease;
+  }
+  .floating-calc-trigger:hover,
+  .floating-calc-trigger:active,
+  .floating-calc-trigger.is-dragging {
+    opacity: 1;
   }
 
   .floating-calc-panel {

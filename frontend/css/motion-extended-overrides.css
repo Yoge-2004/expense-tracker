@@ -1,0 +1,114 @@
+/* Rules adopted from hand edits that lived only in the generated motion-extended.css.
+   Kept unchanged and in the same cascade position so the bundle can be regenerated without
+   losing them. Move each rule into the module that owns it, then rebuild. */
+
+.btn:active,
+.btn-primary:active,
+.btn-secondary:active,
+.btn-danger:active,
+.admin-drawer-btn:active,
+.pill-chip:active,
+.admin-nav-item:active {
+  transform: scale(0.97) !important;
+  transition: transform 0.08s ease !important;
+}
+
+/* Card hover lift & glow elevation */
+.card,
+.metric-card,
+.insight-card-item {
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.card:hover,
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.4), 0 0 16px rgba(var(--primary-rgb), 0.12);
+}
+
+/* Doherty Threshold Button Loading Spinner (< 400ms feedback guarantee) */
+.btn.btn-loading,
+.btn-primary.btn-loading,
+.btn-secondary.btn-loading,
+.btn-danger.btn-loading,
+.admin-drawer-btn.btn-loading {
+  pointer-events: none !important;
+  opacity: 0.8 !important;
+  position: relative !important;
+  color: transparent !important;
+}
+
+.btn.btn-loading::after,
+.btn-primary.btn-loading::after,
+.btn-secondary.btn-loading::after,
+.btn-danger.btn-loading::after,
+.admin-drawer-btn.btn-loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: calc(50% - 8px);
+  left: calc(50% - 8px);
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btnSpin 0.6s linear infinite;
+  color: var(--primary, #10b981);
+}
+
+.btn-primary.btn-loading::after,
+.btn-danger.btn-loading::after {
+  color: #ffffff;
+}
+
+@keyframes btnSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* View & Panel Enter Animations */
+@keyframes viewFadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.view-enter-active {
+  animation: viewFadeSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Modal Scale-In Enter Transition */
+@keyframes modalScaleEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-overlay.active .modal-card,
+.modal-overlay.active .admin-modal-card {
+  animation: modalScaleEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Shimmering Skeleton Loader */
+@keyframes skeletonPulse {
+  0% { opacity: 0.5; background-position: -200% 0; }
+  50% { opacity: 0.9; }
+  100% { opacity: 0.5; background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.03) 75%);
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.6s ease-in-out infinite;
+  border-radius: 6px;
+  color: transparent !important;
+}

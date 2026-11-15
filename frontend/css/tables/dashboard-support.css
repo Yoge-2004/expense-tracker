@@ -309,8 +309,8 @@
   background: var(--card-bg);
   backdrop-filter: var(--glass);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 22px;
+  border-radius: 16px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

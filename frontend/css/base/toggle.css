@@ -100,7 +100,7 @@
 #isRecurring:checked {
   background: var(--primary-gradient);
   border-color: var(--primary);
-  box-shadow: 0 2px 14px rgba(var(--primary-rgb), 0.5);
+  box-shadow: 0 2px 14px var(--primary-glow);
   outline: none;
   animation: none;
 }

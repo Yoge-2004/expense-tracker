@@ -55,3 +55,5 @@
 
 /* Theme-specific card motion was removed from the critical theme-switch path.
    Pointer/interaction motion remains owned by the existing motion modules. */
+
+@import url("motion-extended-overrides.css");
