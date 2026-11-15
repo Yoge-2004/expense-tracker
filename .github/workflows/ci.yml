@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import csv, os
+          import csv, os, sys
           path = 'target/site/jacoco/jacoco.csv'
           if not os.path.exists(path):
               print('Backend coverage report was not produced.')
@@ -50,8 +50,11 @@ jobs:
               print('')
               print('| Measure | Covered |')
               print('|---|---|')
-              for label, kind in (('Lines', 'LINE'), ('Branches', 'BRANCH'), ('Methods', 'METHOD'), ('Classes', 'CLASS')):
+              measures = (('Lines', 'LINE'), ('Branches', 'BRANCH'), ('Methods', 'METHOD'), ('Instructions', 'INSTRUCTION'))
+              for label, kind in measures:
                   print(f'| {label} | {pct(kind)} |')
+              # Also show the numbers as a build annotation so they are visible without opening the summary.
+              print('::notice title=Backend coverage::' + '; '.join(f'{label} {pct(kind)}' for label, kind in measures), file=sys.stderr)
           PY
       - name: Upload backend test log and reports
         if: always()
