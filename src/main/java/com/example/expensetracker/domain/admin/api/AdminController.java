@@ -3,6 +3,7 @@ package com.example.expensetracker.domain.admin.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -407,11 +409,16 @@ public class AdminController {
         return ResponseEntity.ok(adminDataService.getAllIncomes(userId, pageable));
     }
 
-    @Operation(summary = "Export complete platform ledger", description = "Dumps complete multi-tenant ledger as structured JSON")
+    @Operation(summary = "Export complete platform ledger",
+            description = "Streams the complete multi-tenant ledger (users, expenses, incomes, categories) as "
+                    + "one JSON object. Rows are written page by page, so large databases do not exhaust memory.")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping({"/database/export/json", "/data/export-ledger"})
-    public ResponseEntity<Map<String, Object>> exportPlatformLedgerJson() {
-        return ResponseEntity.ok(adminDataService.exportPlatformLedger());
+    public void exportPlatformLedgerJson(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        adminDataService.writePlatformLedger(response.getOutputStream());
     }
 
     @Operation(summary = "Download portable SQLite database snapshot", description = "Generates and streams immediate portable SQLite database snapshot file")
