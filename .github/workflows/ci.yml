@@ -45,6 +45,11 @@ jobs:
           for match in pattern.finditer(log):
               path, line, message = match.groups()
               seen.setdefault((path.split('/')[-1], message.strip()), []).append(line)
+          raw_warnings = log.count('[WARNING]')
+          raw_deprecation = len(re.findall(r'deprecat', log, re.I))
+          raw_removal = len(re.findall(r'for removal', log, re.I))
+          print(f'::notice title=Compiler log::{len(log.splitlines())} lines, {raw_warnings} [WARNING] lines, '
+                f'{raw_deprecation} mention deprecation, {raw_removal} mention removal', file=sys.stderr)
           print('### Deprecated or for-removal API use (compiler)')
           print('')
           if not seen:
