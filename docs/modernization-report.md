@@ -11,6 +11,12 @@ enabled (`spring.threads.virtual.enabled=true`), no `Vector`, `Hashtable`, `Exec
 `Date` appears only where JJWT requires it, and `java.sql.Timestamp` only where JDBC returns it.
 The main class already uses the relaxed non-public `static void main`.
 
+## Deprecated APIs (compiler-verified)
+CI compiles with `-Xlint:deprecation -Xlint:removal`. The first run over main and test code on JDK 27 and Spring Boot 4.1.2
+logged 5 warnings in total and none were about deprecated or for-removal APIs, so no deprecated API calls need replacing today.
+The deprecated item is the Jackson 2 dependency itself (below), which is a library-level deprecation the compiler does not flag.
+Each CI run lists any new ones in the backend job summary.
+
 ## Worth doing
 
 ### 1. Jackson 2 to Jackson 3 (highest value)
