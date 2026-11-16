@@ -66,7 +66,7 @@
 
                 <div class="top-bar-utility-group">
                     <!-- Web Studio & Appearance Trigger -->
-                    <button id="themeStudioBtn" class="btn-icon studio-toggle-btn" title="Studio & Appearance (Alt+T)" aria-label="Studio & Appearance">
+                    <button type="button" id="themeStudioBtn" class="btn-icon studio-toggle-btn" title="Studio & Appearance (Alt+T)" aria-label="Studio & Appearance">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
                             <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
@@ -77,7 +77,7 @@
                     </button>
 
                     <!-- Global Theme Switcher (Dark / Light Theme) -->
-                    <button id="themeToggle" class="btn-icon theme-toggle-btn" title="Switch Theme" aria-label="Switch Theme">
+                    <button type="button" id="themeToggle" class="btn-icon theme-toggle-btn" title="Switch Theme" aria-label="Switch Theme">
                         <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="5"></circle>
                             <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -136,7 +136,7 @@
                     <span class="pulse-dot admin-table-3"></span>
                     <span id="heartbeatText">Telemetry Online</span>
                 </span>
-                <button id="quickPurgeCacheBtn" class="btn-secondary admin-flex-btn-2" title="Purge pre-computed cache">
+                <button type="button" id="quickPurgeCacheBtn" class="btn-secondary admin-flex-btn-2" title="Purge pre-computed cache">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                     <span>Purge Cache</span>
                 </button>
@@ -371,12 +371,12 @@
                             <option value="ROLE_SUPER_ADMIN">Super Administrators</option>
                         </select>
 
-                        <button id="refreshUserTableBtn" class="btn-secondary admin-flex-btn-1" title="Refresh Registry">
+                        <button type="button" id="refreshUserTableBtn" class="btn-secondary admin-flex-btn-1" title="Refresh Registry">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             <span>Refresh</span>
                         </button>
 
-                        <button id="openCreateUserModalBtn" class="btn-primary admin-flex-btn-1" title="Provision New Account">
+                        <button type="button" id="openCreateUserModalBtn" class="btn-primary admin-flex-btn-1" title="Provision New Account">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             <span>Provision User</span>
                         </button>
@@ -393,14 +393,14 @@
                     <table class="data-table admin-table-collapse">
                         <thead>
                             <tr>
-                                <th>User ID</th>
-                                <th>Account Name</th>
-                                <th>Email Address</th>
-                                <th>Privilege Tier</th>
-                                <th>Security State</th>
-                                <th>Expenses</th>
-                                <th>Registered</th>
-                                <th class="admin-table-5">Actions & Moderation</th>
+                                <th scope="col">User ID</th>
+                                <th scope="col">Account Name</th>
+                                <th scope="col">Email Address</th>
+                                <th scope="col">Privilege Tier</th>
+                                <th scope="col">Security State</th>
+                                <th scope="col">Expenses</th>
+                                <th scope="col">Registered</th>
+                                <th scope="col" class="admin-table-5">Actions & Moderation</th>
                             </tr>
                         </thead>
                         <tbody id="userTableBody">
@@ -413,8 +413,8 @@
                 <div class="admin-flex-between">
                     <span id="userPaginationLabel">Showing page 1</span>
                     <div class="admin-flex-1">
-                        <button id="userPrevBtn" class="btn-secondary admin-btn-pill-sm" disabled>Previous</button>
-                        <button id="userNextBtn" class="btn-secondary admin-btn-pill-sm">Next</button>
+                        <button type="button" id="userPrevBtn" class="btn-secondary admin-btn-pill-sm" disabled>Previous</button>
+                        <button type="button" id="userNextBtn" class="btn-secondary admin-btn-pill-sm">Next</button>
                     </div>
                 </div>
             </div>
@@ -454,17 +454,17 @@
                             <span>Auto-Scroll</span>
                         </label>
 
-                        <button id="refreshLogsBtn" class="btn-secondary admin-flex-btn-1" title="Fetch latest logs">
+                        <button type="button" id="refreshLogsBtn" class="btn-secondary admin-flex-btn-1" title="Fetch latest logs">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             <span>Refresh</span>
                         </button>
 
-                        <button id="copyLogsBtn" class="btn-secondary admin-flex-btn-1" title="Copy logs to clipboard">
+                        <button type="button" id="copyLogsBtn" class="btn-secondary admin-flex-btn-1" title="Copy logs to clipboard">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                             <span>Copy</span>
                         </button>
 
-                        <button id="clearLogsViewBtn" class="btn-secondary admin-flex-btn-1" title="Clear console view">
+                        <button type="button" id="clearLogsViewBtn" class="btn-secondary admin-flex-btn-1" title="Clear console view">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                             <span>Clear</span>
                         </button>
@@ -595,11 +595,11 @@
                         </p>
                     </div>
                     <div class="retrain-actions-wrapper admin-flex-table-2">
-                        <button id="refreshRetrainLogsBtn" class="btn-secondary admin-flex-btn-3">
+                        <button type="button" id="refreshRetrainLogsBtn" class="btn-secondary admin-flex-btn-3">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             <span>Refresh Logs</span>
                         </button>
-                        <button id="triggerManualRetrainBtn" class="btn-primary admin-flex-btn-4">
+                        <button type="button" id="triggerManualRetrainBtn" class="btn-primary admin-flex-btn-4">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                             <span>Evaluate Retraining</span>
                         </button>
@@ -648,12 +648,12 @@
                         <table class="admin-table data-table admin-table-collapse">
                             <thead>
                                 <tr>
-                                    <th class="admin-table-1">Run ID</th>
-                                    <th class="admin-table-9">Timestamp</th>
-                                    <th class="admin-table-1">Trigger</th>
-                                    <th class="admin-table-10">Status</th>
-                                    <th class="admin-table-11">Feedback Consumed</th>
-                                    <th class="admin-table-12">Details / Metrics</th>
+                                    <th scope="col" class="admin-table-1">Run ID</th>
+                                    <th scope="col" class="admin-table-9">Timestamp</th>
+                                    <th scope="col" class="admin-table-1">Trigger</th>
+                                    <th scope="col" class="admin-table-10">Status</th>
+                                    <th scope="col" class="admin-table-11">Feedback Consumed</th>
+                                    <th scope="col" class="admin-table-12">Details / Metrics</th>
                                 </tr>
                             </thead>
                             <tbody id="retrainingRunsTbody">
@@ -669,7 +669,7 @@
                 <div>
                     <div class="admin-flex-between">
                         <span class="admin-adm-32">Automation Execution Logs</span>
-                        <button id="copyRetrainLogsBtn" class="btn-secondary admin-btn-4">Copy Logs</button>
+                        <button type="button" id="copyRetrainLogsBtn" class="btn-secondary admin-btn-4">Copy Logs</button>
                     </div>
                     <div class="admin-adm-33" id="retrainTerminalLogs">
                         Listening for retraining automation logs…
@@ -704,7 +704,7 @@
                             <label class="admin-adm-5" for="sandboxTextInput">Sample Transaction Description:</label>
                             <input type="text" id="sandboxTextInput" class="command-search-input admin-input-3" placeholder="e.g. Starbucks cold brew & blueberry muffin">
                         </div>
-                        <button id="runSandboxInferenceBtn" class="btn-primary admin-flex-btn-5 mt-2">
+                        <button type="button" id="runSandboxInferenceBtn" class="btn-primary admin-flex-btn-5 mt-2">
                             <span>Run Category Classification</span>
                         </button>
                         <div class="admin-input-6" id="sandboxOutputStage" style="display:none; margin-top: 14px;">
@@ -722,7 +722,7 @@
                             <label class="admin-adm-5" for="merchantTestInput">Raw Bank Narration / Merchant String:</label>
                             <input type="text" id="merchantTestInput" class="command-search-input admin-input-3" placeholder="e.g. POS 4921 UBER *TRIP AID82 SAN FRANCISCO CA">
                         </div>
-                        <button id="runMerchantMatcherBtn" class="btn-primary admin-flex-btn-5 mt-2">
+                        <button type="button" id="runMerchantMatcherBtn" class="btn-primary admin-flex-btn-5 mt-2">
                             <span>Resolve Merchant Entity</span>
                         </button>
                         <div id="merchantOutputStage" class="admin-input-6" style="display:none; margin-top: 14px;">
@@ -748,7 +748,7 @@
                                 <input type="text" id="dupDesc2" class="command-search-input admin-input-3" placeholder="Description (e.g. Dining)">
                             </div>
                         </div>
-                        <button id="runDuplicateCheckBtn" class="btn-primary admin-flex-btn-5 mt-2">
+                        <button type="button" id="runDuplicateCheckBtn" class="btn-primary admin-flex-btn-5 mt-2">
                             <span>Check Vector & Temporal Similarity</span>
                         </button>
                         <div id="duplicateOutputStage" class="admin-input-6" style="display:none; margin-top: 14px;">
@@ -772,7 +772,7 @@
                                 <input type="number" id="anomalyAmount" class="command-search-input admin-input-3" placeholder="Amount (e.g. 7500)">
                             </div>
                         </div>
-                        <button id="runAnomalyScoreBtn" class="btn-primary admin-flex-btn-5 mt-2">
+                        <button type="button" id="runAnomalyScoreBtn" class="btn-primary admin-flex-btn-5 mt-2">
                             <span>Score Transaction Anomaly</span>
                         </button>
                         <div id="anomalyOutputStage" class="admin-input-6" style="display:none; margin-top: 14px;">
@@ -800,7 +800,7 @@
                                 <input type="number" id="forecastBase" class="command-search-input admin-input-3" placeholder="e.g. 45000">
                             </div>
                         </div>
-                        <button id="runForecastBtn" class="btn-primary admin-flex-btn-5 mt-2">
+                        <button type="button" id="runForecastBtn" class="btn-primary admin-flex-btn-5 mt-2">
                             <span>Generate Trend Forecast</span>
                         </button>
                         <div id="forecastOutputStage" class="admin-input-6" style="display:none; margin-top: 14px;">
@@ -865,10 +865,10 @@
 
                         <div class="admin-flex-2">
                             <label class="admin-adm-38" for="broadcastPin">Operator Step-Up Security PIN</label>
-                            <input type="password" id="broadcastPin" maxlength="6" inputmode="numeric" class="command-search-input admin-input-9" placeholder="••••••">
+                            <input autocomplete="one-time-code" type="password" id="broadcastPin" maxlength="6" inputmode="numeric" class="command-search-input admin-input-9" placeholder="••••••">
                         </div>
 
-                        <button id="sendBroadcastBtn" class="btn-primary admin-flex-btn-6">
+                        <button type="button" id="sendBroadcastBtn" class="btn-primary admin-flex-btn-6">
                             Dispatch Broadcast Announcement
                         </button>
                     </div>
@@ -933,7 +933,7 @@
                         <span class="card-label">Multi-Cloud Storage State</span>
                         <h3 class="section-title">3-Tier Distributed Database Cluster</h3>
                     </div>
-                    <button id="btnProbeTopology" class="btn-secondary admin-flex-btn-7">
+                    <button type="button" id="btnProbeTopology" class="btn-secondary admin-flex-btn-7">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                         <span>Probe Cluster Health & Latency</span>
                     </button>
@@ -1039,7 +1039,7 @@
                         <span class="card-label">Zero-Data-Loss Resilience</span>
                         <h3 class="section-title">Encrypted Cloud Snapshot Failover</h3>
                     </div>
-                    <button id="triggerFailoverSnapshotBtn" class="btn-primary admin-flex-btn-8">
+                    <button type="button" id="triggerFailoverSnapshotBtn" class="btn-primary admin-flex-btn-8">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                         <span>Dispatch Failover Snapshot</span>
                     </button>
@@ -1069,11 +1069,11 @@
                     </div>
 
                     <div class="admin-flex-3">
-                        <button id="refreshAuditTableBtn" class="btn-secondary admin-flex-btn-1">
+                        <button type="button" id="refreshAuditTableBtn" class="btn-secondary admin-flex-btn-1">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             <span>Refresh</span>
                         </button>
-                        <button id="exportAuditCsvBtn" class="btn-primary admin-flex-btn-1">
+                        <button type="button" id="exportAuditCsvBtn" class="btn-primary admin-flex-btn-1">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                             <span>Export CSV</span>
                         </button>
@@ -1090,13 +1090,13 @@
                     <table class="data-table admin-table-collapse">
                         <thead>
                             <tr>
-                                <th>Timestamp</th>
-                                <th>Actor Email</th>
-                                <th>Action</th>
-                                <th>Target Resource</th>
-                                <th>Target ID</th>
-                                <th>Client IP</th>
-                                <th>Audit Diff / Reason</th>
+                                <th scope="col">Timestamp</th>
+                                <th scope="col">Actor Email</th>
+                                <th scope="col">Action</th>
+                                <th scope="col">Target Resource</th>
+                                <th scope="col">Target ID</th>
+                                <th scope="col">Client IP</th>
+                                <th scope="col">Audit Diff / Reason</th>
                             </tr>
                         </thead>
                         <tbody id="auditTableBody">
@@ -1109,8 +1109,8 @@
                 <div class="admin-flex-between">
                     <span id="auditPaginationLabel">Showing page 1</span>
                     <div class="admin-flex-1">
-                        <button id="auditPrevBtn" class="btn-secondary admin-btn-pill-sm" disabled>Previous</button>
-                        <button id="auditNextBtn" class="btn-secondary admin-btn-pill-sm">Next</button>
+                        <button type="button" id="auditPrevBtn" class="btn-secondary admin-btn-pill-sm" disabled>Previous</button>
+                        <button type="button" id="auditNextBtn" class="btn-secondary admin-btn-pill-sm">Next</button>
                     </div>
                 </div>
             </div>
@@ -1131,14 +1131,14 @@
                             <option value="">All Platform Users</option>
                         </select>
 
-                        <button id="refreshDatabaseBtn" class="btn-secondary admin-db-btn" title="Refresh Database Table">
+                        <button type="button" id="refreshDatabaseBtn" class="btn-secondary admin-db-btn" title="Refresh Database Table">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             <span>Refresh</span>
                         </button>
                     </div>
 
                     <div class="admin-db-actions">
-                        <button id="exportLedgerJsonBtn" class="btn-secondary admin-db-btn" title="Export entire multi-tenant ledger as JSON">
+                        <button type="button" id="exportLedgerJsonBtn" class="btn-secondary admin-db-btn" title="Export entire multi-tenant ledger as JSON">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                             <span>Export Full Ledger (JSON)</span>
                         </button>
@@ -1160,13 +1160,13 @@
                     <table class="data-table admin-table-collapse">
                         <thead>
                             <tr>
-                                <th>Txn ID</th>
-                                <th>User</th>
-                                <th>Date</th>
-                                <th>Category / Source</th>
-                                <th>Amount</th>
-                                <th>Description / Note</th>
-                                <th>Method / Type</th>
+                                <th scope="col">Txn ID</th>
+                                <th scope="col">User</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Category / Source</th>
+                                <th scope="col">Amount</th>
+                                <th scope="col">Description / Note</th>
+                                <th scope="col">Method / Type</th>
                             </tr>
                         </thead>
                         <tbody id="databaseTableBody">
@@ -1179,8 +1179,8 @@
                 <div class="admin-flex-between">
                     <span id="dbPaginationLabel">Showing page 1</span>
                     <div class="admin-flex-1">
-                        <button id="dbPrevBtn" class="btn-secondary admin-btn-pill-sm" disabled>Previous</button>
-                        <button id="dbNextBtn" class="btn-secondary admin-btn-pill-sm">Next</button>
+                        <button type="button" id="dbPrevBtn" class="btn-secondary admin-btn-pill-sm" disabled>Previous</button>
+                        <button type="button" id="dbNextBtn" class="btn-secondary admin-btn-pill-sm">Next</button>
                     </div>
                 </div>
             </div>
@@ -1192,7 +1192,7 @@
     <aside id="userDrawer" class="admin-drawer">
         <div class="admin-drawer-header admin-flex-between">
             <span class="admin-adm-44">Account Deep Inspector</span>
-            <button id="closeDrawerBtn" class="modal-close admin-btn-5" aria-label="Close Inspector">✕</button>
+            <button type="button" id="closeDrawerBtn" class="modal-close admin-btn-5" aria-label="Close Inspector">✕</button>
         </div>
 
         <div class="admin-flex-14">
@@ -1222,11 +1222,11 @@
                     </div>
                 </div>
                 <div class="admin-drawer-actions-row">
-                    <button id="drawerResetPinLockoutBtn" class="btn-secondary admin-drawer-btn">
+                    <button type="button" id="drawerResetPinLockoutBtn" class="btn-secondary admin-drawer-btn">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-1"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
                         <span>Unlock PIN</span>
                     </button>
-                    <button id="drawerToggleLockBtn" class="btn-danger admin-drawer-btn">
+                    <button type="button" id="drawerToggleLockBtn" class="btn-danger admin-drawer-btn">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-1"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                         <span>Lock Account</span>
                     </button>
@@ -1269,10 +1269,10 @@
                     <table class="data-table admin-table-collapse">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Category</th>
-                                <th>Amount</th>
-                                <th>Description</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Category</th>
+                                <th scope="col">Amount</th>
+                                <th scope="col">Description</th>
                             </tr>
                         </thead>
                         <tbody id="drawerLedgerTableBody">
@@ -1293,14 +1293,14 @@
                         <option value="ROLE_ADMIN">ROLE_ADMIN (Platform Administrator)</option>
                         <option value="ROLE_SUPER_ADMIN">ROLE_SUPER_ADMIN (Super Administrator)</option>
                     </select>
-                    <button id="drawerApplyRoleBtn" class="btn-primary admin-btn-6">
+                    <button type="button" id="drawerApplyRoleBtn" class="btn-primary admin-btn-6">
                         Elevate / Update Role
                     </button>
                 </div>
-                <button id="drawerRevokeSessionsBtn" class="btn-secondary admin-btn-7">
+                <button type="button" id="drawerRevokeSessionsBtn" class="btn-secondary admin-btn-7">
                     Invalidate Active JWT Sessions
                 </button>
-                <button id="drawerDeleteUserBtn" class="btn-danger admin-btn-8">
+                <button type="button" id="drawerDeleteUserBtn" class="btn-danger admin-btn-8">
                     Permanently Delete User Account
                 </button>
             </div>
@@ -1336,7 +1336,7 @@
                     </div>
                     <div>
                         <label class="admin-form-label-bold" for="createUserPassword">Initial Password *</label>
-                        <input type="password" id="createUserPassword" class="command-search-input admin-input-card-bg" required placeholder="Minimum 6 characters" minlength="6">
+                        <input autocomplete="new-password" type="password" id="createUserPassword" class="command-search-input admin-input-card-bg" required placeholder="Minimum 6 characters" minlength="6">
                     </div>
                 </div>
 
@@ -1362,11 +1362,11 @@
                 <div class="admin-metrics-grid-auto">
                     <div>
                         <label class="admin-form-label-bold" for="createUserPin">User Security PIN *</label>
-                        <input class="admin-input-card-bg" type="password" id="createUserPin" maxlength="6" inputmode="numeric" required placeholder="6-digit PIN">
+                        <input autocomplete="new-password" class="admin-input-card-bg" type="password" id="createUserPin" maxlength="6" inputmode="numeric" required placeholder="6-digit PIN">
                     </div>
                     <div>
                         <label class="admin-adm-17" for="createUserAdminPin">Your Step-Up Admin PIN *</label>
-                        <input class="admin-input-4" type="password" id="createUserAdminPin" maxlength="6" inputmode="numeric" required placeholder="6-digit PIN">
+                        <input autocomplete="one-time-code" class="admin-input-4" type="password" id="createUserAdminPin" maxlength="6" inputmode="numeric" required placeholder="6-digit PIN">
                     </div>
                 </div>
 
@@ -1409,7 +1409,7 @@
                     </div>
                     <div>
                         <label class="admin-form-label-bold" for="editUserPassword">Reset Password (Optional)</label>
-                        <input type="password" id="editUserPassword" class="command-search-input admin-input-card-bg" placeholder="Leave empty to keep unchanged" minlength="6">
+                        <input autocomplete="new-password" type="password" id="editUserPassword" class="command-search-input admin-input-card-bg" placeholder="Leave empty to keep unchanged" minlength="6">
                     </div>
                 </div>
 
@@ -1435,11 +1435,11 @@
                 <div class="admin-metrics-grid-auto">
                     <div>
                         <label class="admin-form-label-bold" for="editUserPin">Reset User Security PIN (Optional)</label>
-                        <input class="admin-input-card-bg" type="password" id="editUserPin" maxlength="6" inputmode="numeric" placeholder="Leave empty to keep unchanged">
+                        <input autocomplete="new-password" class="admin-input-card-bg" type="password" id="editUserPin" maxlength="6" inputmode="numeric" placeholder="Leave empty to keep unchanged">
                     </div>
                     <div>
                         <label class="admin-adm-17" for="editUserAdminPin">Your Step-Up Admin PIN *</label>
-                        <input class="admin-input-4" type="password" id="editUserAdminPin" maxlength="6" inputmode="numeric" required placeholder="6-digit PIN">
+                        <input autocomplete="one-time-code" class="admin-input-4" type="password" id="editUserAdminPin" maxlength="6" inputmode="numeric" required placeholder="6-digit PIN">
                     </div>
                 </div>
 
@@ -1456,21 +1456,23 @@
         <div class="modal modal-card admin-table-14">
             <div class="modal-header">
                 <h3 class="admin-title-1" id="stepUpModalTitle">Step-Up Security Verification</h3>
-                <button id="stepUpCancelBtn" class="modal-close" aria-label="Close modal">✕</button>
+                <button type="button" id="stepUpCancelBtn" class="modal-close" aria-label="Close modal">✕</button>
             </div>
             <div class="modal-body admin-adm-54">
                 <p class="admin-adm-55" id="stepUpModalDesc">
                     This administrative operation requires your 6-digit Security PIN to verify non-repudiation.
                 </p>
                 <div class="admin-flex-18">
-                    <input type="password" id="stepUpModalPinInput" maxlength="6" inputmode="numeric" aria-label="Step-up security PIN" class="command-search-input admin-input-12" placeholder="••••••">
+                    <input autocomplete="one-time-code" type="password" id="stepUpModalPinInput" maxlength="6" inputmode="numeric" aria-label="Step-up security PIN" class="command-search-input admin-input-12" placeholder="••••••">
                 </div>
             </div>
             <div class="modal-footer admin-flex-19">
-                <button id="stepUpCancelBtn2" class="btn-secondary admin-btn-1">Cancel</button>
-                <button id="stepUpConfirmBtn" class="btn-primary admin-btn-9">Verify & Execute</button>
+                <button type="button" id="stepUpCancelBtn2" class="btn-secondary admin-btn-1">Cancel</button>
+                <button type="button" id="stepUpConfirmBtn" class="btn-primary admin-btn-9">Verify & Execute</button>
             </div>
         </div>
+    </div>
+
     <!-- ── MODEL SPECIFICATIONS & ML TELEMETRY MODAL ─────────────────── -->
     <div id="modelSpecsModal" class="modal-overlay">
         <div class="modal modal-card admin-table-14" style="max-width: 620px;">
@@ -1479,14 +1481,14 @@
                     <span class="card-label" id="modelSpecCategory">Machine Learning Operations</span>
                     <h3 class="admin-title-1" id="modelSpecTitle">Model Specifications</h3>
                 </div>
-                <button id="closeModelSpecsBtn" class="modal-close" aria-label="Close modal">✕</button>
+                <button type="button" id="closeModelSpecsBtn" class="modal-close" aria-label="Close modal">✕</button>
             </div>
             <div class="modal-body admin-adm-54" id="modelSpecBody" style="font-size: 13px; line-height: 1.6;">
                 <!-- Dynamically populated by admin.js showModelSpecsModal(index) -->
             </div>
             <div class="modal-footer admin-flex-19">
-                <button id="modelSpecCloseBtn2" class="btn-secondary admin-btn-1">Close</button>
-                <button id="modelSpecTestInSandboxBtn" class="btn-primary admin-btn-9">Open in Evaluation Sandbox ➔</button>
+                <button type="button" id="modelSpecCloseBtn2" class="btn-secondary admin-btn-1">Close</button>
+                <button type="button" id="modelSpecTestInSandboxBtn" class="btn-primary admin-btn-9">Open in Evaluation Sandbox ➔</button>
             </div>
         </div>
     </div>
