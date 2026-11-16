@@ -247,7 +247,7 @@ public class ResilientRoutingDataSource implements DataSource {
         if (connection != null) {
             try {
                 connection.close();
-            } catch (SQLException ignored) {
+            } catch (SQLException _) {
                 // nothing useful to do with a connection that will not close
             }
         }

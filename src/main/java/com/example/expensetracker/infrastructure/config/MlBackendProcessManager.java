@@ -75,7 +75,7 @@ public class MlBackendProcessManager implements SmartLifecycle {
                     while ((line = reader.readLine()) != null) {
                         log.debug("[python-ml] {}", line);
                     }
-                } catch (Exception ignored) {
+                } catch (Exception _) {
                 }
             });
 

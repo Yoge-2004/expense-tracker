@@ -528,7 +528,7 @@ public class ExecutivePdfReportGenerator implements ReportExportStrategy {
                         }
                     }
                     yield upper;
-                } catch (Exception ignored) {
+                } catch (Exception _) {
                     yield upper;
                 }
             }

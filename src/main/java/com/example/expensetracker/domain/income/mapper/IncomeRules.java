@@ -59,7 +59,7 @@ public final class IncomeRules {
             if (stored != null) {
                 return stored;
             }
-        } catch (IllegalArgumentException ignored) {
+        } catch (IllegalArgumentException _) {
             // an unreadable stored value falls back to inference
         }
         return inferKind(income.getSource());
@@ -87,7 +87,7 @@ public final class IncomeRules {
             if (stored != null) {
                 return stored;
             }
-        } catch (IllegalArgumentException ignored) {
+        } catch (IllegalArgumentException _) {
             // an unreadable stored value falls back to the credit date
         }
         return YearMonth.from(income.getIncomeDate());
