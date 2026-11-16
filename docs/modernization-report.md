@@ -5,6 +5,11 @@ with Ruff (`UP`, `FURB`, `PTH`, `PERF`), ESLint (core `prefer-*` plus `eslint-pl
 Baseline: Java 27, Spring Boot 4.1.2, Python 3.14, TypeScript strict, classic-script browser JavaScript.
 Counts are for `src/main/java` (289 files) unless stated.
 
+## Deprecated API check (compiler)
+CI compiles on Java 27 with `-Xlint:deprecation -Xlint:removal`. The build log contains no deprecated or for-removal API
+warnings for main or test code (5 unrelated warning lines, none mentioning removal). The Jackson 2 item below is a
+framework-level deprecation, not a deprecated API call, so the compiler does not report it. Re-check after dependency upgrades.
+
 ## Already modern (no action)
 64 records, 57 text blocks, 27 `instanceof` patterns, 17 arrow-`switch` uses, no `switch` with `break`, virtual threads
 enabled (`spring.threads.virtual.enabled=true`), no `Vector`, `Hashtable`, `Executors` or `HttpURLConnection`.
