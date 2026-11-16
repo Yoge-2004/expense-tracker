@@ -63,3 +63,7 @@ blob-report/
 e2e/playwright.local.config.ts
 artifacts/
 /expensetracker
+
+# Minified copy built by scripts/minify-frontend.mjs
+frontend-min/
+scripts/frontend-tools/node_modules/

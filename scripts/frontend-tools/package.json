@@ -1,0 +1,8 @@
+{
+  "name": "expense-tracker-frontend-build",
+  "private": true,
+  "description": "Build-time tools for the static frontend (minification). Not shipped.",
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
