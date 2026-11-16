@@ -1,11 +1,53 @@
 # Modernization report
 
+Two separate questions: **Part A** is modern capabilities the project never adopted; **Part B** is deprecated or outdated code.
+
 Method: configured versions read from the build files, claims checked against official documentation, then measured
 with Ruff (`UP`, `FURB`, `PTH`, `PERF`), ESLint (core `prefer-*` plus `eslint-plugin-unicorn`), PMD 7 and source scans.
 Baseline: Java 27, Spring Boot 4.1.2, Python 3.14, TypeScript strict, classic-script browser JavaScript.
 Counts are for `src/main/java` (289 files) unless stated.
 
-## Deprecated API check (compiler)
+## Part A: modern capabilities this project does not use
+
+Deprecation is a different question. A linter cannot report a feature that was never adopted, because the old way
+still works. These come from `python3 scripts/adoption-audit.py` (counts per layer), then each zero was checked
+against the code for a real problem the feature would solve. Items where the problem was not there were dropped
+(for example a non-root container user: the Dockerfile already creates one).
+
+### Highest value, each tied to a problem found in this project
+
+| # | Gap (count) | Problem it would solve here | Modern alternative (baseline) | Benefit / drawback | Safe to automate |
+|---|---|---|---|---|---|
+| 1 | Hand-built modals: 23 `.modal-overlay`, 35 manual Escape handlers, 0 `<dialog>`, no `aria-modal` in `admin.html` | The admin Model Specifications modal was invisible because of nesting inside an `opacity:0` overlay (fixed in #76). No focus trap or inert background | `<dialog>` with `showModal()` (Baseline 2022) | Top layer ends z-index and nesting bugs; free focus trap, Esc and accessibility. Needs `::backdrop` styling and JS changes per modal | No. Pilot one modal first |
+| 2 | Schema changes: `ddl-auto=update` (6 properties), no Flyway or Liquibase | Unreviewed schema changes in production, for example the new `tokens_valid_after` column | Flyway or Liquibase migrations (Boot supports both) | Reviewable, repeatable schema; needs a baseline for the existing database and care with the SQLite fallback | No |
+| 3 | Concurrent edits: 0 `@Version`, no ETag or `If-Match` | Web and mobile can edit the same expense and silently overwrite each other | JPA `@Version` plus a 409 response | Detects lost updates; needs a column, a backfill and client handling of 409 | No |
+| 4 | CSS cascade: 0 `@layer`, 1,506 `!important`, 0 nesting in 29,747 lines | Specificity wars. The override files adopted in #70 exist because of this | `@layer` (Baseline 2022), native nesting (Baseline 2023) | Removes the need for most `!important`; a wrong layer order changes the look silently, so check visually | No |
+| 5 | Delivery: 56 requests per dashboard load (48 JS, 8 CSS), nothing minified, no ES modules | Dashboard transfers about 350 KB gzip; 473 undeclared cross-file globals | A build step (esbuild): minification measured at 239 to 167 KB for JS and 111 to 79 KB for CSS (about 30% less), then ES modules | Faster first load; adds a build to deploy | Minification yes, modules no |
+| 6 | Money formatting by hand: 60 `.toFixed(`, 12 with a currency symbol, against 11 `Intl` uses | Multi-currency app; digit grouping (for example en-IN lakh style) is locale-specific | `Intl.NumberFormat(locale, {style: 'currency', currency})` | Correct symbols and grouping; output text can change, so tests that assert strings need updating | Per site, with review |
+| 7 | Error format: 0 `ProblemDetail`; custom error body in a 492-line handler | Every client parses a private error shape | `ProblemDetail`, RFC 9457 (Spring 6+) | Standard format; changes the JSON the web and mobile apps parse | No |
+| 8 | Configuration: 55 `@Value`, 0 `@ConfigurationProperties` | Settings are scattered and unvalidated at startup | `@ConfigurationProperties` records with validation | Fails fast on bad config; moderate refactor | Per class |
+| 9 | Time: 90 `now()` calls, 5 `Clock` uses | Month-boundary logic (reports, budgets) is hard to test | Inject `Clock` | Deterministic tests; touches many signatures | Per class |
+
+### Worth considering
+- **Resilience:** Spring Framework 7 has `@Retryable` and `@ConcurrencyLimit` built in (0 used). Candidates: mail sending, ML and Hugging Face calls.
+- **Observability:** no structured logging (`logging.structured.format.console`), no Micrometer metrics or tracing. Graceful shutdown, compression and HTTP/2 are not set; check Boot 4 defaults before adding.
+- **Pagination:** no keyset scrolling (`Window` and `ScrollPosition`); the ledger export uses offset paging.
+- **Declarative HTTP:** 0 `@HttpExchange` against 8 `RestClient` call sites.
+- **CSS:** 18 `100vh` against 8 `dvh` (mobile address bar), 0 `light-dark()`, 0 `text-wrap: balance`, 81 vendor prefixes that may no longer be needed. `dvh` can be added as a progressive fallback per site.
+- **Web APIs:** 20 hand-built query strings with 0 `URLSearchParams`; 1 `AbortController` (stale responses can overwrite newer ones); 0 `ResizeObserver` for charts.
+- **PWA:** manifest has no `shortcuts` or `share_target` (sharing a receipt photo to the app); service worker has no `navigationPreload`.
+- **Mobile:** 10 `FlatList` and no `FlashList` (measure first); 66 uses of `any` and no `satisfies`; 106 `useMemo`/`useCallback` and 46 `memo` that React Compiler can replace (check Expo SDK 58 support).
+- **Tests:** 671 `assertEquals` against 19 AssertJ; 0 `MockMvcTester`. Testcontainers is not needed while CI provides PostgreSQL.
+- **Repository hygiene:** no formatter or quality gate in the Maven build (Spotless, Error Prone, NullAway, dependency-check), 31 GitHub Actions pinned by tag and 1 by commit SHA. Added in this change: Dependabot for all ecosystems, cancellation of superseded pull-request CI runs, and `.editorconfig`.
+
+### Checked and fine
+Non-root container user, `async/await` (193 against 15 `.then`), optional chaining (737) and `??` (47), `:has()` and `:is()`, `@starting-style`,
+`@view-transition`, `clamp()`, `color-mix()`, `AbortSignal.timeout`, virtual threads, Python 3.14 (`pathlib`, slotted dataclasses; no features it needs).
+React Native 0.88 enables the New Architecture by default, so the missing `newArchEnabled` flag is not a gap.
+
+## Part B: deprecated or outdated APIs
+
+### Deprecated API check (compiler)
 CI compiles on Java 27 with `-Xlint:deprecation -Xlint:removal`. The build log contains no deprecated or for-removal API
 warnings for main or test code (5 unrelated warning lines, none mentioning removal). The Jackson 2 item below is a
 framework-level deprecation, not a deprecated API call, so the compiler does not report it. Re-check after dependency upgrades.
