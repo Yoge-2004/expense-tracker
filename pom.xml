@@ -265,6 +265,12 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.16.0</version>
                 <configuration>
+                    <showDeprecation>true</showDeprecation>
+                    <compilerArgs>
+                        <!-- Report use of deprecated and for-removal APIs so upgrades are not a surprise. -->
+                        <arg>-Xlint:deprecation</arg>
+                        <arg>-Xlint:removal</arg>
+                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>

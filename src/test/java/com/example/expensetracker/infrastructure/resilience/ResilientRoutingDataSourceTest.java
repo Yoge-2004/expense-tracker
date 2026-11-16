@@ -129,7 +129,7 @@ class ResilientRoutingDataSourceTest {
             while (finalPassStarted.getCount() > 0) {
                 try (Connection c = ds.getConnection()) {
                     sleep(5);
-                } catch (SQLException ignored) {
+                } catch (SQLException _) {
                     // keep trying
                 }
             }

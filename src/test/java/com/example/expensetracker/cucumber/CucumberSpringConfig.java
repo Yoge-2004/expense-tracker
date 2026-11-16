@@ -70,16 +70,16 @@ public class CucumberSpringConfig {
         for (String table : tables) {
             try {
                 jdbcTemplate.execute("DELETE FROM " + table);
-            } catch (Exception ignored) {
+            } catch (Exception _) {
             }
         }
         try {
             jdbcTemplate.execute("DELETE FROM categories WHERE user_id IS NOT NULL");
-        } catch (Exception ignored) {
+        } catch (Exception _) {
         }
         try {
             jdbcTemplate.execute("DELETE FROM users");
-        } catch (Exception ignored) {
+        } catch (Exception _) {
         }
 
         testContext.reset();

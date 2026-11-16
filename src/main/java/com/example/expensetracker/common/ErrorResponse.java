@@ -35,7 +35,7 @@ public record ErrorResponse(
         try {
             String tid = org.slf4j.MDC.get("traceId");
             return (tid != null && !tid.isBlank()) ? tid : java.util.UUID.randomUUID().toString();
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             return java.util.UUID.randomUUID().toString();
         }
     }

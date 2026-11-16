@@ -30,6 +30,36 @@ jobs:
         if: failure()
         shell: bash
         run: python3 .github/scripts/annotate_maven_failures.py backend-test.log
+      - name: Deprecation report
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import re, sys, collections
+          try:
+              log = open('backend-test.log', encoding='utf-8', errors='replace').read()
+          except OSError:
+              log = ''
+          pattern = re.compile(r'\[WARNING\] (\S+?\.java):\[(\d+),\d+\] (.*(?:deprecat|removal).*)')
+          seen = collections.OrderedDict()
+          for match in pattern.finditer(log):
+              path, line, message = match.groups()
+              seen.setdefault((path.split('/')[-1], message.strip()), []).append(line)
+          print('### Deprecated or for-removal API use (compiler)')
+          print('')
+          if not seen:
+              print('None reported.')
+          else:
+              kinds = collections.Counter('removal' if 'removal' in m else 'deprecated' for (_, m) in seen)
+              print(f"{len(seen)} distinct warnings ({kinds['removal']} for removal).")
+              print('')
+              print('| File | Warning | Lines |')
+              print('|---|---|---|')
+              for (name, message), lines in list(seen.items())[:60]:
+                  print(f"| {name} | {message[:110]} | {', '.join(lines[:5])} |")
+              top = '; '.join(f'{n}: {m[:70]}' for (n, m) in list(seen)[:8])
+              print(f'::notice title=Deprecations ({len(seen)})::{top}', file=sys.stderr)
+          PY
       - name: Coverage summary
         if: always()
         shell: bash

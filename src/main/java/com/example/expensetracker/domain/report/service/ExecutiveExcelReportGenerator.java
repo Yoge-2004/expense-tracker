@@ -931,7 +931,7 @@ public class ExecutiveExcelReportGenerator implements ReportExportStrategy {
                         }
                     }
                     yield upper;
-                } catch (Exception ignored) {
+                } catch (Exception _) {
                     yield upper;
                 }
             }

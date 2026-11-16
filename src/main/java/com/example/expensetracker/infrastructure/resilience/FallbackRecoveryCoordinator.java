@@ -255,7 +255,7 @@ public class FallbackRecoveryCoordinator implements ResilientRoutingDataSource.R
             if (export != null) {
                 try {
                     Files.deleteIfExists(export);
-                } catch (Exception ignored) {
+                } catch (Exception _) {
                     // temp file; the OS cleans it up eventually
                 }
             }

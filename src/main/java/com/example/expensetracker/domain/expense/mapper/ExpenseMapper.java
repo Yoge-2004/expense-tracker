@@ -63,7 +63,7 @@ public final class ExpenseMapper {
             } catch (Exception ex) {
                 try {
                     categoryId = category.getId();
-                } catch (Exception ignored) {
+                } catch (Exception _) {
                     categoryId = null;
                 }
                 categoryName = "Uncategorized";

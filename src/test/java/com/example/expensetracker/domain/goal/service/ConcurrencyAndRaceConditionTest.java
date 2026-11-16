@@ -120,7 +120,7 @@ class ConcurrencyAndRaceConditionTest {
                 try {
                     startGate.await();
                     loginAttemptGuard.recordFailure(testIp);
-                } catch (Exception ignored) {
+                } catch (Exception _) {
                 } finally {
                     endGate.countDown();
                 }

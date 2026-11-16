@@ -877,7 +877,7 @@ public class ImportServiceImpl implements ImportService {
                     if (debit != null || credit != null) {
                         list.add(new StatementRow(date, narration, debit, credit, ref, lineNum));
                     }
-                } catch (Exception ignored) {
+                } catch (Exception _) {
                     // Skip unparseable row
                 }
             }
@@ -973,7 +973,7 @@ public class ImportServiceImpl implements ImportService {
                         (credit != null && credit.compareTo(BigDecimal.ZERO) > 0)) {
                         list.add(new StatementRow(date, narration, debit, credit, ref, r + 1));
                     }
-                } catch (Exception ignored) {
+                } catch (Exception _) {
                     // Skip unparseable row
                 }
             }
@@ -1211,7 +1211,7 @@ public class ImportServiceImpl implements ImportService {
                     try {
                         String clean = cell.getStringCellValue().replaceAll("[^0-9.\\-]", "").trim();
                         yield clean.isEmpty() ? null : new BigDecimal(clean);
-                    } catch (Exception ignored) {
+                    } catch (Exception _) {
                         yield null;
                     }
                 }

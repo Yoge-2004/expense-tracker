@@ -427,7 +427,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 if (configuredMailHost != null && !configuredMailHost.isBlank()) {
                     helper.setFrom("noreply@" + configuredMailHost);
                 }
-            } catch (Exception ignored) {
+            } catch (Exception _) {
                 // Keep default if setFrom fails
             }
 

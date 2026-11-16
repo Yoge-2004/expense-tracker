@@ -96,7 +96,7 @@ public class DatabaseMigrationConfig {
                 // Migrate legacy is_admin boolean column if it was present in restored older snapshots
                 //noinspection SqlNoDataSourceInspection
                 stmt.execute("UPDATE users SET role = 'ROLE_SUPER_ADMIN' WHERE is_admin = TRUE AND (role IS NULL OR role = 'ROLE_USER')");
-            } catch (Exception ignored) {
+            } catch (Exception _) {
                 // Ignored if is_admin column does not exist
             }
 
