@@ -49,6 +49,20 @@ Java 24+ no longer pins virtual threads on `synchronized`, so do not replace `sy
 New JSON code: do not add more direct Jackson 2 usage than the existing injected `ObjectMapper`. Jackson 2 support in
 Spring Boot is deprecated and will be removed in a future 4.x release.
 
+## Modern capabilities to reach for (this project has not adopted them yet)
+When a change touches one of these areas, use the modern option unless there is a reason not to. Run
+`python3 scripts/adoption-audit.py` to see how adoption stands.
+- Modal or popup UI: `<dialog>` with `showModal()`, not another hand-built overlay. Menus and tooltips: the `popover` attribute.
+- CSS: `@layer` and native nesting before `!important`; `dvh` with a `vh` fallback; logical properties.
+- Money and dates in the browser: `Intl.NumberFormat` and `Intl.DateTimeFormat`, not `toFixed` and string concatenation.
+  Query strings: `URLSearchParams`. Cancel superseded requests with `AbortController`.
+- Entities edited from more than one client: `@Version` and a 409 response.
+- Schema changes: a migration, not `ddl-auto=update` (once Flyway or Liquibase is introduced).
+- Errors from new endpoints: `ProblemDetail` (RFC 9457) when the error format is next revisited.
+- Settings: `@ConfigurationProperties` records with validation, not more `@Value`.
+- Time-dependent logic: inject a `Clock`, so tests can fix the date.
+- Retry or concurrency limits around mail, ML and Hugging Face calls: Spring's `@Retryable` and `@ConcurrencyLimit`.
+
 ## Python 3.14 and TypeScript
 - Python: `pathlib` over `os.path`; `match` for structured branching; no `typing.List`/`Optional` (use `list[...]`, `X | None`).
   Annotations are evaluated lazily from 3.14, so `from __future__ import annotations` is not needed in new files.
