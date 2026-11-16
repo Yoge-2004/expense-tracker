@@ -1,5 +1,11 @@
 [build]
   publish = "frontend"
+  # Minify JS and CSS on Netlify's own checkout (the repository keeps readable sources).
+  # If minification ever fails for a file, that file is served unminified and the deploy still succeeds.
+  command = "npm ci --prefix scripts/frontend-tools --no-audit --no-fund && node scripts/minify-frontend.mjs --in-place"
+
+[build.environment]
+  NODE_VERSION = "24"
 
 [[redirects]]
   from = "/api/*"
