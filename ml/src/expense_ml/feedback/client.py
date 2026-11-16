@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from .schema import FeedbackRecord
@@ -22,6 +22,10 @@ def _request_json(
     payload: object | None = None,
     timeout: float = 30.0,
 ) -> object:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        # urlopen would also read file: and custom-scheme URLs; the endpoint is always the backend.
+        raise FeedbackClientError("Feedback API URL must be an http(s) URL")
     body = None
     headers = {
         "Accept": "application/json",
@@ -33,7 +37,7 @@ def _request_json(
 
     request = Request(url, headers=headers, method=method, data=body)
     try:
-        with urlopen(request, timeout=timeout) as response:
+        with urlopen(request, timeout=timeout) as response:  # nosec B310 - scheme checked above
             raw = response.read()
     except HTTPError as exc:
         raise FeedbackClientError(f"Feedback endpoint returned HTTP {exc.code}") from exc

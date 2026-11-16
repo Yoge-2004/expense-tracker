@@ -187,3 +187,29 @@ def test_fetch_huggingface_dataset_rejects_unknown_finee_category(tmp_path, monk
             progress=False,
             dataset_format="finee-chatml",
         )
+
+
+def test_fetch_huggingface_dataset_passes_revision_and_keys_cache_on_it(tmp_path, monkeypatch):
+    from expense_ml.data import fetch as fetch_module
+
+    calls = []
+
+    def fake_load_dataset(*args, **kwargs):
+        calls.append(kwargs.get("revision"))
+        return [{"text": "Swiggy order", "category": "Food & Dining"}]
+
+    monkeypatch.setattr("datasets.load_dataset", fake_load_dataset)
+    common = {
+        "dataset_id": "demo/dataset",
+        "text_column": "text",
+        "label_column": "category",
+        "source": "global-transaction-categorization",
+        "cache_dir": tmp_path,
+        "progress": False,
+    }
+    fetch_module.fetch_huggingface_dataset(**common, revision="abc123")
+    # Same pin again is served from the cache; a different pin must fetch again.
+    fetch_module.fetch_huggingface_dataset(**common, revision="abc123")
+    fetch_module.fetch_huggingface_dataset(**common, revision="def456")
+
+    assert calls == ["abc123", "def456"]

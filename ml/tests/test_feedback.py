@@ -1,5 +1,6 @@
 import pytest
 
+from expense_ml.feedback.client import FeedbackClientError, count_training_feedback
 from expense_ml.feedback.schema import FeedbackRecord
 from expense_ml.feedback.validation import eligible_feedback, validate_feedback_rows
 
@@ -40,3 +41,9 @@ def test_eligible_feedback_excludes_pending_records():
     ]
     result = eligible_feedback(records)
     assert [record.feedback_id for record in result] == ["1"]
+
+
+@pytest.mark.parametrize("base_url", ["file:///etc", "ftp://host/path", "javascript:alert(1)", "http://"])
+def test_feedback_client_rejects_non_http_urls(base_url):
+    with pytest.raises(FeedbackClientError, match="http"):
+        count_training_feedback(base_url, "token")
