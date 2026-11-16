@@ -2,6 +2,10 @@
 # Every source is normalized into the explicit canonical taxonomy in
 # expense_ml.data.taxonomy. Unknown source labels fail preparation.
 # Raw datasets are never committed to Git.
+#
+# Pin each dataset for reproducible, tamper-resistant training by adding
+#   revision: <commit SHA from the dataset's Hugging Face "History" page>
+# under its dataset_id. Without it, training uses whatever the dataset's main branch holds that day.
 
 datasets:
   - source: global-transaction-categorization

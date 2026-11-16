@@ -148,6 +148,7 @@ def _cache_signature(
     default_country: str,
     default_currency: str,
     default_language: str,
+    revision: str | None = None,
 ) -> dict:
     mapping = SOURCE_LABEL_MAP.get(source)
     if mapping is None:
@@ -168,6 +169,9 @@ def _cache_signature(
         "default_language": default_language,
         "taxonomy_mapping": dict(sorted(mapping.items())),
     }
+    if revision:
+        # Only added when pinned, so caches built before pinning existed stay valid.
+        payload["revision"] = revision
     fingerprint = hashlib.sha256(
         json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
     ).hexdigest()
@@ -199,8 +203,13 @@ def fetch_huggingface_dataset(
     default_currency: str = "unknown",
     default_language: str = "unknown",
     normalize_chunk_size: int = 250_000,
+    revision: str | None = None,
 ) -> tuple[pd.DataFrame, FetchedDataset]:
-    """Fetch, validate, normalize, and cache one dataset with configuration provenance."""
+    """Fetch, validate, normalize, and cache one dataset with configuration provenance.
+
+    ``revision`` pins the Hugging Face dataset to a commit SHA, tag or branch. Leave it unset only for
+    experiments: an unpinned dataset can change upstream and silently alter what gets trained on.
+    """
     if default_country == "unknown" and source in {"finee-india", "synthetic-indian-transactions"}:
         default_country = "India"
     if default_currency == "unknown" and source in {"finee-india", "synthetic-indian-transactions"}:
@@ -226,6 +235,7 @@ def fetch_huggingface_dataset(
         default_country=default_country,
         default_currency=default_currency,
         default_language=default_language,
+        revision=revision,
     )
 
     if target.exists() and metadata_path.exists() and not force and _cache_is_current(metadata_path, signature):
@@ -239,6 +249,7 @@ def fetch_huggingface_dataset(
             split=split,
             cache_dir=str(cache_dir) if cache_dir else None,
             token=hf_token,
+            revision=revision,
         )
     except DatasetNotFoundError as exc:
         message = str(exc).lower()
@@ -292,7 +303,7 @@ def fetch_huggingface_dataset(
             currency = row.get(currency_column) if currency_column else default_currency
             language = row.get(language_column) if language_column else default_language
             raw_id = f"{source}:{start + offset}:{text}:{label}"
-            record_id = hashlib.sha1(raw_id.encode("utf-8")).hexdigest()
+            record_id = hashlib.sha1(raw_id.encode("utf-8"), usedforsecurity=False).hexdigest()  # row id, not security
             batch_rows.append(
                 {
                     "text": text,
@@ -382,6 +393,7 @@ def fetch_configured_datasets(
             default_currency=item.get("default_currency", "unknown"),
             default_language=item.get("default_language", "unknown"),
             normalize_chunk_size=item.get("normalize_chunk_size", 250_000),
+            revision=item.get("revision"),
         )
         frames.append(frame)
         manifests.append(

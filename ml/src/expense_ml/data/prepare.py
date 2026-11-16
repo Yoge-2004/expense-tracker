@@ -53,6 +53,7 @@ def load_configured_datasets(
                 default_currency=item.get("default_currency", "unknown"),
                 default_language=item.get("default_language", "unknown"),
                 normalize_chunk_size=item.get("normalize_chunk_size", normalize_chunk_size),
+                revision=item.get("revision"),
             )
         else:
             raise ValueError(f"Dataset '{source}' needs either path or dataset_id")
