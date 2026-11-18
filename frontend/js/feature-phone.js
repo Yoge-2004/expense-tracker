@@ -14,12 +14,19 @@
 (function () {
   'use strict';
 
-  // Feature phone detection: narrow screen (<= 360px), KaiOS user agent, or no mouse pointer
-  const isFeatureViewport = () => window.innerWidth <= 360 || (window.screen && window.screen.width <= 360);
+  // Feature phone detection. A feature phone is recognised by its browser (KaiOS, Jio, Opera Mini and so on) or
+  // by a tiny screen WITHOUT touch. A plain width check is wrong: many ordinary phones are exactly 360 CSS pixels
+  // wide, and any phone can be held in landscape (about 360px high). Those must get the normal app.
+  const hasTouch = () => 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0;
+  const isFeatureViewport = () => {
+    const screenWidth = (window.screen && window.screen.width) || window.innerWidth;
+    return !hasTouch() && Math.min(window.innerWidth, screenWidth) <= 320;
+  };
   const isKaiOsOrFeature = () => {
     const ua = navigator.userAgent || '';
     return /KaiOS|KAIOS|Jio|FeaturePhone|Nokia|Symbian|Opera Mini|UCWEB|MAUI/i.test(ua);
   };
+  const isFeatureDevice = () => isFeatureViewport() || isKaiOsOrFeature();
 
   let softkeyBarEl = null;
   let lskEl = null;
@@ -89,12 +96,15 @@
     softkeyBarEl.appendChild(rskEl);
 
     document.body.appendChild(softkeyBarEl);
-    document.body.classList.add('has-softkey-bar');
+    syncSoftkeyBar();
+  }
 
-    // On non-feature viewports, keep softkey bar hidden by default
-    if (!isFeatureViewport() && !isKaiOsOrFeature()) {
-      softkeyBarEl.classList.add('fp-auto-hidden');
-    }
+  /** Shows the softkey bar (and the space reserved for it) on feature phones only. */
+  function syncSoftkeyBar() {
+    if (!softkeyBarEl) return;
+    const feature = isFeatureDevice();
+    softkeyBarEl.classList.toggle('fp-auto-hidden', !feature);
+    document.body.classList.toggle('has-softkey-bar', feature);
   }
 
   function updateSoftkeyContext(activeEl) {
@@ -189,6 +199,10 @@
 
   // ── Global Keyboard Listener for Physical Buttons / D-Pad ──
   window.addEventListener('keydown', function (e) {
+    // These keys only mean something on a feature phone. On phones, tablets and computers they would steal
+    // F1 and F2, the arrow keys (page scrolling, dropdowns) and the number keys.
+    if (!isFeatureDevice()) return;
+
     const key = e.key;
     const code = e.keyCode || e.which;
 
@@ -283,13 +297,7 @@
   }
 
   // Handle window resize dynamically
-  window.addEventListener('resize', function () {
-    if (softkeyBarEl) {
-      if (isFeatureViewport() || isKaiOsOrFeature()) {
-        softkeyBarEl.classList.remove('fp-auto-hidden');
-      }
-    }
-  });
+  window.addEventListener('resize', syncSoftkeyBar);
 
   window.FeaturePhoneEngine = {
     init: initSoftkeyBar,

@@ -1,0 +1,37 @@
+name: UI screenshots
+
+# Renders pages in a real mobile browser and publishes the images to the `ui-screenshots` branch,
+# so layout and appearance can be reviewed (the E2E suite checks behaviour, not looks).
+on:
+  workflow_dispatch:
+  push:
+    branches: ['shots/**']
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Install Playwright
+        run: |
+          npm ci --prefix e2e --no-audit --no-fund
+          npx --prefix e2e playwright install --with-deps chromium
+      - name: Take screenshots
+        run: node scripts/ui-screenshots.mjs frontend "$RUNNER_TEMP/shots"
+      - name: Publish to the ui-screenshots branch
+        run: |
+          cd "$RUNNER_TEMP/shots"
+          git init -q
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout -q -b ui-screenshots
+          echo "Source: ${GITHUB_SHA}" > SOURCE.txt
+          git add .
+          git commit -q -m "Screenshots for ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ui-screenshots

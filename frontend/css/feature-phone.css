@@ -10,8 +10,9 @@
    - Contextual bottom Softkey Bar (LSK / Center OK / RSK) for feature phone navigation.
    ========================================================================== */
 
-/* ── Always-active safeguards for small viewports (<= 360px) and KaiOS/Feature devices ── */
-@media (max-width: 360px), (max-height: 360px) {
+/* ── Compact layout for real feature-phone screens (240x320 and 320x240). ──
+   Not 360px: many ordinary phones are 360 CSS pixels wide, and any phone in landscape is about 360px high. */
+@media (max-width: 320px) {
   :root {
     --fp-font-base: 12px;
     --fp-font-sm: 10px;
@@ -533,9 +534,7 @@ body.has-softkey-bar {
   padding-bottom: 32px !important;
 }
 
-@media (min-width: 480px) and (hover: hover) and (pointer: fine) {
-  /* On large desktop pointer screens, hide softkey bar unless forced by query or small window */
-  .feature-phone-softkeys.fp-auto-hidden {
-    display: none !important;
-  }
+/* The script marks the bar fp-auto-hidden on everything that is not a feature phone. */
+.feature-phone-softkeys.fp-auto-hidden {
+  display: none !important;
 }
