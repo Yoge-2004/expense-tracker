@@ -314,6 +314,40 @@
       cursor: pointer;
     }
 
+    /* Account strip */
+    .account-bar {
+      background-color: #111827;
+      border: 1px solid #1f2937;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: #94a3b8;
+      overflow: hidden;
+    }
+
+    .account-text {
+      float: left;
+      width: 68%;
+      line-height: 26px;
+    }
+
+    .account-btn {
+      float: right;
+      background-color: transparent;
+      color: #38bdf8;
+      border: 1px solid #334155;
+      padding: 4px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .form-error {
+      color: #ef4444;
+      font-size: 12px;
+      margin: 6px 0;
+      min-height: 14px;
+    }
+
     /* Modals / Sheet Overlay */
     .modal-overlay {
       display: none;
@@ -414,6 +448,12 @@
   </div>
 
   <div class="container">
+
+    <!-- Account: shares the sign-in of the main app on this browser -->
+    <div class="account-bar" id="accountBar">
+      <span class="account-text" id="accountText">Not signed in. Entries stay on this device.</span>
+      <button type="button" class="account-btn" id="btnAccount">Sign in</button>
+    </div>
 
     <!-- Executive Overview Card -->
     <div class="card" id="summaryCard">
@@ -561,6 +601,28 @@
        Guaranteed zero ES6+ syntax (no const, let, arrows, classes, fetch, Promise)
        Runs identically on iPhone OS 1.0 Safari, Android 1.0 Browser, Symbian
        ======================================================================== -->
+  <!-- Modal: Sign in -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal-box">
+      <div style="font-size:14px; font-weight:bold; color:#38bdf8; margin-bottom:10px;">Sign in</div>
+      <form id="formLogin" onsubmit="return false;">
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email or username</label>
+          <input type="text" id="loginEmail" class="form-control" autocomplete="username" autocapitalize="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" class="form-control" autocomplete="current-password">
+        </div>
+        <div class="form-error" id="loginError"></div>
+        <div class="action-row" style="margin-top:12px;">
+          <button type="button" class="btn btn-half btn-dark" id="btnCloseLoginModal">Cancel</button>
+          <button type="button" class="btn btn-half right btn-sky" id="btnSubmitLogin">Sign in</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="text/javascript">
     (function () {
       // In-memory / LocalStorage state store
@@ -601,6 +663,16 @@
         return "\u20B9" + intPart + decPart;
       }
 
+      // Escape text before putting it into innerHTML
+      function esc(value) {
+        return String(value === null || value === undefined ? "" : value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
       // Safe ISO date string for ES3
       function getTodayDateString() {
         var now = new Date();
@@ -614,6 +686,7 @@
 
       // Safe storage reader/writer
       function loadRecords() {
+        records = [];
         var raw = null;
         try {
           if (window.localStorage) {
@@ -640,6 +713,9 @@
       }
 
       function saveRecords() {
+        if (syncMode) {
+          return; // server data is not copied into the offline notebook
+        }
         try {
           if (window.localStorage) {
             window.localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
@@ -735,15 +811,15 @@
 
           html += '<div class="tx-item">';
           html += '  <div class="tx-left">';
-          html += '    <div class="tx-title">' + (item.title || "Untitled") + '</div>';
+          html += '    <div class="tx-title">' + esc(item.title || "Untitled") + '</div>';
           html += '    <div class="tx-meta">';
-          html += '      <span class="tx-tag">' + (item.category || "General") + '</span>';
-          html += '      <span>' + (item.date || "") + '</span>';
+          html += '      <span class="tx-tag">' + esc(item.category || "General") + '</span>';
+          html += '      <span>' + esc(item.date || "") + '</span>';
           html += '    </div>';
           html += '  </div>';
           html += '  <div class="tx-right">';
           html += '    <div class="' + amtClass + '">' + amtPrefix + formatMoney(item.amount) + '</div>';
-          html += '    <button type="button" class="tx-btn-del" data-id="' + item.id + '">Delete</button>';
+          html += '    <button type="button" class="tx-btn-del" data-id="' + esc(item.id) + '">Delete</button>';
           html += '  </div>';
           html += '</div>';
         }
@@ -754,7 +830,7 @@
         var delButtons = container.getElementsByTagName("button");
         for (i = 0; i < delButtons.length; i++) {
           delButtons[i].onclick = function () {
-            var delId = parseInt(this.getAttribute("data-id"), 10);
+            var delId = this.getAttribute("data-id");
             if (confirm("Delete this transaction?")) {
               deleteRecord(delId);
             }
@@ -764,11 +840,25 @@
 
       function deleteRecord(id) {
         var next = [];
+        var target = null;
         var i;
         for (i = 0; i < records.length; i++) {
-          if (records[i].id !== id) {
+          if (String(records[i].id) !== String(id)) {
             next.push(records[i]);
+          } else {
+            target = records[i];
           }
+        }
+        if (syncMode && target) {
+          var kind = target.type === "INCOME" ? "/incomes/" : "/expenses/";
+          apiCall("DELETE", kind + target.serverId + "/user/" + session.userId, null, function (status) {
+            if (status === 200 || status === 204) {
+              refreshFromServer();
+            } else if (status !== 401) {
+              alert("Could not delete (" + status + "). Please try again.");
+            }
+          });
+          return;
         }
         records = next;
         saveRecords();
@@ -812,6 +902,31 @@
               return;
             }
 
+            if (syncMode) {
+              var catId = parseInt(cat, 10);
+              if (isNaN(catId)) {
+                alert("Please choose a category.");
+                return;
+              }
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                alert("Date must look like 2026-11-18.");
+                return;
+              }
+              apiCall("POST", "/expenses/user/" + session.userId,
+                { amount: amt, description: desc, expenseDate: date, categoryId: catId, isRecurring: false },
+                function (status) {
+                  if (status === 200 || status === 201) {
+                    document.getElementById("expDescription").value = "";
+                    document.getElementById("expAmount").value = "";
+                    expModal.style.display = "none";
+                    refreshFromServer();
+                  } else if (status !== 401) {
+                    alert("Could not save (" + status + "). Please try again.");
+                  }
+                });
+              return;
+            }
+
             var newRecord = {
               id: new Date().getTime(),
               type: "EXPENSE",
@@ -852,6 +967,27 @@
 
             if (!src || isNaN(amt) || amt <= 0) {
               alert("Please enter a valid source and amount.");
+              return;
+            }
+
+            if (syncMode) {
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                alert("Date must look like 2026-11-18.");
+                return;
+              }
+              apiCall("POST", "/incomes/user/" + session.userId,
+                { source: src, amount: amt, incomeDate: date, description: "", isRecurring: false,
+                  kind: "", countsTowardMonth: "", reimbursedCategoryId: 0 },
+                function (status) {
+                  if (status === 200 || status === 201) {
+                    document.getElementById("incSource").value = "";
+                    document.getElementById("incAmount").value = "";
+                    incModal.style.display = "none";
+                    refreshFromServer();
+                  } else if (status !== 401) {
+                    alert("Could not save (" + status + "). Please try again.");
+                  }
+                });
               return;
             }
 
@@ -932,7 +1068,13 @@
         }
         if (tabRefresh) {
           tabRefresh.onclick = function () {
-            // Check for REST API connectivity via XMLHttpRequest
+            if (session) {
+              refreshFromServer(function (ok) {
+                alert(ok ? "Synced with your account." : "Could not reach your account. Showing what is on this device.");
+              });
+              return;
+            }
+            // Not signed in: check for REST API connectivity via XMLHttpRequest
             var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : (window.ActiveXObject ? new ActiveXObject("Microsoft.XMLHTTP") : null);
             if (xhr) {
               xhr.open("GET", "/api/health", true);
@@ -953,13 +1095,273 @@
         }
       }
 
+      // ---- Account: uses the same sign-in as the main app (same browser storage) and the same API ----
+      var API = "/api";
+      var session = null;      // { token, userId, name } while signed in
+      var syncMode = false;    // true while the list shows server data
+      var categories = [];     // server categories: [{ id, name }]
+      var defaultExpenseOptions = "";
+
+      function readSession() {
+        try {
+          var t = window.localStorage.getItem("token");
+          var u = window.localStorage.getItem("userId");
+          if (t && u) {
+            return { token: t, userId: u, name: window.localStorage.getItem("userName") || "" };
+          }
+        } catch (e) {
+          // storage blocked
+        }
+        return null;
+      }
+
+      function apiCall(method, path, body, callback) {
+        var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : null;
+        if (!xhr) {
+          callback(0, null);
+          return;
+        }
+        try {
+          xhr.open(method, API + path, true);
+          xhr.setRequestHeader("Accept", "application/json");
+          if (body) {
+            xhr.setRequestHeader("Content-Type", "application/json");
+          }
+          if (session) {
+            xhr.setRequestHeader("Authorization", "Bearer " + session.token);
+          }
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) {
+              return;
+            }
+            var data = null;
+            try {
+              data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+            } catch (e) {
+              data = null;
+            }
+            if (xhr.status === 401 && session) {
+              signOut(true);
+            }
+            callback(xhr.status, data);
+          };
+          xhr.send(body ? JSON.stringify(body) : null);
+        } catch (e) {
+          callback(0, null);
+        }
+      }
+
+      function renderAccountBar() {
+        var text = document.getElementById("accountText");
+        var btn = document.getElementById("btnAccount");
+        if (!text || !btn) {
+          return;
+        }
+        if (syncMode) {
+          text.innerHTML = "Signed in" + (session && session.name ? " as " + esc(session.name) : "") + ". Showing your account.";
+          btn.innerHTML = "Sign out";
+        } else if (session) {
+          text.innerHTML = "Signed in, but your data could not be loaded.";
+          btn.innerHTML = "Retry";
+        } else {
+          text.innerHTML = "Not signed in. Entries stay on this device.";
+          btn.innerHTML = "Sign in";
+        }
+      }
+
+      function fillExpenseCategories() {
+        var sel = document.getElementById("expCategory");
+        if (!sel) {
+          return;
+        }
+        var html = "";
+        var i;
+        if (syncMode && categories.length) {
+          for (i = 0; i < categories.length; i++) {
+            html += '<option value="' + esc(categories[i].id) + '">' + esc(categories[i].name) + '</option>';
+          }
+        } else {
+          html = defaultExpenseOptions;
+        }
+        sel.innerHTML = html;
+      }
+
+      function showAll() {
+        updateSummary();
+        renderTransactions();
+        renderAccountBar();
+        fillExpenseCategories();
+      }
+
+      // Loads categories, expenses and incomes. done(true) when the lists arrived.
+      function loadFromServer(done) {
+        var pending = 3;
+        var failed = false;
+        var exp = [];
+        var inc = [];
+
+        function finish() {
+          pending--;
+          if (pending > 0) {
+            return;
+          }
+          if (failed || !session) {
+            done(false);
+            return;
+          }
+          var list = [];
+          var i;
+          for (i = 0; i < exp.length; i++) {
+            list.push({
+              id: "e" + exp[i].id, serverId: exp[i].id, type: "EXPENSE",
+              title: exp[i].description || exp[i].categoryName || "Expense",
+              amount: exp[i].amount, category: exp[i].categoryName || "General", date: exp[i].expenseDate || ""
+            });
+          }
+          for (i = 0; i < inc.length; i++) {
+            list.push({
+              id: "i" + inc[i].id, serverId: inc[i].id, type: "INCOME",
+              title: inc[i].source || inc[i].description || "Income",
+              amount: inc[i].amount, category: inc[i].kind || "Income", date: inc[i].incomeDate || ""
+            });
+          }
+          list.sort(function (a, b) {
+            return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0);
+          });
+          records = list;
+          done(true);
+        }
+
+        apiCall("GET", "/categories/user/" + session.userId, null, function (status, data) {
+          if (status === 200 && data && data.length !== undefined) {
+            categories = data;
+          }
+          finish();
+        });
+        apiCall("GET", "/expenses/user/" + session.userId, null, function (status, data) {
+          if (status === 200 && data && data.length !== undefined) {
+            exp = data;
+          } else {
+            failed = true;
+          }
+          finish();
+        });
+        apiCall("GET", "/incomes/user/" + session.userId, null, function (status, data) {
+          if (status === 200 && data && data.length !== undefined) {
+            inc = data;
+          } else {
+            failed = true;
+          }
+          finish();
+        });
+      }
+
+      function refreshFromServer(after) {
+        if (!session) {
+          return;
+        }
+        loadFromServer(function (ok) {
+          if (ok) {
+            syncMode = true;
+          } else if (session) {
+            syncMode = false;
+            loadRecords();
+          }
+          showAll();
+          if (after) {
+            after(ok);
+          }
+        });
+      }
+
+      function signOut(expired) {
+        try {
+          window.localStorage.removeItem("token");
+          window.localStorage.removeItem("userId");
+        } catch (e) {
+          // storage blocked
+        }
+        session = null;
+        syncMode = false;
+        categories = [];
+        loadRecords();
+        showAll();
+        if (expired) {
+          alert("Your session expired. Please sign in again.");
+        }
+      }
+
+      function setupAccount() {
+        var btn = document.getElementById("btnAccount");
+        var modal = document.getElementById("loginModal");
+        var closeBtn = document.getElementById("btnCloseLoginModal");
+        var submitBtn = document.getElementById("btnSubmitLogin");
+        var errEl = document.getElementById("loginError");
+        if (!btn || !modal) {
+          return;
+        }
+        btn.onclick = function () {
+          if (syncMode) {
+            signOut(false);
+          } else if (session) {
+            refreshFromServer();
+          } else {
+            errEl.innerHTML = "";
+            modal.style.display = "block";
+          }
+        };
+        closeBtn.onclick = function () {
+          modal.style.display = "none";
+        };
+        submitBtn.onclick = function () {
+          var who = document.getElementById("loginEmail").value;
+          var pass = document.getElementById("loginPassword").value;
+          if (!who || !pass) {
+            errEl.innerHTML = "Enter your email or username and your password.";
+            return;
+          }
+          errEl.innerHTML = "Signing in...";
+          apiCall("POST", "/auth/login", { email: who, password: pass }, function (status, data) {
+            if (status === 200 && data && data.token && data.userId) {
+              try {
+                window.localStorage.setItem("token", data.token);
+                window.localStorage.setItem("userId", String(data.userId));
+                window.localStorage.setItem("userName", data.name || "");
+              } catch (e) {
+                // storage blocked: the session lasts for this page only
+              }
+              session = { token: data.token, userId: String(data.userId), name: data.name || "" };
+              document.getElementById("loginPassword").value = "";
+              modal.style.display = "none";
+              refreshFromServer();
+            } else if (status === 401 || status === 400) {
+              errEl.innerHTML = "Wrong email, username or password.";
+            } else if (status === 429) {
+              errEl.innerHTML = "Too many attempts. Wait a minute and try again.";
+            } else if (status === 0) {
+              errEl.innerHTML = "Cannot reach the server. Check your connection.";
+            } else {
+              errEl.innerHTML = "Sign-in failed (" + status + ").";
+            }
+          });
+        };
+      }
+
       // Boot application
+      var expSelect = document.getElementById("expCategory");
+      defaultExpenseOptions = expSelect ? expSelect.innerHTML : "";
+      session = readSession();
       loadRecords();
       updateSummary();
       renderTransactions();
       setupModals();
       setupFilters();
       setupTabs();
+      setupAccount();
+      renderAccountBar();
+      if (session) {
+        refreshFromServer();
+      }
 
       // Export for testing
       window.ExpenseTrackerMobile = {

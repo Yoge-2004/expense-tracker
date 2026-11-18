@@ -62,6 +62,47 @@ for (const target of targets) {
   }
   await context.close();
 }
+// ---- Legacy page: sign in and show the account's data, with the API mocked ----
+const fakeApi = async (route) => {
+  const url = new URL(route.request().url());
+  const json = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+  if (url.pathname.endsWith('/auth/login')) return json({ token: 'test-token', userId: 7, name: 'Asha', email: 'asha@example.com' });
+  if (url.pathname.includes('/categories/user/')) return json([{ id: 1, name: 'Food & Dining' }, { id: 2, name: 'Transport' }]);
+  if (url.pathname.includes('/expenses/user/')) return json([
+    { id: 11, amount: 450.5, description: 'Lunch <b>bold</b>', expenseDate: '2026-11-17', categoryId: 1, categoryName: 'Food & Dining' },
+    { id: 12, amount: 120, description: 'Metro', expenseDate: '2026-11-16', categoryId: 2, categoryName: 'Transport' },
+  ]);
+  if (url.pathname.includes('/incomes/user/')) return json([{ id: 21, amount: 50000, source: 'Salary', incomeDate: '2026-11-01', kind: 'SALARY' }]);
+  return json({ status: 'UP' });
+};
+{
+  const context = await browser.newContext({ ...devices['Pixel 7'] });
+  await context.route('**/api/**', fakeApi);
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  page.on('dialog', (d) => d.dismiss());
+  await page.goto(base + 'legacy-mobile.html', { waitUntil: 'load' });
+  await page.click('#btnAccount');
+  await page.screenshot({ path: path.join(out, 'legacy-login-pixel7.png') });
+  await page.fill('#loginEmail', 'asha@example.com');
+  await page.fill('#loginPassword', 'secret');
+  await page.click('#btnSubmitLogin');
+  await page.waitForSelector('.tx-item');
+  await page.screenshot({ path: path.join(out, 'legacy-signedin-pixel7.png') });
+  const result = await page.evaluate(() => ({
+    accountText: document.getElementById('accountText').innerText,
+    rows: document.querySelectorAll('.tx-item').length,
+    net: document.getElementById('netBalanceVal').innerText,
+    htmlInjected: document.querySelectorAll('.tx-title b').length,
+    firstTitle: document.querySelector('.tx-title').innerText,
+    expenseCategories: Array.from(document.querySelectorAll('#expCategory option')).map((o) => o.value + ':' + o.text),
+    storedRecords: window.localStorage.getItem('et_mobile_records_v1'),
+  }));
+  report.push({ page: 'legacy-mobile.html', scenario: 'signed-in (mocked API)', pageErrors: errors, ...result });
+  await context.close();
+}
+
 await browser.close();
 server.close();
 fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
