@@ -5,7 +5,7 @@ name: UI screenshots
 on:
   workflow_dispatch:
   push:
-    branches: ['shots/**', 'fix/legacy-page']
+    branches: ['shots/**']
 
 permissions:
   contents: write
