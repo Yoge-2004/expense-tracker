@@ -103,6 +103,55 @@ const fakeApi = async (route) => {
   await context.close();
 }
 
+// ---- Other pages: plain pages, then the signed-in dashboard and admin with a mocked API ----
+const smallApi = async (route) => {
+  const url = new URL(route.request().url());
+  const json = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+  const p = url.pathname;
+  if (p.includes('/admin/permissions') || p.endsWith('/permissions')) return json({ role: 'ROLE_ADMIN', canManageUsers: true, canViewAudit: true, canManageSystem: true });
+  if (p.includes('/categories/user/')) return json([{ id: 1, name: 'Food & Dining' }, { id: 2, name: 'Transport' }]);
+  if (p.includes('/expenses/user/') && !p.includes('/export')) return json([
+    { id: 11, amount: 450.5, description: 'Lunch', expenseDate: '2026-11-17', categoryId: 1, categoryName: 'Food & Dining' },
+    { id: 12, amount: 120, description: 'Metro', expenseDate: '2026-11-16', categoryId: 2, categoryName: 'Transport' }]);
+  if (p.includes('/incomes/user/') && !p.includes('/export')) return json([{ id: 21, amount: 50000, source: 'Salary', incomeDate: '2026-11-01' }]);
+  if (p.includes('/users/') || p.includes('/profile')) return json({ id: 7, name: 'Asha', email: 'asha@example.com', username: 'asha', currency: 'INR', role: 'ROLE_ADMIN' });
+  if (p.includes('/user/') || p.endsWith('s')) return json([]);
+  return json({});
+};
+async function audit(label, file, device, opts = {}) {
+  const context = await browser.newContext({ ...device });
+  if (opts.signedIn) {
+    await context.addInitScript(() => {
+      localStorage.setItem('token', 'test-token'); localStorage.setItem('userId', '7'); localStorage.setItem('userName', 'Asha');
+      localStorage.setItem('userEmail', 'asha@example.com'); localStorage.setItem('userRole', 'ROLE_ADMIN'); localStorage.setItem('userCurrency', 'INR');
+    });
+    await context.route('**/api/**', smallApi);
+  }
+  const page = await context.newPage();
+  const errors = []; const failed = [];
+  page.on('pageerror', (e) => errors.push(String(e).slice(0, 160)));
+  page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
+  page.on('requestfailed', (r) => failed.push(r.url().replace(base, '/').slice(0, 90)));
+  await page.goto(base + file, { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: path.join(out, `${label}-top.png`) });
+  await page.screenshot({ path: path.join(out, `${label}-full.png`), fullPage: true });
+  const m = await page.evaluate(() => {
+    const w = window.innerWidth;
+    const wide = Array.from(document.querySelectorAll('body *')).filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.right > w + 2 && getComputedStyle(el).position !== 'fixed'; }).slice(0, 4).map((el) => (el.id ? '#' + el.id : el.className ? '.' + String(el.className).split(' ')[0] : el.tagName));
+    const taps = Array.from(document.querySelectorAll('button, a, input, select')).filter((el) => { const r = el.getBoundingClientRect(); const v = r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; return v && (r.height < 32 || r.width < 32) && !(el.tagName === 'INPUT' && ['checkbox', 'radio', 'hidden'].includes(el.type)); }).length;
+    let smallest = 99; document.querySelectorAll('body *').forEach((el) => { if (el.childNodes.length && Array.from(el.childNodes).some((n) => n.nodeType === 3 && n.textContent.trim())) { const f = parseFloat(getComputedStyle(el).fontSize); if (f && f < smallest) smallest = f; } });
+    return { url: location.pathname, overflowX: document.documentElement.scrollWidth > w + 1, widest: wide, tapTargetsUnder32px: taps, smallestFontPx: smallest, textLength: document.body.innerText.trim().length, height: document.documentElement.scrollHeight };
+  });
+  report.push({ audit: label, errors: errors.slice(0, 6), errorCount: errors.length, failedRequests: failed.slice(0, 4), ...m });
+  await context.close();
+}
+await audit('register-pixel7', 'register.html', devices['Pixel 7']);
+await audit('forgot-pixel7', 'forgot-password.html', devices['Pixel 7']);
+await audit('dashboard-pixel7', 'dashboard.html', devices['Pixel 7'], { signedIn: true });
+await audit('dashboard-phone360', 'dashboard.html', { ...devices['Pixel 5'], viewport: { width: 360, height: 780 } }, { signedIn: true });
+await audit('admin-pixel7', 'admin.html', devices['Pixel 7'], { signedIn: true });
+
 await browser.close();
 server.close();
 fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
