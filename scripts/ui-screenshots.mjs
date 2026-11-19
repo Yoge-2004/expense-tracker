@@ -141,7 +141,18 @@ async function audit(label, file, device, opts = {}) {
     const wide = Array.from(document.querySelectorAll('body *')).filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.right > w + 2 && getComputedStyle(el).position !== 'fixed'; }).slice(0, 4).map((el) => (el.id ? '#' + el.id : el.className ? '.' + String(el.className).split(' ')[0] : el.tagName));
     const taps = Array.from(document.querySelectorAll('button, a, input, select')).filter((el) => { const r = el.getBoundingClientRect(); const v = r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; return v && (r.height < 32 || r.width < 32) && !(el.tagName === 'INPUT' && ['checkbox', 'radio', 'hidden'].includes(el.type)); }).length;
     let smallest = 99; document.querySelectorAll('body *').forEach((el) => { if (el.childNodes.length && Array.from(el.childNodes).some((n) => n.nodeType === 3 && n.textContent.trim())) { const f = parseFloat(getComputedStyle(el).fontSize); if (f && f < smallest) smallest = f; } });
-    return { url: location.pathname, overflowX: document.documentElement.scrollWidth > w + 1, widest: wide, tapTargetsUnder32px: taps, smallestFontPx: smallest, textLength: document.body.innerText.trim().length, height: document.documentElement.scrollHeight };
+    const smallList = {};
+    document.querySelectorAll('button, a, input, select').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (!(r.width > 0 && r.height > 0) || getComputedStyle(el).visibility === 'hidden') return;
+      if (el.tagName === 'INPUT' && ['checkbox', 'radio', 'hidden'].includes(el.type)) return;
+      if (r.height >= 32 && r.width >= 32) return;
+      const key = el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/)[0] : '') + (el.id ? '#' + el.id : '');
+      smallList[key] = smallList[key] || { count: 0, size: Math.round(r.width) + 'x' + Math.round(r.height) };
+      smallList[key].count += 1;
+    });
+    const fixed = Array.from(document.querySelectorAll('body *')).filter((el) => getComputedStyle(el).position === 'fixed' && el.getBoundingClientRect().width > 0).map((el) => { const r = el.getBoundingClientRect(); return (el.id ? '#' + el.id : '.' + String(el.className).split(' ')[0]) + ' ' + Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height); });
+    return { smallTargets: Object.entries(smallList).sort((a, b) => b[1].count - a[1].count).slice(0, 14).map(([k, v]) => k + ' ' + v.size + ' x' + v.count), fixedElements: fixed.slice(0, 8), url: location.pathname, overflowX: document.documentElement.scrollWidth > w + 1, widest: wide, tapTargetsUnder32px: taps, smallestFontPx: smallest, textLength: document.body.innerText.trim().length, height: document.documentElement.scrollHeight };
   });
   report.push({ audit: label, errors: errors.slice(0, 6), errorCount: errors.length, failedRequests: failed.slice(0, 4), ...m });
   await context.close();
