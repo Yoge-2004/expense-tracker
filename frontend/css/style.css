@@ -21929,3 +21929,38 @@ select option {
 }
 
 /* --- End of consolidated-overrides.css --- */
+
+/* --- Content from touch-comfort.css --- */
+/* Touch comfort. Applies to touch screens only, so desktop layouts are unchanged.
+   - Controls that measured under 32px get a 40px minimum height or width.
+   - Text links get a larger tap area without moving anything (padding with an equal negative margin).
+   - The page ends with room below it, so the floating calculator button and the connection badge never
+     sit on top of the last control (for example the Sign In and biometrics buttons). */
+@media (pointer: coarse) {
+    .ml-suite-tab-btn,
+    .loan-tab-btn,
+    .preset-btn,
+    .bi-action-btn,
+    .btn-text-icon {
+        min-height: 40px;
+    }
+
+    .btn-edit,
+    .btn-delete {
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    .link-action,
+    .auth-footer-link {
+        display: inline-block;
+        padding: 12px 8px;
+        margin: -12px -8px;
+    }
+
+    body {
+        padding-bottom: max(88px, calc(env(safe-area-inset-bottom) + 72px));
+    }
+}
+
+/* --- End of touch-comfort.css --- */
