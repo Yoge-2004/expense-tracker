@@ -34,6 +34,12 @@ const targets = [
   { name: 'phone360', device: { ...devices['Pixel 5'], viewport: { width: 360, height: 780 } } },
   { name: 'landscape', device: { ...devices['Pixel 7'], viewport: { width: 915, height: 412 } } },
 ];
+
+/** Playwright's phone emulation has touch events but still reports a fine pointer; real phones report coarse. */
+async function emulateTouchPointer(context, page) {
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'pointer', value: 'coarse' }, { name: 'hover', value: 'none' }, { name: 'any-pointer', value: 'coarse' }] });
+}
 const pages = ['index.html', 'legacy-mobile.html'];
 const browser = await chromium.launch();
 const report = [];
@@ -41,6 +47,7 @@ for (const target of targets) {
   const context = await browser.newContext({ ...target.device });
   for (const file of pages) {
     const page = await context.newPage();
+    await emulateTouchPointer(context, page);
     await page.goto(base + file, { waitUntil: 'load' });
     await page.waitForTimeout(1200);
     const slug = `${path.basename(file, '.html')}-${target.name}`;
@@ -128,6 +135,7 @@ async function audit(label, file, device, opts = {}) {
     await context.route('**/api/**', smallApi);
   }
   const page = await context.newPage();
+  await emulateTouchPointer(context, page);
   const errors = []; const failed = [];
   page.on('pageerror', (e) => errors.push(String(e).slice(0, 160)));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
@@ -152,7 +160,7 @@ async function audit(label, file, device, opts = {}) {
       smallList[key].count += 1;
     });
     const fixed = Array.from(document.querySelectorAll('body *')).filter((el) => getComputedStyle(el).position === 'fixed' && el.getBoundingClientRect().width > 0).map((el) => { const r = el.getBoundingClientRect(); return (el.id ? '#' + el.id : '.' + String(el.className).split(' ')[0]) + ' ' + Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height); });
-    return { smallTargets: Object.entries(smallList).sort((a, b) => b[1].count - a[1].count).slice(0, 14).map(([k, v]) => k + ' ' + v.size + ' x' + v.count), fixedElements: fixed.slice(0, 8), url: location.pathname, overflowX: document.documentElement.scrollWidth > w + 1, widest: wide, tapTargetsUnder32px: taps, smallestFontPx: smallest, textLength: document.body.innerText.trim().length, height: document.documentElement.scrollHeight };
+    return { coarse: matchMedia('(pointer: coarse)').matches, smallTargets: Object.entries(smallList).sort((a, b) => b[1].count - a[1].count).slice(0, 14).map(([k, v]) => k + ' ' + v.size + ' x' + v.count), fixedElements: fixed.slice(0, 8), url: location.pathname, overflowX: document.documentElement.scrollWidth > w + 1, widest: wide, tapTargetsUnder32px: taps, smallestFontPx: smallest, textLength: document.body.innerText.trim().length, height: document.documentElement.scrollHeight };
   });
   report.push({ audit: label, errors: errors.slice(0, 6), errorCount: errors.length, failedRequests: failed.slice(0, 4), ...m });
   await context.close();
