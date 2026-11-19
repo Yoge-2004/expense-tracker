@@ -162,6 +162,11 @@ async function audit(label, file, device, opts = {}) {
     const fixed = Array.from(document.querySelectorAll('body *')).filter((el) => getComputedStyle(el).position === 'fixed' && el.getBoundingClientRect().width > 0).map((el) => { const r = el.getBoundingClientRect(); return (el.id ? '#' + el.id : '.' + String(el.className).split(' ')[0]) + ' ' + Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height); });
     return { coarse: matchMedia('(pointer: coarse)').matches, smallTargets: Object.entries(smallList).sort((a, b) => b[1].count - a[1].count).slice(0, 14).map(([k, v]) => k + ' ' + v.size + ' x' + v.count), fixedElements: fixed.slice(0, 8), url: location.pathname, overflowX: document.documentElement.scrollWidth > w + 1, widest: wide, tapTargetsUnder32px: taps, smallestFontPx: smallest, textLength: document.body.innerText.trim().length, height: document.documentElement.scrollHeight };
   });
+  const row = page.locator('.btn-edit').first();
+  if (await row.count()) {
+    const holder = row.locator('xpath=ancestor::*[self::tr or self::li or contains(@class,"item") or contains(@class,"row")][1]');
+    try { await holder.screenshot({ path: path.join(out, `${label}-row.png`), timeout: 4000 }); } catch (e) { /* not visible */ }
+  }
   report.push({ audit: label, errors: errors.slice(0, 6), errorCount: errors.length, failedRequests: failed.slice(0, 4), ...m });
   await context.close();
 }

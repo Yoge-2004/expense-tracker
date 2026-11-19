@@ -8,8 +8,22 @@
     .loan-tab-btn,
     .preset-btn,
     .bi-action-btn,
-    .btn-text-icon {
+    .bi-reset-slicers-btn,
+    .btn-text-icon,
+    .btn-scan-receipt,
+    .category-pills-scroll-cue {
         min-height: 40px;
+    }
+
+    .btn-dismiss-hint {
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    .studio-target-chip,
+    .floating-calc-split-chip,
+    .floating-calc-fx-chip {
+        min-height: 32px;
     }
 
     .btn-edit,
