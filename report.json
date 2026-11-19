@@ -1,0 +1,259 @@
+[
+  {
+    "page": "index.html",
+    "device": "pixel7",
+    "innerWidth": 412,
+    "screenWidth": 412,
+    "softkeyBarVisible": false,
+    "htmlFontSize": "16px",
+    "horizontalOverflow": false,
+    "textLength": 1708
+  },
+  {
+    "page": "legacy-mobile.html",
+    "device": "pixel7",
+    "innerWidth": 412,
+    "screenWidth": 412,
+    "softkeyBarVisible": false,
+    "htmlFontSize": "16px",
+    "horizontalOverflow": false,
+    "textLength": 295
+  },
+  {
+    "page": "index.html",
+    "device": "phone360",
+    "innerWidth": 360,
+    "screenWidth": 393,
+    "softkeyBarVisible": false,
+    "htmlFontSize": "16px",
+    "horizontalOverflow": false,
+    "textLength": 1708
+  },
+  {
+    "page": "legacy-mobile.html",
+    "device": "phone360",
+    "innerWidth": 360,
+    "screenWidth": 393,
+    "softkeyBarVisible": false,
+    "htmlFontSize": "16px",
+    "horizontalOverflow": false,
+    "textLength": 295
+  },
+  {
+    "page": "index.html",
+    "device": "landscape",
+    "innerWidth": 915,
+    "screenWidth": 412,
+    "softkeyBarVisible": false,
+    "htmlFontSize": "16px",
+    "horizontalOverflow": false,
+    "textLength": 2158
+  },
+  {
+    "page": "legacy-mobile.html",
+    "device": "landscape",
+    "innerWidth": 915,
+    "screenWidth": 412,
+    "softkeyBarVisible": false,
+    "htmlFontSize": "16px",
+    "horizontalOverflow": false,
+    "textLength": 295
+  },
+  {
+    "page": "legacy-mobile.html",
+    "scenario": "signed-in (mocked API)",
+    "pageErrors": [],
+    "accountText": "Signed in as Asha. Showing your account.",
+    "rows": 3,
+    "net": "₹49,429.50",
+    "htmlInjected": 0,
+    "firstTitle": "Lunch <b>bold</b>",
+    "expenseCategories": [
+      "1:Food & Dining",
+      "2:Transport"
+    ],
+    "storedRecords": null
+  },
+  {
+    "audit": "register-pixel7",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "console: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "console: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "console: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "console: Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    ],
+    "errorCount": 5,
+    "failedRequests": [],
+    "coarse": true,
+    "smallTargets": [
+      "button.studio-target-chip 103x30 x5"
+    ],
+    "fixedElements": [
+      ".mesh-wash 0,0 412x839",
+      "#themeStudioModal 0,0 412x839",
+      "#appLoading 0,0 412x839",
+      "#serverStatusBadge 204,796 190x25",
+      "#appToastRegion 8,20 380x795"
+    ],
+    "url": "/register.html",
+    "overflowX": false,
+    "widest": [
+      ".hero-orb",
+      ".hero-orb",
+      ".studio-tab-btn"
+    ],
+    "tapTargetsUnder32px": 5,
+    "smallestFontPx": 9,
+    "textLength": 1451,
+    "height": 1725
+  },
+  {
+    "audit": "forgot-pixel7",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "console: Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    ],
+    "errorCount": 2,
+    "failedRequests": [],
+    "coarse": true,
+    "smallTargets": [
+      "button.studio-target-chip 103x30 x5"
+    ],
+    "fixedElements": [
+      ".mesh-wash 0,0 412x839",
+      "#themeStudioModal 0,0 412x839",
+      "#appLoading 0,0 412x839",
+      "#serverStatusBadge 255,796 139x25",
+      "#appToastRegion 8,20 380x795"
+    ],
+    "url": "/forgot-password.html",
+    "overflowX": false,
+    "widest": [
+      ".hero-orb",
+      ".hero-orb",
+      ".studio-tab-btn"
+    ],
+    "tapTargetsUnder32px": 5,
+    "smallestFontPx": 9,
+    "textLength": 1313,
+    "height": 927
+  },
+  {
+    "audit": "dashboard-pixel7",
+    "errors": [],
+    "errorCount": 0,
+    "failedRequests": [],
+    "coarse": true,
+    "smallTargets": [
+      "button.floating-calc-split-chip 24x29 x5",
+      "button.floating-calc-fx-chip 41x29 x5",
+      "button.studio-target-chip 103x30 x5",
+      "button.touch-pressable#moneyFlowPrev 32x32 x1",
+      "button.touch-pressable#moneyFlowNext 32x32 x1",
+      "button.avatar-browse-btn#modalAvatarBrowseBtn 26x26 x1",
+      "button.floating-calc-use-btn#floatingCalcUseBtn 91x20 x1",
+      "button.floating-calc-fx-swap#floatingCalcFxSwap 22x23 x1",
+      "button.floating-calc-fx-convert-btn#floatingCalcFxConvert 56x23 x1"
+    ],
+    "fixedElements": [
+      ".mesh-wash 0,0 412x839",
+      ".hero-bg -32,-31 474x903",
+      "#profileMenu 117,68 285x712",
+      "#expenseModal 0,0 412x839",
+      "#budgetModal 0,0 412x839",
+      "#securityPinModal 0,0 412x839",
+      "#biometricsModal 0,0 412x839",
+      "#subsModal 0,0 412x839"
+    ],
+    "url": "/dashboard.html",
+    "overflowX": false,
+    "widest": [
+      ".loan-tab-btn",
+      "#tabCountPending",
+      ".loan-tab-btn",
+      "#tabCountSettled"
+    ],
+    "tapTargetsUnder32px": 21,
+    "smallestFontPx": 9,
+    "textLength": 13406,
+    "height": 8497
+  },
+  {
+    "audit": "dashboard-phone360",
+    "errors": [],
+    "errorCount": 0,
+    "failedRequests": [],
+    "coarse": true,
+    "smallTargets": [
+      "button.floating-calc-split-chip 24x29 x5",
+      "button.floating-calc-fx-chip 41x29 x5",
+      "button.studio-target-chip 103x30 x5",
+      "button.touch-pressable#moneyFlowPrev 32x32 x1",
+      "button.touch-pressable#moneyFlowNext 32x32 x1",
+      "button.avatar-browse-btn#modalAvatarBrowseBtn 26x26 x1",
+      "button.floating-calc-use-btn#floatingCalcUseBtn 91x20 x1",
+      "button.floating-calc-fx-swap#floatingCalcFxSwap 22x23 x1",
+      "button.floating-calc-fx-convert-btn#floatingCalcFxConvert 56x23 x1"
+    ],
+    "fixedElements": [
+      ".mesh-wash 0,0 360x780",
+      ".hero-bg -32,-31 422x844",
+      "#profileMenu 65,68 285x656",
+      "#expenseModal 0,0 360x780",
+      "#budgetModal 0,0 360x780",
+      "#securityPinModal 0,0 360x780",
+      "#biometricsModal 0,0 360x780",
+      "#subsModal 0,0 360x780"
+    ],
+    "url": "/dashboard.html",
+    "overflowX": false,
+    "widest": [
+      ".loan-tab-btn",
+      ".loan-tab-btn",
+      "#tabCountPending",
+      ".loan-tab-btn"
+    ],
+    "tapTargetsUnder32px": 21,
+    "smallestFontPx": 9,
+    "textLength": 13406,
+    "height": 8659
+  },
+  {
+    "audit": "admin-pixel7",
+    "errors": [],
+    "errorCount": 0,
+    "failedRequests": [],
+    "coarse": true,
+    "smallTargets": [
+      "button.studio-target-chip 103x30 x5",
+      "select.form-select#autoRefreshSelector 1x44 x1",
+      "select.form-select#createUserRole 1x41 x1",
+      "select.form-select#createUserStatus 1x41 x1",
+      "select.form-select#editUserRole 1x41 x1",
+      "select.form-select#editUserStatus 1x41 x1"
+    ],
+    "fixedElements": [
+      ".hero-bg -30,-30 472x899",
+      "#adminProfileMenu 115,68 285x216",
+      "#drawerOverlay 0,0 412x839",
+      "#userDrawer 412,0 412x839",
+      "#createUserModal 0,0 412x839",
+      "#editUserModal 0,0 412x839",
+      "#stepUpModal 0,0 412x839",
+      "#modelSpecsModal 0,0 412x839"
+    ],
+    "url": "/admin.html",
+    "overflowX": false,
+    "widest": [
+      ".stream-pill-btn",
+      ".[object",
+      ".[object",
+      ".[object"
+    ],
+    "tapTargetsUnder32px": 10,
+    "smallestFontPx": 9,
+    "textLength": 3328,
+    "height": 1958
+  }
+]
