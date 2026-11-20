@@ -251,9 +251,14 @@ jobs:
         run: |
           set -o pipefail
           npx expo install --check 2>&1 | tee expo-install-check.log
+      # Offline on purpose: this compares package.json with the version table shipped inside the installed
+      # `expo` package, so it fails only when dependencies are changed, not whenever Expo publishes a patch
+      # (the online table moves on its own and would turn main red with no code change).
       - name: Check mobile dependencies match the Expo SDK
         working-directory: mobile
         shell: bash
+        env:
+          EXPO_OFFLINE: '1'
         run: |
           npx --no-install expo install --check 2>&1 | tee /tmp/expo-check.log
           if ! grep -q "Dependencies are up to date" /tmp/expo-check.log; then
