@@ -17,6 +17,46 @@ updates:
     groups:
       mobile-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # Expo SDK 58 fixes the version of these packages (expo/bundledNativeModules.json). Moving one off
+      # that table can break the native build, so they change only with an SDK upgrade:
+      #   npx expo install expo@latest --fix
+      - dependency-name: "@expo/vector-icons"
+      - dependency-name: "@react-native-async-storage/async-storage"
+      - dependency-name: "eslint-config-expo"
+      - dependency-name: "expo-auth-session"
+      - dependency-name: "expo-clipboard"
+      - dependency-name: "expo-constants"
+      - dependency-name: "expo-crypto"
+      - dependency-name: "expo-document-picker"
+      - dependency-name: "expo-file-system"
+      - dependency-name: "expo-font"
+      - dependency-name: "expo-haptics"
+      - dependency-name: "expo-image-manipulator"
+      - dependency-name: "expo-image-picker"
+      - dependency-name: "expo-intent-launcher"
+      - dependency-name: "expo-linear-gradient"
+      - dependency-name: "expo-linking"
+      - dependency-name: "expo-local-authentication"
+      - dependency-name: "expo-notifications"
+      - dependency-name: "expo-router"
+      - dependency-name: "expo-secure-store"
+      - dependency-name: "expo-sharing"
+      - dependency-name: "expo-status-bar"
+      - dependency-name: "expo-web-browser"
+      - dependency-name: "jest-expo"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-reanimated"
+      - dependency-name: "react-native-safe-area-context"
+      - dependency-name: "react-native-screens"
+      - dependency-name: "react-native-svg"
+      - dependency-name: "react-native-web"
+      - dependency-name: "react-native-worklets"
+      # babel-preset-expo depends on Babel 7 plugins, so Babel 8 cannot work until the SDK supports it.
+      - dependency-name: "@babel/*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: /e2e
     schedule: { interval: weekly }
