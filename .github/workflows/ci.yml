@@ -256,10 +256,10 @@ jobs:
         shell: bash
         run: |
           npx --no-install expo install --check 2>&1 | tee /tmp/expo-check.log
-          grep -q "Dependencies are up to date" /tmp/expo-check.log || {
-            echo "::error::Mobile dependencies differ from the Expo SDK table. Run: cd mobile && npx expo install --fix"
+          if ! grep -q "Dependencies are up to date" /tmp/expo-check.log; then
+            echo "::error title=Mobile dependencies differ from the Expo SDK table::$(head -c 1500 /tmp/expo-check.log | tr '\n' '|') Run: cd mobile && npx expo install --fix"
             exit 1
-          }
+          fi
       - name: Check mobile TypeScript
         working-directory: mobile
         run: npx tsc --noEmit
