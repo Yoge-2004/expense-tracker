@@ -34,6 +34,12 @@ const targets = [
   { name: 'phone360', device: { ...devices['Pixel 5'], viewport: { width: 360, height: 780 } } },
   { name: 'landscape', device: { ...devices['Pixel 7'], viewport: { width: 915, height: 412 } } },
 ];
+
+/** Playwright's phone emulation has touch events but still reports a fine pointer; real phones report coarse. */
+async function emulateTouchPointer(context, page) {
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'pointer', value: 'coarse' }, { name: 'hover', value: 'none' }, { name: 'any-pointer', value: 'coarse' }] });
+}
 const pages = ['index.html', 'legacy-mobile.html'];
 const browser = await chromium.launch();
 const report = [];
@@ -41,6 +47,7 @@ for (const target of targets) {
   const context = await browser.newContext({ ...target.device });
   for (const file of pages) {
     const page = await context.newPage();
+    await emulateTouchPointer(context, page);
     await page.goto(base + file, { waitUntil: 'load' });
     await page.waitForTimeout(1200);
     const slug = `${path.basename(file, '.html')}-${target.name}`;
@@ -128,6 +135,7 @@ async function audit(label, file, device, opts = {}) {
     await context.route('**/api/**', smallApi);
   }
   const page = await context.newPage();
+  await emulateTouchPointer(context, page);
   const errors = []; const failed = [];
   page.on('pageerror', (e) => errors.push(String(e).slice(0, 160)));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
@@ -141,8 +149,25 @@ async function audit(label, file, device, opts = {}) {
     const wide = Array.from(document.querySelectorAll('body *')).filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.right > w + 2 && getComputedStyle(el).position !== 'fixed'; }).slice(0, 4).map((el) => (el.id ? '#' + el.id : el.className ? '.' + String(el.className).split(' ')[0] : el.tagName));
     const taps = Array.from(document.querySelectorAll('button, a, input, select')).filter((el) => { const r = el.getBoundingClientRect(); const v = r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; return v && (r.height < 32 || r.width < 32) && !(el.tagName === 'INPUT' && ['checkbox', 'radio', 'hidden'].includes(el.type)); }).length;
     let smallest = 99; document.querySelectorAll('body *').forEach((el) => { if (el.childNodes.length && Array.from(el.childNodes).some((n) => n.nodeType === 3 && n.textContent.trim())) { const f = parseFloat(getComputedStyle(el).fontSize); if (f && f < smallest) smallest = f; } });
-    return { url: location.pathname, overflowX: document.documentElement.scrollWidth > w + 1, widest: wide, tapTargetsUnder32px: taps, smallestFontPx: smallest, textLength: document.body.innerText.trim().length, height: document.documentElement.scrollHeight };
+    const smallList = {};
+    document.querySelectorAll('button, a, input, select').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (!(r.width > 0 && r.height > 0) || getComputedStyle(el).visibility === 'hidden') return;
+      if (el.tagName === 'INPUT' && ['checkbox', 'radio', 'hidden'].includes(el.type)) return;
+      if (r.height >= 32 && r.width >= 32) return;
+      const key = el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/)[0] : '') + (el.id ? '#' + el.id : '');
+      smallList[key] = smallList[key] || { count: 0, size: Math.round(r.width) + 'x' + Math.round(r.height) };
+      smallList[key].count += 1;
+    });
+    const fixed = Array.from(document.querySelectorAll('body *')).filter((el) => getComputedStyle(el).position === 'fixed' && el.getBoundingClientRect().width > 0).map((el) => { const r = el.getBoundingClientRect(); return (el.id ? '#' + el.id : '.' + String(el.className).split(' ')[0]) + ' ' + Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height); });
+    return { coarse: matchMedia('(pointer: coarse)').matches, smallTargets: Object.entries(smallList).sort((a, b) => b[1].count - a[1].count).slice(0, 14).map(([k, v]) => k + ' ' + v.size + ' x' + v.count), fixedElements: fixed.slice(0, 8), url: location.pathname, overflowX: document.documentElement.scrollWidth > w + 1, widest: wide, tapTargetsUnder32px: taps, smallestFontPx: smallest, textLength: document.body.innerText.trim().length, height: document.documentElement.scrollHeight };
   });
+  const edit = page.locator('.btn-edit:visible').first();
+  if (await edit.count()) {
+    await edit.scrollIntoViewIfNeeded();
+    const box = await edit.evaluate((el) => { const r = el.getBoundingClientRect(); return { y: Math.max(0, r.top + window.scrollY - 150), h: r.height + 300 }; });
+    await page.screenshot({ path: path.join(out, `${label}-row.png`), fullPage: true, clip: { x: 0, y: box.y, width: page.viewportSize().width, height: box.h } });
+  }
   report.push({ audit: label, errors: errors.slice(0, 6), errorCount: errors.length, failedRequests: failed.slice(0, 4), ...m });
   await context.close();
 }
