@@ -36,10 +36,15 @@
 .modal-overlay:not(.active) {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 .modal-overlay.active {
+  display: flex !important;
   opacity: 1;
   pointer-events: all;
+  visibility: visible !important;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }

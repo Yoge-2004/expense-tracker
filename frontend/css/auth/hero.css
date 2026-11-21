@@ -5,7 +5,8 @@
   height: auto;
   min-height: 0;
   align-self: stretch;
-  overflow: visible;
+  overflow: hidden;
+  max-width: 100%;
   overscroll-behavior: auto;
   display: flex;
   flex-direction: column;
