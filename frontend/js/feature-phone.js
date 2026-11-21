@@ -24,7 +24,7 @@
   };
   const isKaiOsOrFeature = () => {
     const ua = navigator.userAgent || '';
-    return /KaiOS|KAIOS|Jio|FeaturePhone|Nokia|Symbian|Opera Mini|UCWEB|MAUI/i.test(ua);
+    return /KaiOS|KAIOS|Jio|FeaturePhone|Nokia|Symbian|Series60|S60|BlackBerry|BB10|IEMobile|Windows CE|Windows Phone|Bada|Tizen|webOS|PalmOS|MeeGo|Maemo|MAUI|MTK|MediaTek|BREW|Opera Mini|Opera Mobi|UCWEB|UCBrowser|NetFront|Openwave|UP\.Browser|Obigo|Teleca|SEMC/i.test(ua);
   };
   const isFeatureDevice = () => isFeatureViewport() || isKaiOsOrFeature();
 

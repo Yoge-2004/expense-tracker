@@ -396,12 +396,12 @@
     /* Fixed Bottom Tab Bar (iOS 1 & Android 1 Native Style) */
     .bottom-tab-bar {
       position: fixed;
-      bottom: 0;
+      bottom: 28px;
       left: 0;
       width: 100%;
       background-color: #111827;
       border-top: 1px solid #1f2937;
-      height: 48px;
+      height: 44px;
       z-index: 1000;
       overflow: hidden;
     }
@@ -409,9 +409,9 @@
     .tab-item {
       float: left;
       width: 25%;
-      height: 48px;
+      height: 44px;
       text-align: center;
-      padding-top: 6px;
+      padding-top: 4px;
       color: #94a3b8;
       cursor: pointer;
       font-size: 10px;
@@ -424,8 +424,82 @@
 
     .tab-icon {
       display: block;
-      font-size: 14px;
-      margin-bottom: 2px;
+      font-size: 13px;
+      margin-bottom: 1px;
+    }
+
+    /* Native Feature Phone Softkey Bar (KaiOS, Symbian, Nokia, Jio) */
+    .fp-softkey-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 28px;
+      background-color: #080c14;
+      border-top: 1px solid #1e293b;
+      z-index: 10001;
+      overflow: hidden;
+      line-height: 28px;
+      padding: 0 8px;
+      font-family: inherit;
+    }
+
+    .fp-lsk,
+    .fp-rsk {
+      float: left;
+      width: 33%;
+      font-size: 10px;
+      font-weight: bold;
+      color: #94a3b8;
+      text-transform: uppercase;
+      text-align: left;
+      cursor: pointer;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .fp-rsk {
+      float: right;
+      text-align: right;
+    }
+
+    .fp-csk {
+      float: left;
+      width: 34%;
+      font-size: 11px;
+      font-weight: bold;
+      color: #38bdf8;
+      text-transform: uppercase;
+      text-align: center;
+      cursor: pointer;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    /* Keypad Shortcuts Guide Strip */
+    .keypad-strip {
+      background-color: #111827;
+      border: 1px dashed #334155;
+      color: #94a3b8;
+      font-size: 10px;
+      padding: 4px 6px;
+      margin-bottom: 8px;
+      text-align: center;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    /* High-contrast D-Pad focus ring for non-touch button mobiles */
+    .fp-focused,
+    button:focus,
+    a:focus,
+    input:focus,
+    select:focus,
+    .tab-item:focus {
+      outline: 2px solid #38bdf8 !important;
+      background-color: rgba(56, 189, 248, 0.22) !important;
     }
 
     .empty-state {
@@ -433,6 +507,23 @@
       text-align: center;
       color: #64748b;
       font-size: 12px;
+    }
+
+    @media (max-width: 320px) {
+      body {
+        font-size: 13px;
+        padding-bottom: 80px;
+      }
+      .brand-title {
+        font-size: 14px;
+      }
+      .badge-os {
+        font-size: 9px;
+        padding: 1px 4px;
+      }
+      .metric-table td {
+        padding: 4px 2px;
+      }
     }
   </style>
 </head>
@@ -443,11 +534,16 @@
     <div class="brand-title">ExpenseTracker</div>
     <div class="header-actions">
       <span class="badge-os" id="deviceBadge">Mobile 1.0</span>
-      <a href="index.html" class="badge-os" style="color:#38bdf8;">Desktop</a>
+      <a href="index.html?nomobile=1" class="badge-os" style="color:#38bdf8;" id="linkDesktop">Desktop</a>
     </div>
   </div>
 
   <div class="container">
+
+    <!-- Feature Phone Physical Keypad Quick Strip -->
+    <div class="keypad-strip" id="keypadStrip">
+      <strong>Keypad:</strong> [1] +Exp &nbsp; [2] +Inc &nbsp; [3] Home &nbsp; [4] Exp &nbsp; [5] Inc &nbsp; [6] Sync &nbsp; [0] Account &nbsp; [D-Pad] Move
+    </div>
 
     <!-- Account: shares the sign-in of the main app on this browser -->
     <div class="account-bar" id="accountBar">
@@ -577,23 +673,30 @@
   </div>
 
   <!-- Bottom Fixed Navigation Tab Bar -->
-  <div class="bottom-tab-bar">
+  <div class="bottom-tab-bar" id="bottomTabBar">
     <div class="tab-item active" id="tabOverview">
       <span class="tab-icon">&#9679;</span>
-      <span>Home</span>
+      <span>Home [3]</span>
     </div>
     <div class="tab-item" id="tabExpenses">
       <span class="tab-icon">&#8722;</span>
-      <span>Expenses</span>
+      <span>Expenses [4]</span>
     </div>
     <div class="tab-item" id="tabIncome">
       <span class="tab-icon">&#43;</span>
-      <span>Income</span>
+      <span>Income [5]</span>
     </div>
     <div class="tab-item" id="tabRefresh">
       <span class="tab-icon">&#8635;</span>
-      <span>Sync</span>
+      <span>Sync [6]</span>
     </div>
+  </div>
+
+  <!-- Native Feature Phone Softkey Bar (LSK, Center, RSK) -->
+  <div class="fp-softkey-bar" id="fpSoftkeyBar">
+    <span class="fp-lsk" id="fpLsk">+ EXPENSE [1]</span>
+    <span class="fp-csk" id="fpCsk">SELECT</span>
+    <span class="fp-rsk" id="fpRsk">+ INCOME [2]</span>
   </div>
 
   <!-- ========================================================================
@@ -631,18 +734,466 @@
       var records = [];
       var budgetTarget = 0;
 
+      // Comprehensive Historical Legacy Mobile & Feature Phone Platform Detection
+      function detectLegacyPlatform(customUa) {
+        var str = customUa || navigator.userAgent || "";
+
+        // 1. Apple iPhone OS / iOS (1.0 to modern)
+        var iosMatch = str.match(/(?:iPhone OS|CPU iPhone OS|iPad.*OS|CPU OS)\s*([0-9._]+)/i);
+        if (iosMatch) {
+          var iosVer = iosMatch[1].replace(/_/g, ".");
+          var majorIos = parseInt(iosVer.split(".")[0], 10);
+          if (majorIos <= 1) return "iOS 1.0";
+          if (majorIos === 2) return "iOS 2.0";
+          if (majorIos === 3) return "iOS 3.0";
+          if (majorIos <= 6) return "iOS " + majorIos + " (Classic)";
+          if (majorIos <= 9) return "iOS " + majorIos + " (Legacy)";
+          return "iOS " + iosVer;
+        }
+        if (/iPhone.*WebKit\/42/i.test(str)) return "iOS 1.0";
+        if (/iPhone/i.test(str)) return "iPhone Web";
+
+        // 2. Android (1.0 to 4.x legacy and beyond)
+        var androidMatch = str.match(/Android\s*([0-9.]+)/i);
+        if (androidMatch) {
+          var aVer = androidMatch[1];
+          var majorA = parseFloat(aVer);
+          if (majorA <= 1.05) return "Android 1.0";
+          if (majorA < 2.0) return "Android 1.x (Cupcake/Donut)";
+          if (majorA < 3.0) return "Android 2.x (Eclair/Froyo/GB)";
+          if (majorA < 4.0) return "Android 3.x (Honeycomb)";
+          if (majorA < 5.0) return "Android 4.x (ICS/JB/KitKat)";
+          return "Android " + aVer;
+        }
+        if (/Android.*WebKit\/525/i.test(str)) return "Android 1.0";
+
+        // 3. Windows Mobile / Windows Phone / Windows CE
+        if (/Windows Phone/i.test(str)) {
+          var wpMatch = str.match(/Windows Phone\s*(?:OS\s*)?([0-9.]+)/i);
+          return "Windows Phone " + (wpMatch ? wpMatch[1] : "7/8");
+        }
+        if (/Windows CE|Pocket PC|IEMobile/i.test(str)) return "Windows Mobile";
+
+        // 4. BlackBerry
+        if (/BB10|BlackBerry.*Version\/10/i.test(str)) return "BlackBerry 10";
+        if (/BlackBerry/i.test(str) || /RIM Tablet/i.test(str) || /PlayBook/i.test(str)) {
+          var bbMatch = str.match(/BlackBerry\s*([0-9]+)/i);
+          var bbVerMatch = str.match(/Version\/([0-9.]+)/i);
+          return "BlackBerry " + (bbMatch ? bbMatch[1] : (bbVerMatch ? "OS " + bbVerMatch[1] : "OS"));
+        }
+
+        // Microbrowsers (Opera Mini, Opera Mobi, UC Browser)
+        if (/Opera Mini/i.test(str)) {
+          var opMiniMatch = str.match(/Opera Mini\/([0-9.]+)/i);
+          return "Opera Mini" + (opMiniMatch ? " " + opMiniMatch[1] : "");
+        }
+        if (/Opera Mobi/i.test(str)) return "Opera Mobile";
+        if (/UCWEB|UCBrowser/i.test(str)) return "UC Browser";
+
+        // 5. Symbian OS / Series 60 / S40 / Nokia Asha
+        if (/Series60|S60/i.test(str)) {
+          var s60Match = str.match(/Series60\/([0-9.]+)/i);
+          return "Symbian S60" + (s60Match ? " v" + s60Match[1] : "");
+        }
+        if (/SymbianOS|SymbOS|Symbian/i.test(str)) return "Symbian OS";
+        if (/Asha/i.test(str)) return "Nokia Asha";
+        if (/Nokia/i.test(str)) {
+          var nokiaMatch = str.match(/Nokia([A-Za-z0-9\-_]+)/i);
+          return "Nokia " + (nokiaMatch ? nokiaMatch[1] : "Mobile");
+        }
+
+        // 6. Palm OS & HP / Palm webOS
+        if (/webOS|hpwOS/i.test(str)) return "Palm webOS";
+        if (/PalmOS|PalmSource|Blazer|Xiino/i.test(str)) return "Palm OS";
+
+        // 7. Samsung Bada & Tizen
+        if (/Bada[ \/]?([0-9.]*)/i.test(str)) {
+          var badaMatch = str.match(/Bada[ \/]?([0-9.]*)/i);
+          return "Samsung Bada" + (badaMatch && badaMatch[1] ? " " + badaMatch[1] : "");
+        }
+        if (/Tizen/i.test(str)) return "Samsung Tizen";
+
+        // 8. MeeGo & Maemo
+        if (/MeeGo/i.test(str)) return "MeeGo";
+        if (/Maemo/i.test(str)) return "Nokia Maemo";
+
+        // 9. KaiOS & JioPhone
+        if (/KaiOS|KAIOS/i.test(str)) {
+          var kaiMatch = str.match(/KaiOS\/([0-9.]+)/i);
+          return "KaiOS" + (kaiMatch ? " " + kaiMatch[1] : "");
+        }
+        if (/Jio/i.test(str)) return "JioPhone";
+
+        // 10. Feature Phone Chipsets & Microbrowsers
+        if (/MAUI/i.test(str) || /MTK/i.test(str) || /MediaTek/i.test(str)) return "MediaTek MAUI";
+        if (/BREW|Brew MP/i.test(str)) return "Qualcomm BREW";
+        if (/NetFront/i.test(str)) return "Access NetFront";
+        if (/UP\.Browser|UP\.Link|Openwave/i.test(str)) return "Openwave WAP";
+        if (/Teleca|Obigo/i.test(str)) return "Teleca-Obigo";
+        if (/SEMC-Browser|SonyEricsson/i.test(str)) return "Sony Ericsson";
+        if (/MOT-|Motorola/i.test(str)) return "Motorola EZ";
+
+        // 11. Handheld Gaming Consoles
+        if (/PlayStation Portable|PSP/i.test(str)) return "PlayStation Portable";
+        if (/PlayStation Vita/i.test(str)) return "PlayStation Vita";
+        if (/Nintendo 3DS/i.test(str)) return "Nintendo 3DS";
+        if (/Nintendo DSi/i.test(str)) return "Nintendo DSi";
+
+        // 12. Fallbacks
+        if (/Mobile|Handheld|MIDP|CLDC|WAP/i.test(str)) return "Feature Mobile";
+        return "Legacy Mobile Web";
+      }
+
       // Platform detection for badge
-      var ua = navigator.userAgent;
+      var ua = navigator.userAgent || "";
       var badgeEl = document.getElementById("deviceBadge");
+      var detectedPlatform = detectLegacyPlatform(ua);
       if (badgeEl) {
-        if (/iPhone OS 1_/i.test(ua) || /iPhone.*WebKit\/42/i.test(ua)) {
-          badgeEl.innerHTML = "iOS 1.0";
-        } else if (/Android 1\.0/i.test(ua) || /Android.*WebKit\/525/i.test(ua)) {
-          badgeEl.innerHTML = "Android 1.0";
-        } else if (/Mobile/i.test(ua)) {
-          badgeEl.innerHTML = "Mobile Web";
+        badgeEl.innerHTML = esc(detectedPlatform);
+      }
+      try {
+        document.body.setAttribute("data-os", detectedPlatform.toLowerCase().replace(/[^a-z0-9]+/g, "-"));
+      } catch (e) {}
+
+      // ======================================================================
+      // Feature Phone D-Pad Spatial Navigation & Physical Button Engine (ES3)
+      // ======================================================================
+      var softkeyLsk = document.getElementById("fpLsk");
+      var softkeyCsk = document.getElementById("fpCsk");
+      var softkeyRsk = document.getElementById("fpRsk");
+
+      function updateSoftkeys() {
+        var expModal = document.getElementById("expenseModal");
+        var incModal = document.getElementById("incomeModal");
+        var logModal = document.getElementById("loginModal");
+
+        var expOpen = expModal && expModal.style.display === "block";
+        var incOpen = incModal && incModal.style.display === "block";
+        var logOpen = logModal && logModal.style.display === "block";
+
+        if (expOpen || incOpen || logOpen) {
+          if (softkeyLsk) softkeyLsk.innerHTML = "Cancel";
+          if (softkeyCsk) softkeyCsk.innerHTML = logOpen ? "SIGN IN" : "SAVE";
+          if (softkeyRsk) softkeyRsk.innerHTML = "Close";
+          return;
+        }
+
+        var active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "SELECT" || active.tagName === "TEXTAREA")) {
+          if (softkeyLsk) softkeyLsk.innerHTML = "Clear";
+          if (softkeyCsk) softkeyCsk.innerHTML = "DONE";
+          if (softkeyRsk) softkeyRsk.innerHTML = "Next";
+          return;
+        }
+
+        if (softkeyLsk) softkeyLsk.innerHTML = "+ EXPENSE [1]";
+        if (softkeyCsk) softkeyCsk.innerHTML = "SELECT";
+        if (softkeyRsk) softkeyRsk.innerHTML = "+ INCOME [2]";
+      }
+
+      function getVisibleFocusables() {
+        var expModal = document.getElementById("expenseModal");
+        var incModal = document.getElementById("incomeModal");
+        var logModal = document.getElementById("loginModal");
+
+        var root = document.body;
+        if (expModal && expModal.style.display === "block") root = expModal;
+        else if (incModal && incModal.style.display === "block") root = incModal;
+        else if (logModal && logModal.style.display === "block") root = logModal;
+
+        var tags = ["a", "button", "input", "select", "textarea"];
+        var elements = [];
+        var i, j;
+        for (i = 0; i < tags.length; i++) {
+          var found = root.getElementsByTagName(tags[i]);
+          for (j = 0; j < found.length; j++) {
+            var el = found[j];
+            if (el.type === "hidden" || el.disabled) continue;
+            if (el.offsetWidth === 0 && el.offsetHeight === 0 && el.style.display === "none") continue;
+            elements.push(el);
+          }
+        }
+        var tabs = root.getElementsByClassName ? root.getElementsByClassName("tab-item") : [];
+        for (i = 0; i < tabs.length; i++) {
+          elements.push(tabs[i]);
+        }
+        return elements;
+      }
+
+      function focusFpElement(el) {
+        if (!el) return;
+        var i;
+        var all = getVisibleFocusables();
+        for (i = 0; i < all.length; i++) {
+          if (all[i].className) {
+            all[i].className = all[i].className.replace(/\s*fp-focused\b/g, "");
+          }
+        }
+        if (el.className) {
+          el.className += " fp-focused";
+        } else {
+          el.className = "fp-focused";
+        }
+        try { el.focus(); } catch(e) {}
+        try {
+          if (el.scrollIntoView) {
+            el.scrollIntoView(false);
+          }
+        } catch(e) {}
+        updateSoftkeys();
+      }
+
+      function handleFpLsk() {
+        var expModal = document.getElementById("expenseModal");
+        var incModal = document.getElementById("incomeModal");
+        var logModal = document.getElementById("loginModal");
+
+        if (expModal && expModal.style.display === "block") {
+          expModal.style.display = "none";
+          updateSoftkeys();
+          return;
+        }
+        if (incModal && incModal.style.display === "block") {
+          incModal.style.display = "none";
+          updateSoftkeys();
+          return;
+        }
+        if (logModal && logModal.style.display === "block") {
+          logModal.style.display = "none";
+          updateSoftkeys();
+          return;
+        }
+
+        var active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) {
+          active.value = "";
+          return;
+        }
+
+        var btnExp = document.getElementById("btnOpenExpenseModal");
+        if (btnExp) btnExp.click();
+        updateSoftkeys();
+      }
+
+      function handleFpCsk() {
+        var expModal = document.getElementById("expenseModal");
+        var incModal = document.getElementById("incomeModal");
+        var logModal = document.getElementById("loginModal");
+
+        if (expModal && expModal.style.display === "block") {
+          var btnSaveExp = document.getElementById("btnSaveExpense");
+          if (btnSaveExp) btnSaveExp.click();
+          updateSoftkeys();
+          return;
+        }
+        if (incModal && incModal.style.display === "block") {
+          var btnSaveInc = document.getElementById("btnSaveIncome");
+          if (btnSaveInc) btnSaveInc.click();
+          updateSoftkeys();
+          return;
+        }
+        if (logModal && logModal.style.display === "block") {
+          var btnSubLog = document.getElementById("btnSubmitLogin");
+          if (btnSubLog) btnSubLog.click();
+          updateSoftkeys();
+          return;
+        }
+
+        var active = document.activeElement;
+        if (active && active !== document.body) {
+          if (typeof active.click === "function") {
+            active.click();
+            updateSoftkeys();
+            return;
+          }
+        }
+
+        var focusables = getVisibleFocusables();
+        if (focusables.length > 0) {
+          focusFpElement(focusables[0]);
         }
       }
+
+      function handleFpRsk() {
+        var expModal = document.getElementById("expenseModal");
+        var incModal = document.getElementById("incomeModal");
+        var logModal = document.getElementById("loginModal");
+
+        if (expModal && expModal.style.display === "block") {
+          expModal.style.display = "none";
+          updateSoftkeys();
+          return;
+        }
+        if (incModal && incModal.style.display === "block") {
+          incModal.style.display = "none";
+          updateSoftkeys();
+          return;
+        }
+        if (logModal && logModal.style.display === "block") {
+          logModal.style.display = "none";
+          updateSoftkeys();
+          return;
+        }
+
+        var active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "SELECT")) {
+          var focusables = getVisibleFocusables();
+          var idx = -1;
+          for (var i = 0; i < focusables.length; i++) {
+            if (focusables[i] === active) { idx = i; break; }
+          }
+          if (idx !== -1 && idx + 1 < focusables.length) {
+            focusFpElement(focusables[idx + 1]);
+          } else if (active.blur) {
+            active.blur();
+          }
+          return;
+        }
+
+        var btnInc = document.getElementById("btnOpenIncomeModal");
+        if (btnInc) btnInc.click();
+        updateSoftkeys();
+      }
+
+      // Wire softkey button clicks
+      if (softkeyLsk) softkeyLsk.onclick = handleFpLsk;
+      if (softkeyCsk) softkeyCsk.onclick = handleFpCsk;
+      if (softkeyRsk) softkeyRsk.onclick = handleFpRsk;
+
+      // Global Hardware Keyboard Listener for Physical Buttons / D-Pad
+      document.onkeydown = function (e) {
+        e = e || window.event;
+        var code = e.keyCode || e.which || 0;
+        var key = e.key || "";
+
+        var isInput = false;
+        var target = e.target || e.srcElement;
+        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
+          isInput = true;
+        }
+
+        // SoftLeft / F1 (code 403 / 112)
+        if (key === "SoftLeft" || key === "F1" || code === 403 || code === 112) {
+          if (e.preventDefault) e.preventDefault();
+          handleFpLsk();
+          return false;
+        }
+        // SoftRight / F2 (code 404 / 113)
+        if (key === "SoftRight" || key === "F2" || code === 404 || code === 113) {
+          if (e.preventDefault) e.preventDefault();
+          handleFpRsk();
+          return false;
+        }
+        // Center Select Key (code 13 / 29443) when not typing in input
+        if ((key === "Enter" || code === 13 || code === 29443) && !isInput) {
+          if (e.preventDefault) e.preventDefault();
+          handleFpCsk();
+          return false;
+        }
+        // Back / Escape / BrowserBack (code 461 / 27 / 8)
+        if (key === "Escape" || key === "BrowserBack" || code === 27 || code === 461 || (code === 8 && !isInput)) {
+          var expModal = document.getElementById("expenseModal");
+          var incModal = document.getElementById("incomeModal");
+          var logModal = document.getElementById("loginModal");
+          if ((expModal && expModal.style.display === "block") ||
+              (incModal && incModal.style.display === "block") ||
+              (logModal && logModal.style.display === "block")) {
+            if (e.preventDefault) e.preventDefault();
+            if (expModal) expModal.style.display = "none";
+            if (incModal) incModal.style.display = "none";
+            if (logModal) logModal.style.display = "none";
+            updateSoftkeys();
+            return false;
+          }
+        }
+
+        // Spatial D-Pad: Down (40), Up (38), Left (37), Right (39)
+        if (!isInput && (code === 38 || code === 40 || code === 37 || code === 39)) {
+          var focusables = getVisibleFocusables();
+          if (focusables.length === 0) return true;
+
+          var current = -1;
+          for (var i = 0; i < focusables.length; i++) {
+            if (focusables[i] === document.activeElement || (focusables[i].className && focusables[i].className.indexOf("fp-focused") !== -1)) {
+              current = i;
+              break;
+            }
+          }
+
+          var next = current;
+          if (code === 40 || code === 39) {
+            next = current + 1;
+            if (next >= focusables.length) next = 0;
+          } else if (code === 38 || code === 37) {
+            next = current - 1;
+            if (next < 0) next = focusables.length - 1;
+          }
+
+          if (focusables[next]) {
+            if (e.preventDefault) e.preventDefault();
+            focusFpElement(focusables[next]);
+            return false;
+          }
+        }
+
+        // T9 Numeric Keypad Shortcuts (when not in an input field)
+        if (!isInput) {
+          if (key === "1" || code === 49) {
+            if (e.preventDefault) e.preventDefault();
+            var bExp = document.getElementById("btnOpenExpenseModal");
+            if (bExp) bExp.click();
+            updateSoftkeys();
+            return false;
+          }
+          if (key === "2" || code === 50) {
+            if (e.preventDefault) e.preventDefault();
+            var bInc = document.getElementById("btnOpenIncomeModal");
+            if (bInc) bInc.click();
+            updateSoftkeys();
+            return false;
+          }
+          if (key === "3" || code === 51) {
+            if (e.preventDefault) e.preventDefault();
+            var tOver = document.getElementById("tabOverview");
+            if (tOver) tOver.click();
+            return false;
+          }
+          if (key === "4" || code === 52) {
+            if (e.preventDefault) e.preventDefault();
+            var tExp = document.getElementById("tabExpenses");
+            if (tExp) tExp.click();
+            return false;
+          }
+          if (key === "5" || code === 53) {
+            if (e.preventDefault) e.preventDefault();
+            var tInc = document.getElementById("tabIncome");
+            if (tInc) tInc.click();
+            return false;
+          }
+          if (key === "6" || code === 54) {
+            if (e.preventDefault) e.preventDefault();
+            var tRef = document.getElementById("tabRefresh");
+            if (tRef) tRef.click();
+            return false;
+          }
+          if (key === "0" || code === 48) {
+            if (e.preventDefault) e.preventDefault();
+            var bAcc = document.getElementById("btnAccount");
+            if (bAcc) bAcc.click();
+            return false;
+          }
+          if (key === "*" || code === 106) {
+            if (e.preventDefault) e.preventDefault();
+            window.scrollTo(0, 0);
+            return false;
+          }
+          if (key === "#" || code === 192) {
+            if (e.preventDefault) e.preventDefault();
+            alert("Feature Phone Keypad Guide:\n[1] +Expense\n[2] +Income\n[3] Home\n[4] Expenses\n[5] Income\n[6] Sync\n[0] Account\n[D-Pad] Navigate\n[Enter/Center] Select");
+            return false;
+          }
+        }
+      };
 
       // Format currency without Intl.NumberFormat dependency
       function formatMoney(amount) {
@@ -1367,7 +1918,13 @@
       window.ExpenseTrackerMobile = {
         getRecords: function () { return records; },
         addRecord: function (r) { records.unshift(r); saveRecords(); updateSummary(); renderTransactions(); },
-        formatMoney: formatMoney
+        formatMoney: formatMoney,
+        detectPlatform: detectLegacyPlatform,
+        updateSoftkeys: updateSoftkeys,
+        handleLsk: handleFpLsk,
+        handleCsk: handleFpCsk,
+        handleRsk: handleFpRsk,
+        focusElement: focusFpElement
       };
     })();
   </script>

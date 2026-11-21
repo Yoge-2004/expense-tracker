@@ -3,13 +3,40 @@
 
 <head>
     <meta charset="UTF-8">
-    <!-- Legacy Mobile (Android 1.0 / iOS 1.0) Auto-Redirect / Fallback Check -->
+    <!-- Legacy & Feature Mobile Auto-Redirect Check -->
     <script type="text/javascript">
       (function() {
+        if (window.location.search.indexOf("nomobile=1") !== -1) {
+          try { sessionStorage.setItem("pref_nomobile", "1"); } catch(e) {}
+          return;
+        }
+        try {
+          if (sessionStorage.getItem("pref_nomobile") === "1") return;
+        } catch(e) {}
+
         var ua = navigator.userAgent || "";
-        var isLegacy = /iPhone OS [123]_/i.test(ua) || 
-                       /Android [12]\./i.test(ua) || 
-                       (/Mobile/i.test(ua) && (!window.fetch || !window.Promise || !window.Symbol));
+        var screenW = (window.screen && window.screen.width) || window.innerWidth || 1024;
+        var screenH = (window.screen && window.screen.height) || window.innerHeight || 768;
+        var minDimension = Math.min(screenW, screenH);
+
+        var isLegacyUA = /iPhone OS [123456789]_/i.test(ua) ||
+                         /Android [1234]\./i.test(ua) ||
+                         /Symbian|Series60|S60|Nokia|SymbOS|Asha/i.test(ua) ||
+                         /BlackBerry|BB10|PlayBook|RIM Tablet/i.test(ua) ||
+                         /Windows CE|Pocket PC|IEMobile|Windows Phone/i.test(ua) ||
+                         /webOS|PalmOS|Blazer/i.test(ua) ||
+                         /Bada|Tizen/i.test(ua) ||
+                         /MeeGo|Maemo/i.test(ua) ||
+                         /KaiOS|KAIOS|Jio|FeaturePhone/i.test(ua) ||
+                         /MAUI|MTK|MediaTek|BREW/i.test(ua) ||
+                         /Opera Mini|Opera Mobi|UCWEB|UCBrowser/i.test(ua) ||
+                         /NetFront|UP\.Browser|Openwave|Obigo|Teleca|SEMC-Browser/i.test(ua) ||
+                         /PlayStation Portable|PSP|PlayStation Vita|Nintendo 3DS|Nintendo DSi/i.test(ua);
+
+        var lacksModernJS = (!window.fetch || !window.Promise || !window.Symbol || !window.customElements || !document.querySelector);
+
+        var isLegacy = isLegacyUA || (lacksModernJS && (/Mobile|Handheld|MIDP|CLDC/i.test(ua) || minDimension <= 320));
+
         if (isLegacy && window.location.href.indexOf("legacy-mobile.html") === -1) {
           window.location.replace("legacy-mobile.html");
         }
