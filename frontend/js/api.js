@@ -1,7 +1,15 @@
 // Dynamically resolve API URL: origin-relative when served over HTTP/HTTPS,
 // supports explicit localStorage configuration, with safe file:// protocol fallback.
+// Detect if running from local static dev server (IntelliJ port 63342, VS Code port 5500, etc.)
+// where the Spring Boot backend runs on localhost:8080.
+const isDevStaticPort = typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") &&
+    window.location.port !== "" &&
+    window.location.port !== "8080";
+
 const API_BASE_URL = (typeof window !== "undefined" && window.API_BASE_URL)
     || (typeof localStorage !== "undefined" && localStorage.getItem("expense_api_url"))
+    || (isDevStaticPort ? "http://localhost:8080/api" : null)
     || (typeof window !== "undefined" && window.location.protocol !== "file:"
         ? `${window.location.origin}/api`
         : "http://localhost:8080/api");

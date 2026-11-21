@@ -472,10 +472,9 @@
   }
 }
 
-/* ── Physical D-Pad / Directional Button Navigation Focus Highlighting ── */
-:focus,
-:focus-visible,
-.fp-focused {
+/* ── Physical D-Pad / Directional Button Navigation Focus Highlighting (Feature Phones Only) ── */
+.fp-focused,
+body.has-softkey-bar .fp-focused {
   outline: 2px solid #F59E0B !important;
   outline-offset: 1px !important;
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.45) !important;
