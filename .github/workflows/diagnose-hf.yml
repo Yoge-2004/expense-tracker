@@ -77,21 +77,37 @@ jobs:
               out.append('database/ not listed: ' + redact(f'{type(e).__name__}: {e}'))
           note('3 Snapshot files in the Space repo', out)
 
+          # 1b. is the container itself alive? /health is served by the ML service through nginx
+          out = []
+          for path in ('/health', '/api/health', '/'):
+              try:
+                  t = time.time()
+                  r = requests.get(url + path, timeout=45)
+                  out.append(f'{path}: HTTP {r.status_code} in {time.time() - t:.1f}s {redact(r.text[:160].replace(chr(10), " "))}')
+              except Exception as e:
+                  out.append(f'{path}: {type(e).__name__} after {time.time() - t:.0f}s')
+          note('1b Probes', out)
+
           # 4. runtime logs, filtered and redacted
-          lines = []
-          try:
-              r = requests.get(f'https://api.hf.space/v1/{repo}/logs/run', headers={'Authorization': f'Bearer {token}'}, stream=True, timeout=(20, 25))
-              start = time.time()
-              for raw in r.iter_lines(decode_unicode=True):
-                  if raw and raw.startswith('data:'):
-                      try:
-                          lines.append(json.loads(raw[5:]).get('data', ''))
-                      except Exception:
-                          lines.append(raw[5:])
-                  if time.time() - start > 25 or len(lines) > 4000:
+          lines, info = [], []
+          for endpoint in (f'https://api.hf.space/v1/{repo}/logs/run', f'https://huggingface.co/api/spaces/{repo}/logs/run'):
+              try:
+                  r = requests.get(endpoint, headers={'Authorization': f'Bearer {token}', 'Accept': 'text/event-stream'}, stream=True, timeout=(20, 30))
+                  info.append(f'{endpoint.split("/")[2]} -> HTTP {r.status_code} {r.headers.get("content-type", "")[:30]}')
+                  start = time.time()
+                  for raw in r.iter_lines(decode_unicode=True):
+                      if raw and raw.startswith('data:'):
+                          try:
+                              lines.append(json.loads(raw[5:]).get('data', ''))
+                          except Exception:
+                              lines.append(raw[5:])
+                      if time.time() - start > 30 or len(lines) > 6000:
+                          break
+                  if lines:
                       break
-          except Exception as e:
-              lines.append('log stream ended: ' + f'{type(e).__name__}')
+              except Exception as e:
+                  info.append(f'{endpoint.split("/")[2]} -> {type(e).__name__}')
+          note('4a log stream', info)
           keep = re.compile(r'fallback|Fallback|FALLBACK|neon|Neon|quota|snapshot|Snapshot|Hikari|Primary database|ERROR|Exception|FATAL|restor|mirror|H2|out of|Caused by', re.I)
           picked = [redact(l.strip()) for l in lines if keep.search(l)]
           # keep the most recent lines, de-duplicated in order
