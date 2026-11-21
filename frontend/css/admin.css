@@ -1049,7 +1049,10 @@ html[data-theme="light"] #themeToggle .moon-icon {
     font-size: 11.5px !important;
   }
 
+  .admin-topbar-root .top-bar-utility-group,
   .top-bar-utility-group {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
     display: inline-flex !important;
     align-items: center !important;
     gap: 6px !important;
@@ -1072,7 +1075,6 @@ html[data-theme="light"] #themeToggle .moon-icon {
     height: 30px !important;
   }
 
-  .top-bar-utility-group .btn-icon,
   .top-bar-utility-group .header-action-btn {
     width: 32px !important;
     height: 32px !important;
@@ -1090,14 +1092,149 @@ html[data-theme="light"] #themeToggle .moon-icon {
     height: 16px !important;
   }
 
-  .grid-4-metrics {
-    grid-template-columns: 1fr !important;
+  .admin-tab-header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
     gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .admin-tab-header .admin-flex-7 {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .admin-tab-header #heartbeatPill,
+  .admin-tab-header #quickPurgeCacheBtn {
+    flex: 1 1 auto !important;
+    justify-content: center !important;
+  }
+
+  .grid-4-metrics {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
   }
 
   .card {
     padding: 12px !important;
   }
+}
+
+@media (max-width: 560px) {
+  .admin-top-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .admin-workspace-btn {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  .admin-top-select-wrapper {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+
+  .admin-topbar-root .top-bar-utility-group,
+  .admin-topbar-root .admin-top-actions > .top-bar-utility-group {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    justify-self: center !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding-top: 6px !important;
+    border-top: 1px solid rgba(var(--primary-rgb), 0.12) !important;
+    width: 100% !important;
+  }
+
+  .admin-nav-scroll-btn {
+    display: none !important;
+  }
+
+  .admin-stream-tabs-wrapper {
+    gap: 0 !important;
+    margin-bottom: 14px !important;
+  }
+
+  .admin-nav-stream,
+  .ledger-stream-tabs {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  .admin-nav-stream::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .grid-4-metrics {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .grid-analytics {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .grid-analytics > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 1024px) {
+  .admin-content-view .grid-4-metrics,
+  .grid-4-metrics {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+.metric-header {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+  width: 100% !important;
+}
+
+.metric-header .card-label {
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
+.metric-header .status-badge {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.immersive-halo-wrap {
+  overflow: hidden !important;
+}
+
+/* On Admin Command Center, system connectivity is natively displayed via .live-pulse and #heartbeatPill */
+.server-status-badge {
+  display: none !important;
 }
 
 /* ==========================================================================

@@ -201,7 +201,7 @@ public class FinancialStatementExcelGenerator {
         else if (runwayDays > 0) healthScore += 5;
         else healthScore -= 10;
 
-        healthScore = Math.max(15, Math.min(99, healthScore));
+        healthScore = Math.clamp(healthScore, 15, 99);
 
         String healthGrade;
         String healthStatusText;

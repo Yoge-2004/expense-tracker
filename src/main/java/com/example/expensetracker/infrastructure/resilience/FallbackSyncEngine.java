@@ -214,9 +214,9 @@ public final class FallbackSyncEngine {
 
     private void createTable(Connection h2, Tbl t) throws SQLException {
         List<String> defs = new ArrayList<>();
-        boolean singleAutoPk = t.pk().size() == 1 && isAuto(t, t.pk().get(0));
+        boolean singleAutoPk = t.pk().size() == 1 && isAuto(t, t.pk().getFirst());
         for (Col c : t.cols()) {
-            boolean identity = singleAutoPk && c.lower().equals(t.pk().get(0).toLowerCase(Locale.ROOT));
+            boolean identity = singleAutoPk && c.lower().equals(t.pk().getFirst().toLowerCase(Locale.ROOT));
             String def = q(upper(c.name())) + " " + h2Type(c, identity);
             if (!c.nullable() && !identity) {
                 def += " NOT NULL";
@@ -259,7 +259,7 @@ public final class FallbackSyncEngine {
             case Types.NUMERIC, Types.DECIMAL -> {
                 boolean unconstrained = c.size() <= 0 || c.size() > 100;
                 int precision = unconstrained ? 38 : c.size();
-                int scale = unconstrained ? 10 : Math.max(0, Math.min(c.scale(), precision));
+                int scale = unconstrained ? 10 : Math.clamp(c.scale(), 0, precision);
                 base = "NUMERIC(" + precision + "," + scale + ")";
             }
             case Types.FLOAT, Types.DOUBLE -> base = "DOUBLE PRECISION";
@@ -302,10 +302,10 @@ public final class FallbackSyncEngine {
         int restarted = 0;
         for (String name : tableNames(h2)) {
             Tbl t = loadTable(h2, name);
-            if (t.pk().size() != 1 || !isAuto(t, t.pk().get(0))) {
+            if (t.pk().size() != 1 || !isAuto(t, t.pk().getFirst())) {
                 continue;
             }
-            Col pkCol = t.col(t.pk().get(0).toLowerCase(Locale.ROOT));
+            Col pkCol = t.col(t.pk().getFirst().toLowerCase(Locale.ROOT));
             if (pkCol == null) {
                 continue;
             }
@@ -744,10 +744,10 @@ public final class FallbackSyncEngine {
     }
 
     private void fixSequence(Connection primary, Tbl t) {
-        if (t.pk().size() != 1 || !isAuto(t, t.pk().get(0))) {
+        if (t.pk().size() != 1 || !isAuto(t, t.pk().getFirst())) {
             return;
         }
-        Col c = t.col(t.pk().get(0).toLowerCase(Locale.ROOT));
+        Col c = t.col(t.pk().getFirst().toLowerCase(Locale.ROOT));
         if (c == null) {
             return;
         }

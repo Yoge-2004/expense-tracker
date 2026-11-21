@@ -55,7 +55,7 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
         map.put("Utilities", List.of("electricity", "power", "water", "gas bill", "broadband", "wifi", "internet", "airtel", "jio", "vodafone", "telecom", "utility"));
         map.put("Health & Medical", List.of("pharmacy", "chemist", "drug", "hospital", "clinic", "medical", "apollo", "medplus", "healthcare", "diagnostic", "lab", "walgreens", "cvs"));
         map.put("Entertainment", List.of("cinema", "movie", "theatre", "imax", "pvr", "inox", "concert", "game", "bowling", "netflix", "spotify"));
-        CATEGORY_KEYWORDS = Collections.unmodifiableMap(map);
+        CATEGORY_KEYWORDS = Map.copyOf(map);
     }
 
     private static final String CURRENCY_SYMBOLS = "[\\s:₹$€£]*(?:rs\\.?|inr)?\\s*";

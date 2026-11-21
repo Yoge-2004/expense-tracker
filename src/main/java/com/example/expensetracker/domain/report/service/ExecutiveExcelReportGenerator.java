@@ -202,7 +202,7 @@ public class ExecutiveExcelReportGenerator implements ReportExportStrategy {
             else if (savingsRate >= 0.10) resilienceScore += 10;
             else if (net.signum() < 0) resilienceScore -= 20;
             if (d.budgets.stream().allMatch(b -> b.getLimitAmount().compareTo(BigDecimal.ZERO) > 0)) resilienceScore += 10;
-            resilienceScore = Math.max(15, Math.min(99, resilienceScore));
+            resilienceScore = Math.clamp(resilienceScore, 15, 99);
 
             // Daily Burn Calculation
             int activeDays = d.expenses.isEmpty() ? 1 : 30;

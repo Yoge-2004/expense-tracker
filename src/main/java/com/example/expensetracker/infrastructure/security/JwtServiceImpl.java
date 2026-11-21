@@ -48,7 +48,7 @@ public class JwtServiceImpl implements JwtService {
      */
     @PostConstruct
     public void init() {
-        if (secretKey == null || secretKey.trim().isEmpty()) {
+        if (secretKey == null || secretKey.isBlank()) {
             throw new IllegalStateException(
                     "JWT secret key is not configured. Set the JWT_SECRET environment variable.");
         }
@@ -56,7 +56,7 @@ public class JwtServiceImpl implements JwtService {
         byte[] keyBytes;
         try {
             keyBytes = Decoders.BASE64.decode(secretKey.trim());
-        } catch (Exception e) {
+        } catch (Exception _) {
             keyBytes = secretKey.trim().getBytes(StandardCharsets.UTF_8);
         }
 

@@ -122,7 +122,7 @@ public class AdminController {
             @RequestParam(required = false) Role role,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        int boundedSize = Math.min(Math.max(size, 1), 50);
+        int boundedSize = Math.clamp(size, 1, 50);
         Pageable pageable = PageRequest.of(Math.max(page, 0), boundedSize, Sort.by("id").descending());
         return ResponseEntity.ok(adminUserService.getUsers(query, role, pageable));
     }
@@ -236,7 +236,7 @@ public class AdminController {
             @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        int boundedSize = Math.min(Math.max(size, 1), 50);
+        int boundedSize = Math.clamp(size, 1, 50);
         Pageable pageable = PageRequest.of(Math.max(page, 0), boundedSize, Sort.by("createdAt").descending());
         return ResponseEntity.ok(auditService.getAuditLogs(query, pageable));
     }
@@ -265,7 +265,7 @@ public class AdminController {
     public ResponseEntity<Page<AdminMlFeedbackItemDto>> getMlFeedback(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        int boundedSize = Math.min(Math.max(size, 1), 50);
+        int boundedSize = Math.clamp(size, 1, 50);
         Pageable pageable = PageRequest.of(Math.max(page, 0), boundedSize);
         return ResponseEntity.ok(mlGovernanceService.getFeedbackQueue(pageable));
     }
@@ -392,7 +392,7 @@ public class AdminController {
             @RequestParam(required = false) Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        int boundedSize = Math.min(Math.max(size, 1), 100);
+        int boundedSize = Math.clamp(size, 1, 100);
         Pageable pageable = PageRequest.of(Math.max(page, 0), boundedSize, Sort.by("id").descending());
         return ResponseEntity.ok(adminDataService.getAllExpenses(userId, pageable));
     }
@@ -404,7 +404,7 @@ public class AdminController {
             @RequestParam(required = false) Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        int boundedSize = Math.min(Math.max(size, 1), 100);
+        int boundedSize = Math.clamp(size, 1, 100);
         Pageable pageable = PageRequest.of(Math.max(page, 0), boundedSize, Sort.by("id").descending());
         return ResponseEntity.ok(adminDataService.getAllIncomes(userId, pageable));
     }

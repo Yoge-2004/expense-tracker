@@ -76,7 +76,7 @@ public class MemoryLogAppender extends AppenderBase<ILoggingEvent> {
         }
 
         int size = result.size();
-        int max = Math.min(Math.max(limit, 10), 1000);
+        int max = Math.clamp(limit, 10, 1000);
         if (size > max) {
             return new ArrayList<>(result.subList(size - max, size));
         }

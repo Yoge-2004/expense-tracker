@@ -204,9 +204,9 @@ public class ExportServiceImpl implements ExportService {
      */
     public static CurrencyMeta resolveCurrency(String preferredCurrency, User user) {
         String code = null;
-        if (preferredCurrency != null && !preferredCurrency.trim().isEmpty()) {
+        if (preferredCurrency != null && !preferredCurrency.isBlank()) {
             code = preferredCurrency.trim().toUpperCase();
-        } else if (user != null && user.getCurrency() != null && !user.getCurrency().trim().isEmpty()) {
+        } else if (user != null && user.getCurrency() != null && !user.getCurrency().isBlank()) {
             code = user.getCurrency().trim().toUpperCase();
         }
         if (code == null || code.isEmpty()) {

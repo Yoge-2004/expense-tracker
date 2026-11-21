@@ -172,7 +172,7 @@ public class AdminSystemOpsServiceImpl implements AdminSystemOpsService {
             return tsA.compareTo(tsB);
         });
 
-        int max = Math.min(Math.max(lines, 10), 1000);
+        int max = Math.clamp(lines, 10, 1000);
         if (combined.size() > max) {
             return new ArrayList<>(combined.subList(combined.size() - max, combined.size()));
         }

@@ -135,7 +135,7 @@ public class ImportServiceImpl implements ImportService {
             int rowNum = 1;
             while ((line = reader.readLine()) != null) {
                 rowNum++;
-                if (line.trim().isEmpty()) {
+                if (line.isBlank()) {
                     continue;
                 }
 
@@ -418,7 +418,7 @@ public class ImportServiceImpl implements ImportService {
             int rowNum = 1;
             while ((line = reader.readLine()) != null) {
                 rowNum++;
-                if (line.trim().isEmpty()) {
+                if (line.isBlank()) {
                     continue;
                 }
 
@@ -794,7 +794,7 @@ public class ImportServiceImpl implements ImportService {
             Map<String, Integer> col = null;
             while ((line = reader.readLine()) != null) {
                 lineNum++;
-                if (line.trim().isEmpty()) continue;
+                if (line.isBlank()) continue;
 
                 Map<String, Integer> candidateCol = parseHeader(line);
                 Integer dCol = findColumn(candidateCol, "date", "txndate", "transactiondate", "valuedate", "trandate", "postingdate");
@@ -829,7 +829,7 @@ public class ImportServiceImpl implements ImportService {
 
             while ((line = reader.readLine()) != null) {
                 lineNum++;
-                if (line.trim().isEmpty()) continue;
+                if (line.isBlank()) continue;
 
                 try {
                     List<String> parts = parseCsvLine(line);

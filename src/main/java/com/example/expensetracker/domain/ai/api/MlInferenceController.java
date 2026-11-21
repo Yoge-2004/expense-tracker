@@ -41,7 +41,7 @@ public class MlInferenceController {
         payload.put("top_k", request.getOrDefault("top_k", 5));
 
         Map<String, Object> res = new LinkedHashMap<>(client.matchMerchant(payload));
-        if (res.get("matches") instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Map<?, ?> top) {
+        if (res.get("matches") instanceof List<?> list && !list.isEmpty() && list.getFirst() instanceof Map<?, ?> top) {
             res.put("canonical_merchant", top.get("merchant"));
             res.put("merchant", top.get("merchant"));
             res.put("confidence", top.get("similarity"));
@@ -70,7 +70,7 @@ public class MlInferenceController {
         }
 
         Map<String, Object> res = new LinkedHashMap<>(client.checkDuplicates(payload));
-        if (res.get("matches") instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Map<?, ?> top) {
+        if (res.get("matches") instanceof List<?> list && !list.isEmpty() && list.getFirst() instanceof Map<?, ?> top) {
             double sim = top.get("similarity") instanceof Number n ? n.doubleValue() : 0.0;
             res.put("is_duplicate", sim >= 0.70);
             res.put("similarity", sim);
@@ -94,7 +94,7 @@ public class MlInferenceController {
         }
 
         Map<String, Object> res = new LinkedHashMap<>(client.scoreAnomalies(payload));
-        if (res.get("results") instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Map<?, ?> first) {
+        if (res.get("results") instanceof List<?> list && !list.isEmpty() && list.getFirst() instanceof Map<?, ?> first) {
             res.put("is_anomaly", first.get("is_anomaly") != null ? first.get("is_anomaly") : false);
             res.put("anomaly_score", first.get("anomaly_score") != null ? first.get("anomaly_score") : 0.0);
             res.put("z_score", first.get("z_score") != null ? first.get("z_score") : 0.0);

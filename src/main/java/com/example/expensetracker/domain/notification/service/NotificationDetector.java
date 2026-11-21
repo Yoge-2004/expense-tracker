@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import com.example.expensetracker.domain.budget.model.Budget;
 import com.example.expensetracker.domain.budget.repository.BudgetRepository;
@@ -194,7 +193,7 @@ public class NotificationDetector {
         }
         List<BigDecimal> history = expenseRepository
                 .findByUserAndExpenseDateBetween(user, yesterday.minusDays(LARGE_EXPENSE_HISTORY_DAYS), yesterday.minusDays(1))
-                .stream().map(Expense::getAmount).filter(Objects::nonNull).collect(Collectors.toList());
+                .stream().map(Expense::getAmount).filter(Objects::nonNull).toList();
         BigDecimal average = NotificationRules.average(history);
 
         List<PendingNotification> result = new ArrayList<>();

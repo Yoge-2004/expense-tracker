@@ -31,11 +31,13 @@ public class MlInferenceClient {
     public MlInferenceClient(
             @Autowired(required = false) RestClient.Builder builder,
             @Value("${ml.inference.url:http://127.0.0.1:8000}") String baseUrl) {
-        RestClient.Builder effectiveBuilder = builder != null ? builder.clone() : RestClient.builder();
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
-        requestFactory.setReadTimeout(READ_TIMEOUT);
-        effectiveBuilder.requestFactory(requestFactory);
+        RestClient.Builder effectiveBuilder = builder != null ? builder : RestClient.builder();
+        if (builder == null) {
+            SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+            requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
+            requestFactory.setReadTimeout(READ_TIMEOUT);
+            effectiveBuilder.requestFactory(requestFactory);
+        }
         this.client = effectiveBuilder
                 .baseUrl(baseUrl)
                 .build();

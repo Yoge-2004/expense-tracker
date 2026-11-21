@@ -23,8 +23,9 @@ import com.example.expensetracker.domain.user.model.User;
  */
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
-    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user "
-            + "ORDER BY e.expenseDate DESC, e.id DESC")
+    @Query("""
+            SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user \
+            ORDER BY e.expenseDate DESC, e.id DESC""")
     List<Expense> findByUser(@Param("user") User user);
 
     @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.id = :id AND e.user = :user")

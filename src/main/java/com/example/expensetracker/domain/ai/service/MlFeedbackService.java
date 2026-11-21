@@ -90,7 +90,7 @@ public class MlFeedbackService {
 
     @Transactional(readOnly = true)
     public MlFeedbackPageResponse fetchEligible(String after, int limit) {
-        int safeLimit = Math.min(Math.max(limit, 1), 1000);
+        int safeLimit = Math.clamp(limit, 1, 1000);
         List<MlFeedback> feedback;
         if (after == null || after.isBlank()) {
             feedback = repository.findByTrainingStatusInOrderByIdAsc(TRAINING_READY_STATUSES, PageRequest.of(0, safeLimit));

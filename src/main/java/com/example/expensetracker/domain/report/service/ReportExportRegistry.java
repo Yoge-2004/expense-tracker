@@ -30,7 +30,7 @@ public class ReportExportRegistry {
                 map.putIfAbsent("excel", strategy);
             }
         }
-        this.strategies = Collections.unmodifiableMap(map);
+        this.strategies = Map.copyOf(map);
     }
 
     /**

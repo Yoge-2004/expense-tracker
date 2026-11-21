@@ -44,7 +44,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Bean
     @ConditionalOnMissingBean
     public RestClient.Builder restClientBuilder() {
-        return RestClient.builder();
+        org.springframework.http.client.SimpleClientHttpRequestFactory requestFactory =
+                new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(java.time.Duration.ofSeconds(3));
+        requestFactory.setReadTimeout(java.time.Duration.ofSeconds(6));
+        return RestClient.builder().requestFactory(requestFactory);
     }
 
     @Override

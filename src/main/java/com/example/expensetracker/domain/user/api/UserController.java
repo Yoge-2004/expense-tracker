@@ -79,7 +79,7 @@ public class UserController {
     @GetMapping("/check-username")
     public ResponseEntity<UsernameAvailabilityDto> checkUsername(
             @RequestParam(required = false) String username) {
-        if (username == null || username.trim().isEmpty()) {
+        if (username == null || username.isBlank()) {
             return ResponseEntity.badRequest().body(new UsernameAvailabilityDto(false, null, "Username cannot be empty"));
         }
 

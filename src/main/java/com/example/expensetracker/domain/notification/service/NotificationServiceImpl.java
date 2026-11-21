@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.notification.dto.NotificationDto;
@@ -63,7 +62,7 @@ public class NotificationServiceImpl implements NotificationService {
         entity.setDedupeKey(clip(notification.dedupeKey(), 160));
         try {
             notificationRepository.save(entity);
-        } catch (DataIntegrityViolationException duplicate) {
+        } catch (DataIntegrityViolationException _) {
             return false;   // another run created the same event first
         }
         push(user, notification, devices);
@@ -73,7 +72,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public NotificationInboxDto getInbox(User user, int limit) {
-        int size = Math.max(1, Math.min(limit, MAX_INBOX));
+        int size = Math.clamp(limit, 1, MAX_INBOX);
         List<NotificationDto> items = notificationRepository
                 .findByUserOrderByCreatedAtDesc(user, PageRequest.of(0, size)).stream()
                 .map(n -> new NotificationDto(n.getId(), n.getType(), n.getTitle(), n.getBody(), n.getRoute(),
@@ -137,7 +136,7 @@ public class NotificationServiceImpl implements NotificationService {
             NotificationType type;
             try {
                 type = NotificationType.valueOf(name.trim().toUpperCase(Locale.ROOT));
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException _) {
                 throw new IllegalArgumentException("Unknown notification type '" + name + "'");
             }
             if (type.isUserControllable()) {
@@ -207,14 +206,14 @@ public class NotificationServiceImpl implements NotificationService {
                     .filter(devices)
                     .map(DeviceToken::getToken)
                     .filter(ExpoPushClient::isValidToken)
-                    .collect(Collectors.toList());
+                    .toList();
             if (tokens.isEmpty()) {
                 return;
             }
             for (String dead : ExpoPushClient.send(tokens, notification.title(), notification.body(), notification.route())) {
                 deviceTokenRepository.deleteByToken(dead);
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
             // The notification is already in the inbox; a failed push is only logged.
