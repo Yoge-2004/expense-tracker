@@ -174,4 +174,78 @@ test.describe('Mobile dashboard regressions', () => {
     expect(metrics.children.every(child => child.width > 0)).toBe(true);
     expect(metrics.scrollWidth).toBeGreaterThanOrEqual(metrics.clientWidth);
   });
+
+  test('activates native bottom navigation and quick-add action sheet on mobile viewports', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); // iPhone 14 / Pixel
+    await page.goto('/index.html');
+    await page.evaluate(() => {
+      localStorage.setItem('token', 'mobile-nav-test-token');
+      localStorage.setItem('userId', '1');
+      localStorage.setItem('userName', 'Mobile Tester');
+    });
+
+    await emptyApi(page);
+    await page.goto('/dashboard.html');
+
+    // Bottom navigation should be visible on mobile
+    const bottomNav = page.locator('#mobileBottomNav');
+    await expect(bottomNav).toBeVisible();
+
+    const overviewBtn = page.locator('#mobNavOverview');
+    const ledgerBtn = page.locator('#mobNavLedger');
+    const fabBtn = page.locator('#mobNavFab');
+    const analyticsBtn = page.locator('#mobNavAnalytics');
+    const budgetsBtn = page.locator('#mobNavBudgets');
+
+    await expect(overviewBtn).toBeVisible();
+    await expect(ledgerBtn).toBeVisible();
+    await expect(fabBtn).toBeVisible();
+    await expect(analyticsBtn).toBeVisible();
+    await expect(budgetsBtn).toBeVisible();
+
+    // Mode badge exists in header
+    const modeBadge = page.locator('#mobileModeBadge');
+    await expect(modeBadge).toBeVisible();
+
+    // Tapping FAB opens the mobile action sheet
+    await fabBtn.click();
+    const actionSheet = page.locator('#mobileActionSheetOverlay');
+    await expect(actionSheet).toBeVisible();
+    await expect(actionSheet).toHaveClass(/active/);
+
+    const addExpenseAction = page.locator('#mobActionAddExpense');
+    const addIncomeAction = page.locator('#mobActionAddIncome');
+    await expect(addExpenseAction).toBeVisible();
+    await expect(addIncomeAction).toBeVisible();
+
+    // Tapping Add Expense opens modal and closes sheet
+    await addExpenseAction.click();
+    await expect(actionSheet).not.toHaveClass(/active/);
+    await expect(page.locator('#expenseModal')).toHaveClass(/active/);
+
+    // Close expense modal
+    await page.click('#closeExpenseModalBtn');
+    await expect(page.locator('#expenseModal')).not.toHaveClass(/active/);
+
+    // Tapping Ledger tab updates active state
+    await ledgerBtn.click();
+    await expect(ledgerBtn).toHaveClass(/active/);
+  });
+
+  test('hides mobile bottom navigation on desktop viewports', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/index.html');
+    await page.evaluate(() => {
+      localStorage.setItem('token', 'desktop-test-token');
+      localStorage.setItem('userId', '1');
+      localStorage.setItem('userName', 'Desktop User');
+    });
+
+    await emptyApi(page);
+    await page.goto('/dashboard.html');
+
+    const bottomNav = page.locator('#mobileBottomNav');
+    await expect(bottomNav).toBeHidden();
+  });
 });
+
