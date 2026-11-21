@@ -181,6 +181,38 @@ class DatabaseSnapshotServiceImplTest {
     }
 
     @Test
+    @DisplayName("importIntoFallback: auto-creates H2 tables when importing into an empty cold-boot fallback database")
+    void importIntoFallback_emptyH2ColdBoot_createsTablesAndImportsRows() throws Exception {
+        Path sqlitePath = tempDir.resolve("coldboot_source.sqlite");
+        Class.forName("org.sqlite.JDBC");
+        try (Connection sqConn = java.sql.DriverManager.getConnection("jdbc:sqlite:" + sqlitePath.toAbsolutePath());
+             Statement stmt = sqConn.createStatement()) {
+            stmt.execute("CREATE TABLE products (id INTEGER PRIMARY KEY, title TEXT, price REAL)");
+            stmt.execute("INSERT INTO products VALUES (101, 'Mechanical Keyboard', 89.99)");
+            stmt.execute("INSERT INTO products VALUES (102, 'Wireless Mouse', 49.50)");
+        }
+
+        Path emptyFallbackDb = tempDir.resolve("coldboot_fallback_db");
+        DatabaseSnapshotServiceImpl testService = new DatabaseSnapshotServiceImpl(dataSource, emptyFallbackDb.toString());
+
+        int imported = testService.importIntoFallback(sqlitePath);
+        assertEquals(2, imported);
+
+        String fallbackUrl = "jdbc:h2:file:" + emptyFallbackDb.toAbsolutePath() + ";MODE=PostgreSQL";
+        try (Connection h2Conn = java.sql.DriverManager.getConnection(fallbackUrl, "sa", "");
+             Statement stmt = h2Conn.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery("SELECT id, title, price FROM products ORDER BY id")) {
+            assertTrue(rs.next());
+            assertEquals(101L, rs.getLong("id"));
+            assertEquals("Mechanical Keyboard", rs.getString("title"));
+            assertTrue(rs.next());
+            assertEquals(102L, rs.getLong("id"));
+            assertEquals("Wireless Mouse", rs.getString("title"));
+            assertFalse(rs.next());
+        }
+    }
+
+    @Test
     @DisplayName("decrypt: null, non-existent, or blank password arguments throw IllegalArgumentException")
     void decrypt_invalidArgs_throwsException() {
         Path existing = tempDir.resolve("test_file.txt");

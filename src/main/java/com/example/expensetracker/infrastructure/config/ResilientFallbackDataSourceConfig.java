@@ -42,6 +42,9 @@ public class ResilientFallbackDataSourceConfig {
     @Value("${app.fallback-db-path:${DATA_DIR:/data}/expensetracker_fallback}")
     private String fallbackDbPath;
 
+    @Value("${app.fallback-db.password:${FALLBACK_DB_PASSWORD:}}")
+    private String fallbackDbPassword;
+
     @Bean
     @Primary
     public DataSource dataSource() {
@@ -87,7 +90,7 @@ public class ResilientFallbackDataSourceConfig {
         fallbackConfig.setJdbcUrl("jdbc:h2:file:" + fallbackFile.getPath() + ";AUTO_SERVER=TRUE;MODE=PostgreSQL");
         fallbackConfig.setDriverClassName("org.h2.Driver");
         fallbackConfig.setUsername("sa");
-        fallbackConfig.setPassword("");
+        fallbackConfig.setPassword(fallbackDbPassword != null ? fallbackDbPassword : "");
         fallbackConfig.setConnectionTimeout(5000);
         fallbackConfig.setMaximumPoolSize(10);
         fallbackConfig.setMinimumIdle(0);

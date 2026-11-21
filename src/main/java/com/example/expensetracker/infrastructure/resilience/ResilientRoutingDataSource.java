@@ -123,7 +123,7 @@ public class ResilientRoutingDataSource implements DataSource {
                 return connection;
             }
         } else if (current == Mode.FALLBACK && primaryDs != null && System.currentTimeMillis() >= nextProbeAt) {
-            nextProbeAt = System.currentTimeMillis() + retryIntervalMs;
+            nextProbeAt = System.currentTimeMillis() + failedRecoveryBackoffMs;
             Thread.ofVirtual().name("neon-primary-probe").start(this::probePrimary);
         }
         awaitGate();
@@ -161,9 +161,11 @@ public class ResilientRoutingDataSource implements DataSource {
     private void probePrimary() {
         try (Connection probe = primaryDs.getConnection()) {
             if (probe == null || !probe.isValid(5)) {
+                nextProbeAt = System.currentTimeMillis() + failedRecoveryBackoffMs;
                 return;
             }
         } catch (Exception e) {
+            nextProbeAt = System.currentTimeMillis() + failedRecoveryBackoffMs;
             return;
         }
         beginRecovery();

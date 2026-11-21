@@ -83,14 +83,12 @@ public class HealthController {
             log.debug("System health check probe passed: UP, uptimeMs={}", uptime);
             statusMap.put("status", "UP");
             statusMap.put("database", "UP");
-            if (fallbackCoordinator != null && fallbackCoordinator.isActive()) {
-                String mode = fallbackCoordinator.mode().name();
-                statusMap.put("databaseMode", mode);
-            } else {
-                statusMap.put("databaseMode", databaseMode);
-            }
-            if (!"PRIMARY".equals(databaseMode)) {
-                statusMap.put("warning", "Running in fallback mode with in-memory H2 database. Data will not persist across restarts.");
+            String effectiveMode = (fallbackCoordinator != null && fallbackCoordinator.isActive())
+                    ? fallbackCoordinator.mode().name()
+                    : databaseMode;
+            statusMap.put("databaseMode", effectiveMode);
+            if (!"PRIMARY".equalsIgnoreCase(effectiveMode)) {
+                statusMap.put("warning", "Running in fallback mode with emergency local datastore. Primary database is currently unreachable.");
                 statusMap.put("message", "Primary database unavailable; serving the emergency fallback.");
             }
             return ResponseEntity.ok(statusMap);
