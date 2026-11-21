@@ -17,12 +17,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="HandheldFriendly" content="True">
   <meta name="MobileOptimized" content="320">
-  <meta name="theme-color" content="#0B0F19">
+  <meta name="theme-color" content="#10120e">
 
   <style type="text/css">
     /* ==========================================================================
-       CSS 2.1 & Early WebKit Compatible Styling (QVGA 240x320 & HVGA 320x480)
-       Strictly zero modern CSS features: no flexbox, no grid, no css vars, no calc()
+       Ledger & Lumina Mobile Edition (CSS 2.1 & Retro-WebKit Compatible)
+       Strictly zero unsupported CSS features; graceful degradation on retro engines.
+       Color Palette: Obsidian (#10120e), Imperial Gold (#c79a3e), Sage Emerald (#10b981)
        ========================================================================== */
     * {
       -webkit-box-sizing: border-box;
@@ -33,12 +34,15 @@
     }
 
     body {
-      background-color: #0b111e;
-      color: #f1f5f9;
-      font-family: -apple-system, "Helvetica Neue", Helvetica, "Droid Sans", Arial, sans-serif;
+      background-color: #10120e;
+      background-image: -webkit-radial-gradient(50% 0%, circle, #1d2119 0%, #10120e 75%);
+      background-image: radial-gradient(circle at 50% 0%, #1d2119 0%, #10120e 75%);
+      background-attachment: fixed;
+      color: #f4f1ea;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 13px;
-      line-height: 1.35;
-      padding: 0 0 34px 0;
+      line-height: 1.4;
+      padding: 0 0 38px 0;
       width: 100%;
       max-width: 100%;
       overflow-x: hidden;
@@ -46,27 +50,41 @@
     }
 
     a {
-      color: #38bdf8;
+      color: #c79a3e;
       text-decoration: none;
     }
 
     /* Top Navigation Header */
     .top-header {
-      background-color: #0e1726;
-      border-bottom: 1px solid #1b283d;
-      padding: 6px 10px;
+      background-color: #141712;
+      border-bottom: 1px solid #282c22;
+      border-bottom: 1px solid rgba(199, 154, 62, 0.25);
+      padding: 7px 12px;
       width: 100%;
       overflow: hidden;
       line-height: 24px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
     }
 
     .brand-title {
       float: left;
       font-size: 13px;
-      font-weight: bold;
-      color: #38bdf8;
+      font-weight: 800;
+      color: #c79a3e;
       line-height: 24px;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .brand-accent-dot {
+      color: #c79a3e;
+      margin-right: 2px;
+      font-size: 11px;
+    }
+
+    .brand-title span {
+      color: #f4f1ea;
+      font-weight: 500;
     }
 
     .header-actions {
@@ -76,56 +94,78 @@
 
     .badge-os {
       display: inline-block;
-      background-color: #172439;
-      color: #94a3b8;
-      border: 1px solid #233652;
-      border-radius: 3px;
+      background-color: #1e2219;
+      background-color: rgba(199, 154, 62, 0.12);
+      color: #e5b85c;
+      border: 1px solid #3d331d;
+      border: 1px solid rgba(199, 154, 62, 0.3);
+      border-radius: 9999px;
       font-size: 9px;
-      font-weight: bold;
-      padding: 1px 5px;
-      margin-left: 3px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      padding: 1px 7px;
+      margin-left: 4px;
       text-transform: uppercase;
-      line-height: 15px;
+      line-height: 16px;
       vertical-align: middle;
+    }
+
+    .badge-desktop-link {
+      background-color: #1a1d17;
+      background-color: rgba(255, 255, 255, 0.05);
+      color: #a8a59b !important;
+      border: 1px solid rgba(236, 231, 216, 0.15) !important;
+      transition: all 0.2s ease;
+    }
+    .badge-desktop-link:hover {
+      color: #c79a3e !important;
+      border-color: rgba(199, 154, 62, 0.4) !important;
     }
 
     .container {
       width: 100%;
-      padding: 8px 10px;
+      padding: 10px 12px;
       max-width: 480px;
       margin: 0 auto;
     }
 
     /* Keypad Shortcuts Guide Strip */
     .keypad-strip {
-      background-color: #0e1726;
-      border: 1px solid #1e2d44;
-      border-radius: 4px;
-      color: #94a3b8;
+      background-color: #171a13;
+      background-color: rgba(23, 26, 19, 0.85);
+      border: 1px solid #282d21;
+      border: 1px solid rgba(199, 154, 62, 0.22);
+      border-radius: 7px;
+      color: #a8a59b;
       font-size: 10px;
-      padding: 4px 6px;
-      margin-bottom: 8px;
+      padding: 5px 8px;
+      margin-bottom: 9px;
       text-align: center;
       overflow-x: auto;
       white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     }
 
     .keypad-strip strong {
-      color: #38bdf8;
+      color: #c79a3e;
       margin-right: 4px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
     }
 
     /* Account Status Strip */
     .account-bar {
-      background-color: #0e1726;
-      border: 1px solid #1e2d44;
-      border-radius: 4px;
-      padding: 5px 8px;
-      margin-bottom: 8px;
+      background-color: #171a14;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.1);
+      border-radius: 7px;
+      padding: 5px 10px;
+      margin-bottom: 9px;
       font-size: 11px;
-      color: #94a3b8;
+      color: #a8a59b;
       overflow: hidden;
-      line-height: 22px;
+      line-height: 24px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     }
 
     .account-text {
@@ -134,119 +174,135 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      line-height: 22px;
+      line-height: 24px;
     }
 
     .account-btn {
       float: right;
-      background-color: #172439;
-      color: #38bdf8;
-      border: 1px solid #233652;
-      border-radius: 3px;
-      padding: 1px 8px;
+      background-color: #1e2219;
+      background-color: rgba(199, 154, 62, 0.12);
+      color: #c79a3e;
+      border: 1px solid #3d331d;
+      border: 1px solid rgba(199, 154, 62, 0.4);
+      border-radius: 5px;
+      padding: 1px 9px;
       font-size: 11px;
-      font-weight: bold;
+      font-weight: 700;
       cursor: pointer;
-      line-height: 18px;
+      line-height: 20px;
     }
 
     /* Executive Overview Card */
     .card {
-      background-color: #121c2e;
-      border: 1px solid #1f2f48;
-      border-radius: 6px;
-      padding: 10px 12px;
-      margin-bottom: 8px;
+      background-color: #171a14;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.1);
+      border-top: 2px solid #c79a3e;
+      border-radius: 9px;
+      padding: 12px 14px;
+      margin-bottom: 9px;
       width: 100%;
       overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     }
 
     .card-title {
       font-size: 10px;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #94a3b8;
-      margin-bottom: 2px;
+      letter-spacing: 0.8px;
+      color: #a8a59b;
+      margin-bottom: 3px;
     }
 
     .balance-amount {
-      font-size: 22px;
-      font-weight: bold;
-      color: #ffffff;
-      margin-bottom: 6px;
+      font-size: 24px;
+      font-weight: 800;
+      color: #f4f1ea;
+      letter-spacing: -0.3px;
+      margin-bottom: 8px;
     }
 
     .metric-table {
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 4px;
+      border-collapse: separate;
+      border-spacing: 6px 0;
+      margin: 6px -3px 0 -3px;
     }
 
     .metric-table td {
       width: 50%;
-      padding: 4px 2px;
+      padding: 7px 10px;
       vertical-align: top;
-      border-top: 1px solid #1f2f48;
+      background-color: #12140f;
+      background-color: rgba(0, 0, 0, 0.3);
+      border: 1px solid #20241b;
+      border: 1px solid rgba(236, 231, 216, 0.08);
+      border-radius: 7px;
     }
 
     .metric-table td.border-right {
-      border-right: 1px solid #1f2f48;
+      border-right: 1px solid rgba(236, 231, 216, 0.08);
     }
 
     .metric-label {
       font-size: 9px;
-      font-weight: bold;
-      color: #94a3b8;
+      font-weight: 700;
+      color: #8e8b80;
       text-transform: uppercase;
+      letter-spacing: 0.5px;
       display: block;
+      margin-bottom: 2px;
     }
 
     .metric-val-income {
-      font-size: 14px;
-      font-weight: bold;
+      font-size: 15px;
+      font-weight: 800;
       color: #10b981;
     }
 
     .metric-val-expense {
-      font-size: 14px;
-      font-weight: bold;
+      font-size: 15px;
+      font-weight: 800;
       color: #ef4444;
     }
 
     /* Budget Progress Bar */
     .progress-bar-bg {
-      background-color: #1e2d44;
-      height: 5px;
-      border-radius: 3px;
+      background-color: #20241b;
+      height: 6px;
+      border-radius: 9999px;
       width: 100%;
       overflow: hidden;
-      margin-top: 4px;
+      margin-top: 5px;
     }
 
     .progress-bar-fill {
       background-color: #10b981;
-      height: 5px;
+      height: 6px;
+      border-radius: 9999px;
       width: 0%;
     }
 
     /* Action Buttons (Side by Side) */
     .action-row {
       width: 100%;
-      margin-bottom: 8px;
+      margin-bottom: 9px;
       overflow: hidden;
     }
 
     .btn {
       display: inline-block;
       text-align: center;
-      padding: 7px 8px;
+      padding: 8px 10px;
       font-size: 12px;
-      font-weight: bold;
+      font-weight: 700;
+      letter-spacing: 0.3px;
       cursor: pointer;
       border: 1px solid transparent;
-      border-radius: 4px;
+      border-radius: 7px;
       color: #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     }
 
     .btn-half {
@@ -260,46 +316,61 @@
 
     .btn-emerald {
       background-color: #059669;
+      background-image: -webkit-linear-gradient(top, #059669, #047857);
+      background-image: linear-gradient(to bottom, #059669, #047857);
       border-color: #047857;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
 
     .btn-rose {
       background-color: #dc2626;
+      background-image: -webkit-linear-gradient(top, #dc2626, #b91c1c);
+      background-image: linear-gradient(to bottom, #dc2626, #b91c1c);
       border-color: #b91c1c;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
 
     .btn-sky {
-      background-color: #0284c7;
-      border-color: #0369a1;
+      background-color: #c79a3e;
+      background-image: -webkit-linear-gradient(top, #c79a3e, #aa7f2b);
+      background-image: linear-gradient(to bottom, #c79a3e, #aa7f2b);
+      border-color: #aa7f2b;
+      color: #10120e;
+      font-weight: 800;
     }
 
     .btn-dark {
-      background-color: #172439;
-      color: #cbd5e1;
-      border: 1px solid #233652;
+      background-color: #22261e;
+      color: #d1cdbf;
+      border: 1px solid #33382c;
+      border: 1px solid rgba(236, 231, 216, 0.15);
     }
 
-    /* Segmented Navigation Tab Strip (In-flow, never covers transactions) */
+    /* Segmented Navigation Tab Strip */
     .bottom-tab-bar {
       width: 100%;
-      background-color: #0e1726;
-      border: 1px solid #1e2d44;
-      border-radius: 4px;
-      margin-bottom: 8px;
-      height: 32px;
+      background-color: #141712;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.1);
+      border-radius: 7px;
+      margin-bottom: 9px;
+      height: 34px;
       overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     }
 
     .tab-item {
       float: left;
       width: 25%;
-      height: 32px;
-      line-height: 30px;
+      height: 34px;
+      line-height: 32px;
       text-align: center;
-      color: #94a3b8;
+      color: #8e8b80;
       cursor: pointer;
       font-size: 11px;
-      border-right: 1px solid #1e2d44;
+      font-weight: 600;
+      border-right: 1px solid #20241b;
+      border-right: 1px solid rgba(236, 231, 216, 0.08);
     }
 
     .tab-item:last-child {
@@ -307,9 +378,11 @@
     }
 
     .tab-item.active {
-      color: #38bdf8;
-      background-color: #1a273e;
-      font-weight: bold;
+      color: #c79a3e;
+      background-color: #1d2118;
+      background-color: rgba(199, 154, 62, 0.15);
+      font-weight: 800;
+      border-bottom: 2px solid #c79a3e;
     }
 
     .tab-icon {
@@ -321,50 +394,59 @@
     /* Filter & Search Bar */
     .search-row {
       width: 100%;
-      margin-bottom: 8px;
+      margin-bottom: 9px;
       overflow: hidden;
     }
 
     .search-input {
       width: 63%;
       float: left;
-      background-color: #0c1422;
-      border: 1px solid #1e2d44;
-      border-radius: 4px;
-      color: #f8fafc;
-      padding: 6px 8px;
+      background-color: #141712;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.12);
+      border-radius: 7px;
+      color: #f4f1ea;
+      padding: 7px 10px;
       font-size: 12px;
     }
 
     .filter-select {
       width: 34%;
       float: right;
-      background-color: #0c1422;
-      border: 1px solid #1e2d44;
-      border-radius: 4px;
-      color: #f8fafc;
-      padding: 6px 4px;
+      background-color: #141712;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.12);
+      border-radius: 7px;
+      color: #f4f1ea;
+      padding: 7px 6px;
       font-size: 12px;
+    }
+
+    .search-input:focus, .filter-select:focus {
+      border-color: #c79a3e;
+      outline: 1px solid #c79a3e;
     }
 
     /* Transaction Stream */
     .section-title {
       font-size: 11px;
-      font-weight: bold;
-      color: #94a3b8;
+      font-weight: 800;
+      color: #8e8b80;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin: 8px 0 4px 0;
+      letter-spacing: 0.8px;
+      margin: 10px 0 6px 0;
     }
 
     .tx-item {
-      background-color: #121c2e;
-      border: 1px solid #1e2d44;
-      border-radius: 4px;
-      padding: 8px 10px;
-      margin-bottom: 5px;
+      background-color: #171a14;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.08);
+      border-radius: 8px;
+      padding: 9px 12px;
+      margin-bottom: 6px;
       overflow: hidden;
       width: 100%;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     }
 
     .tx-left {
@@ -379,9 +461,9 @@
     }
 
     .tx-title {
-      font-size: 12px;
-      font-weight: bold;
-      color: #f1f5f9;
+      font-size: 13px;
+      font-weight: 700;
+      color: #f4f1ea;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -389,46 +471,53 @@
 
     .tx-meta {
       font-size: 10px;
-      color: #94a3b8;
-      margin-top: 1px;
+      color: #8e8b80;
+      margin-top: 2px;
     }
 
     .tx-tag {
       display: inline-block;
-      padding: 0 4px;
-      background-color: #172439;
-      color: #38bdf8;
-      border: 1px solid #233652;
-      border-radius: 2px;
+      padding: 1px 6px;
+      background-color: #1e2219;
+      background-color: rgba(199, 154, 62, 0.12);
+      color: #e5b85c;
+      border: 1px solid #3d331d;
+      border: 1px solid rgba(199, 154, 62, 0.25);
+      border-radius: 9999px;
       font-size: 9px;
-      margin-right: 3px;
+      font-weight: 600;
+      margin-right: 4px;
+      letter-spacing: 0.3px;
     }
 
     .tx-amount-exp {
-      font-size: 13px;
-      font-weight: bold;
+      font-size: 14px;
+      font-weight: 800;
       color: #ef4444;
     }
 
     .tx-amount-inc {
-      font-size: 13px;
-      font-weight: bold;
+      font-size: 14px;
+      font-weight: 800;
       color: #10b981;
     }
 
     .tx-btn-del {
       background-color: transparent;
-      color: #64748b;
-      border: 1px solid #233652;
-      border-radius: 2px;
-      padding: 1px 5px;
+      color: #8e8b80;
+      border: 1px solid #33382c;
+      border: 1px solid rgba(236, 231, 216, 0.15);
+      border-radius: 4px;
+      padding: 2px 6px;
       font-size: 9px;
-      margin-top: 2px;
+      font-weight: 600;
+      margin-top: 3px;
       cursor: pointer;
     }
     .tx-btn-del:hover {
       color: #ef4444;
       border-color: #ef4444;
+      background-color: rgba(239, 68, 68, 0.1);
     }
 
     .form-error {
@@ -452,38 +541,46 @@
 
     .modal-box {
       position: absolute;
-      top: 12px;
+      top: 14px;
       left: 4%;
       width: 92%;
-      max-width: 340px;
-      background-color: #121c2e;
-      border: 1px solid #38bdf8;
-      border-radius: 6px;
-      padding: 12px;
+      max-width: 360px;
+      background-color: #171a14;
+      border: 1px solid #3d331d;
+      border: 1px solid rgba(199, 154, 62, 0.35);
+      border-radius: 9px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
     }
 
     .form-group {
-      margin-bottom: 8px;
+      margin-bottom: 9px;
       overflow: hidden;
     }
 
     .form-label {
       display: block;
       font-size: 10px;
-      font-weight: bold;
-      color: #cbd5e1;
-      margin-bottom: 2px;
+      font-weight: 700;
+      color: #a8a59b;
+      margin-bottom: 3px;
       text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .form-control {
       width: 100%;
-      background-color: #0b111e;
-      border: 1px solid #1e2d44;
-      border-radius: 3px;
-      color: #f8fafc;
-      padding: 6px 8px;
+      background-color: #10120e;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.15);
+      border-radius: 6px;
+      color: #f4f1ea;
+      padding: 7px 9px;
       font-size: 12px;
+    }
+    .form-control:focus {
+      border-color: #c79a3e;
+      outline: 1px solid #c79a3e;
     }
 
     /* Native Feature Phone Softkey Bar (Single Fixed Bottom Bar) */
@@ -492,23 +589,27 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      height: 28px;
-      line-height: 27px;
-      background-color: #080d17;
-      border-top: 1px solid #1e2d44;
+      height: 30px;
+      line-height: 29px;
+      background-color: #0e100c;
+      background-color: rgba(14, 16, 12, 0.95);
+      border-top: 1px solid #282c22;
+      border-top: 1px solid rgba(199, 154, 62, 0.25);
       z-index: 10001;
       overflow: hidden;
-      padding: 0 8px;
+      padding: 0 10px;
       font-family: inherit;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.4);
     }
 
     .fp-lsk {
       float: left;
       width: 33%;
       font-size: 10px;
-      font-weight: bold;
+      font-weight: 700;
       color: #ef4444;
       text-transform: uppercase;
+      letter-spacing: 0.4px;
       text-align: left;
       cursor: pointer;
       overflow: hidden;
@@ -520,9 +621,10 @@
       float: left;
       width: 34%;
       font-size: 11px;
-      font-weight: bold;
-      color: #38bdf8;
+      font-weight: 800;
+      color: #c79a3e;
       text-transform: uppercase;
+      letter-spacing: 0.5px;
       text-align: center;
       cursor: pointer;
       overflow: hidden;
@@ -534,9 +636,10 @@
       float: right;
       width: 33%;
       font-size: 10px;
-      font-weight: bold;
+      font-weight: 700;
       color: #10b981;
       text-transform: uppercase;
+      letter-spacing: 0.4px;
       text-align: right;
       cursor: pointer;
       overflow: hidden;
@@ -544,23 +647,26 @@
       text-overflow: ellipsis;
     }
 
-    /* High-contrast D-Pad focus ring for non-touch button mobiles */
+    /* High-contrast Imperial Gold D-Pad focus ring for non-touch button mobiles */
     .fp-focused,
     button:focus,
     a:focus,
     input:focus,
     select:focus,
     .tab-item:focus {
-      outline: 2px solid #38bdf8 !important;
+      outline: 2px solid #c79a3e !important;
       outline-offset: 1px !important;
-      background-color: rgba(56, 189, 248, 0.18) !important;
+      background-color: rgba(199, 154, 62, 0.18) !important;
     }
 
     .empty-state {
-      padding: 16px;
+      padding: 20px 12px;
       text-align: center;
-      color: #64748b;
+      color: #8e8b80;
       font-size: 11px;
+      background-color: #171a14;
+      border: 1px dashed rgba(236, 231, 216, 0.1);
+      border-radius: 8px;
     }
 
     @media (max-width: 320px) {
@@ -572,10 +678,13 @@
       }
       .badge-os {
         font-size: 8px;
-        padding: 1px 3px;
+        padding: 1px 5px;
       }
       .metric-table td {
-        padding: 3px 2px;
+        padding: 5px 6px;
+      }
+      .metric-table {
+        border-spacing: 4px 0;
       }
     }
 
@@ -587,7 +696,7 @@
       .brand-title {
         font-size: 11px;
         line-height: 18px;
-        max-width: 82px;
+        max-width: 86px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -597,8 +706,8 @@
       }
       .badge-os {
         font-size: 7.5px;
-        padding: 0 2px;
-        max-width: 70px;
+        padding: 0 4px;
+        max-width: 72px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -608,7 +717,7 @@
         padding: 4px 6px;
       }
       .keypad-strip {
-        padding: 2px 4px;
+        padding: 3px 4px;
         margin-bottom: 5px;
         font-size: 9px;
       }
@@ -616,17 +725,21 @@
         padding: 3px 6px;
         margin-bottom: 5px;
         font-size: 10px;
+        line-height: 20px;
       }
       .card {
-        padding: 6px 8px;
+        padding: 8px;
         margin-bottom: 5px;
       }
       .balance-amount {
         font-size: 18px;
-        margin-bottom: 3px;
+        margin-bottom: 4px;
+      }
+      .metric-table td {
+        padding: 4px 5px;
       }
       .btn {
-        padding: 5px 6px;
+        padding: 6px;
         font-size: 11px;
       }
       .bottom-tab-bar {
@@ -642,7 +755,7 @@
         margin-bottom: 5px;
       }
       .search-input, .filter-select {
-        padding: 4px 6px;
+        padding: 5px 6px;
         font-size: 11px;
       }
     }
@@ -652,10 +765,10 @@
 
   <!-- Top Navigation Header -->
   <div class="top-header">
-    <div class="brand-title">ExpenseTracker</div>
+    <div class="brand-title"><span class="brand-accent-dot">&#9670;</span> Ledger <span>&amp;</span> Lumina</div>
     <div class="header-actions">
       <span class="badge-os" id="deviceBadge">Mobile 1.0</span>
-      <a href="index.html?nomobile=1" class="badge-os" style="color:#38bdf8;" id="linkDesktop">Desktop</a>
+      <a href="index.html?nomobile=1" class="badge-os badge-desktop-link" id="linkDesktop">Desktop &rarr;</a>
     </div>
   </div>
 
@@ -745,7 +858,7 @@
   <!-- Modal: Add Expense (ES3 / Mobile 1.0 compatible) -->
   <div class="modal-overlay" id="expenseModal">
     <div class="modal-box">
-      <div style="font-size:14px; font-weight:bold; color:#ef4444; margin-bottom:10px;">New Expense</div>
+      <div style="font-size:14px; font-weight:800; color:#ef4444; letter-spacing:0.3px; margin-bottom:10px; border-bottom:1px solid rgba(239,68,68,0.2); padding-bottom:6px;">&#8722; New Expense</div>
       <form id="formExpense" onsubmit="return false;">
         <div class="form-group">
           <label class="form-label" for="expDescription">Description</label>
@@ -781,7 +894,7 @@
   <!-- Modal: Add Income (ES3 / Mobile 1.0 compatible) -->
   <div class="modal-overlay" id="incomeModal">
     <div class="modal-box">
-      <div style="font-size:14px; font-weight:bold; color:#10b981; margin-bottom:10px;">New Income</div>
+      <div style="font-size:14px; font-weight:800; color:#10b981; letter-spacing:0.3px; margin-bottom:10px; border-bottom:1px solid rgba(16,185,129,0.2); padding-bottom:6px;">&#43; New Income</div>
       <form id="formIncome" onsubmit="return false;">
         <div class="form-group">
           <label class="form-label" for="incSource">Source / Description</label>
@@ -829,7 +942,7 @@
   <!-- Modal: Sign in -->
   <div class="modal-overlay" id="loginModal">
     <div class="modal-box">
-      <div style="font-size:14px; font-weight:bold; color:#38bdf8; margin-bottom:10px;">Sign in</div>
+      <div style="font-size:14px; font-weight:800; color:#c79a3e; letter-spacing:0.3px; margin-bottom:10px; border-bottom:1px solid rgba(199,154,62,0.2); padding-bottom:6px;">Sign in &bull; Ledger &amp; Lumina</div>
       <form id="formLogin" onsubmit="return false;">
         <div class="form-group">
           <label class="form-label" for="loginEmail">Email or username</label>
