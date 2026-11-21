@@ -372,15 +372,15 @@ input:invalid:not(:placeholder-shown),
   }
 }
 
-/* ── 10. Fluid Typography & Typographic Scale (Visual Hierarchy & Adaptability) ── */
+/* ── 10. Fluid Typography & Typographic Scale (Visual Hierarchy & Universal Adaptability) ── */
 :root {
-  --font-display: clamp(1.4rem, 1.15rem + 1.2vw, 2.4rem);
-  --font-h2: clamp(1.2rem, 1.05rem + 0.75vw, 1.75rem);
-  --font-h3: clamp(1.05rem, 0.95rem + 0.45vw, 1.35rem);
-  --font-body: clamp(0.85rem, 0.8rem + 0.25vw, 1rem);
-  --font-sm: clamp(0.75rem, 0.72rem + 0.15vw, 0.875rem);
-  --font-xs: clamp(0.6875rem, 0.65rem + 0.12vw, 0.75rem);
-  --font-metric: clamp(1.35rem, 1.15rem + 1.1vw, 2.2rem);
+  --font-display: clamp(1.05rem, 0.85rem + 1.25vw, 3.8rem);
+  --font-h2: clamp(0.95rem, 0.8rem + 0.95vw, 2.9rem);
+  --font-h3: clamp(0.85rem, 0.72rem + 0.65vw, 2.2rem);
+  --font-body: clamp(0.72rem, 0.68rem + 0.32vw, 1.35rem);
+  --font-sm: clamp(0.68rem, 0.64rem + 0.22vw, 1.15rem);
+  --font-xs: clamp(0.6rem, 0.58rem + 0.16vw, 0.95rem);
+  --font-metric: clamp(1.15rem, 0.95rem + 1.25vw, 3.5rem);
 }
 
 .brand-title {
@@ -402,10 +402,93 @@ input:invalid:not(:placeholder-shown),
   letter-spacing: -0.02em;
 }
 
-/* ── 11. Full Display Size Adaptations (320px to 2560px Ultrawide) ── */
+/* ── 11. Intrinsic Container Queries (Component-Level Responsiveness) ── */
+.card,
+.metric-card,
+.chart-card,
+.table-responsive {
+  container-type: inline-size;
+}
 
-/* A. Ultrawide Monitors & 4K (>= 1440px up to 2560px+) */
-@media (min-width: 1440px) {
+@container (max-width: 210px) {
+  .metric-footer,
+  .metric-icon-wrap {
+    display: none !important;
+  }
+  .card-label {
+    font-size: 9.5px !important;
+  }
+  .metric-value {
+    font-size: 15px !important;
+  }
+}
+
+/* ── 12. Full Display Size Adaptations (Smartwatch 180px to 8K Extreme 7680px) ── */
+
+/* A. 8K Extreme Ultra HD Displays (>= 3841px up to 7680px+) */
+@media (min-width: 3841px) {
+  .dashboard-container {
+    max-width: min(94vw, 7200px) !important;
+    padding: 64px 96px 120px !important;
+    gap: 48px !important;
+  }
+
+  .grid-4-metrics {
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 40px !important;
+  }
+
+  .powerbi-charts-row,
+  .charts-double-col {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(1100px, 1fr)) !important;
+    gap: 48px !important;
+  }
+
+  .card, .metric-card {
+    padding: 40px 48px !important;
+    border-radius: 28px !important;
+  }
+
+  .top-bar {
+    padding: 36px 54px !important;
+    border-radius: 32px !important;
+  }
+}
+
+/* B. 4K Ultra HD & High-Res Ultrawide (2560px to 3840px) */
+@media (min-width: 2560px) and (max-width: 3840px) {
+  .dashboard-container {
+    max-width: min(94vw, 3400px) !important;
+    padding: 48px 64px 80px !important;
+    gap: 32px !important;
+  }
+
+  .grid-4-metrics {
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 28px !important;
+  }
+
+  .powerbi-charts-row,
+  .charts-double-col {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(680px, 1fr)) !important;
+    gap: 32px !important;
+  }
+
+  .card, .metric-card {
+    padding: 28px 32px !important;
+    border-radius: 20px !important;
+  }
+
+  .top-bar {
+    padding: 24px 36px !important;
+    border-radius: 24px !important;
+  }
+}
+
+/* C. QHD & Ultrawide Desktops (1440px to 2559px) */
+@media (min-width: 1440px) and (max-width: 2559px) {
   .dashboard-container {
     max-width: min(100% - 64px, 1720px) !important;
     padding: 40px 48px 64px !important;
@@ -428,7 +511,7 @@ input:invalid:not(:placeholder-shown),
   }
 }
 
-/* B. Laptops & Standard Desktops (1024px to 1439px) */
+/* D. Laptops & Standard Desktops (1024px to 1439px) */
 @media (min-width: 1024px) and (max-width: 1439px) {
   .dashboard-container {
     max-width: min(100% - 40px, 1320px) !important;
@@ -441,7 +524,7 @@ input:invalid:not(:placeholder-shown),
   }
 }
 
-/* C. Tablets & iPads (768px to 1023px) */
+/* E. Tablets & iPads (768px to 1023px) */
 @media (min-width: 768px) and (max-width: 1023px) {
   .dashboard-container {
     max-width: 100% !important;
@@ -477,7 +560,7 @@ input:invalid:not(:placeholder-shown),
   }
 }
 
-/* D. Phablets & Large Phones (481px to 767px) */
+/* F. Phablets & Large Phones (481px to 767px) */
 @media (min-width: 481px) and (max-width: 767px) {
   .dashboard-container {
     max-width: 100% !important;
@@ -495,8 +578,8 @@ input:invalid:not(:placeholder-shown),
   }
 }
 
-/* E. Compact Mobile & Small Displays (320px to 480px) */
-@media (max-width: 480px) {
+/* G. Compact Mobile & Handheld Displays (281px to 480px) */
+@media (min-width: 281px) and (max-width: 480px) {
   html, body {
     overflow-x: hidden !important;
     max-width: 100vw !important;
@@ -509,7 +592,6 @@ input:invalid:not(:placeholder-shown),
     overflow-x: hidden !important;
   }
 
-  /* Chunking & Proximity: 2-column compact metric cards instead of endless vertical scroll */
   .grid-4-metrics {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
@@ -551,7 +633,6 @@ input:invalid:not(:placeholder-shown),
     font-size: 10.5px !important;
   }
 
-  /* Table responsiveness with scroll cues */
   .table-responsive,
   .recent-transactions {
     width: 100% !important;
@@ -560,7 +641,6 @@ input:invalid:not(:placeholder-shown),
     scrollbar-width: thin !important;
   }
 
-  /* Modals: fit comfortable safe bounds */
   .modal {
     width: calc(100vw - 20px) !important;
     max-width: 440px !important;
@@ -569,7 +649,6 @@ input:invalid:not(:placeholder-shown),
     border-radius: 16px !important;
   }
 
-  /* Ribbon controls: horizontal touch scroll ribbons */
   .loans-filter-bar,
   .category-pills-bar,
   .bi-slicers-bar {
@@ -589,7 +668,138 @@ input:invalid:not(:placeholder-shown),
   }
 }
 
-/* ── 12. Doherty Threshold & Micro-Interaction Feedback ── */
+/* H. Micro Displays & Smartwatches (<= 280px, Apple Watch / WearOS / Wrist Displays) */
+@media (max-width: 280px) {
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  .dashboard-container {
+    max-width: 100% !important;
+    padding: 6px 4px 64px !important;
+    gap: 8px !important;
+    overflow-x: hidden !important;
+  }
+
+  .top-bar {
+    padding: 8px 6px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    border-radius: 10px !important;
+  }
+
+  .dashboard-heading {
+    text-align: center !important;
+  }
+
+  .brand-badge {
+    justify-content: center !important;
+  }
+
+  .brand-title {
+    font-size: 13px !important;
+  }
+
+  #userWelcomeText {
+    display: none !important;
+  }
+
+  .top-bar-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    width: 100% !important;
+  }
+
+  .command-search-wrapper {
+    display: none !important;
+  }
+
+  .top-bar-actions > .btn-primary {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    min-height: 36px !important;
+    min-width: 36px !important;
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .top-bar-utility-group {
+    justify-content: center !important;
+    gap: 4px !important;
+  }
+
+  .header-action-btn {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    padding: 0 !important;
+  }
+
+  .header-action-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .user-profile {
+    display: none !important;
+  }
+
+  .grid-4-metrics {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .metric-card {
+    padding: 8px 8px !important;
+    border-radius: 10px !important;
+  }
+
+  .metric-header {
+    margin-bottom: 4px !important;
+  }
+
+  .metric-value {
+    font-size: 14.5px !important;
+  }
+
+  .card-label {
+    font-size: 9px !important;
+  }
+
+  .metric-footer {
+    display: none !important;
+  }
+
+  .mobile-bottom-nav {
+    height: 48px !important;
+    padding: 0 4px !important;
+  }
+
+  .mobile-nav-item span {
+    display: none !important;
+  }
+
+  .mobile-nav-fab {
+    width: 36px !important;
+    height: 36px !important;
+    top: -12px !important;
+  }
+
+  .modal {
+    width: calc(100vw - 8px) !important;
+    max-height: calc(100dvh - 12px) !important;
+    padding: 12px 8px !important;
+    border-radius: 12px !important;
+  }
+}
+
+/* ── 13. Doherty Threshold & Micro-Interaction Feedback ── */
 button:active:not(:disabled),
 .btn:active:not(:disabled),
 .tab-item:active,
@@ -601,7 +811,7 @@ button:active:not(:disabled),
   transition: transform 0.08s ease-out !important;
 }
 
-/* ── 13. WCAG 2.1 Contrast & Readability Safeguards ── */
+/* ── 14. WCAG 2.1 Contrast & Readability Safeguards ── */
 ::selection {
   background: rgba(199, 154, 62, 0.35);
   color: var(--text-main, #ece7d8);
@@ -611,4 +821,5 @@ button:active:not(:disabled),
   background: rgba(212, 175, 55, 0.4);
   color: #0f172a;
 }
+
 
