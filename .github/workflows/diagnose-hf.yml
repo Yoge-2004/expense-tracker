@@ -75,6 +75,13 @@ jobs:
                   out.append('database/ folder is EMPTY or missing in the Space repo')
           except Exception as e:
               out.append('database/ not listed: ' + redact(f'{type(e).__name__}: {e}'))
+          try:
+              info = api.get_paths_info(repo, ['database/expense_tracker.sqlite.enc'], repo_type='space', expand=True)
+              for i in info:
+                  out.append(f'MAIN {i.path} size={getattr(i, "size", None)} last_commit={getattr(getattr(i, "last_commit", None), "date", None)}')
+          except Exception as e:
+              out.append('main snapshot: ' + redact(f'{type(e).__name__}: {e}'))
+          out = [l for l in out if not l.startswith('database/backups/')][:6] + [f'({len([1 for _ in out])} lines total)']
           note('3 Snapshot files in the Space repo', out)
 
           # 1b. is the container itself alive? /health is served by the ML service through nginx
@@ -82,7 +89,7 @@ jobs:
           for path in ('/health', '/api/health', '/'):
               try:
                   t = time.time()
-                  r = requests.get(url + path, timeout=45)
+                  r = requests.get(url + path, timeout=130)
                   out.append(f'{path}: HTTP {r.status_code} in {time.time() - t:.1f}s {redact(r.text[:160].replace(chr(10), " "))}')
               except Exception as e:
                   out.append(f'{path}: {type(e).__name__} after {time.time() - t:.0f}s')
@@ -108,15 +115,21 @@ jobs:
               except Exception as e:
                   info.append(f'{endpoint.split("/")[2]} -> {type(e).__name__}')
           note('4a log stream', info)
-          keep = re.compile(r'fallback|Fallback|FALLBACK|neon|Neon|quota|snapshot|Snapshot|Hikari|Primary database|ERROR|Exception|FATAL|restor|mirror|H2|out of|Caused by', re.I)
-          picked = [redact(l.strip()) for l in lines if keep.search(l)]
-          # keep the most recent lines, de-duplicated in order
+          ansi = re.compile(r'\x1b\[[0-9;]*m')
+          clean = [ansi.sub('', l).strip() for l in lines]
+          stamps = [l[:23] for l in clean if re.match(r'^\d{4}-\d\d-\d\d \d\d:\d\d', l)]
+          note('4b log window', [f'{len(lines)} lines; first {stamps[0] if stamps else "?"}; last {stamps[-1] if stamps else "?"}'])
+          def short(l):
+              l = re.sub(r'\[traceId=[^\]]*\]\s*\[user=[^\]]*\]\s*', '', l)
+              l = re.sub(r'^\S+ (\S+) ', r'\1 ', l)
+              return redact(l)[:210]
+          marks = re.compile(r'Started |Tomcat|Netty|entering|emergency|fallback|Fallback|snapshot|Snapshot|failover|Failover|mirror|Exception|ERROR|FATAL|Caused by|Unable|timed out|Timeout|exhausted|quota|too many|blocked|virtual|pinned|OutOfMemory|GC', re.I)
           seen, uniq = set(), []
-          for l in picked:
-              key = re.sub(r'^\S+\s+', '', l)[:90]
-              if key not in seen:
-                  seen.add(key); uniq.append(l)
-          uniq = uniq[-90:]
-          note(f'4 Space log: {len(lines)} lines read, {len(picked)} relevant, {len(uniq)} shown', ['(none matched)'] if not uniq else uniq[:1])
-          for i in range(0, len(uniq), 12):
-              note(f'4.{i // 12 + 1} log lines', uniq[i:i + 12])
+          for l in clean:
+              if marks.search(l):
+                  key = re.sub(r'\d+', '#', re.sub(r'^\S+ \S+ ', '', l))[:70]
+                  if key not in seen:
+                      seen.add(key); uniq.append(short(l))
+          note(f'4c unique notable log lines ({len(uniq)})', ['first 14 (startup sequence):'] + uniq[:14])
+          for i in range(14, min(len(uniq), 14 + 60), 12):
+              note(f'4d more unique lines {i}', uniq[i:i + 12])
