@@ -21,7 +21,7 @@
 
   <style type="text/css">
     /* ==========================================================================
-       CSS 2.1 & Early WebKit Compatible Styling (Android 1.0 / iOS 1.0 / HVGA)
+       CSS 2.1 & Early WebKit Compatible Styling (QVGA 240x320 & HVGA 320x480)
        Strictly zero modern CSS features: no flexbox, no grid, no css vars, no calc()
        ========================================================================== */
     * {
@@ -33,12 +33,12 @@
     }
 
     body {
-      background-color: #0b0f19;
+      background-color: #0b111e;
       color: #f1f5f9;
       font-family: -apple-system, "Helvetica Neue", Helvetica, "Droid Sans", Arial, sans-serif;
-      font-size: 14px;
-      line-height: 1.4;
-      padding: 0 0 70px 0;
+      font-size: 13px;
+      line-height: 1.35;
+      padding: 0 0 34px 0;
       width: 100%;
       max-width: 100%;
       overflow-x: hidden;
@@ -50,141 +50,207 @@
       text-decoration: none;
     }
 
-    /* Top Navigation Bar */
+    /* Top Navigation Header */
     .top-header {
-      background-color: #111827;
-      border-bottom: 1px solid #1f2937;
-      padding: 10px 12px;
+      background-color: #0e1726;
+      border-bottom: 1px solid #1b283d;
+      padding: 6px 10px;
       width: 100%;
       overflow: hidden;
+      line-height: 24px;
     }
 
     .brand-title {
       float: left;
-      font-size: 16px;
+      font-size: 13px;
       font-weight: bold;
       color: #38bdf8;
-      line-height: 28px;
+      line-height: 24px;
+      letter-spacing: 0.3px;
     }
 
     .header-actions {
       float: right;
+      line-height: 24px;
     }
 
     .badge-os {
       display: inline-block;
-      background-color: #1e293b;
+      background-color: #172439;
       color: #94a3b8;
-      border: 1px solid #334155;
-      font-size: 10px;
-      padding: 2px 6px;
-      margin-left: 4px;
+      border: 1px solid #233652;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: bold;
+      padding: 1px 5px;
+      margin-left: 3px;
       text-transform: uppercase;
+      line-height: 15px;
+      vertical-align: middle;
     }
 
     .container {
       width: 100%;
-      padding: 10px;
+      padding: 8px 10px;
       max-width: 480px;
       margin: 0 auto;
     }
 
-    /* Overview Balance Card */
+    /* Keypad Shortcuts Guide Strip */
+    .keypad-strip {
+      background-color: #0e1726;
+      border: 1px solid #1e2d44;
+      border-radius: 4px;
+      color: #94a3b8;
+      font-size: 10px;
+      padding: 4px 6px;
+      margin-bottom: 8px;
+      text-align: center;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .keypad-strip strong {
+      color: #38bdf8;
+      margin-right: 4px;
+    }
+
+    /* Account Status Strip */
+    .account-bar {
+      background-color: #0e1726;
+      border: 1px solid #1e2d44;
+      border-radius: 4px;
+      padding: 5px 8px;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: #94a3b8;
+      overflow: hidden;
+      line-height: 22px;
+    }
+
+    .account-text {
+      float: left;
+      width: 70%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 22px;
+    }
+
+    .account-btn {
+      float: right;
+      background-color: #172439;
+      color: #38bdf8;
+      border: 1px solid #233652;
+      border-radius: 3px;
+      padding: 1px 8px;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      line-height: 18px;
+    }
+
+    /* Executive Overview Card */
     .card {
-      background-color: #151d2a;
-      border: 1px solid #243042;
-      padding: 12px;
-      margin-bottom: 10px;
+      background-color: #121c2e;
+      border: 1px solid #1f2f48;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
       width: 100%;
       overflow: hidden;
     }
 
     .card-title {
-      font-size: 11px;
+      font-size: 10px;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: #94a3b8;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .balance-amount {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: bold;
       color: #ffffff;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .metric-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     .metric-table td {
       width: 50%;
-      padding: 6px 4px;
+      padding: 4px 2px;
       vertical-align: top;
-      border-top: 1px solid #243042;
+      border-top: 1px solid #1f2f48;
     }
 
     .metric-table td.border-right {
-      border-right: 1px solid #243042;
+      border-right: 1px solid #1f2f48;
     }
 
     .metric-label {
-      font-size: 10px;
+      font-size: 9px;
+      font-weight: bold;
       color: #94a3b8;
       text-transform: uppercase;
       display: block;
     }
 
     .metric-val-income {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: bold;
       color: #10b981;
     }
 
     .metric-val-expense {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: bold;
       color: #ef4444;
     }
 
     /* Budget Progress Bar */
     .progress-bar-bg {
-      background-color: #1e293b;
-      height: 8px;
+      background-color: #1e2d44;
+      height: 5px;
+      border-radius: 3px;
       width: 100%;
       overflow: hidden;
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     .progress-bar-fill {
       background-color: #10b981;
-      height: 8px;
+      height: 5px;
       width: 0%;
     }
 
-    /* Action Buttons (Float-based row) */
+    /* Action Buttons (Side by Side) */
     .action-row {
       width: 100%;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       overflow: hidden;
     }
 
     .btn {
       display: inline-block;
       text-align: center;
-      padding: 8px 10px;
-      font-size: 13px;
+      padding: 7px 8px;
+      font-size: 12px;
       font-weight: bold;
       cursor: pointer;
-      border: none;
+      border: 1px solid transparent;
+      border-radius: 4px;
       color: #ffffff;
     }
 
     .btn-half {
-      width: 48%;
+      width: 48.5%;
       float: left;
     }
 
@@ -194,83 +260,128 @@
 
     .btn-emerald {
       background-color: #059669;
+      border-color: #047857;
     }
 
     .btn-rose {
       background-color: #dc2626;
+      border-color: #b91c1c;
     }
 
     .btn-sky {
       background-color: #0284c7;
+      border-color: #0369a1;
     }
 
     .btn-dark {
-      background-color: #1e293b;
+      background-color: #172439;
       color: #cbd5e1;
-      border: 1px solid #334155;
+      border: 1px solid #233652;
+    }
+
+    /* Segmented Navigation Tab Strip (In-flow, never covers transactions) */
+    .bottom-tab-bar {
+      width: 100%;
+      background-color: #0e1726;
+      border: 1px solid #1e2d44;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      height: 32px;
+      overflow: hidden;
+    }
+
+    .tab-item {
+      float: left;
+      width: 25%;
+      height: 32px;
+      line-height: 30px;
+      text-align: center;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 11px;
+      border-right: 1px solid #1e2d44;
+    }
+
+    .tab-item:last-child {
+      border-right: none;
+    }
+
+    .tab-item.active {
+      color: #38bdf8;
+      background-color: #1a273e;
+      font-weight: bold;
+    }
+
+    .tab-icon {
+      display: inline-block;
+      font-size: 10px;
+      margin-right: 2px;
     }
 
     /* Filter & Search Bar */
     .search-row {
       width: 100%;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       overflow: hidden;
     }
 
     .search-input {
-      width: 65%;
+      width: 63%;
       float: left;
-      background-color: #0f172a;
-      border: 1px solid #334155;
+      background-color: #0c1422;
+      border: 1px solid #1e2d44;
+      border-radius: 4px;
       color: #f8fafc;
-      padding: 7px 8px;
-      font-size: 13px;
+      padding: 6px 8px;
+      font-size: 12px;
     }
 
     .filter-select {
-      width: 32%;
+      width: 34%;
       float: right;
-      background-color: #0f172a;
-      border: 1px solid #334155;
+      background-color: #0c1422;
+      border: 1px solid #1e2d44;
+      border-radius: 4px;
       color: #f8fafc;
-      padding: 7px 4px;
-      font-size: 13px;
+      padding: 6px 4px;
+      font-size: 12px;
     }
 
-    /* Transaction List */
+    /* Transaction Stream */
     .section-title {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: bold;
-      color: #cbd5e1;
+      color: #94a3b8;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin: 12px 0 6px 0;
+      margin: 8px 0 4px 0;
     }
 
     .tx-item {
-      background-color: #151d2a;
-      border: 1px solid #243042;
-      padding: 10px;
-      margin-bottom: 6px;
+      background-color: #121c2e;
+      border: 1px solid #1e2d44;
+      border-radius: 4px;
+      padding: 8px 10px;
+      margin-bottom: 5px;
       overflow: hidden;
       width: 100%;
     }
 
     .tx-left {
       float: left;
-      width: 68%;
+      width: 66%;
     }
 
     .tx-right {
       float: right;
-      width: 30%;
+      width: 32%;
       text-align: right;
     }
 
     .tx-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: bold;
-      color: #ffffff;
+      color: #f1f5f9;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -279,72 +390,51 @@
     .tx-meta {
       font-size: 10px;
       color: #94a3b8;
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
     .tx-tag {
       display: inline-block;
-      padding: 1px 4px;
-      background-color: #1e293b;
+      padding: 0 4px;
+      background-color: #172439;
       color: #38bdf8;
-      border: 1px solid #334155;
+      border: 1px solid #233652;
+      border-radius: 2px;
       font-size: 9px;
-      margin-right: 4px;
+      margin-right: 3px;
     }
 
     .tx-amount-exp {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
       color: #ef4444;
     }
 
     .tx-amount-inc {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
       color: #10b981;
     }
 
     .tx-btn-del {
       background-color: transparent;
-      color: #94a3b8;
-      border: 1px solid #334155;
-      padding: 2px 6px;
-      font-size: 10px;
-      margin-top: 4px;
+      color: #64748b;
+      border: 1px solid #233652;
+      border-radius: 2px;
+      padding: 1px 5px;
+      font-size: 9px;
+      margin-top: 2px;
       cursor: pointer;
     }
-
-    /* Account strip */
-    .account-bar {
-      background-color: #111827;
-      border: 1px solid #1f2937;
-      padding: 8px 10px;
-      margin-bottom: 10px;
-      font-size: 12px;
-      color: #94a3b8;
-      overflow: hidden;
-    }
-
-    .account-text {
-      float: left;
-      width: 68%;
-      line-height: 26px;
-    }
-
-    .account-btn {
-      float: right;
-      background-color: transparent;
-      color: #38bdf8;
-      border: 1px solid #334155;
-      padding: 4px 10px;
-      font-size: 12px;
-      cursor: pointer;
+    .tx-btn-del:hover {
+      color: #ef4444;
+      border-color: #ef4444;
     }
 
     .form-error {
       color: #ef4444;
-      font-size: 12px;
-      margin: 6px 0;
+      font-size: 11px;
+      margin: 4px 0;
       min-height: 14px;
     }
 
@@ -362,106 +452,68 @@
 
     .modal-box {
       position: absolute;
-      top: 20px;
-      left: 5%;
-      width: 90%;
-      max-width: 360px;
-      background-color: #151d2a;
+      top: 12px;
+      left: 4%;
+      width: 92%;
+      max-width: 340px;
+      background-color: #121c2e;
       border: 1px solid #38bdf8;
-      padding: 14px;
+      border-radius: 6px;
+      padding: 12px;
     }
 
     .form-group {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       overflow: hidden;
     }
 
     .form-label {
       display: block;
-      font-size: 11px;
+      font-size: 10px;
+      font-weight: bold;
       color: #cbd5e1;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
       text-transform: uppercase;
     }
 
     .form-control {
       width: 100%;
-      background-color: #0b0f19;
-      border: 1px solid #334155;
+      background-color: #0b111e;
+      border: 1px solid #1e2d44;
+      border-radius: 3px;
       color: #f8fafc;
-      padding: 8px;
-      font-size: 13px;
+      padding: 6px 8px;
+      font-size: 12px;
     }
 
-    /* Fixed Bottom Tab Bar (iOS 1 & Android 1 Native Style) */
-    .bottom-tab-bar {
-      position: fixed;
-      bottom: 28px;
-      left: 0;
-      width: 100%;
-      background-color: #111827;
-      border-top: 1px solid #1f2937;
-      height: 44px;
-      z-index: 1000;
-      overflow: hidden;
-    }
-
-    .tab-item {
-      float: left;
-      width: 25%;
-      height: 44px;
-      text-align: center;
-      padding-top: 4px;
-      color: #94a3b8;
-      cursor: pointer;
-      font-size: 10px;
-    }
-
-    .tab-item.active {
-      color: #38bdf8;
-      background-color: #0f172a;
-    }
-
-    .tab-icon {
-      display: block;
-      font-size: 13px;
-      margin-bottom: 1px;
-    }
-
-    /* Native Feature Phone Softkey Bar (KaiOS, Symbian, Nokia, Jio) */
+    /* Native Feature Phone Softkey Bar (Single Fixed Bottom Bar) */
     .fp-softkey-bar {
       position: fixed;
       bottom: 0;
       left: 0;
       width: 100%;
       height: 28px;
-      background-color: #080c14;
-      border-top: 1px solid #1e293b;
+      line-height: 27px;
+      background-color: #080d17;
+      border-top: 1px solid #1e2d44;
       z-index: 10001;
       overflow: hidden;
-      line-height: 28px;
       padding: 0 8px;
       font-family: inherit;
     }
 
-    .fp-lsk,
-    .fp-rsk {
+    .fp-lsk {
       float: left;
       width: 33%;
       font-size: 10px;
       font-weight: bold;
-      color: #94a3b8;
+      color: #ef4444;
       text-transform: uppercase;
       text-align: left;
       cursor: pointer;
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
-    }
-
-    .fp-rsk {
-      float: right;
-      text-align: right;
     }
 
     .fp-csk {
@@ -478,17 +530,18 @@
       text-overflow: ellipsis;
     }
 
-    /* Keypad Shortcuts Guide Strip */
-    .keypad-strip {
-      background-color: #111827;
-      border: 1px dashed #334155;
-      color: #94a3b8;
+    .fp-rsk {
+      float: right;
+      width: 33%;
       font-size: 10px;
-      padding: 4px 6px;
-      margin-bottom: 8px;
-      text-align: center;
-      overflow-x: auto;
+      font-weight: bold;
+      color: #10b981;
+      text-transform: uppercase;
+      text-align: right;
+      cursor: pointer;
+      overflow: hidden;
       white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
     /* High-contrast D-Pad focus ring for non-touch button mobiles */
@@ -499,30 +552,98 @@
     select:focus,
     .tab-item:focus {
       outline: 2px solid #38bdf8 !important;
-      background-color: rgba(56, 189, 248, 0.22) !important;
+      outline-offset: 1px !important;
+      background-color: rgba(56, 189, 248, 0.18) !important;
     }
 
     .empty-state {
-      padding: 20px;
+      padding: 16px;
       text-align: center;
       color: #64748b;
-      font-size: 12px;
+      font-size: 11px;
     }
 
     @media (max-width: 320px) {
       body {
-        font-size: 13px;
-        padding-bottom: 80px;
+        font-size: 12px;
       }
       .brand-title {
-        font-size: 14px;
+        font-size: 12px;
       }
       .badge-os {
-        font-size: 9px;
-        padding: 1px 4px;
+        font-size: 8px;
+        padding: 1px 3px;
       }
       .metric-table td {
-        padding: 4px 2px;
+        padding: 3px 2px;
+      }
+    }
+
+    @media (max-width: 260px) {
+      .top-header {
+        padding: 4px 6px;
+        line-height: 18px;
+      }
+      .brand-title {
+        font-size: 11px;
+        line-height: 18px;
+        max-width: 82px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .header-actions {
+        line-height: 18px;
+      }
+      .badge-os {
+        font-size: 7.5px;
+        padding: 0 2px;
+        max-width: 70px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        line-height: 14px;
+      }
+      .container {
+        padding: 4px 6px;
+      }
+      .keypad-strip {
+        padding: 2px 4px;
+        margin-bottom: 5px;
+        font-size: 9px;
+      }
+      .account-bar {
+        padding: 3px 6px;
+        margin-bottom: 5px;
+        font-size: 10px;
+      }
+      .card {
+        padding: 6px 8px;
+        margin-bottom: 5px;
+      }
+      .balance-amount {
+        font-size: 18px;
+        margin-bottom: 3px;
+      }
+      .btn {
+        padding: 5px 6px;
+        font-size: 11px;
+      }
+      .bottom-tab-bar {
+        height: 28px;
+        margin-bottom: 5px;
+      }
+      .tab-item {
+        height: 28px;
+        line-height: 26px;
+        font-size: 10px;
+      }
+      .search-row {
+        margin-bottom: 5px;
+      }
+      .search-input, .filter-select {
+        padding: 4px 6px;
+        font-size: 11px;
       }
     }
   </style>
@@ -542,7 +663,7 @@
 
     <!-- Feature Phone Physical Keypad Quick Strip -->
     <div class="keypad-strip" id="keypadStrip">
-      <strong>Keypad:</strong> [1] +Exp &nbsp; [2] +Inc &nbsp; [3] Home &nbsp; [4] Exp &nbsp; [5] Inc &nbsp; [6] Sync &nbsp; [0] Account &nbsp; [D-Pad] Move
+      <strong>Keypad:</strong> [1] +Exp &bull; [2] +Inc &bull; [3] Home &bull; [4] Exp &bull; [5] Inc &bull; [6] Sync &bull; [0] Acc &bull; [D-Pad] Move
     </div>
 
     <!-- Account: shares the sign-in of the main app on this browser -->
@@ -569,7 +690,7 @@
         </tr>
       </table>
 
-      <div style="margin-top: 8px;">
+      <div style="margin-top: 6px;">
         <span class="metric-label" id="budgetLabel">Budget Target: 0% used</span>
         <div class="progress-bar-bg">
           <div class="progress-bar-fill" id="budgetProgressBar"></div>
@@ -581,6 +702,26 @@
     <div class="action-row">
       <button type="button" class="btn btn-half btn-rose" id="btnOpenExpenseModal">+ Expense</button>
       <button type="button" class="btn btn-half right btn-emerald" id="btnOpenIncomeModal">+ Income</button>
+    </div>
+
+    <!-- Segmented Filter Tab Strip -->
+    <div class="bottom-tab-bar" id="bottomTabBar">
+      <div class="tab-item active" id="tabOverview">
+        <span class="tab-icon">&#9679;</span>
+        <span>All [3]</span>
+      </div>
+      <div class="tab-item" id="tabExpenses">
+        <span class="tab-icon">&#8722;</span>
+        <span>Expenses [4]</span>
+      </div>
+      <div class="tab-item" id="tabIncome">
+        <span class="tab-icon">&#43;</span>
+        <span>Income [5]</span>
+      </div>
+      <div class="tab-item" id="tabRefresh">
+        <span class="tab-icon">&#8635;</span>
+        <span>Sync [6]</span>
+      </div>
     </div>
 
     <!-- Search & Filter Controls -->
@@ -672,25 +813,6 @@
     </div>
   </div>
 
-  <!-- Bottom Fixed Navigation Tab Bar -->
-  <div class="bottom-tab-bar" id="bottomTabBar">
-    <div class="tab-item active" id="tabOverview">
-      <span class="tab-icon">&#9679;</span>
-      <span>Home [3]</span>
-    </div>
-    <div class="tab-item" id="tabExpenses">
-      <span class="tab-icon">&#8722;</span>
-      <span>Expenses [4]</span>
-    </div>
-    <div class="tab-item" id="tabIncome">
-      <span class="tab-icon">&#43;</span>
-      <span>Income [5]</span>
-    </div>
-    <div class="tab-item" id="tabRefresh">
-      <span class="tab-icon">&#8635;</span>
-      <span>Sync [6]</span>
-    </div>
-  </div>
 
   <!-- Native Feature Phone Softkey Bar (LSK, Center, RSK) -->
   <div class="fp-softkey-bar" id="fpSoftkeyBar">
