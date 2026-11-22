@@ -65,9 +65,10 @@
                 : "Forward-looking forecast based on your spending rhythm";
         }
 
-        // Top Category
+        // Top Category: Scoped to the current month to align with monthly burn and forecast
         const catMap = {};
-        expenses.forEach(e => {
+        const catSource = currentMonthExpenses.length > 0 ? currentMonthExpenses : expenses;
+        catSource.forEach(e => {
             const cat = e.categoryName || 'Other';
             catMap[cat] = (catMap[cat] || 0) + Number(e.amount || 0);
         });

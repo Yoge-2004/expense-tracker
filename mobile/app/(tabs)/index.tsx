@@ -702,6 +702,8 @@ export default function DashboardScreen() {
     daysInMonth,
     highestCatName,
     highestCatAmt,
+    monthlyTopCatName,
+    monthlyTopCatAmt,
     safeDailySpend,
     noSpendStreak,
   } = useMemo(() => {
@@ -739,6 +741,15 @@ export default function DashboardScreen() {
     const sortedCats = Object.entries(catSummary).sort((a, b) => b[1] - a[1]);
     const topCatName = sortedCats.length > 0 ? sortedCats[0][0] : 'None';
     const topCatAmt = sortedCats.length > 0 ? sortedCats[0][1] : 0;
+
+    const monthlyCatSummary: Record<string, number> = {};
+    currentMonthExpenses.forEach((e) => {
+      const name = e.categoryName || 'General';
+      monthlyCatSummary[name] = (monthlyCatSummary[name] || 0) + Math.max(0, Number(e.amount || 0));
+    });
+    const sortedMonthlyCats = Object.entries(monthlyCatSummary).sort((a, b) => b[1] - a[1]);
+    const monthlyTopCatName = sortedMonthlyCats.length > 0 ? sortedMonthlyCats[0][0] : 'None';
+    const monthlyTopCatAmt = sortedMonthlyCats.length > 0 ? sortedMonthlyCats[0][1] : 0;
 
     // Safe-to-Spend Daily Allowance
     const daysLeft = Math.max(1, dInMonth - cDay + 1);
@@ -807,6 +818,8 @@ export default function DashboardScreen() {
       daysInMonth: dInMonth,
       highestCatName: topCatName,
       highestCatAmt: topCatAmt,
+      monthlyTopCatName,
+      monthlyTopCatAmt,
       safeDailySpend: safeSpend,
       noSpendStreak: streak,
     };
@@ -1061,6 +1074,8 @@ export default function DashboardScreen() {
               monthEndForecast={monthEndForecast}
               highestCatName={highestCatName}
               highestCatAmt={highestCatAmt}
+              monthlyTopCatName={monthlyTopCatName}
+              monthlyTopCatAmt={monthlyTopCatAmt}
             />
 
             <StaggeredView delay={80} direction="up">

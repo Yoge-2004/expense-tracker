@@ -56,7 +56,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 )
 @SecurityRequirement(name = "BearerAuth")
 @Slf4j
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 @RestController
 @RequestMapping({"/api/reports", "/api/expenses"})
@@ -65,16 +64,55 @@ public class RangeReportController {
     private static final MediaType XLSX = MediaType.parseMediaType(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
-    private final ExpenseRepository expenses;
-    private final IncomeRepository incomes;
-    private final SavingsGoalRepository savingsGoals;
-    private final RecurringExpenseRepository recurringExpenses;
-    private final BudgetRepository budgets;
+    private final com.example.expensetracker.domain.report.service.ExecutiveReportService executiveReportService;
     private final UserService users;
     private final UserSecurity security;
     private final ExecutiveExcelReportGenerator excelReportGenerator;
     private final ExecutivePdfReportGenerator pdfReportGenerator;
     private final com.example.expensetracker.domain.report.service.ReportExportRegistry exportRegistry;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public RangeReportController(com.example.expensetracker.domain.report.service.ExecutiveReportService executiveReportService,
+                                 UserService users,
+                                 UserSecurity security,
+                                 ExecutiveExcelReportGenerator excelReportGenerator,
+                                 ExecutivePdfReportGenerator pdfReportGenerator,
+                                 @org.springframework.beans.factory.annotation.Autowired(required = false) com.example.expensetracker.domain.report.service.ReportExportRegistry exportRegistry) {
+        this.executiveReportService = executiveReportService;
+        this.users = users;
+        this.security = security;
+        this.excelReportGenerator = excelReportGenerator;
+        this.pdfReportGenerator = pdfReportGenerator;
+        this.exportRegistry = exportRegistry;
+    }
+
+    public RangeReportController(ExpenseRepository expenses,
+                                 IncomeRepository incomes,
+                                 SavingsGoalRepository savingsGoals,
+                                 RecurringExpenseRepository recurringExpenses,
+                                 BudgetRepository budgets,
+                                 UserService users,
+                                 UserSecurity security,
+                                 ExecutiveExcelReportGenerator excelReportGenerator,
+                                 ExecutivePdfReportGenerator pdfReportGenerator,
+                                 com.example.expensetracker.domain.report.service.ReportExportRegistry exportRegistry) {
+        this(new com.example.expensetracker.domain.report.service.ExecutiveReportServiceImpl(
+                expenses, incomes, savingsGoals, recurringExpenses, budgets),
+                users, security, excelReportGenerator, pdfReportGenerator, exportRegistry);
+    }
+
+    public RangeReportController(ExpenseRepository expenses,
+                                 IncomeRepository incomes,
+                                 SavingsGoalRepository savingsGoals,
+                                 RecurringExpenseRepository recurringExpenses,
+                                 BudgetRepository budgets,
+                                 UserService users,
+                                 UserSecurity security,
+                                 ExecutiveExcelReportGenerator excelReportGenerator,
+                                 ExecutivePdfReportGenerator pdfReportGenerator) {
+        this(expenses, incomes, savingsGoals, recurringExpenses, budgets,
+                users, security, excelReportGenerator, pdfReportGenerator, null);
+    }
 
     /**
      * Polymorphic range export endpoint following the Open/Closed Principle (OCP).
@@ -176,31 +214,6 @@ public class RangeReportController {
     }
 
     private ExecutiveReportData data(User user, ExecutiveReportDateRange range) {
-        List<Expense> e;
-        if (range.from() != null && range.to() != null) {
-            e = expenses.findByUserAndExpenseDateBetween(user, range.from(), range.to());
-        } else if (range.from() != null) {
-            e = expenses.findByUserAndExpenseDateGreaterThanEqual(user, range.from());
-        } else if (range.to() != null) {
-            e = expenses.findByUserAndExpenseDateLessThanEqual(user, range.to());
-        } else {
-            e = expenses.findByUser(user);
-        }
-
-        List<Income> i;
-        if (range.from() != null && range.to() != null) {
-            i = incomes.findByUserAndIncomeDateBetween(user, range.from(), range.to());
-        } else if (range.from() != null) {
-            i = incomes.findByUserAndIncomeDateGreaterThanEqual(user, range.from());
-        } else if (range.to() != null) {
-            i = incomes.findByUserAndIncomeDateLessThanEqual(user, range.to());
-        } else {
-            i = incomes.findByUser(user);
-        }
-
-        List<SavingsGoal> s = savingsGoals.findByUser(user);
-        List<RecurringExpense> r = recurringExpenses.findByUser(user);
-        List<Budget> b = budgets.findByUser(user);
-        return new ExecutiveReportData(e, i, s, r, b);
+        return executiveReportService.loadReportData(user, range);
     }
 }

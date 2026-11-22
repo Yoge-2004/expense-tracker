@@ -770,24 +770,6 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
     });
   };
 
-  // ML Fleet Governance
-  const openEngineStatusDetail = () => {
-    openDetail({
-      title: 'ML Fleet & Zero-Fabrication Protocol',
-      icon: 'git-network-outline',
-      color: c.success,
-      headline: '5 Specialized Production Machine Learning Models running under strict zero-fabrication privacy.',
-      metrics: [
-        { label: 'Active Fleet Size', value: `${mlHealth?.onlineCount ?? 5}/${mlHealth?.totalModels ?? 5} Models Ready` },
-        { label: 'Fleet Telemetry', value: mlHealth?.status || 'Online' },
-        { label: 'Zero-Fabrication', value: 'Enforced' },
-        { label: 'Data Privacy', value: 'Zero Cloud Leakage' },
-        { label: 'Calibration Requirement', value: '28 Calendar Days' },
-      ],
-      advice:
-        'Unlike generative AI that hallucinates financial estimates, our deterministic ML fleet runs statistical and NLP algorithms strictly against your authentic transaction records.',
-    });
-  };
 
   // Burn Velocity
   const openBurnVelocityDetail = () => {
@@ -1216,10 +1198,10 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                 colors={c}
               />
 
-              {/* Card 2: Model 1 - Category Classifier */}
+              {/* Card 2: Category Classifier */}
               <InsightCard
                 title="Category Classifier"
-                tag="Model 1 • NLP"
+                tag="NLP Intelligence"
                 icon="sparkles-outline"
                 iconColor={c.primary}
                 primaryVal={mlHealth ? (mlHealth.status === 'Online' ? (mlHealth.revision || 'v2.5.0') : 'Offline') : 'Checking...'}
@@ -1229,10 +1211,10 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                 colors={c}
               />
 
-              {/* Card 3: Model 2 - Merchant Matcher */}
+              {/* Card 3: Merchant Matcher */}
               <InsightCard
                 title="Merchant Matcher"
-                tag="Model 2 • Entity"
+                tag="Entity Recognition"
                 icon="storefront-outline"
                 iconColor={c.accent}
                 primaryVal={mlHealth ? (mlHealth.status === 'Online' ? (mlHealth.merchantAccuracy || '98.1%') : 'Offline') : 'Checking...'}
@@ -1242,10 +1224,10 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                 colors={c}
               />
 
-              {/* Card 4: Model 3 - Duplicate Sentinel */}
+              {/* Card 4: Duplicate Sentinel */}
               <InsightCard
                 title="Duplicate Sentinel"
-                tag="Model 3 • Sentinel"
+                tag="Safety Guard"
                 icon="copy-outline"
                 iconColor="#06B6D4"
                 primaryVal={mlHealth?.status === 'Offline' ? 'Offline' : '48h Window'}
@@ -1265,19 +1247,6 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                 primaryValColor={c.teal}
                 subText="Human-in-the-Loop Refinement"
                 onPress={openFeedbackDetail}
-                colors={c}
-              />
-
-              {/* Card 6: ML Production Fleet Governance */}
-              <InsightCard
-                title="Production Fleet"
-                tag="Governance"
-                icon="git-network-outline"
-                iconColor={c.success}
-                primaryVal={mlHealth ? `${mlHealth.onlineCount}/${mlHealth.totalModels} Online` : 'Checking...'}
-                primaryValColor={mlHealth && mlHealth.onlineCount > 0 ? c.success : c.danger}
-                subText={mlHealth && mlHealth.onlineCount > 0 ? 'Zero-Fabrication Protocol' : 'Fleet Offline'}
-                onPress={openEngineStatusDetail}
                 colors={c}
               />
             </View>

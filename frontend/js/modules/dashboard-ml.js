@@ -725,7 +725,7 @@
         if (existing) existing.remove();
 
         const isOnline = !document.body.classList.contains("server-offline");
-        const statusText = isOnline ? "5 Models Active" : "Offline";
+        const statusText = isOnline ? "Active" : "Offline";
 
         const card = document.createElement("div");
         card.id = "aiIntelligenceInsightCard";
@@ -748,22 +748,22 @@
                 </div>
             </div>
 
-            <!-- Tab Navigation Bar for all 5 Models -->
+            <!-- Tab Navigation Bar for ML Features -->
             <div id="mlSuiteTabs" class="ml-suite-tabs-wrap">
                 <button type="button" class="ml-suite-tab-btn active" data-tab="classify">
-                    1. Categorizer
+                    Categorizer
                 </button>
                 <button type="button" class="ml-suite-tab-btn" data-tab="merchants">
-                    2. Merchant Matcher
+                    Merchant Matcher
                 </button>
                 <button type="button" class="ml-suite-tab-btn" data-tab="duplicates">
-                    3. Duplicate Detector
+                    Duplicate Detector
                 </button>
                 <button type="button" class="ml-suite-tab-btn" data-tab="anomalies">
-                    4. Anomaly Scorer
+                    Anomaly Scorer
                 </button>
                 <button type="button" class="ml-suite-tab-btn" data-tab="forecast">
-                    5. Spending Forecast
+                    Spending Forecast
                 </button>
             </div>
 

@@ -28,6 +28,8 @@ export interface DashboardMetricsMatrixProps {
   monthEndForecast: number;
   highestCatName: string;
   highestCatAmt: number;
+  monthlyTopCatName?: string;
+  monthlyTopCatAmt?: number;
 }
 
 export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
@@ -44,12 +46,16 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
   dailyBurn,
   highestCatName,
   highestCatAmt,
+  monthlyTopCatName,
+  monthlyTopCatAmt,
 }: DashboardMetricsMatrixProps) {
   const [period, setPeriod] = useState<'month' | 'all'>('month');
 
   const activeInflow = period === 'month' ? monthlyInflow : totalIncome;
   const activeOutflow = period === 'month' ? monthlyOutflow : totalSpent;
   const activeNet = period === 'month' ? monthlyNet : allTimeNet;
+  const activeCatName = period === 'month' ? (monthlyTopCatName || highestCatName || 'Category') : (highestCatName || 'Category');
+  const activeCatAmt = period === 'month' ? (monthlyTopCatAmt ?? highestCatAmt) : highestCatAmt;
   const isSurplus = activeNet >= 0;
 
   return (
@@ -239,12 +245,12 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={[styles.proMetricLabel, { color: c.textMuted }]} numberOfLines={1}>
-                {highestCatName || 'Category'}
+                {activeCatName || 'Category'}
               </Text>
               <Text style={[styles.proMetricVal, { color: c.text }]} numberOfLines={1}>
                 {isStealthMode
                   ? currSymbol + '••••••'
-                  : currSymbol + Math.round(highestCatAmt).toLocaleString('en-IN')}
+                  : currSymbol + Math.round(activeCatAmt).toLocaleString('en-IN')}
               </Text>
             </View>
           </View>
