@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sign In - Expense Tracker Mobile Edition</title>
+
+  <!-- iOS 1.0 Home Screen & Handheld Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="theme-color" content="#10120e">
+
+  <link rel="stylesheet" href="css/feature-phone.css">
+
+  <style type="text/css">
+    * {
+      -webkit-box-sizing: border-box;
+      -moz-box-sizing: border-box;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #10120e;
+      background-image: -webkit-radial-gradient(50% 0%, circle, #1d2119 0%, #10120e 75%);
+      background-image: radial-gradient(circle at 50% 0%, #1d2119 0%, #10120e 75%);
+      background-attachment: fixed;
+      color: #f4f1ea;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.4;
+      padding: 0 0 56px 0;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: none;
+    }
+
+    a {
+      color: #c79a3e;
+      text-decoration: none;
+    }
+    a:hover, a:focus {
+      text-decoration: underline;
+      color: #e5b85c;
+    }
+
+    .top-header {
+      background-color: #141712;
+      border-bottom: 1px solid #282c22;
+      border-bottom: 1px solid rgba(199, 154, 62, 0.25);
+      padding: 8px 12px;
+      width: 100%;
+      overflow: hidden;
+      line-height: 24px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .brand-title {
+      float: left;
+      font-size: 13px;
+      font-weight: 800;
+      color: #c79a3e;
+      line-height: 24px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .brand-accent-dot {
+      color: #c79a3e;
+      margin-right: 3px;
+      font-size: 11px;
+    }
+
+    .brand-title span {
+      color: #f4f1ea;
+      font-weight: 500;
+    }
+
+    .header-actions {
+      float: right;
+      line-height: 24px;
+    }
+
+    .badge-os {
+      display: inline-block;
+      background-color: #1e2219;
+      background-color: rgba(199, 154, 62, 0.12);
+      color: #e5b85c;
+      border: 1px solid #3d331d;
+      border: 1px solid rgba(199, 154, 62, 0.28);
+      font-size: 10px;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .container {
+      padding: 12px 12px 20px 12px;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background-color: #171a14;
+      border: 1px solid #282c22;
+      border: 1px solid rgba(199, 154, 62, 0.22);
+      border-radius: 8px;
+      padding: 16px 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    }
+
+    .card-badge {
+      display: inline-block;
+      background-color: #231e13;
+      color: #c79a3e;
+      border: 1px solid #5a451d;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #f4f1ea;
+      margin-bottom: 4px;
+      letter-spacing: -0.2px;
+    }
+
+    .card-sub {
+      font-size: 12px;
+      color: #a8a395;
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #d1cbba;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .form-control {
+      width: 100%;
+      background-color: #10120e;
+      border: 1px solid #33382c;
+      border: 1px solid rgba(236, 231, 216, 0.16);
+      color: #f4f1ea;
+      padding: 9px 10px;
+      font-size: 13px;
+      border-radius: 6px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .form-control:focus {
+      border-color: #c79a3e;
+      background-color: #141711;
+      box-shadow: 0 0 6px rgba(199, 154, 62, 0.4);
+    }
+
+    .form-error {
+      display: none;
+      background-color: #2c1212;
+      color: #f87171;
+      border: 1px solid #7f1d1d;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 11.5px;
+      margin-bottom: 12px;
+      line-height: 1.35;
+    }
+
+    .form-success {
+      display: none;
+      background-color: #0f271c;
+      color: #34d399;
+      border: 1px solid #065f46;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 11.5px;
+      margin-bottom: 12px;
+      line-height: 1.35;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 18px;
+    }
+
+    .btn-gold {
+      background-color: #c79a3e;
+      background-image: -webkit-linear-gradient(top, #e5b85c, #a87e2b);
+      background-image: linear-gradient(to bottom, #e5b85c, #a87e2b);
+      color: #10120e;
+      border-color: #8b651e;
+      box-shadow: 0 2px 8px rgba(199, 154, 62, 0.35);
+    }
+    .btn-gold:hover, .btn-gold:focus {
+      background-color: #d8aa49;
+      color: #000000;
+    }
+
+    .links-card {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #282c22;
+      font-size: 11.5px;
+      color: #a8a395;
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    .links-card a {
+      font-weight: 700;
+      margin: 0 4px;
+    }
+
+    /* Keypad quick guide */
+    .keypad-guide {
+      margin-top: 14px;
+      padding: 8px 10px;
+      background-color: #12140f;
+      border: 1px solid #22261b;
+      border-radius: 6px;
+      font-size: 10.5px;
+      color: #8a8577;
+      text-align: center;
+    }
+    .keypad-guide kbd {
+      background-color: #1c2018;
+      border: 1px solid #363c2c;
+      color: #e5b85c;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    /* Feature phone softkey bar (LSK / CSK / RSK) */
+    .fp-softkey-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 32px;
+      background-color: #0b0c09;
+      border-top: 1px solid #282c22;
+      color: #f4f1ea;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 32px;
+      z-index: 10000;
+      display: table;
+      table-layout: fixed;
+    }
+    .fp-lsk, .fp-csk, .fp-rsk {
+      display: table-cell;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+    .fp-lsk {
+      text-align: left;
+      padding-left: 10px;
+      color: #e5b85c;
+    }
+    .fp-csk {
+      text-align: center;
+      color: #ffffff;
+      background-color: #171b13;
+      border-left: 1px solid #282c22;
+      border-right: 1px solid #282c22;
+    }
+    .fp-rsk {
+      text-align: right;
+      padding-right: 10px;
+      color: #e5b85c;
+    }
+
+    /* D-Pad focus state */
+    .fp-focused {
+      outline: 2px solid #e5b85c !important;
+      border-color: #e5b85c !important;
+      background-color: #21251a !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Bar -->
+  <div class="top-header" id="topHeader">
+    <div class="brand-title">
+      <span class="brand-accent-dot">&#9670;</span>ExpenseTracker <span>Lite</span>
+    </div>
+    <div class="header-actions">
+      <span class="badge-os" id="deviceBadge">Mobile</span>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card" id="loginCard">
+      <span class="card-badge">Secure Retro Auth</span>
+      <h1 class="card-title">Sign In</h1>
+      <p class="card-sub">Access your synchronized financial ledger on retro &amp; feature mobile devices.</p>
+
+      <div class="form-error" id="loginError"></div>
+      <div class="form-success" id="loginSuccess"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email or Username</label>
+          <input type="text" id="loginEmail" class="form-control" placeholder="user@example.com or username" autocomplete="username" autocapitalize="off" autocorrect="off" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password" required>
+        </div>
+
+        <button type="button" class="btn btn-gold" id="btnSubmitLogin">Sign In [Enter]</button>
+      </form>
+
+      <div class="links-card">
+        <div>Don't have an account? <a href="legacy-register.html" id="linkRegister">Create Account [1]</a></div>
+        <div>Forgot password? <a href="legacy-forgot-password.html" id="linkForgot">Reset Password [2]</a></div>
+        <div style="margin-top:6px;"><a href="index.html?nomobile=1" style="color:#a8a395;">&larr; Switch to Modern Edition</a></div>
+      </div>
+    </div>
+
+    <div class="keypad-guide" id="keypadGuide">
+      Keypad: <kbd>[1]</kbd> Register &bull; <kbd>[2]</kbd> Reset &bull; <kbd>[Enter]</kbd> Sign In &bull; <kbd>[D-Pad]</kbd> Navigate
+    </div>
+  </div>
+
+  <!-- Feature Phone Softkey Bar -->
+  <div class="fp-softkey-bar" id="fpSoftkeyBar">
+    <span class="fp-lsk" id="fpLsk">Register [1]</span>
+    <span class="fp-csk" id="fpCsk">SIGN IN</span>
+    <span class="fp-rsk" id="fpRsk">Reset [2]</span>
+  </div>
+
+  <!-- Strict ECMAScript 3 (ES3) Logic Engine -->
+  <script type="text/javascript">
+    (function () {
+      var API = "/api";
+
+      // Detect OS platform
+      function detectLegacyPlatform(ua) {
+        var str = ua || navigator.userAgent || "";
+        if (/(?:iPhone OS|CPU iPhone OS|iPad.*OS)\s*1_0/i.test(str) || /iPhone.*WebKit\/42/i.test(str)) return "iOS 1.0";
+        if (/(?:iPhone OS|CPU iPhone OS)\s*([0-9._]+)/i.test(str)) return "iOS " + RegExp.$1.replace(/_/g, ".");
+        if (/Android\s*1\.0/i.test(str) || /Android.*WebKit\/525/i.test(str)) return "Android 1.0";
+        if (/Android\s*([0-9.]+)/i.test(str)) return "Android " + RegExp.$1;
+        if (/Symbian|Series60|S60/i.test(str)) return "Symbian";
+        if (/BlackBerry|BB10/i.test(str)) return "BlackBerry";
+        if (/Windows Phone|IEMobile/i.test(str)) return "Windows Phone";
+        if (/KaiOS/i.test(str)) return "KaiOS";
+        if (/Opera Mini/i.test(str)) return "Opera Mini";
+        return "Mobile Web";
+      }
+
+      var badgeEl = document.getElementById("deviceBadge");
+      if (badgeEl) {
+        badgeEl.innerHTML = detectLegacyPlatform(navigator.userAgent);
+      }
+
+      // Check if already signed in
+      try {
+        var existingToken = window.localStorage.getItem("token");
+        var existingUserId = window.localStorage.getItem("userId");
+        if (existingToken && existingUserId) {
+          window.location.href = "legacy-mobile.html";
+          return;
+        }
+      } catch (e) {}
+
+      var errEl = document.getElementById("loginError");
+      var successEl = document.getElementById("loginSuccess");
+      var emailInput = document.getElementById("loginEmail");
+      var passInput = document.getElementById("loginPassword");
+      var submitBtn = document.getElementById("btnSubmitLogin");
+      var loginForm = document.getElementById("loginForm");
+      if (loginForm) {
+        loginForm.onsubmit = function () { return false; };
+      }
+
+      function showMessage(msg, isError) {
+        if (isError) {
+          if (successEl) successEl.style.display = "none";
+          if (errEl) {
+            errEl.innerHTML = msg;
+            errEl.style.display = "block";
+          }
+        } else {
+          if (errEl) errEl.style.display = "none";
+          if (successEl) {
+            successEl.innerHTML = msg;
+            successEl.style.display = "block";
+          }
+        }
+      }
+
+      function doLogin() {
+        var who = emailInput ? emailInput.value : "";
+        var pass = passInput ? passInput.value : "";
+        if (!who || !pass) {
+          showMessage("Please enter your email or username and password.", true);
+          return;
+        }
+
+        showMessage("Authenticating with server...", false);
+        if (submitBtn) submitBtn.disabled = true;
+
+        var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : (window.ActiveXObject ? new ActiveXObject("Microsoft.XMLHTTP") : null);
+        if (!xhr) {
+          showMessage("Browser does not support HTTP requests.", true);
+          if (submitBtn) submitBtn.disabled = false;
+          return;
+        }
+
+        xhr.open("POST", API + "/auth/login", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Accept", "application/json");
+
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState !== 4) return;
+          if (submitBtn) submitBtn.disabled = false;
+
+          var data = null;
+          try {
+            data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+          } catch (ex) {
+            data = null;
+          }
+
+          if (xhr.status === 200 && data && data.token && data.userId) {
+            try {
+              window.localStorage.setItem("token", data.token);
+              window.localStorage.setItem("userId", String(data.userId));
+              window.localStorage.setItem("userName", data.name || data.username || "");
+              if (data.currency) {
+                window.localStorage.setItem("userCurrency", data.currency);
+              }
+            } catch (storageErr) {
+              // Cookie fallback for retro browsers with restricted localStorage
+              document.cookie = "token=" + encodeURIComponent(data.token) + "; path=/; max-age=86400";
+              document.cookie = "userId=" + encodeURIComponent(String(data.userId)) + "; path=/; max-age=86400";
+            }
+            showMessage("Signed in successfully! Redirecting to ledger...", false);
+            setTimeout(function () {
+              window.location.href = "legacy-mobile.html";
+            }, 500);
+          } else if (xhr.status === 401 || xhr.status === 400) {
+            showMessage("Invalid email, username or password.", true);
+          } else if (xhr.status === 429) {
+            showMessage("Too many login attempts. Please wait a moment.", true);
+          } else if (xhr.status === 0) {
+            showMessage("Cannot connect to server. Check your network or try offline mode.", true);
+          } else {
+            showMessage("Sign-in failed (Error " + xhr.status + ").", true);
+          }
+        };
+
+        try {
+          xhr.send(JSON.stringify({ email: who, password: pass }));
+        } catch (netErr) {
+          if (submitBtn) submitBtn.disabled = false;
+          showMessage("Network error: " + (netErr.message || "Failed to dispatch request"), true);
+        }
+      }
+
+      if (submitBtn) {
+        submitBtn.onclick = doLogin;
+      }
+
+      // Feature phone softkeys
+      var softLsk = document.getElementById("fpLsk");
+      var softCsk = document.getElementById("fpCsk");
+      var softRsk = document.getElementById("fpRsk");
+
+      if (softLsk) softLsk.onclick = function () { window.location.href = "legacy-register.html"; };
+      if (softCsk) softCsk.onclick = doLogin;
+      if (softRsk) softRsk.onclick = function () { window.location.href = "legacy-forgot-password.html"; };
+
+      // Keypad physical event listener
+      document.onkeydown = function (e) {
+        var evt = e || window.event;
+        var code = evt.keyCode || evt.which;
+
+        // Enter submits form
+        if (code === 13) {
+          doLogin();
+          return;
+        }
+
+        // T9 physical numeric shortcuts (when not typing in form inputs)
+        var active = document.activeElement;
+        var inInput = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.tagName === "SELECT");
+        if (!inInput) {
+          if (code === 49) { // Key '1' -> Register
+            window.location.href = "legacy-register.html";
+          } else if (code === 50) { // Key '2' -> Forgot password
+            window.location.href = "legacy-forgot-password.html";
+          }
+        }
+      };
+
+      // D-Pad spatial focus helper
+      var focusableTags = ["input", "button", "a"];
+      var focusables = [];
+      var i, j;
+      for (i = 0; i < focusableTags.length; i++) {
+        var found = document.getElementsByTagName(focusableTags[i]);
+        for (j = 0; j < found.length; j++) {
+          focusables.push(found[j]);
+        }
+      }
+
+      var focusIndex = 0;
+      function setSpatialFocus(idx) {
+        if (focusables.length === 0) return;
+        if (idx < 0) idx = 0;
+        if (idx >= focusables.length) idx = focusables.length - 1;
+        focusIndex = idx;
+        for (var k = 0; k < focusables.length; k++) {
+          if (focusables[k].className) {
+            focusables[k].className = focusables[k].className.replace(/\s*fp-focused\b/g, "");
+          }
+        }
+        var target = focusables[focusIndex];
+        if (target) {
+          target.className += " fp-focused";
+          try { target.focus(); } catch (e) {}
+        }
+      }
+
+      document.addEventListener ? document.addEventListener("keydown", function (e) {
+        if (e.keyCode === 38) { // Up
+          setSpatialFocus(focusIndex - 1);
+        } else if (e.keyCode === 40) { // Down
+          setSpatialFocus(focusIndex + 1);
+        }
+      }) : (document.onkeydown = function (e) {
+        var evt = e || window.event;
+        if (evt.keyCode === 38) setSpatialFocus(focusIndex - 1);
+        else if (evt.keyCode === 40) setSpatialFocus(focusIndex + 1);
+      });
+
+    })();
+  </script>
+</body>
+</html>

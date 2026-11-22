@@ -240,4 +240,196 @@ test.describe('Legacy & Retro Mobile Support (Android 1.0 & iOS 1.0)', () => {
     expect(await page.inputValue('#filterType')).toBe('ALL');
   });
 
+  test('renders legacy-login.html with zero horizontal overflow on QVGA (240x320) and handles login', async ({ page }) => {
+    await page.setViewportSize({ width: 240, height: 320 });
+    await page.route('**/api/**', async (route) => {
+      const url = route.request().url();
+      const headers = { 'content-type': 'application/json' };
+      if (url.includes('/api/auth/login')) {
+        await route.fulfill({
+          status: 200,
+          headers,
+          body: JSON.stringify({ token: 'retro-jwt-test', userId: 1, name: 'Retro User', currency: 'USD' })
+        });
+        return;
+      }
+      await route.fulfill({ status: 200, headers, body: '[]' });
+    });
+
+    await page.goto('/legacy-login.html');
+
+    // Verify 0 horizontal overflow
+    const overflow = await page.evaluate(() => {
+      const docW = document.documentElement.clientWidth;
+      const scrollW = document.documentElement.scrollWidth;
+      const bodyW = document.body.scrollWidth;
+      return scrollW > docW || bodyW > docW;
+    });
+    expect(overflow).toBe(false);
+
+    // Verify form elements
+    await expect(page.locator('#loginEmail')).toBeVisible();
+    await expect(page.locator('#loginPassword')).toBeVisible();
+    await expect(page.locator('#btnSubmitLogin')).toBeVisible();
+
+    // Fill credentials and submit
+    await page.fill('#loginEmail', 'retro@example.com');
+    await page.fill('#loginPassword', 'SecretPass123!');
+    await page.click('#btnSubmitLogin');
+
+    // Should redirect to legacy-mobile.html with stored credentials
+    await page.waitForURL('**/legacy-mobile.html');
+    expect(page.url()).toContain('legacy-mobile.html');
+  });
+
+  test('renders legacy-register.html with zero horizontal overflow on QVGA (240x320)', async ({ page }) => {
+    await page.setViewportSize({ width: 240, height: 320 });
+    await page.route('**/api/**', async (route) => {
+      const url = route.request().url();
+      const headers = { 'content-type': 'application/json' };
+      if (url.includes('/api/auth/register')) {
+        await route.fulfill({
+          status: 200,
+          headers,
+          body: JSON.stringify({ message: 'User registered successfully' })
+        });
+        return;
+      }
+      if (url.includes('/api/auth/login')) {
+        await route.fulfill({
+          status: 200,
+          headers,
+          body: JSON.stringify({ token: 'retro-jwt-reg', userId: 2, name: 'Retro New', currency: 'EUR' })
+        });
+        return;
+      }
+      await route.fulfill({ status: 200, headers, body: '[]' });
+    });
+
+    await page.goto('/legacy-register.html');
+
+    // Verify 0 horizontal overflow
+    const overflow = await page.evaluate(() => {
+      const docW = document.documentElement.clientWidth;
+      const scrollW = document.documentElement.scrollWidth;
+      const bodyW = document.body.scrollWidth;
+      return scrollW > docW || bodyW > docW;
+    });
+    expect(overflow).toBe(false);
+
+    // Verify input fields
+    await expect(page.locator('#regName')).toBeVisible();
+    await expect(page.locator('#regUsername')).toBeVisible();
+    await expect(page.locator('#regEmail')).toBeVisible();
+    await expect(page.locator('#regCurrency')).toBeVisible();
+    await expect(page.locator('#regPassword')).toBeVisible();
+    await expect(page.locator('#regPin')).toBeVisible();
+    await expect(page.locator('#btnSubmitRegister')).toBeVisible();
+
+    // Fill form and submit
+    await page.fill('#regName', 'Retro New User');
+    await page.fill('#regUsername', 'retronew');
+    await page.fill('#regEmail', 'new@retro.org');
+    await page.selectOption('#regCurrency', 'EUR');
+    await page.fill('#regPassword', 'P@ssword123');
+    await page.fill('#regPin', '123456');
+
+    await page.click('#btnSubmitRegister');
+    await page.waitForURL('**/legacy-mobile.html');
+    expect(page.url()).toContain('legacy-mobile.html');
+  });
+
+  test('renders legacy-forgot-password.html with zero horizontal overflow on QVGA (240x320)', async ({ page }) => {
+    await page.setViewportSize({ width: 240, height: 320 });
+    await page.goto('/legacy-forgot-password.html');
+
+    const overflow = await page.evaluate(() => {
+      const docW = document.documentElement.clientWidth;
+      const scrollW = document.documentElement.scrollWidth;
+      const bodyW = document.body.scrollWidth;
+      return scrollW > docW || bodyW > docW;
+    });
+    expect(overflow).toBe(false);
+
+    await expect(page.locator('#resetEmail')).toBeVisible();
+    await expect(page.locator('#resetCode')).toBeVisible();
+    await expect(page.locator('#resetNewPass')).toBeVisible();
+    await expect(page.locator('#resetConfirmPass')).toBeVisible();
+    await expect(page.locator('#btnSubmitReset')).toBeVisible();
+  });
+
+  test('supports Budgets, Goals, Reports tab switching and contextual softkeys', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 480 });
+    await emptyApi(page);
+    await page.goto('/legacy-mobile.html');
+
+    // 1. Switch to Budgets
+    await page.click('#tabBudgets');
+    await expect(page.locator('#viewBudgets')).toBeVisible();
+    await expect(page.locator('#viewTransactions')).toBeHidden();
+    await expect(page.locator('#fpLsk')).toContainText('+ BUDGET [1]');
+
+    // Open & close budget modal
+    await page.click('#btnOpenBudgetModal');
+    await expect(page.locator('#budgetModal')).toBeVisible();
+    await expect(page.locator('#fpLsk')).toContainText('Cancel');
+    await page.click('#btnCloseBudgetModal');
+    await expect(page.locator('#budgetModal')).toBeHidden();
+
+    // 2. Switch to Goals
+    await page.click('#tabGoals');
+    await expect(page.locator('#viewGoals')).toBeVisible();
+    await expect(page.locator('#viewBudgets')).toBeHidden();
+    await expect(page.locator('#fpLsk')).toContainText('+ GOAL [1]');
+
+    // Open & close goal modal
+    await page.click('#btnOpenGoalModal');
+    await expect(page.locator('#goalModal')).toBeVisible();
+    await page.click('#btnCloseGoalModal');
+    await expect(page.locator('#goalModal')).toBeHidden();
+
+    // 3. Switch to Reports
+    await page.click('#tabReports');
+    await expect(page.locator('#viewReports')).toBeVisible();
+    await expect(page.locator('#viewGoals')).toBeHidden();
+    await expect(page.locator('#fpLsk')).toContainText('CSV [1]');
+
+    // 4. Switch back to Transactions
+    await page.click('#tabOverview');
+    await expect(page.locator('#viewTransactions')).toBeVisible();
+    await expect(page.locator('#fpLsk')).toContainText('+ EXPENSE [1]');
+  });
+
+  test('supports editing an existing transaction and recalculating summary', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 480 });
+    await emptyApi(page);
+    await page.goto('/legacy-mobile.html');
+
+    // Add initial expense
+    await page.click('#btnOpenExpenseModal');
+    await page.fill('#expDescription', 'Book Store');
+    await page.fill('#expAmount', '100');
+    await page.click('#btnSaveExpense');
+
+    // Verify initial item exists
+    const item = page.locator('#txListContainer', { hasText: 'Book Store' });
+    await expect(item).toBeVisible();
+    await expect(item).toContainText('100.00');
+
+    // Click Edit button
+    await item.locator('.tx-btn-edit').click();
+    await expect(page.locator('#editTxModal')).toBeVisible();
+    expect(await page.inputValue('#editTxAmount')).toBe('100');
+
+    // Update amount to 250
+    await page.fill('#editTxAmount', '250');
+    await page.click('#btnSaveEditTx');
+    await expect(page.locator('#editTxModal')).toBeHidden();
+
+    // Verify updated amount in item and overview summary
+    await expect(item).toContainText('250.00');
+    await expect(page.locator('#totalExpenseVal')).toContainText('250.00');
+  });
+
 });
+

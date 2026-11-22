@@ -827,6 +827,152 @@
         letter-spacing: 0;
       }
     }
+
+    /* Enhanced Views & Tabs */
+    .view-section {
+      display: none;
+    }
+    .view-section.active {
+      display: block;
+    }
+
+    .budget-card, .goal-card {
+      background-color: #171a14;
+      border: 1px solid #282c22;
+      border: 1px solid rgba(199, 154, 62, 0.2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+
+    .card-header-row {
+      overflow: hidden;
+      margin-bottom: 6px;
+      line-height: 20px;
+    }
+    .card-header-title {
+      float: left;
+      font-weight: 700;
+      color: #f4f1ea;
+      font-size: 13px;
+    }
+    .card-header-action {
+      float: right;
+    }
+
+    .badge-overbudget {
+      background-color: #7f1d1d;
+      color: #fca5a5;
+      font-size: 9.5px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .badge-ontrack {
+      background-color: #064e3b;
+      color: #6ee7b7;
+      font-size: 9.5px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .btn-xs {
+      display: inline-block;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      line-height: 16px;
+    }
+    .btn-xs-emerald {
+      background-color: #10b981;
+      color: #000000;
+    }
+    .btn-xs-rose {
+      background-color: #ef4444;
+      color: #ffffff;
+    }
+    .btn-xs-dark {
+      background-color: #21251c;
+      border: 1px solid #3d4432;
+      color: #d1cbba;
+    }
+    .btn-xs-sky {
+      background-color: #0284c7;
+      color: #ffffff;
+    }
+
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+      margin-bottom: 12px;
+      background-color: #171a14;
+      border: 1px solid #282c22;
+      border-radius: 6px;
+    }
+    .report-table th {
+      background-color: #12140f;
+      color: #a8a395;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid #282c22;
+    }
+    .report-table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid #1c2018;
+      color: #f4f1ea;
+    }
+    .report-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .tx-actions {
+      display: inline-block;
+      margin-top: 3px;
+    }
+    .tx-btn-edit {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 9.5px;
+      font-weight: 700;
+      border-radius: 3px;
+      background-color: #1f2937;
+      color: #93c5fd;
+      border: 1px solid #374151;
+      cursor: pointer;
+      margin-right: 4px;
+    }
+
+    .account-btn-link {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #21251c;
+      border: 1px solid #3d4432;
+      color: #e5b85c;
+      text-decoration: none;
+      margin-left: 4px;
+      vertical-align: middle;
+      line-height: 18px;
+    }
+    .account-btn-link:hover {
+      background-color: #2a3023;
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
@@ -844,13 +990,14 @@
 
     <!-- Feature Phone Physical Keypad Quick Strip -->
     <div class="keypad-strip" id="keypadStrip">
-      <strong>Keypad:</strong> [1] +Exp &bull; [2] +Inc &bull; [3] Home &bull; [4] Exp &bull; [5] Inc &bull; [6] Sync &bull; [0] Acc &bull; [D-Pad] Move
+      <strong>Keypad:</strong> [1] +Exp &bull; [2] +Inc &bull; [3] All &bull; [4] Exp &bull; [5] Inc &bull; [6] Budgets &bull; [7] Goals &bull; [8] Reports &bull; [9] Sync &bull; [0] Acc &bull; [D-Pad] Move
     </div>
 
     <!-- Account: shares the sign-in of the main app on this browser -->
     <div class="account-bar" id="accountBar">
       <span class="account-text" id="accountText">Not signed in. Entries stay on this device.</span>
       <button type="button" class="account-btn" id="btnAccount">Sign in</button>
+      <a href="legacy-register.html" class="account-btn-link" id="linkRegisterAccount">Register</a>
     </div>
 
     <!-- Executive Overview Card -->
@@ -899,26 +1046,72 @@
         <span class="tab-icon">&#43;</span>
         <span>Income [5]</span>
       </div>
+      <div class="tab-item" id="tabBudgets">
+        <span class="tab-icon">&#9632;</span>
+        <span>Budgets [6]</span>
+      </div>
+      <div class="tab-item" id="tabGoals">
+        <span class="tab-icon">&#9733;</span>
+        <span>Goals [7]</span>
+      </div>
+      <div class="tab-item" id="tabReports">
+        <span class="tab-icon">&#9635;</span>
+        <span>Reports [8]</span>
+      </div>
       <div class="tab-item" id="tabRefresh">
         <span class="tab-icon">&#8635;</span>
-        <span>Sync [6]</span>
+        <span>Sync [9]</span>
       </div>
     </div>
 
-    <!-- Search & Filter Controls -->
-    <div class="search-row">
-      <input type="text" class="search-input" id="searchKeyword" placeholder="Search transactions...">
-      <select class="filter-select" id="filterType">
-        <option value="ALL">All</option>
-        <option value="EXPENSE">Expenses</option>
-        <option value="INCOME">Income</option>
-      </select>
+    <!-- View 1: Transactions Stream -->
+    <div class="view-section active" id="viewTransactions">
+      <div class="search-row">
+        <input type="text" class="search-input" id="searchKeyword" placeholder="Search transactions...">
+        <select class="filter-select" id="filterType">
+          <option value="ALL">All</option>
+          <option value="EXPENSE">Expenses</option>
+          <option value="INCOME">Income</option>
+        </select>
+      </div>
+
+      <div class="section-title">Transactions</div>
+      <div id="txListContainer">
+        <div class="empty-state">No transactions recorded yet. Tap + Expense or + Income to begin.</div>
+      </div>
     </div>
 
-    <!-- Transactions Stream -->
-    <div class="section-title">Transactions</div>
-    <div id="txListContainer">
-      <div class="empty-state">No transactions recorded yet. Tap + Expense or + Income to begin.</div>
+    <!-- View 2: Monthly Budgets -->
+    <div class="view-section" id="viewBudgets" style="display:none;">
+      <div class="card-header-row" style="margin-top:10px;">
+        <span class="section-title" style="float:left; margin-bottom:0;">Monthly Budgets</span>
+        <button type="button" class="btn-xs btn-xs-emerald" style="float:right;" id="btnOpenBudgetModal">+ Set Budget</button>
+      </div>
+      <div id="budgetListContainer">
+        <div class="empty-state">No category budgets configured yet. Tap + Set Budget to begin.</div>
+      </div>
+    </div>
+
+    <!-- View 3: Savings Goals -->
+    <div class="view-section" id="viewGoals" style="display:none;">
+      <div class="card-header-row" style="margin-top:10px;">
+        <span class="section-title" style="float:left; margin-bottom:0;">Savings Goals</span>
+        <button type="button" class="btn-xs btn-xs-emerald" style="float:right;" id="btnOpenGoalModal">+ New Goal</button>
+      </div>
+      <div id="goalsListContainer">
+        <div class="empty-state">No savings goals tracked yet. Tap + New Goal to begin.</div>
+      </div>
+    </div>
+
+    <!-- View 4: Reports & Summary -->
+    <div class="view-section" id="viewReports" style="display:none;">
+      <div class="card-header-row" style="margin-top:10px;">
+        <span class="section-title" style="float:left; margin-bottom:0;">Cashflow &amp; Reports</span>
+        <button type="button" class="btn-xs btn-xs-sky" style="float:right;" id="btnExportCsv">Export CSV</button>
+      </div>
+      <div id="reportsContainer">
+        <div class="empty-state">No report data generated yet.</div>
+      </div>
     </div>
 
   </div><!-- /.container -->
@@ -927,7 +1120,7 @@
   <div class="modal-overlay" id="expenseModal">
     <div class="modal-box">
       <div style="font-size:14px; font-weight:800; color:#ef4444; letter-spacing:0.3px; margin-bottom:10px; border-bottom:1px solid rgba(239,68,68,0.2); padding-bottom:6px;">&#8722; New Expense</div>
-      <form id="formExpense" onsubmit="return false;">
+      <form id="formExpense">
         <div class="form-group">
           <label class="form-label" for="expDescription">Description</label>
           <input type="text" id="expDescription" class="form-control" placeholder="e.g. Groceries, Metro, Coffee" required>
@@ -963,7 +1156,7 @@
   <div class="modal-overlay" id="incomeModal">
     <div class="modal-box">
       <div style="font-size:14px; font-weight:800; color:#10b981; letter-spacing:0.3px; margin-bottom:10px; border-bottom:1px solid rgba(16,185,129,0.2); padding-bottom:6px;">&#43; New Income</div>
-      <form id="formIncome" onsubmit="return false;">
+      <form id="formIncome">
         <div class="form-group">
           <label class="form-label" for="incSource">Source / Description</label>
           <input type="text" id="incSource" class="form-control" placeholder="e.g. Salary, Dividend, Freelance" required>
@@ -995,6 +1188,114 @@
   </div>
 
 
+  <!-- Modal: Set Budget -->
+  <div class="modal-overlay" id="budgetModal">
+    <div class="modal-box">
+      <div style="font-size:14px; font-weight:800; color:#c79a3e; letter-spacing:0.3px; margin-bottom:10px; border-bottom:1px solid rgba(199,154,62,0.2); padding-bottom:6px;">&#9632; Set Category Budget</div>
+      <form id="formBudget">
+        <div class="form-group">
+          <label class="form-label" for="budgetCategory">Category</label>
+          <select id="budgetCategory" class="form-control">
+            <option value="">Select Category</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="budgetLimit">Monthly Limit Amount</label>
+          <input type="number" step="0.01" id="budgetLimit" class="form-control" placeholder="0.00" required>
+        </div>
+        <div class="action-row" style="margin-top:12px;">
+          <button type="button" class="btn btn-half btn-dark" id="btnCloseBudgetModal">Cancel</button>
+          <button type="button" class="btn btn-half right btn-gold" id="btnSaveBudget">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: New Savings Goal -->
+  <div class="modal-overlay" id="goalModal">
+    <div class="modal-box">
+      <div style="font-size:14px; font-weight:800; color:#10b981; letter-spacing:0.3px; margin-bottom:10px; border-bottom:1px solid rgba(16,185,129,0.2); padding-bottom:6px;">&#9733; New Savings Goal</div>
+      <form id="formGoal">
+        <div class="form-group">
+          <label class="form-label" for="goalName">Goal Name</label>
+          <input type="text" id="goalName" class="form-control" placeholder="e.g. Emergency Fund, Vacation" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="goalTarget">Target Amount</label>
+          <input type="number" step="0.01" id="goalTarget" class="form-control" placeholder="0.00" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="goalDate">Target Date</label>
+          <input type="text" id="goalDate" class="form-control" placeholder="YYYY-MM-DD">
+        </div>
+        <div class="action-row" style="margin-top:12px;">
+          <button type="button" class="btn btn-half btn-dark" id="btnCloseGoalModal">Cancel</button>
+          <button type="button" class="btn btn-half right btn-emerald" id="btnSaveGoal">Save Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Deposit to Savings Goal -->
+  <div class="modal-overlay" id="depositModal">
+    <div class="modal-box">
+      <div style="font-size:14px; font-weight:800; color:#10b981; letter-spacing:0.3px; margin-bottom:10px; border-bottom:1px solid rgba(16,185,129,0.2); padding-bottom:6px;">&#43; Add Deposit</div>
+      <form id="formDeposit">
+        <input type="hidden" id="depositGoalId">
+        <div class="form-group">
+          <label class="form-label" id="depositGoalTitle">Goal: Deposit</label>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="depositAmount">Deposit Amount</label>
+          <input type="number" step="0.01" id="depositAmount" class="form-control" placeholder="0.00" required>
+        </div>
+        <div class="action-row" style="margin-top:12px;">
+          <button type="button" class="btn btn-half btn-dark" id="btnCloseDepositModal">Cancel</button>
+          <button type="button" class="btn btn-half right btn-emerald" id="btnSaveDeposit">Deposit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Transaction -->
+  <div class="modal-overlay" id="editTxModal">
+    <div class="modal-box">
+      <div style="font-size:14px; font-weight:800; color:#38bdf8; letter-spacing:0.3px; margin-bottom:10px; border-bottom:1px solid rgba(56,189,248,0.2); padding-bottom:6px;">Edit Transaction</div>
+      <form id="formEditTx">
+        <input type="hidden" id="editTxId">
+        <input type="hidden" id="editTxType">
+        <div class="form-group">
+          <label class="form-label" for="editTxDescription">Description / Source</label>
+          <input type="text" id="editTxDescription" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editTxAmount">Amount</label>
+          <input type="number" step="0.01" id="editTxAmount" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editTxCategory">Category</label>
+          <select id="editTxCategory" class="form-control">
+            <option value="Food & Dining">Food & Dining</option>
+            <option value="Transportation">Transportation</option>
+            <option value="Utilities">Utilities</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Salary">Salary</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editTxDate">Date</label>
+          <input type="text" id="editTxDate" class="form-control" placeholder="YYYY-MM-DD">
+        </div>
+        <div class="action-row" style="margin-top:12px;">
+          <button type="button" class="btn btn-half btn-dark" id="btnCloseEditModal">Cancel</button>
+          <button type="button" class="btn btn-half right btn-sky" id="btnSaveEditTx">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Native Feature Phone Softkey Bar (LSK, Center, RSK) -->
   <div class="fp-softkey-bar" id="fpSoftkeyBar">
     <span class="fp-lsk" id="fpLsk">+ EXPENSE [1]</span>
@@ -1011,7 +1312,7 @@
   <div class="modal-overlay" id="loginModal">
     <div class="modal-box">
       <div style="font-size:14px; font-weight:800; color:#c79a3e; letter-spacing:0.3px; margin-bottom:10px; border-bottom:1px solid rgba(199,154,62,0.2); padding-bottom:6px;">Sign in &bull; Ledger &amp; Lumina</div>
-      <form id="formLogin" onsubmit="return false;">
+      <form id="formLogin">
         <div class="form-group">
           <label class="form-label" for="loginEmail">Email or username</label>
           <input type="text" id="loginEmail" class="form-control" autocomplete="username" autocapitalize="off">
@@ -1025,6 +1326,10 @@
           <button type="button" class="btn btn-half btn-dark" id="btnCloseLoginModal">Cancel</button>
           <button type="button" class="btn btn-half right btn-sky" id="btnSubmitLogin">Sign in</button>
         </div>
+        <div style="margin-top:10px; text-align:center; font-size:11px; color:#a8a395; border-top:1px solid #282c22; padding-top:8px;">
+          <div>Don't have an account? <a href="legacy-register.html">Create Account</a></div>
+          <div>Forgot password? <a href="legacy-forgot-password.html">Reset Password</a></div>
+        </div>
       </form>
     </div>
   </div>
@@ -1036,6 +1341,9 @@
       var BUDGET_KEY = "et_mobile_budget_v1";
       var records = [];
       var budgetTarget = 0;
+      var budgetStatusList = [];
+      var savingsGoalsList = [];
+      var currentView = "tx"; // "tx", "budgets", "goals", "reports"
 
       // Comprehensive Historical Legacy Mobile & Feature Phone Platform Detection
       function detectLegacyPlatform(customUa) {
@@ -1165,18 +1473,23 @@
       var softkeyCsk = document.getElementById("fpCsk");
       var softkeyRsk = document.getElementById("fpRsk");
 
+      function getOpenModal() {
+        var ids = ["expenseModal", "incomeModal", "loginModal", "budgetModal", "goalModal", "depositModal", "editTxModal"];
+        var i;
+        for (i = 0; i < ids.length; i++) {
+          var m = document.getElementById(ids[i]);
+          if (m && m.style.display === "block") {
+            return m;
+          }
+        }
+        return null;
+      }
+
       function updateSoftkeys() {
-        var expModal = document.getElementById("expenseModal");
-        var incModal = document.getElementById("incomeModal");
-        var logModal = document.getElementById("loginModal");
-
-        var expOpen = expModal && expModal.style.display === "block";
-        var incOpen = incModal && incModal.style.display === "block";
-        var logOpen = logModal && logModal.style.display === "block";
-
-        if (expOpen || incOpen || logOpen) {
+        var openModal = getOpenModal();
+        if (openModal) {
           if (softkeyLsk) softkeyLsk.innerHTML = "Cancel";
-          if (softkeyCsk) softkeyCsk.innerHTML = logOpen ? "SIGN IN" : "SAVE";
+          if (softkeyCsk) softkeyCsk.innerHTML = (openModal.id === "loginModal") ? "SIGN IN" : ((openModal.id === "depositModal") ? "DEPOSIT" : ((openModal.id === "editTxModal") ? "UPDATE" : "SAVE"));
           if (softkeyRsk) softkeyRsk.innerHTML = "Close";
           return;
         }
@@ -1189,20 +1502,28 @@
           return;
         }
 
-        if (softkeyLsk) softkeyLsk.innerHTML = "+ EXPENSE [1]";
-        if (softkeyCsk) softkeyCsk.innerHTML = "SELECT";
-        if (softkeyRsk) softkeyRsk.innerHTML = "+ INCOME [2]";
+        if (currentView === "budgets") {
+          if (softkeyLsk) softkeyLsk.innerHTML = "+ BUDGET [1]";
+          if (softkeyCsk) softkeyCsk.innerHTML = "SELECT";
+          if (softkeyRsk) softkeyRsk.innerHTML = "SYNC [9]";
+        } else if (currentView === "goals") {
+          if (softkeyLsk) softkeyLsk.innerHTML = "+ GOAL [1]";
+          if (softkeyCsk) softkeyCsk.innerHTML = "SELECT";
+          if (softkeyRsk) softkeyRsk.innerHTML = "SYNC [9]";
+        } else if (currentView === "reports") {
+          if (softkeyLsk) softkeyLsk.innerHTML = "CSV [1]";
+          if (softkeyCsk) softkeyCsk.innerHTML = "SELECT";
+          if (softkeyRsk) softkeyRsk.innerHTML = "SYNC [9]";
+        } else {
+          if (softkeyLsk) softkeyLsk.innerHTML = "+ EXPENSE [1]";
+          if (softkeyCsk) softkeyCsk.innerHTML = "SELECT";
+          if (softkeyRsk) softkeyRsk.innerHTML = "+ INCOME [2]";
+        }
       }
 
       function getVisibleFocusables() {
-        var expModal = document.getElementById("expenseModal");
-        var incModal = document.getElementById("incomeModal");
-        var logModal = document.getElementById("loginModal");
-
-        var root = document.body;
-        if (expModal && expModal.style.display === "block") root = expModal;
-        else if (incModal && incModal.style.display === "block") root = incModal;
-        else if (logModal && logModal.style.display === "block") root = logModal;
+        var openModal = getOpenModal();
+        var root = openModal ? openModal : document.body;
 
         var tags = ["a", "button", "input", "select", "textarea"];
         var elements = [];
@@ -1247,22 +1568,9 @@
       }
 
       function handleFpLsk() {
-        var expModal = document.getElementById("expenseModal");
-        var incModal = document.getElementById("incomeModal");
-        var logModal = document.getElementById("loginModal");
-
-        if (expModal && expModal.style.display === "block") {
-          expModal.style.display = "none";
-          updateSoftkeys();
-          return;
-        }
-        if (incModal && incModal.style.display === "block") {
-          incModal.style.display = "none";
-          updateSoftkeys();
-          return;
-        }
-        if (logModal && logModal.style.display === "block") {
-          logModal.style.display = "none";
+        var openModal = getOpenModal();
+        if (openModal) {
+          openModal.style.display = "none";
           updateSoftkeys();
           return;
         }
@@ -1273,31 +1581,47 @@
           return;
         }
 
-        var btnExp = document.getElementById("btnOpenExpenseModal");
-        if (btnExp) btnExp.click();
+        if (currentView === "budgets") {
+          var btnBud = document.getElementById("btnOpenBudgetModal");
+          if (btnBud) btnBud.click();
+        } else if (currentView === "goals") {
+          var btnGoa = document.getElementById("btnOpenGoalModal");
+          if (btnGoa) btnGoa.click();
+        } else if (currentView === "reports") {
+          var btnCsv = document.getElementById("btnExportCsv");
+          if (btnCsv) btnCsv.click();
+        } else {
+          var btnExp = document.getElementById("btnOpenExpenseModal");
+          if (btnExp) btnExp.click();
+        }
         updateSoftkeys();
       }
 
       function handleFpCsk() {
-        var expModal = document.getElementById("expenseModal");
-        var incModal = document.getElementById("incomeModal");
-        var logModal = document.getElementById("loginModal");
-
-        if (expModal && expModal.style.display === "block") {
-          var btnSaveExp = document.getElementById("btnSaveExpense");
-          if (btnSaveExp) btnSaveExp.click();
-          updateSoftkeys();
-          return;
-        }
-        if (incModal && incModal.style.display === "block") {
-          var btnSaveInc = document.getElementById("btnSaveIncome");
-          if (btnSaveInc) btnSaveInc.click();
-          updateSoftkeys();
-          return;
-        }
-        if (logModal && logModal.style.display === "block") {
-          var btnSubLog = document.getElementById("btnSubmitLogin");
-          if (btnSubLog) btnSubLog.click();
+        var openModal = getOpenModal();
+        if (openModal) {
+          if (openModal.id === "expenseModal") {
+            var bSaveExp = document.getElementById("btnSaveExpense");
+            if (bSaveExp) bSaveExp.click();
+          } else if (openModal.id === "incomeModal") {
+            var bSaveInc = document.getElementById("btnSaveIncome");
+            if (bSaveInc) bSaveInc.click();
+          } else if (openModal.id === "budgetModal") {
+            var bSaveBud = document.getElementById("btnSaveBudget");
+            if (bSaveBud) bSaveBud.click();
+          } else if (openModal.id === "goalModal") {
+            var bSaveGoa = document.getElementById("btnSaveGoal");
+            if (bSaveGoa) bSaveGoa.click();
+          } else if (openModal.id === "depositModal") {
+            var bSaveDep = document.getElementById("btnSaveDeposit");
+            if (bSaveDep) bSaveDep.click();
+          } else if (openModal.id === "editTxModal") {
+            var bSaveEdit = document.getElementById("btnSaveEditTx");
+            if (bSaveEdit) bSaveEdit.click();
+          } else if (openModal.id === "loginModal") {
+            var bSubLog = document.getElementById("btnSubmitLogin");
+            if (bSubLog) bSubLog.click();
+          }
           updateSoftkeys();
           return;
         }
@@ -1318,22 +1642,9 @@
       }
 
       function handleFpRsk() {
-        var expModal = document.getElementById("expenseModal");
-        var incModal = document.getElementById("incomeModal");
-        var logModal = document.getElementById("loginModal");
-
-        if (expModal && expModal.style.display === "block") {
-          expModal.style.display = "none";
-          updateSoftkeys();
-          return;
-        }
-        if (incModal && incModal.style.display === "block") {
-          incModal.style.display = "none";
-          updateSoftkeys();
-          return;
-        }
-        if (logModal && logModal.style.display === "block") {
-          logModal.style.display = "none";
+        var openModal = getOpenModal();
+        if (openModal) {
+          openModal.style.display = "none";
           updateSoftkeys();
           return;
         }
@@ -1353,8 +1664,13 @@
           return;
         }
 
-        var btnInc = document.getElementById("btnOpenIncomeModal");
-        if (btnInc) btnInc.click();
+        if (currentView === "budgets" || currentView === "goals" || currentView === "reports") {
+          var tSync = document.getElementById("tabRefresh");
+          if (tSync) tSync.click();
+        } else {
+          var btnInc = document.getElementById("btnOpenIncomeModal");
+          if (btnInc) btnInc.click();
+        }
         updateSoftkeys();
       }
 
@@ -1395,16 +1711,10 @@
         }
         // Back / Escape / BrowserBack (code 461 / 27 / 8)
         if (key === "Escape" || key === "BrowserBack" || code === 27 || code === 461 || (code === 8 && !isInput)) {
-          var expModal = document.getElementById("expenseModal");
-          var incModal = document.getElementById("incomeModal");
-          var logModal = document.getElementById("loginModal");
-          if ((expModal && expModal.style.display === "block") ||
-              (incModal && incModal.style.display === "block") ||
-              (logModal && logModal.style.display === "block")) {
+          var om = getOpenModal();
+          if (om) {
             if (e.preventDefault) e.preventDefault();
-            if (expModal) expModal.style.display = "none";
-            if (incModal) incModal.style.display = "none";
-            if (logModal) logModal.style.display = "none";
+            om.style.display = "none";
             updateSoftkeys();
             return false;
           }
@@ -1443,9 +1753,7 @@
         if (!isInput) {
           if (key === "1" || code === 49) {
             if (e.preventDefault) e.preventDefault();
-            var bExp = document.getElementById("btnOpenExpenseModal");
-            if (bExp) bExp.click();
-            updateSoftkeys();
+            handleFpLsk();
             return false;
           }
           if (key === "2" || code === 50) {
@@ -1475,6 +1783,24 @@
           }
           if (key === "6" || code === 54) {
             if (e.preventDefault) e.preventDefault();
+            var tBud = document.getElementById("tabBudgets");
+            if (tBud) tBud.click();
+            return false;
+          }
+          if (key === "7" || code === 55) {
+            if (e.preventDefault) e.preventDefault();
+            var tGoa = document.getElementById("tabGoals");
+            if (tGoa) tGoa.click();
+            return false;
+          }
+          if (key === "8" || code === 56) {
+            if (e.preventDefault) e.preventDefault();
+            var tRep = document.getElementById("tabReports");
+            if (tRep) tRep.click();
+            return false;
+          }
+          if (key === "9" || code === 57) {
+            if (e.preventDefault) e.preventDefault();
             var tRef = document.getElementById("tabRefresh");
             if (tRef) tRef.click();
             return false;
@@ -1492,11 +1818,32 @@
           }
           if (key === "#" || code === 192) {
             if (e.preventDefault) e.preventDefault();
-            alert("Feature Phone Keypad Guide:\n[1] +Expense\n[2] +Income\n[3] Home\n[4] Expenses\n[5] Income\n[6] Sync\n[0] Account\n[D-Pad] Navigate\n[Enter/Center] Select");
+            alert("Feature Phone Keypad Guide:\n[1] Context Action (+Exp/+Bud/+Goal/CSV)\n[2] +Income\n[3] All Transactions\n[4] Expenses\n[5] Income\n[6] Budgets\n[7] Savings Goals\n[8] Reports\n[9] Sync\n[0] Account\n[D-Pad] Navigate\n[Enter/Center] Select");
             return false;
           }
         }
       };
+
+      // Currency symbol resolver
+      function getCurrencySymbol() {
+        var code = "INR";
+        try {
+          if (window.localStorage) {
+            code = window.localStorage.getItem("userCurrency") || "INR";
+          }
+        } catch (e) {}
+        switch (code) {
+          case "USD": return "$";
+          case "EUR": return "\u20AC";
+          case "GBP": return "\u00A3";
+          case "JPY": return "\u00A5";
+          case "CAD": return "CA$";
+          case "AUD": return "A$";
+          case "INR":
+          default:
+            return "\u20B9";
+        }
+      }
 
       // Format currency without Intl.NumberFormat dependency
       function formatMoney(amount) {
@@ -1514,7 +1861,7 @@
         while (rgx.test(intPart)) {
           intPart = intPart.replace(rgx, "$1" + "," + "$2");
         }
-        return "\u20B9" + intPart + decPart;
+        return getCurrencySymbol() + intPart + decPart;
       }
 
       // Escape text before putting it into innerHTML
@@ -1614,11 +1961,27 @@
         }
 
         if (pBarEl && bLabelEl) {
-          if (budgetTarget > 0) {
-            var pct = Math.min(100, Math.round((totalExp / budgetTarget) * 100));
+          var totalLimit = 0;
+          var anyOver = false;
+          if (syncMode && budgetStatusList && budgetStatusList.length > 0) {
+            for (i = 0; i < budgetStatusList.length; i++) {
+              var b = budgetStatusList[i];
+              totalLimit += (parseFloat(b.limit) || 0);
+              if ((parseFloat(b.spent) || 0) > (parseFloat(b.limit) || 0)) {
+                anyOver = true;
+              }
+            }
+          } else {
+            totalLimit = budgetTarget;
+          }
+
+          if (totalLimit > 0) {
+            var pct = Math.min(100, Math.round((totalExp / totalLimit) * 100));
             pBarEl.style.width = pct + "%";
-            pBarEl.style.backgroundColor = pct > 85 ? "#ef4444" : (pct > 60 ? "#f59e0b" : "#10b981");
-            bLabelEl.innerHTML = "Budget Target: " + pct + "% used (" + formatMoney(totalExp) + " / " + formatMoney(budgetTarget) + ")";
+            var barColor = (pct > 90 || anyOver) ? "#ef4444" : (pct > 70 ? "#f59e0b" : "#10b981");
+            pBarEl.style.backgroundColor = barColor;
+            var overBadge = anyOver || totalExp > totalLimit ? ' <span class="badge-overbudget">OVER BUDGET</span>' : '';
+            bLabelEl.innerHTML = "Budget Target: " + pct + "% used (" + formatMoney(totalExp) + " / " + formatMoney(totalLimit) + ")" + overBadge;
           } else {
             pBarEl.style.width = "0%";
             bLabelEl.innerHTML = "Budget Target: No limit set (" + formatMoney(totalExp) + " spent)";
@@ -1673,7 +2036,10 @@
           html += '  </div>';
           html += '  <div class="tx-right">';
           html += '    <div class="' + amtClass + '">' + amtPrefix + formatMoney(item.amount) + '</div>';
-          html += '    <button type="button" class="tx-btn-del" data-id="' + esc(item.id) + '">Delete</button>';
+          html += '    <div class="tx-actions">';
+          html += '      <button type="button" class="tx-btn-edit" data-id="' + esc(item.id) + '">Edit</button>';
+          html += '      <button type="button" class="tx-btn-del" data-id="' + esc(item.id) + '">Delete</button>';
+          html += '    </div>';
           html += '  </div>';
           html += '</div>';
         }
@@ -1681,7 +2047,7 @@
         container.innerHTML = html;
 
         // Wire delete buttons using classical DOM
-        var delButtons = container.getElementsByTagName("button");
+        var delButtons = container.getElementsByClassName ? container.getElementsByClassName("tx-btn-del") : [];
         for (i = 0; i < delButtons.length; i++) {
           delButtons[i].onclick = function () {
             var delId = this.getAttribute("data-id");
@@ -1690,6 +2056,44 @@
             }
           };
         }
+
+        // Wire edit buttons
+        var editButtons = container.getElementsByClassName ? container.getElementsByClassName("tx-btn-edit") : [];
+        for (i = 0; i < editButtons.length; i++) {
+          editButtons[i].onclick = function () {
+            var editId = this.getAttribute("data-id");
+            openEditTxModal(editId);
+          };
+        }
+      }
+
+      function openEditTxModal(id) {
+        var target = null;
+        var i;
+        for (i = 0; i < records.length; i++) {
+          if (String(records[i].id) === String(id)) {
+            target = records[i];
+            break;
+          }
+        }
+        if (!target) return;
+
+        var modal = document.getElementById("editTxModal");
+        if (!modal) return;
+
+        document.getElementById("editTxId").value = target.id;
+        document.getElementById("editTxType").value = target.type;
+        document.getElementById("editTxDescription").value = target.title || "";
+        document.getElementById("editTxAmount").value = target.amount || "";
+        document.getElementById("editTxDate").value = target.date || "";
+
+        var catSel = document.getElementById("editTxCategory");
+        if (catSel) {
+          catSel.value = target.category || "";
+        }
+
+        modal.style.display = "block";
+        updateSoftkeys();
       }
 
       function deleteRecord(id) {
@@ -1720,28 +2124,356 @@
         renderTransactions();
       }
 
+      // Render category budgets view
+      function renderBudgets() {
+        var container = document.getElementById("budgetListContainer");
+        if (!container) return;
+
+        if (!budgetStatusList || budgetStatusList.length === 0) {
+          container.innerHTML = '<div class="empty-state">No category budgets configured yet. Tap + Set Budget to begin.</div>';
+          return;
+        }
+
+        var html = "";
+        var i;
+        for (i = 0; i < budgetStatusList.length; i++) {
+          var b = budgetStatusList[i];
+          var limit = parseFloat(b.limit) || 0;
+          var spent = parseFloat(b.spent) || 0;
+          var pct = Math.round(b.percentage || (limit > 0 ? (spent / limit) * 100 : 0));
+          var isOver = spent > limit || pct > 100;
+          var badgeHtml = isOver ? '<span class="badge-overbudget">OVER BUDGET (' + pct + '%)</span>' : '<span class="badge-ontrack">' + pct + '% ON TRACK</span>';
+          var barWidth = Math.min(100, Math.max(0, pct));
+          var barColor = isOver ? '#ef4444' : (pct > 80 ? '#f59e0b' : '#10b981');
+
+          html += '<div class="budget-card">';
+          html += '  <div class="card-header-row">';
+          html += '    <span class="card-header-title">' + esc(b.categoryName || "Category") + '</span>';
+          html += '    <span class="card-header-action">';
+          html += '      ' + badgeHtml;
+          html += '      <button type="button" class="btn-xs btn-xs-rose btn-del-budget" data-catid="' + esc(b.categoryId) + '" style="margin-left:6px;">Delete</button>';
+          html += '    </span>';
+          html += '  </div>';
+          html += '  <div style="font-size:12px; margin-bottom:4px; color:#d1cbba;">';
+          html += '    Spent: <strong>' + formatMoney(spent) + '</strong> &bull; Limit: <strong>' + formatMoney(limit) + '</strong>';
+          html += '  </div>';
+          html += '  <div class="progress-bar-bg">';
+          html += '    <div class="progress-bar-fill" style="width:' + barWidth + '%; background-color:' + barColor + ';"></div>';
+          html += '  </div>';
+          html += '</div>';
+        }
+
+        container.innerHTML = html;
+
+        // Wire budget delete buttons
+        var delBudgetBtns = container.getElementsByClassName ? container.getElementsByClassName("btn-del-budget") : [];
+        for (i = 0; i < delBudgetBtns.length; i++) {
+          delBudgetBtns[i].onclick = function () {
+            var catId = this.getAttribute("data-catid");
+            if (!confirm("Delete budget for this category?")) return;
+            if (syncMode && session) {
+              apiCall("DELETE", "/expenses/budget/user/" + session.userId + "/category/" + catId, null, function (status) {
+                if (status === 200 || status === 204) {
+                  refreshFromServer();
+                } else if (status !== 401) {
+                  alert("Could not delete budget (" + status + ").");
+                }
+              });
+            } else {
+              var nextBudgets = [];
+              for (var j = 0; j < budgetStatusList.length; j++) {
+                if (String(budgetStatusList[j].categoryId) !== String(catId)) {
+                  nextBudgets.push(budgetStatusList[j]);
+                }
+              }
+              budgetStatusList = nextBudgets;
+              renderBudgets();
+              updateSummary();
+            }
+          };
+        }
+      }
+
+      // Render savings goals view
+      function renderGoals() {
+        var container = document.getElementById("goalsListContainer");
+        if (!container) return;
+
+        if (!savingsGoalsList || savingsGoalsList.length === 0) {
+          container.innerHTML = '<div class="empty-state">No savings goals tracked yet. Tap + New Goal to begin.</div>';
+          return;
+        }
+
+        var html = "";
+        var i;
+        for (i = 0; i < savingsGoalsList.length; i++) {
+          var g = savingsGoalsList[i];
+          var target = parseFloat(g.targetAmount) || 0;
+          var cur = parseFloat(g.currentAmount) || 0;
+          var pct = target > 0 ? Math.min(100, Math.round((cur / target) * 100)) : 0;
+          var isDone = g.status === "COMPLETED" || pct >= 100;
+          var badgeClass = isDone ? "badge-ontrack" : "badge-overbudget";
+          var badgeText = isDone ? "COMPLETED" : "IN PROGRESS (" + pct + "%)";
+          var barColor = isDone ? "#10b981" : "#0284c7";
+
+          html += '<div class="goal-card">';
+          html += '  <div class="card-header-row">';
+          html += '    <span class="card-header-title">' + esc(g.name || "Savings Goal") + '</span>';
+          html += '    <span class="card-header-action">';
+          html += '      <span class="' + badgeClass + '" style="' + (isDone ? '' : 'background-color:#1e3a8a; color:#93c5fd;') + '">' + badgeText + '</span>';
+          html += '      <button type="button" class="btn-xs btn-xs-emerald btn-dep-goal" data-id="' + esc(g.id) + '" data-name="' + esc(g.name) + '" style="margin-left:6px;">+ Deposit</button>';
+          html += '      <button type="button" class="btn-xs btn-xs-rose btn-del-goal" data-id="' + esc(g.id) + '" style="margin-left:4px;">Delete</button>';
+          html += '    </span>';
+          html += '  </div>';
+          html += '  <div style="font-size:12px; margin-bottom:4px; color:#d1cbba;">';
+          html += '    Saved: <strong>' + formatMoney(cur) + '</strong> &bull; Target: <strong>' + formatMoney(target) + '</strong>';
+          html += '  </div>';
+          html += '  <div class="progress-bar-bg">';
+          html += '    <div class="progress-bar-fill" style="width:' + pct + '%; background-color:' + barColor + ';"></div>';
+          html += '  </div>';
+          if (g.targetDate) {
+            html += '  <div style="font-size:10px; color:#8e8b80; margin-top:4px;">Target Date: ' + esc(g.targetDate) + '</div>';
+          }
+          html += '</div>';
+        }
+
+        container.innerHTML = html;
+
+        // Wire deposit buttons
+        var depBtns = container.getElementsByClassName ? container.getElementsByClassName("btn-dep-goal") : [];
+        for (i = 0; i < depBtns.length; i++) {
+          depBtns[i].onclick = function () {
+            var gId = this.getAttribute("data-id");
+            var gName = this.getAttribute("data-name");
+            var depModal = document.getElementById("depositModal");
+            if (depModal) {
+              document.getElementById("depositGoalId").value = gId;
+              document.getElementById("depositGoalTitle").innerHTML = "Goal: " + esc(gName);
+              document.getElementById("depositAmount").value = "";
+              depModal.style.display = "block";
+              updateSoftkeys();
+            }
+          };
+        }
+
+        // Wire goal delete buttons
+        var delGoalBtns = container.getElementsByClassName ? container.getElementsByClassName("btn-del-goal") : [];
+        for (i = 0; i < delGoalBtns.length; i++) {
+          delGoalBtns[i].onclick = function () {
+            var gId = this.getAttribute("data-id");
+            if (!confirm("Delete this savings goal?")) return;
+            if (syncMode && session) {
+              apiCall("DELETE", "/savings/goals/" + gId + "/user/" + session.userId, null, function (status) {
+                if (status === 200 || status === 204) {
+                  refreshFromServer();
+                } else if (status !== 401) {
+                  alert("Could not delete savings goal (" + status + ").");
+                }
+              });
+            } else {
+              var nextGoals = [];
+              for (var j = 0; j < savingsGoalsList.length; j++) {
+                if (String(savingsGoalsList[j].id) !== String(gId)) {
+                  nextGoals.push(savingsGoalsList[j]);
+                }
+              }
+              savingsGoalsList = nextGoals;
+              renderGoals();
+            }
+          };
+        }
+      }
+
+      // Render reports & breakdown view
+      function renderReports() {
+        var container = document.getElementById("reportsContainer");
+        if (!container) return;
+
+        var totalInc = 0;
+        var totalExp = 0;
+        var catTotals = {};
+        var i;
+
+        for (i = 0; i < records.length; i++) {
+          var item = records[i];
+          var amt = parseFloat(item.amount) || 0;
+          if (item.type === "INCOME") {
+            totalInc += amt;
+          } else {
+            totalExp += amt;
+            var catName = item.category || "General";
+            catTotals[catName] = (catTotals[catName] || 0) + amt;
+          }
+        }
+
+        var net = totalInc - totalExp;
+        var savingsRate = totalInc > 0 ? Math.max(0, Math.round((net / totalInc) * 100)) : 0;
+
+        var html = "";
+        html += '<div class="section-title">Cashflow Summary</div>';
+        html += '<table class="report-table">';
+        html += '  <thead><tr><th>Metric</th><th style="text-align:right;">Amount</th></tr></thead>';
+        html += '  <tbody>';
+        html += '    <tr><td>Total Inflows (Income)</td><td style="text-align:right; color:#10b981; font-weight:700;">+' + formatMoney(totalInc) + '</td></tr>';
+        html += '    <tr><td>Total Outflows (Expenses)</td><td style="text-align:right; color:#ef4444; font-weight:700;">-' + formatMoney(totalExp) + '</td></tr>';
+        html += '    <tr><td>Net Cashflow</td><td style="text-align:right; font-weight:700; color:' + (net >= 0 ? '#ffffff' : '#ef4444') + ';">' + formatMoney(net) + '</td></tr>';
+        html += '    <tr><td>Savings Rate</td><td style="text-align:right; font-weight:700; color:#c79a3e;">' + savingsRate + '%</td></tr>';
+        html += '  </tbody>';
+        html += '</table>';
+
+        html += '<div class="section-title">Expense Breakdown By Category</div>';
+        var catKeys = [];
+        for (var k in catTotals) {
+          if (Object.prototype.hasOwnProperty.call(catTotals, k)) {
+            catKeys.push(k);
+          }
+        }
+
+        catKeys.sort(function (a, b) {
+          return catTotals[b] - catTotals[a];
+        });
+
+        if (catKeys.length === 0) {
+          html += '<div class="empty-state">No expense records found to generate category report.</div>';
+        } else {
+          html += '<table class="report-table">';
+          html += '  <thead><tr><th>Category</th><th style="text-align:right;">Spent</th><th style="text-align:right;">Share</th></tr></thead>';
+          html += '  <tbody>';
+          for (i = 0; i < catKeys.length; i++) {
+            var cName = catKeys[i];
+            var cAmt = catTotals[cName];
+            var cPct = totalExp > 0 ? Math.round((cAmt / totalExp) * 100) : 0;
+            html += '  <tr>';
+            html += '    <td><strong>' + esc(cName) + '</strong></td>';
+            html += '    <td style="text-align:right; color:#ef4444; font-weight:700;">' + formatMoney(cAmt) + '</td>';
+            html += '    <td style="text-align:right; color:#c79a3e;">' + cPct + '%</td>';
+            html += '  </tr>';
+          }
+          html += '  </tbody>';
+          html += '</table>';
+        }
+
+        container.innerHTML = html;
+      }
+
+      // Offline & Online CSV Ledger Exporter
+      function exportCsvLedger() {
+        if (!records || records.length === 0) {
+          alert("No transactions available to export.");
+          return;
+        }
+
+        var csv = "Date,Type,Category,Description,Amount\r\n";
+        var i;
+        for (i = 0; i < records.length; i++) {
+          var r = records[i];
+          var date = (r.date || "").replace(/"/g, '""');
+          var type = (r.type || "").replace(/"/g, '""');
+          var cat = (r.category || "").replace(/"/g, '""');
+          var desc = (r.title || "").replace(/"/g, '""');
+          var amt = parseFloat(r.amount) || 0;
+          csv += '"' + date + '","' + type + '","' + cat + '","' + desc + '","' + amt.toFixed(2) + '"\r\n';
+        }
+
+        try {
+          var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = "ledger-" + getTodayDateString() + ".csv";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          alert("Ledger exported successfully (" + records.length + " transactions).");
+        } catch (e) {
+          // Fallback data URI for classic webkit
+          var uri = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+          window.open(uri, "_blank");
+        }
+      }
+
+      // View switching controller
+      function switchView(viewName) {
+        currentView = viewName;
+
+        var vt = document.getElementById("viewTransactions");
+        var vb = document.getElementById("viewBudgets");
+        var vg = document.getElementById("viewGoals");
+        var vr = document.getElementById("viewReports");
+
+        if (vt) vt.style.display = viewName === "tx" ? "block" : "none";
+        if (vb) vb.style.display = viewName === "budgets" ? "block" : "none";
+        if (vg) vg.style.display = viewName === "goals" ? "block" : "none";
+        if (vr) vr.style.display = viewName === "reports" ? "block" : "none";
+
+        var tabOver = document.getElementById("tabOverview");
+        var tabExp = document.getElementById("tabExpenses");
+        var tabInc = document.getElementById("tabIncome");
+        var tabBud = document.getElementById("tabBudgets");
+        var tabGoa = document.getElementById("tabGoals");
+        var tabRep = document.getElementById("tabReports");
+
+        var fType = (document.getElementById("filterType") ? document.getElementById("filterType").value : "ALL");
+        if (tabOver) tabOver.className = "tab-item" + (viewName === "tx" && fType === "ALL" ? " active" : "");
+        if (tabExp) tabExp.className = "tab-item" + (viewName === "tx" && fType === "EXPENSE" ? " active" : "");
+        if (tabInc) tabInc.className = "tab-item" + (viewName === "tx" && fType === "INCOME" ? " active" : "");
+        if (tabBud) tabBud.className = "tab-item" + (viewName === "budgets" ? " active" : "");
+        if (tabGoa) tabGoa.className = "tab-item" + (viewName === "goals" ? " active" : "");
+        if (tabRep) tabRep.className = "tab-item" + (viewName === "reports" ? " active" : "");
+
+        if (viewName === "budgets") {
+          renderBudgets();
+        } else if (viewName === "goals") {
+          renderGoals();
+        } else if (viewName === "reports") {
+          renderReports();
+        } else {
+          renderTransactions();
+        }
+
+        updateSoftkeys();
+      }
+
       // Wire modal events
       function setupModals() {
         var expModal = document.getElementById("expenseModal");
         var incModal = document.getElementById("incomeModal");
+        var budModal = document.getElementById("budgetModal");
+        var goaModal = document.getElementById("goalModal");
+        var depModal = document.getElementById("depositModal");
+        var editModal = document.getElementById("editTxModal");
 
+        var fExp = document.getElementById("formExpense");
+        if (fExp) fExp.onsubmit = function () { return false; };
+        var fInc = document.getElementById("formIncome");
+        if (fInc) fInc.onsubmit = function () { return false; };
+        var fBud = document.getElementById("formBudget");
+        if (fBud) fBud.onsubmit = function () { return false; };
+        var fGoa = document.getElementById("formGoal");
+        if (fGoa) fGoa.onsubmit = function () { return false; };
+        var fDep = document.getElementById("formDeposit");
+        if (fDep) fDep.onsubmit = function () { return false; };
+        var fEdit = document.getElementById("formEditTx");
+        if (fEdit) fEdit.onsubmit = function () { return false; };
+        var fLog = document.getElementById("formLogin");
+        if (fLog) fLog.onsubmit = function () { return false; };
+
+        // 1. Add Expense
         var btnOpenExp = document.getElementById("btnOpenExpenseModal");
         var btnCloseExp = document.getElementById("btnCloseExpenseModal");
         var btnSaveExp = document.getElementById("btnSaveExpense");
-
-        var btnOpenInc = document.getElementById("btnOpenIncomeModal");
-        var btnCloseInc = document.getElementById("btnCloseIncomeModal");
-        var btnSaveInc = document.getElementById("btnSaveIncome");
 
         if (btnOpenExp) {
           btnOpenExp.onclick = function () {
             document.getElementById("expDate").value = getTodayDateString();
             expModal.style.display = "block";
+            updateSoftkeys();
           };
         }
         if (btnCloseExp) {
           btnCloseExp.onclick = function () {
             expModal.style.display = "none";
+            updateSoftkeys();
           };
         }
         if (btnSaveExp) {
@@ -1756,7 +2488,7 @@
               return;
             }
 
-            if (syncMode) {
+            if (syncMode && session) {
               var catId = parseInt(cat, 10);
               if (isNaN(catId)) {
                 alert("Please choose a category.");
@@ -1798,18 +2530,26 @@
             document.getElementById("expDescription").value = "";
             document.getElementById("expAmount").value = "";
             expModal.style.display = "none";
+            updateSoftkeys();
           };
         }
+
+        // 2. Add Income
+        var btnOpenInc = document.getElementById("btnOpenIncomeModal");
+        var btnCloseInc = document.getElementById("btnCloseIncomeModal");
+        var btnSaveInc = document.getElementById("btnSaveIncome");
 
         if (btnOpenInc) {
           btnOpenInc.onclick = function () {
             document.getElementById("incDate").value = getTodayDateString();
             incModal.style.display = "block";
+            updateSoftkeys();
           };
         }
         if (btnCloseInc) {
           btnCloseInc.onclick = function () {
             incModal.style.display = "none";
+            updateSoftkeys();
           };
         }
         if (btnSaveInc) {
@@ -1824,7 +2564,7 @@
               return;
             }
 
-            if (syncMode) {
+            if (syncMode && session) {
               if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
                 alert("Date must look like 2026-11-18.");
                 return;
@@ -1862,7 +2602,266 @@
             document.getElementById("incSource").value = "";
             document.getElementById("incAmount").value = "";
             incModal.style.display = "none";
+            updateSoftkeys();
           };
+        }
+
+        // 3. Set Category Budget
+        var btnOpenBud = document.getElementById("btnOpenBudgetModal");
+        var btnCloseBud = document.getElementById("btnCloseBudgetModal");
+        var btnSaveBud = document.getElementById("btnSaveBudget");
+
+        if (btnOpenBud) {
+          btnOpenBud.onclick = function () {
+            budModal.style.display = "block";
+            updateSoftkeys();
+          };
+        }
+        if (btnCloseBud) {
+          btnCloseBud.onclick = function () {
+            budModal.style.display = "none";
+            updateSoftkeys();
+          };
+        }
+        if (btnSaveBud) {
+          btnSaveBud.onclick = function () {
+            var catVal = document.getElementById("budgetCategory").value;
+            var limitVal = parseFloat(document.getElementById("budgetLimit").value);
+
+            if (!catVal || isNaN(limitVal) || limitVal <= 0) {
+              alert("Please select a valid category and enter a positive monthly limit.");
+              return;
+            }
+
+            if (syncMode && session) {
+              var catId = parseInt(catVal, 10);
+              apiCall("POST", "/expenses/budget/user/" + session.userId,
+                { categoryId: catId, limitAmount: limitVal },
+                function (status) {
+                  if (status === 200 || status === 201) {
+                    document.getElementById("budgetLimit").value = "";
+                    budModal.style.display = "none";
+                    refreshFromServer();
+                  } else if (status !== 401) {
+                    alert("Could not save budget (" + status + ").");
+                  }
+                });
+              return;
+            }
+
+            // Local fallback budget tracking
+            budgetTarget = limitVal;
+            try {
+              if (window.localStorage) {
+                window.localStorage.setItem(BUDGET_KEY, String(budgetTarget));
+              }
+            } catch (e) {}
+            budModal.style.display = "none";
+            updateSummary();
+            renderBudgets();
+            updateSoftkeys();
+          };
+        }
+
+        // 4. Create Savings Goal
+        var btnOpenGoa = document.getElementById("btnOpenGoalModal");
+        var btnCloseGoa = document.getElementById("btnCloseGoalModal");
+        var btnSaveGoa = document.getElementById("btnSaveGoal");
+
+        if (btnOpenGoa) {
+          btnOpenGoa.onclick = function () {
+            goaModal.style.display = "block";
+            updateSoftkeys();
+          };
+        }
+        if (btnCloseGoa) {
+          btnCloseGoa.onclick = function () {
+            goaModal.style.display = "none";
+            updateSoftkeys();
+          };
+        }
+        if (btnSaveGoa) {
+          btnSaveGoa.onclick = function () {
+            var gName = document.getElementById("goalName").value;
+            var gTarget = parseFloat(document.getElementById("goalTarget").value);
+            var gDate = document.getElementById("goalDate").value || "";
+
+            if (!gName || isNaN(gTarget) || gTarget <= 0) {
+              alert("Please enter a valid goal name and target amount.");
+              return;
+            }
+
+            if (syncMode && session) {
+              apiCall("POST", "/savings/goals/user/" + session.userId,
+                { name: gName, targetAmount: gTarget, targetDate: gDate || null, status: "IN_PROGRESS", isRecurring: false },
+                function (status) {
+                  if (status === 200 || status === 201) {
+                    document.getElementById("goalName").value = "";
+                    document.getElementById("goalTarget").value = "";
+                    document.getElementById("goalDate").value = "";
+                    goaModal.style.display = "none";
+                    refreshFromServer();
+                  } else if (status !== 401) {
+                    alert("Could not create savings goal (" + status + ").");
+                  }
+                });
+              return;
+            }
+
+            var newGoal = {
+              id: new Date().getTime(),
+              name: gName,
+              targetAmount: gTarget,
+              currentAmount: 0,
+              targetDate: gDate,
+              status: "IN_PROGRESS"
+            };
+            savingsGoalsList.unshift(newGoal);
+            document.getElementById("goalName").value = "";
+            document.getElementById("goalTarget").value = "";
+            document.getElementById("goalDate").value = "";
+            goaModal.style.display = "none";
+            renderGoals();
+            updateSoftkeys();
+          };
+        }
+
+        // 5. Deposit to Goal
+        var btnCloseDep = document.getElementById("btnCloseDepositModal");
+        var btnSaveDep = document.getElementById("btnSaveDeposit");
+
+        if (btnCloseDep) {
+          btnCloseDep.onclick = function () {
+            depModal.style.display = "none";
+            updateSoftkeys();
+          };
+        }
+        if (btnSaveDep) {
+          btnSaveDep.onclick = function () {
+            var gId = document.getElementById("depositGoalId").value;
+            var depAmt = parseFloat(document.getElementById("depositAmount").value);
+
+            if (isNaN(depAmt) || depAmt <= 0) {
+              alert("Please enter a positive deposit amount.");
+              return;
+            }
+
+            if (syncMode && session) {
+              apiCall("POST", "/savings/goals/" + gId + "/deposit/user/" + session.userId,
+                { amount: depAmt },
+                function (status) {
+                  if (status === 200 || status === 201) {
+                    document.getElementById("depositAmount").value = "";
+                    depModal.style.display = "none";
+                    refreshFromServer();
+                  } else if (status !== 401) {
+                    alert("Could not apply deposit (" + status + ").");
+                  }
+                });
+              return;
+            }
+
+            for (var j = 0; j < savingsGoalsList.length; j++) {
+              if (String(savingsGoalsList[j].id) === String(gId)) {
+                savingsGoalsList[j].currentAmount = (savingsGoalsList[j].currentAmount || 0) + depAmt;
+                if (savingsGoalsList[j].currentAmount >= savingsGoalsList[j].targetAmount) {
+                  savingsGoalsList[j].status = "COMPLETED";
+                }
+                break;
+              }
+            }
+            depModal.style.display = "none";
+            renderGoals();
+            updateSoftkeys();
+          };
+        }
+
+        // 6. Edit Transaction
+        var btnCloseEdit = document.getElementById("btnCloseEditModal");
+        var btnSaveEdit = document.getElementById("btnSaveEditTx");
+
+        if (btnCloseEdit) {
+          btnCloseEdit.onclick = function () {
+            editModal.style.display = "none";
+            updateSoftkeys();
+          };
+        }
+        if (btnSaveEdit) {
+          btnSaveEdit.onclick = function () {
+            var editId = document.getElementById("editTxId").value;
+            var editType = document.getElementById("editTxType").value;
+            var desc = document.getElementById("editTxDescription").value;
+            var amt = parseFloat(document.getElementById("editTxAmount").value);
+            var cat = document.getElementById("editTxCategory").value;
+            var date = document.getElementById("editTxDate").value || getTodayDateString();
+
+            if (!desc || isNaN(amt) || amt <= 0) {
+              alert("Please enter a valid description and amount.");
+              return;
+            }
+
+            var target = null;
+            for (var i = 0; i < records.length; i++) {
+              if (String(records[i].id) === String(editId)) {
+                target = records[i];
+                break;
+              }
+            }
+            if (!target) return;
+
+            if (syncMode && session) {
+              if (editType === "EXPENSE") {
+                var catId = parseInt(cat, 10);
+                if (isNaN(catId) && categories.length > 0) {
+                  for (var c = 0; c < categories.length; c++) {
+                    if (categories[c].name === cat) {
+                      catId = categories[c].id;
+                      break;
+                    }
+                  }
+                }
+                apiCall("PUT", "/expenses/" + target.serverId + "/user/" + session.userId,
+                  { amount: amt, description: desc, expenseDate: date, categoryId: catId, isRecurring: false },
+                  function (status) {
+                    if (status === 200 || status === 204) {
+                      editModal.style.display = "none";
+                      refreshFromServer();
+                    } else if (status !== 401) {
+                      alert("Could not update expense (" + status + ").");
+                    }
+                  });
+              } else {
+                apiCall("PUT", "/incomes/" + target.serverId + "/user/" + session.userId,
+                  { source: desc, amount: amt, incomeDate: date, description: "", isRecurring: false,
+                    kind: "", countsTowardMonth: "", reimbursedCategoryId: 0 },
+                  function (status) {
+                    if (status === 200 || status === 204) {
+                      editModal.style.display = "none";
+                      refreshFromServer();
+                    } else if (status !== 401) {
+                      alert("Could not update income (" + status + ").");
+                    }
+                  });
+              }
+              return;
+            }
+
+            target.title = desc;
+            target.amount = amt;
+            target.category = cat;
+            target.date = date;
+            saveRecords();
+            updateSummary();
+            renderTransactions();
+            editModal.style.display = "none";
+            updateSoftkeys();
+          };
+        }
+
+        // 7. CSV Export
+        var btnExpCsv = document.getElementById("btnExportCsv");
+        if (btnExpCsv) {
+          btnExpCsv.onclick = exportCsvLedger;
         }
       }
 
@@ -1888,36 +2887,42 @@
         var tabOverview = document.getElementById("tabOverview");
         var tabExpenses = document.getElementById("tabExpenses");
         var tabIncome = document.getElementById("tabIncome");
+        var tabBudgets = document.getElementById("tabBudgets");
+        var tabGoals = document.getElementById("tabGoals");
+        var tabReports = document.getElementById("tabReports");
         var tabRefresh = document.getElementById("tabRefresh");
-
-        function clearActiveTabs() {
-          tabOverview.className = "tab-item";
-          tabExpenses.className = "tab-item";
-          tabIncome.className = "tab-item";
-        }
 
         if (tabOverview) {
           tabOverview.onclick = function () {
-            clearActiveTabs();
-            this.className = "tab-item active";
-            document.getElementById("filterType").value = "ALL";
-            renderTransactions();
+            if (document.getElementById("filterType")) document.getElementById("filterType").value = "ALL";
+            switchView("tx");
           };
         }
         if (tabExpenses) {
           tabExpenses.onclick = function () {
-            clearActiveTabs();
-            this.className = "tab-item active";
-            document.getElementById("filterType").value = "EXPENSE";
-            renderTransactions();
+            if (document.getElementById("filterType")) document.getElementById("filterType").value = "EXPENSE";
+            switchView("tx");
           };
         }
         if (tabIncome) {
           tabIncome.onclick = function () {
-            clearActiveTabs();
-            this.className = "tab-item active";
-            document.getElementById("filterType").value = "INCOME";
-            renderTransactions();
+            if (document.getElementById("filterType")) document.getElementById("filterType").value = "INCOME";
+            switchView("tx");
+          };
+        }
+        if (tabBudgets) {
+          tabBudgets.onclick = function () {
+            switchView("budgets");
+          };
+        }
+        if (tabGoals) {
+          tabGoals.onclick = function () {
+            switchView("goals");
+          };
+        }
+        if (tabReports) {
+          tabReports.onclick = function () {
+            switchView("reports");
           };
         }
         if (tabRefresh) {
@@ -2025,9 +3030,9 @@
 
       function fillExpenseCategories() {
         var sel = document.getElementById("expCategory");
-        if (!sel) {
-          return;
-        }
+        var editSel = document.getElementById("editTxCategory");
+        var budSel = document.getElementById("budgetCategory");
+
         var html = "";
         var i;
         if (syncMode && categories.length) {
@@ -2037,22 +3042,32 @@
         } else {
           html = defaultExpenseOptions;
         }
-        sel.innerHTML = html;
+
+        if (sel) sel.innerHTML = html;
+        if (editSel) editSel.innerHTML = html;
+        if (budSel) {
+          budSel.innerHTML = '<option value="">Select Category</option>' + html;
+        }
       }
 
       function showAll() {
         updateSummary();
-        renderTransactions();
+        if (currentView === "budgets") renderBudgets();
+        else if (currentView === "goals") renderGoals();
+        else if (currentView === "reports") renderReports();
+        else renderTransactions();
         renderAccountBar();
         fillExpenseCategories();
       }
 
-      // Loads categories, expenses and incomes. done(true) when the lists arrived.
+      // Loads categories, expenses, incomes, budgets, and savings goals. done(true) when lists arrived.
       function loadFromServer(done) {
-        var pending = 3;
+        var pending = 5;
         var failed = false;
         var exp = [];
         var inc = [];
+        var budgets = [];
+        var goals = [];
 
         function finish() {
           pending--;
@@ -2083,6 +3098,8 @@
             return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0);
           });
           records = list;
+          budgetStatusList = budgets;
+          savingsGoalsList = goals;
           done(true);
         }
 
@@ -2105,6 +3122,18 @@
             inc = data;
           } else {
             failed = true;
+          }
+          finish();
+        });
+        apiCall("GET", "/expenses/budget/status/user/" + session.userId, null, function (status, data) {
+          if (status === 200 && data && data.length !== undefined) {
+            budgets = data;
+          }
+          finish();
+        });
+        apiCall("GET", "/savings/goals/user/" + session.userId, null, function (status, data) {
+          if (status === 200 && data && data.length !== undefined) {
+            goals = data;
           }
           finish();
         });
@@ -2138,6 +3167,8 @@
         session = null;
         syncMode = false;
         categories = [];
+        budgetStatusList = [];
+        savingsGoalsList = [];
         loadRecords();
         showAll();
         if (expired) {
@@ -2162,10 +3193,12 @@
           } else {
             errEl.innerHTML = "";
             modal.style.display = "block";
+            updateSoftkeys();
           }
         };
         closeBtn.onclick = function () {
           modal.style.display = "none";
+          updateSoftkeys();
         };
         submitBtn.onclick = function () {
           var who = document.getElementById("loginEmail").value;
@@ -2181,6 +3214,9 @@
                 window.localStorage.setItem("token", data.token);
                 window.localStorage.setItem("userId", String(data.userId));
                 window.localStorage.setItem("userName", data.name || "");
+                if (data.currency) {
+                  window.localStorage.setItem("userCurrency", data.currency);
+                }
               } catch (e) {
                 // storage blocked: the session lasts for this page only
               }
@@ -2221,13 +3257,22 @@
       window.ExpenseTrackerMobile = {
         getRecords: function () { return records; },
         addRecord: function (r) { records.unshift(r); saveRecords(); updateSummary(); renderTransactions(); },
+        deleteRecord: deleteRecord,
         formatMoney: formatMoney,
         detectPlatform: detectLegacyPlatform,
         updateSoftkeys: updateSoftkeys,
         handleLsk: handleFpLsk,
         handleCsk: handleFpCsk,
         handleRsk: handleFpRsk,
-        focusElement: focusFpElement
+        focusElement: focusFpElement,
+        switchView: switchView,
+        renderBudgets: renderBudgets,
+        renderGoals: renderGoals,
+        renderReports: renderReports,
+        exportCsvLedger: exportCsvLedger,
+        getBudgetStatus: function () { return budgetStatusList; },
+        getSavingsGoals: function () { return savingsGoalsList; },
+        openEditTxModal: openEditTxModal
       };
     })();
   </script>
