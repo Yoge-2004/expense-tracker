@@ -24,7 +24,10 @@
   };
   const isKaiOsOrFeature = () => {
     const ua = navigator.userAgent || '';
-    return /KaiOS|KAIOS|Jio|FeaturePhone|Nokia|Symbian|Series60|S60|BlackBerry|BB10|IEMobile|Windows CE|Windows Phone|Bada|Tizen|webOS|PalmOS|MeeGo|Maemo|MAUI|MTK|MediaTek|BREW|Opera Mini|Opera Mobi|UCWEB|UCBrowser|NetFront|Openwave|UP\.Browser|Obigo|Teleca|SEMC/i.test(ua);
+    // Exclude modern touch smartphones (iPhone, iPad, Android without KaiOS/Jio)
+    if (/iPhone|iPad|iPod/i.test(ua)) return false;
+    if (/Android/i.test(ua) && !/KaiOS|KAIOS|Jio/i.test(ua) && (hasTouch() || window.innerWidth > 320)) return false;
+    return /KaiOS|KAIOS|Jio|FeaturePhone|Nokia8110|Nokia2720|Symbian|Series60|S60|BlackBerry|BB10|IEMobile|Windows CE|Windows Phone|Bada|BREW|Opera Mini|NetFront|Openwave/i.test(ua);
   };
   const isFeatureDevice = () => isFeatureViewport() || isKaiOsOrFeature();
 

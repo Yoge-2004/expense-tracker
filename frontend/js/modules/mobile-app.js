@@ -17,8 +17,8 @@
       return; // Only run on dashboard
     }
 
-    injectMobileBottomNav();
-    injectMobileActionSheet();
+    // Modern mobile devices (Android / iOS) use standard touch navigation.
+    // Fixed bottom bars are strictly reserved for Feature Mobiles (softkeys).
     injectMobileModeBadge();
     setupActiveSectionObserver();
   }

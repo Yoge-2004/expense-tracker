@@ -16,17 +16,20 @@ html {
 body {
   min-height: 100% !important;
   height: auto !important;
-  overflow-x: hidden !important;
+  overflow-x: clip !important;
   overflow-y: visible !important;
   -webkit-overflow-scrolling: touch !important;
   touch-action: pan-y !important;
   position: relative !important;
 }
 
-.dashboard-container {
+.dashboard-container,
+.auth-page,
+.admin-container {
   height: auto !important;
   min-height: 100% !important;
-  overflow: visible !important;
+  overflow-x: clip !important;
+  overflow-y: visible !important;
 }
 
 /* ================== 8. MOBILE RESPONSIVE & GLOBAL SCROLLABILITY ================== */
@@ -44,7 +47,7 @@ body {
   body {
     min-height: 100% !important;
     height: auto !important;
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
     overflow-y: visible !important;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y !important;
@@ -61,7 +64,8 @@ body {
     flex-direction: column;
     gap: 14px;
     padding: 14px 14px 36px !important;
-    overflow: visible !important;
+    overflow-x: clip !important;
+    overflow-y: visible !important;
     touch-action: pan-y !important;
     -webkit-overflow-scrolling: touch !important;
   }

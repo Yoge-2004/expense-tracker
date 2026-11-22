@@ -580,16 +580,31 @@ input:invalid:not(:placeholder-shown),
 
 /* G. Compact Mobile & Handheld Displays (281px to 480px) */
 @media (min-width: 281px) and (max-width: 480px) {
-  html, body {
+  html {
     overflow-x: hidden !important;
+    overflow-y: auto !important;
     max-width: 100vw !important;
+    height: auto !important;
+    min-height: 100% !important;
+  }
+
+  body {
+    overflow-x: clip !important;
+    overflow-y: visible !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    min-height: 100% !important;
+    touch-action: pan-y !important;
   }
 
   .dashboard-container {
     max-width: 100% !important;
     padding: 12px 10px 88px !important;
     gap: 12px !important;
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
+    overflow-y: visible !important;
+    height: auto !important;
+    min-height: 100% !important;
   }
 
   .grid-4-metrics {
@@ -670,16 +685,31 @@ input:invalid:not(:placeholder-shown),
 
 /* H. Micro Displays & Smartwatches (<= 280px, Apple Watch / WearOS / Wrist Displays) */
 @media (max-width: 280px) {
-  html, body {
+  html {
     overflow-x: hidden !important;
+    overflow-y: auto !important;
     max-width: 100vw !important;
+    height: auto !important;
+    min-height: 100% !important;
+  }
+
+  body {
+    overflow-x: clip !important;
+    overflow-y: visible !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    min-height: 100% !important;
+    touch-action: pan-y !important;
   }
 
   .dashboard-container {
     max-width: 100% !important;
     padding: 6px 4px 64px !important;
     gap: 8px !important;
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
+    overflow-y: visible !important;
+    height: auto !important;
+    min-height: 100% !important;
   }
 
   .top-bar {

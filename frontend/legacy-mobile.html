@@ -583,8 +583,9 @@
       outline: 1px solid #c79a3e;
     }
 
-    /* Native Feature Phone Softkey Bar (Single Fixed Bottom Bar) */
+    /* Native Feature Phone Softkey Bar (Strictly on Feature Mobiles) */
     .fp-softkey-bar {
+      display: none;
       position: fixed;
       bottom: 0;
       left: 0;
@@ -592,14 +593,109 @@
       height: 30px;
       line-height: 29px;
       background-color: #0e100c;
-      background-color: rgba(14, 16, 12, 0.95);
-      border-top: 1px solid #282c22;
       border-top: 1px solid rgba(199, 154, 62, 0.25);
       z-index: 10001;
       overflow: hidden;
       padding: 0 10px;
       font-family: inherit;
       box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    body.is-feature-device .fp-softkey-bar {
+      display: block !important;
+    }
+
+    body.is-feature-device {
+      padding-bottom: 34px !important;
+    }
+
+    /* Light Theme Adaptation for Feature Mobile */
+    [data-theme="light"] body {
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+    [data-theme="light"] .header {
+      background-color: #ffffff;
+      border-bottom-color: rgba(15, 23, 42, 0.12);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    [data-theme="light"] .brand-title span {
+      color: #0f172a;
+    }
+    [data-theme="light"] .badge-os {
+      background-color: rgba(199, 154, 62, 0.12);
+      color: #b45309;
+      border-color: rgba(199, 154, 62, 0.35);
+    }
+    [data-theme="light"] .header-link {
+      background-color: #e2e8f0;
+      color: #0f172a;
+      border-color: rgba(15, 23, 42, 0.15);
+    }
+    [data-theme="light"] .nav-tabs {
+      background-color: #e2e8f0;
+      border-bottom-color: rgba(15, 23, 42, 0.12);
+    }
+    [data-theme="light"] .tab-item {
+      background-color: #f1f5f9;
+      color: #475569;
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+    [data-theme="light"] .tab-item.active {
+      background-color: #c79a3e;
+      color: #ffffff;
+    }
+    [data-theme="light"] .card,
+    [data-theme="light"] .metric-box {
+      background-color: #ffffff;
+      border-color: rgba(15, 23, 42, 0.12);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    [data-theme="light"] .metric-box {
+      background-color: #f8fafc;
+    }
+    [data-theme="light"] .metric-val {
+      color: #0f172a;
+    }
+    [data-theme="light"] .metric-lbl {
+      color: #64748b;
+    }
+    [data-theme="light"] .table th {
+      background-color: #f8fafc;
+      color: #475569;
+      border-bottom-color: rgba(15, 23, 42, 0.12);
+    }
+    [data-theme="light"] .table td {
+      border-bottom-color: rgba(15, 23, 42, 0.08);
+      color: #0f172a;
+    }
+    [data-theme="light"] .text-muted {
+      color: #64748b !important;
+    }
+    [data-theme="light"] .fp-softkey-bar {
+      background-color: #ffffff !important;
+      border-top: 1px solid rgba(15, 23, 42, 0.15) !important;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08) !important;
+    }
+    [data-theme="light"] .fp-lsk {
+      color: #dc2626 !important;
+    }
+    [data-theme="light"] .fp-csk {
+      color: #b45309 !important;
+    }
+    [data-theme="light"] .fp-rsk {
+      color: #059669 !important;
+    }
+    [data-theme="light"] .modal-content {
+      background-color: #ffffff;
+      border-color: rgba(15, 23, 42, 0.15);
+      color: #0f172a;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    [data-theme="light"] .form-control {
+      background-color: #ffffff;
+      border-color: rgba(15, 23, 42, 0.2);
+      color: #0f172a;
     }
 
     .fp-lsk {
@@ -1344,6 +1440,28 @@
       var budgetStatusList = [];
       var savingsGoalsList = [];
       var currentView = "tx"; // "tx", "budgets", "goals", "reports"
+
+      // Theme Adaptation Engine (Dark by default, unless explicitly set to 'light')
+      try {
+        var storedTheme = localStorage.getItem("theme");
+        if (storedTheme === "light") {
+          document.documentElement.setAttribute("data-theme", "light");
+        } else {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      } catch (e) {}
+
+      // Feature Mobile Platform Detection & Softkey Bar Activation
+      (function checkFeatureMobile() {
+        var hasTouch = 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0;
+        var screenWidth = (window.screen && window.screen.width) || window.innerWidth;
+        var ua = navigator.userAgent || "";
+        var isModernSmart = /iPhone|iPad|iPod/i.test(ua) || (/Android/i.test(ua) && !/KaiOS|KAIOS|Jio/i.test(ua) && (hasTouch || window.innerWidth > 320));
+        var isFeature = !isModernSmart && (!hasTouch && Math.min(window.innerWidth, screenWidth) <= 320 || /KaiOS|KAIOS|Jio|FeaturePhone|Nokia8110|Nokia2720|Symbian|Series60|S60|BlackBerry|BB10|IEMobile|Windows CE|Windows Phone|Bada|BREW|Opera Mini/i.test(ua));
+        if (isFeature) {
+          document.body.className = (document.body.className + " is-feature-device").trim();
+        }
+      })();
 
       // Comprehensive Historical Legacy Mobile & Feature Phone Platform Detection
       function detectLegacyPlatform(customUa) {

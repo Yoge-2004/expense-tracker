@@ -75,24 +75,6 @@
    Mobile Devices & Tablets (max-width: 768px)
    ========================================================================== */
 @media (max-width: 768px) {
-    /* Safe-area buffer for bottom navigation bar */
-    body {
-        padding-bottom: calc(78px + env(safe-area-inset-bottom, 12px)) !important;
-    }
-
-    /* Move floating calculator button above the mobile bottom nav */
-    #floatingCalcBtn {
-        bottom: calc(84px + env(safe-area-inset-bottom, 12px)) !important;
-        right: 16px !important;
-        z-index: 998 !important;
-    }
-
-    /* System Status Pill placement above mobile nav */
-    #systemStatusPill {
-        bottom: calc(84px + env(safe-area-inset-bottom, 12px)) !important;
-        left: 16px !important;
-    }
-
     /* Injected Header Mode Switcher Badge for Dashboard */
     #mobileModeBadge {
         display: inline-flex;
@@ -100,31 +82,10 @@
         align-self: flex-start;
     }
 
-    /* Native-Style Mobile Bottom Navigation Bar */
-    .mobile-bottom-nav {
-        display: flex;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
-        height: calc(62px + env(safe-area-inset-bottom, 10px));
-        padding-bottom: env(safe-area-inset-bottom, 10px);
-        background: rgba(16, 18, 14, 0.92);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
-        z-index: 9999;
-        justify-content: space-around;
-        align-items: center;
-    }
-
-    /* Light Theme Adjustment */
-    [data-theme="light"] .mobile-bottom-nav {
-        background: rgba(255, 255, 255, 0.94);
-        border-top: 1px solid rgba(0, 0, 0, 0.08);
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+    /* Bottom navigation bar is strictly hidden on modern mobile devices (reserved for feature phones) */
+    .mobile-bottom-nav,
+    .mobile-action-sheet-overlay {
+        display: none !important;
     }
 
     .mobile-nav-item {
