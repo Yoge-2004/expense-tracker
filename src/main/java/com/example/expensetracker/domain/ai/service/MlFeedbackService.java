@@ -60,7 +60,7 @@ public class MlFeedbackService {
         long expenseId;
         try {
             expenseId = Long.parseLong(request.transactionId().trim());
-        } catch (NumberFormatException exception) {
+        } catch (NumberFormatException _) {
             throw new IllegalArgumentException("ML feedback transactionId must reference an expense id");
         }
         Expense expense = expenseRepository.findById(expenseId)
@@ -98,7 +98,7 @@ public class MlFeedbackService {
             long afterId;
             try {
                 afterId = Long.parseLong(after);
-            } catch (NumberFormatException exception) {
+            } catch (NumberFormatException _) {
                 throw new IllegalArgumentException("ML feedback cursor must be a numeric id");
             }
             feedback = repository.findByTrainingStatusInAndIdGreaterThanOrderByIdAsc(

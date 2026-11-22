@@ -489,7 +489,7 @@ public final class FallbackSyncEngine {
      * only sees writes made after the first call read the fallback.
      */
     public SyncResult syncBack(Connection h2, Connection primary) throws SQLException {
-        long started = System.currentTimeMillis();
+        long startedNanos = System.nanoTime();
         ensureSupportTables(h2);
         if (!hasBaseline(h2)) {
             log.warn("Fallback sync: no baseline recorded; treating the current fallback state as unchanged.");
@@ -593,7 +593,7 @@ public final class FallbackSyncEngine {
                     c.operation, "row", c.table, c.reason.length() > 40 ? c.reason.substring(0, 40) : c.reason, CONFLICT_TABLE);
         }
         SyncResult result = new SyncResult(inserted, updated, deleted, skipped, conflicts.size(),
-                System.currentTimeMillis() - started);
+                (System.nanoTime() - startedNanos) / 1_000_000);
         log.info("Fallback sync finished: {} inserted, {} updated, {} deleted, {} already present, {} conflicts in {} ms.",
                 inserted, updated, deleted, skipped, conflicts.size(), result.millis());
         return result;
@@ -633,10 +633,9 @@ public final class FallbackSyncEngine {
             if (sets.isEmpty()) {
                 return 2;
             }
-            List<String> assignments = new ArrayList<>();
-            for (Col c : sets) {
-                assignments.add(q(c.name()) + " = ?");
-            }
+            List<String> assignments = sets.stream()
+                    .map(c -> q(c.name()) + " = ?")
+                    .toList();
             try (PreparedStatement ps = primary.prepareStatement("UPDATE " + q(target.name()) + " SET "
                     + String.join(", ", assignments) + " WHERE " + whereClause(pkCols))) {
                 int i = 1;
@@ -714,11 +713,7 @@ public final class FallbackSyncEngine {
     }
 
     private static String whereClause(List<Col> pkCols) {
-        List<String> parts = new ArrayList<>();
-        for (Col c : pkCols) {
-            parts.add(q(c.name()) + " = ?");
-        }
-        return String.join(" AND ", parts);
+        return String.join(" AND ", pkCols.stream().map(c -> q(c.name()) + " = ?").toList());
     }
 
     private static void bind(PreparedStatement ps, int index, Col column, Object value) throws SQLException {
@@ -908,30 +903,20 @@ public final class FallbackSyncEngine {
     }
 
     static String canon(Object v) {
-        if (v == null) {
-            return NULL_MARK;
-        }
-        if (v instanceof BigDecimal b) {
-            return b.signum() == 0 ? "0" : b.stripTrailingZeros().toPlainString();
-        }
-        if (v instanceof byte[] bytes) {
-            return "b:" + Base64.getEncoder().encodeToString(bytes);
-        }
-        if (v instanceof java.sql.Timestamp ts) {
-            return ts.toLocalDateTime().toString();
-        }
-        return v.toString();
+        return switch (v) {
+            case null -> NULL_MARK;
+            case BigDecimal b -> b.signum() == 0 ? "0" : b.stripTrailingZeros().toPlainString();
+            case byte[] bytes -> "b:" + Base64.getEncoder().encodeToString(bytes);
+            case java.sql.Timestamp ts -> ts.toLocalDateTime().toString();
+            case Object obj -> obj.toString();
+        };
     }
 
     private static String sha256(String text) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(text.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(hash.length * 2);
-            for (byte b : hash) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
+            return java.util.HexFormat.of().formatHex(hash);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is unavailable", e);
         }

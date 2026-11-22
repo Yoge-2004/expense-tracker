@@ -22,14 +22,25 @@ import java.net.UnknownHostException;
 @Component
 public class ClientIpResolver {
 
-    @Value("${app.trusted-proxy.enabled:false}")
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private TrustedProxyProperties properties;
+
     private boolean trustedProxyEnabled;
-
-    @Value("${app.trusted-proxy.cidrs:127.0.0.1/32,::1/128}")
-    private String trustedProxyCidrs;
-
-    @Value("${app.trusted-proxy.hops:0}")
+    private String trustedProxyCidrs = "127.0.0.1/32,::1/128";
     private int trustedProxyHops;
+
+    public ClientIpResolver(@org.springframework.beans.factory.annotation.Autowired(required = false) TrustedProxyProperties properties) {
+        this.properties = properties;
+        if (properties != null) {
+            this.trustedProxyEnabled = properties.enabled();
+            this.trustedProxyCidrs = properties.cidrs();
+            this.trustedProxyHops = properties.hops();
+        }
+    }
+
+    public ClientIpResolver() {
+        this(null);
+    }
 
     public String resolve(HttpServletRequest request) {
         String remoteAddr = request.getRemoteAddr();

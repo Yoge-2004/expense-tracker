@@ -223,8 +223,8 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
             throw new BadRequestException("ML retraining script not found at ml/jobs/retrain.py");
         }
 
-        String runId = "run_manual_" + System.currentTimeMillis();
         Instant startTime = Instant.now();
+        String runId = "run_manual_" + startTime.toEpochMilli();
         StringBuilder executionLogs = new StringBuilder();
         executionLogs.append(String.format("[%s] [INFO] [AdminStepUp] Step-Up PIN verified for operator: %s (runId: %s)\n",
                 startTime, actor.getEmail(), runId));
@@ -529,7 +529,7 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
             if (file.exists()) {
                 try {
                     runs = objectMapper.readValue(file, new TypeReference<List<Map<String, Object>>>() {});
-                } catch (Exception e) {
+                } catch (Exception _) {
                     runs = new ArrayList<>();
                 }
             }

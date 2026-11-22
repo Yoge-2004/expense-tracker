@@ -286,7 +286,7 @@ public class FallbackRecoveryCoordinator implements ResilientRoutingDataSource.R
             try (Connection fallback = routing.fallbackDataSource().getConnection()) {
                 info.put("pendingFallbackChanges", engine.pendingChanges(fallback));
                 info.put("conflictsAwaitingReview", engine.conflictCount(fallback));
-            } catch (Exception e) {
+            } catch (Exception _) {
                 info.put("pendingFallbackChanges", "unknown");
             } finally {
                 lock.unlock();

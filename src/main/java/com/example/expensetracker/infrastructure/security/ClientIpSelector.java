@@ -77,7 +77,7 @@ public final class ClientIpSelector {
             try {
                 var addr = InetAddress.getByName(value); // an IP literal: never triggers a DNS lookup
                 return addr != null;
-            } catch (Exception e) {
+            } catch (Exception _) {
                 return false;
             }
         }
@@ -112,7 +112,7 @@ public final class ClientIpSelector {
             return unspecifiedOrLoopback && (b[15] == 0 || b[15] == 1)
                     || (b0 & 0xFE) == 0xFC
                     || (b0 == 0xFE && (b1 & 0xC0) == 0x80);
-        } catch (Exception e) {
+        } catch (Exception _) {
             return true;
         }
     }

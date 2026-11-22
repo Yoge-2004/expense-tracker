@@ -92,12 +92,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * say whether a filter applies, {@code pattern} is always a real LIKE pattern and {@code role} always a real
      * value (ignored when {@code hasRole} is false).
      */
-    @Query("SELECT u FROM User u WHERE " +
-           "(:hasQuery = false OR LOWER(u.name) LIKE :pattern " +
-           "OR LOWER(u.email) LIKE :pattern " +
-           "OR LOWER(u.username) LIKE :pattern) " +
-           "AND (:hasRole = false OR u.role = :role) " +
-           "ORDER BY u.id DESC")
+    @Query("""
+            SELECT u FROM User u WHERE \
+            (:hasQuery = false OR LOWER(u.name) LIKE :pattern \
+            OR LOWER(u.email) LIKE :pattern \
+            OR LOWER(u.username) LIKE :pattern) \
+            AND (:hasRole = false OR u.role = :role) \
+            ORDER BY u.id DESC""")
     Page<User> searchUsersFiltered(@Param("hasQuery") boolean hasQuery, @Param("pattern") String pattern,
                                    @Param("hasRole") boolean hasRole, @Param("role") Role role, Pageable pageable);
 

@@ -56,7 +56,7 @@ public class ResilientRoutingDataSource implements DataSource {
     private final AtomicReference<Mode> mode = new AtomicReference<>(Mode.PRIMARY);
     private volatile RecoveryHandler recoveryHandler;
     private volatile CountDownLatch gate;
-    private volatile long nextProbeAt = 0;
+    private volatile long nextProbeNanos = 0;
     private volatile Instant lastModeChange = Instant.now();
     private volatile String lastRecoveryError;
 
@@ -122,8 +122,8 @@ public class ResilientRoutingDataSource implements DataSource {
             if (connection != null) {
                 return connection;
             }
-        } else if (current == Mode.FALLBACK && primaryDs != null && System.currentTimeMillis() >= nextProbeAt) {
-            nextProbeAt = System.currentTimeMillis() + failedRecoveryBackoffMs;
+        } else if (current == Mode.FALLBACK && primaryDs != null && System.nanoTime() >= nextProbeNanos) {
+            nextProbeNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(failedRecoveryBackoffMs);
             Thread.ofVirtual().name("neon-primary-probe").start(this::probePrimary);
         }
         awaitGate();
@@ -152,7 +152,7 @@ public class ResilientRoutingDataSource implements DataSource {
 
     private void enterFallback(String reason) {
         if (mode.compareAndSet(Mode.PRIMARY, Mode.FALLBACK)) {
-            nextProbeAt = System.currentTimeMillis() + retryIntervalMs;
+            nextProbeNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(retryIntervalMs);
             lastModeChange = Instant.now();
             log.warn("Primary database unavailable; entering emergency fallback mode: {}", reason);
         }
@@ -161,11 +161,11 @@ public class ResilientRoutingDataSource implements DataSource {
     private void probePrimary() {
         try (Connection probe = primaryDs.getConnection()) {
             if (probe == null || !probe.isValid(5)) {
-                nextProbeAt = System.currentTimeMillis() + failedRecoveryBackoffMs;
+                nextProbeNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(failedRecoveryBackoffMs);
                 return;
             }
-        } catch (Exception e) {
-            nextProbeAt = System.currentTimeMillis() + failedRecoveryBackoffMs;
+        } catch (Exception _) {
+            nextProbeNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(failedRecoveryBackoffMs);
             return;
         }
         beginRecovery();
@@ -201,7 +201,7 @@ public class ResilientRoutingDataSource implements DataSource {
             lastModeChange = Instant.now();
             success = true;
             log.info("Switched back to the primary database. Merged during recovery: {} then {}.", first, last);
-        } catch (InterruptedException ie) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             lastRecoveryError = "interrupted";
             fail("interrupted");
@@ -228,7 +228,7 @@ public class ResilientRoutingDataSource implements DataSource {
         log.error("Could not merge the fallback into the primary database ({}); staying on the fallback and retrying later.", reason);
         mode.set(Mode.FALLBACK);
         lastModeChange = Instant.now();
-        nextProbeAt = System.currentTimeMillis() + failedRecoveryBackoffMs;
+        nextProbeNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(failedRecoveryBackoffMs);
     }
 
     private void awaitGate() {
@@ -240,7 +240,7 @@ public class ResilientRoutingDataSource implements DataSource {
             if (!g.await(gateWaitMs, TimeUnit.MILLISECONDS)) {
                 log.warn("Gave up waiting for the fallback merge to finish; serving the fallback anyway.");
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
     }

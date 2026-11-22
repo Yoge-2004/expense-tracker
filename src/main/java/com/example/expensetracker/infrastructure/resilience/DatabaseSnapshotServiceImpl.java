@@ -217,7 +217,7 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
                         String email = null;
                         try {
                             email = rs.getString("email");
-                        } catch (Exception e1) {
+                        } catch (Exception _) {
                             try {
                                 email = rs.getString("EMAIL");
                             } catch (Exception e2) {

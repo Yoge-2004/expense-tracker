@@ -67,6 +67,9 @@ public class AdminMetricsServiceImpl implements AdminMetricsService {
         }
     }
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.core.task.TaskExecutor taskExecutor;
+
     /**
      * Re-aggregates metrics every 5 minutes in a background task.
      */
@@ -74,15 +77,25 @@ public class AdminMetricsServiceImpl implements AdminMetricsService {
     @Transactional
     @Override
     public void refreshMetrics() {
-        long startTime = System.currentTimeMillis();
-        long totalUsers = userRepository.count();
-        long lockedUsers = userRepository.countByAccountLocked(true);
-        long totalExpensesCount = expenseRepository.count();
-        BigDecimal totalExpensesAmount = expenseRepository.sumTotalExpensesAmount();
-        BigDecimal totalIncomesAmount = incomeRepository.sumTotalIncomesAmount();
+        long startNanos = System.nanoTime();
+        java.util.concurrent.Executor executor = taskExecutor != null ? taskExecutor : Runnable::run;
 
-        if (totalExpensesAmount == null) totalExpensesAmount = BigDecimal.ZERO;
-        if (totalIncomesAmount == null) totalIncomesAmount = BigDecimal.ZERO;
+        var totalUsersFuture = java.util.concurrent.CompletableFuture.supplyAsync(userRepository::count, executor);
+        var lockedUsersFuture = java.util.concurrent.CompletableFuture.supplyAsync(() -> userRepository.countByAccountLocked(true), executor);
+        var totalExpensesCountFuture = java.util.concurrent.CompletableFuture.supplyAsync(expenseRepository::count, executor);
+        var totalExpensesAmountFuture = java.util.concurrent.CompletableFuture.supplyAsync(expenseRepository::sumTotalExpensesAmount, executor);
+        var totalIncomesAmountFuture = java.util.concurrent.CompletableFuture.supplyAsync(incomeRepository::sumTotalIncomesAmount, executor);
+
+        java.util.concurrent.CompletableFuture.allOf(
+                totalUsersFuture, lockedUsersFuture, totalExpensesCountFuture,
+                totalExpensesAmountFuture, totalIncomesAmountFuture
+        ).join();
+
+        long totalUsers = totalUsersFuture.join();
+        long lockedUsers = lockedUsersFuture.join();
+        long totalExpensesCount = totalExpensesCountFuture.join();
+        BigDecimal totalExpensesAmount = java.util.Objects.requireNonNullElse(totalExpensesAmountFuture.join(), BigDecimal.ZERO);
+        BigDecimal totalIncomesAmount = java.util.Objects.requireNonNullElse(totalIncomesAmountFuture.join(), BigDecimal.ZERO);
 
         long activeUsers = Math.max(0, totalUsers - lockedUsers);
 
@@ -121,7 +134,7 @@ public class AdminMetricsServiceImpl implements AdminMetricsService {
                 now
         );
 
-        long duration = System.currentTimeMillis() - startTime;
+        long duration = (System.nanoTime() - startNanos) / 1_000_000;
         log.debug("Admin metrics pre-aggregation completed in {}ms: users={}, expenses={}",
                 duration, totalUsers, totalExpensesCount);
     }
@@ -162,16 +175,14 @@ public class AdminMetricsServiceImpl implements AdminMetricsService {
             ));
         }
 
-        List<AdminVolumeTrendDto> dtos = new ArrayList<>();
-        for (PlatformDailyMetrics m : metrics) {
-            dtos.add(new AdminVolumeTrendDto(
-                    m.getMetricDate(),
-                    m.getTotalUsers(),
-                    m.getTotalExpensesCount(),
-                    m.getTotalExpensesAmount(),
-                    m.getTotalIncomesAmount()
-            ));
-        }
-        return dtos;
+        return metrics.stream()
+                .map(m -> new AdminVolumeTrendDto(
+                        m.getMetricDate(),
+                        m.getTotalUsers(),
+                        m.getTotalExpensesCount(),
+                        m.getTotalExpensesAmount(),
+                        m.getTotalIncomesAmount()
+                ))
+                .toList();
     }
 }

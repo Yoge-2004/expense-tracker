@@ -90,7 +90,7 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
         String catalog = "expensetracker";
 
         try {
-            long start = System.currentTimeMillis();
+            long startNanos = System.nanoTime();
             try (Connection conn = dataSource.getConnection();
                  Statement stmt = conn.createStatement()) {
                 engineName = conn.getMetaData().getDatabaseProductName() + " " + conn.getMetaData().getDatabaseProductVersion();
@@ -99,7 +99,7 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
                     catalog = conn.getCatalog();
                 }
                 stmt.execute("SELECT 1");
-                latencyMs = Math.max(1, System.currentTimeMillis() - start);
+                latencyMs = Math.max(1, (System.nanoTime() - startNanos) / 1_000_000);
             }
         } catch (Exception e) {
             log.warn("Database ping probe error: {}", e.getMessage());
@@ -142,12 +142,12 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
         String neonProbeStatus;
 
         try {
-            long pStart = System.currentTimeMillis();
+            long pStartNanos = System.nanoTime();
             InetAddress addr = InetAddress.getByName(neonHost);
             boolean reachable = addr.isReachable(1000);
-            neonLatency = Math.max(1, System.currentTimeMillis() - pStart);
+            neonLatency = Math.max(1, (System.nanoTime() - pStartNanos) / 1_000_000);
             neonProbeStatus = reachable ? "ONLINE_REACHABLE (0% packet drop)" : "STANDBY (Host resolved: " + addr.getHostAddress() + ")";
-        } catch (Exception e) {
+        } catch (Exception _) {
             neonProbeStatus = "STANDBY (Replication ready)";
             neonLatency = isNeon ? latencyMs : 28;
         }
@@ -168,10 +168,10 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
         boolean isConfigured = Boolean.TRUE.equals(hfDiag.get("isConfigured"));
         long hfLatency;
         try {
-            long hStart = System.currentTimeMillis();
+            long hStartNanos = System.nanoTime();
             InetAddress hfAddr = InetAddress.getByName("huggingface.co");
-            hfLatency = Math.max(1, System.currentTimeMillis() - hStart);
-        } catch (Exception e) {
+            hfLatency = Math.max(1, (System.nanoTime() - hStartNanos) / 1_000_000);
+        } catch (Exception _) {
             hfLatency = 45;
         }
 

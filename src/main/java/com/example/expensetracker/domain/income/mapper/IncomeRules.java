@@ -37,7 +37,7 @@ public final class IncomeRules {
         }
         try {
             return IncomeKind.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             throw new IllegalArgumentException(
                     "Unknown income kind '" + raw.trim() + "'. Use SALARY, OTHER or REIMBURSEMENT.");
         }
@@ -138,7 +138,7 @@ public final class IncomeRules {
             YearMonth stored;
             try {
                 stored = parseMonth(target.getCountsTowardMonth());
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException _) {
                 stored = null;
             }
             if (stored == null || monthsApart(YearMonth.from(date), stored) > MAX_MONTH_SHIFT) {

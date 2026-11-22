@@ -899,7 +899,7 @@ public class ExecutiveExcelReportGenerator implements ReportExportStrategy {
         try {
             String name = cat.getName();
             return (name != null && !name.isBlank()) ? name : "Uncategorized";
-        } catch (Exception ex) {
+        } catch (Exception _) {
             return "Uncategorized";
         }
     }
@@ -982,14 +982,12 @@ public class ExecutiveExcelReportGenerator implements ReportExportStrategy {
         Row targetRow = sheet.getRow(row);
         if (targetRow == null) targetRow = sheet.createRow(row);
         Cell cell = targetRow.createCell(column);
-        if (value instanceof BigDecimal decimal) {
-            cell.setCellValue(decimal.doubleValue());
-        } else if (value instanceof Number number) {
-            cell.setCellValue(number.doubleValue());
-        } else if (value instanceof String s && s.startsWith("=")) {
-            cell.setCellFormula(s.substring(1));
-        } else {
-            cell.setCellValue(String.valueOf(value));
+        switch (value) {
+            case BigDecimal decimal -> cell.setCellValue(decimal.doubleValue());
+            case Number number -> cell.setCellValue(number.doubleValue());
+            case String s when s.startsWith("=") -> cell.setCellFormula(s.substring(1));
+            case null -> cell.setCellValue("");
+            case Object obj -> cell.setCellValue(String.valueOf(obj));
         }
         cell.setCellStyle(style);
     }

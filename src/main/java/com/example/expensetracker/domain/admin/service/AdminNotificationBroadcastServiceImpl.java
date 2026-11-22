@@ -43,6 +43,9 @@ public class AdminNotificationBroadcastServiceImpl implements AdminNotificationB
     private final AdminAuditService auditService;
     private final StepUpPinVerifier stepUpPinVerifier;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.core.task.TaskExecutor taskExecutor;
+
     @Override
     public AdminBroadcastResultDto broadcastAnnouncement(AdminBroadcastRequest request,
                                                          User actor,
@@ -58,39 +61,44 @@ public class AdminNotificationBroadcastServiceImpl implements AdminNotificationB
                     + "'. Use ALL, ACTIVE or ADMINS.");
         }
 
-        int targeted = 0;
-        int successCount = 0;
-        int failedCount = 0;
+        java.util.concurrent.atomic.AtomicInteger targeted = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.atomic.AtomicInteger failedCount = new java.util.concurrent.atomic.AtomicInteger(0);
         String broadcastId = "admin-broadcast-" + UUID.randomUUID();
         String route = request.route() != null && !request.route().isBlank() ? request.route() : "/dashboard";
+        java.util.concurrent.Executor executor = taskExecutor != null ? taskExecutor : Runnable::run;
 
         Pageable pageable = PageRequest.of(0, BATCH_SIZE, Sort.by("id"));
         Page<User> page;
         do {
             page = userRepository.findAll(pageable);
+            java.util.List<java.util.concurrent.CompletableFuture<Void>> futures = new java.util.ArrayList<>();
             for (User u : page.getContent()) {
                 if (!matchesAudience(u, audience)) {
                     continue;
                 }
-                targeted++;
-                try {
-                    PendingNotification pending = new PendingNotification(
-                            NotificationType.SYSTEM,
-                            request.title(),
-                            request.message(),
-                            route,
-                            broadcastId + "-user-" + u.getId()
-                    );
-                    if (notificationService.notify(u, pending)) {
-                        successCount++;
-                    } else {
-                        failedCount++;
+                targeted.incrementAndGet();
+                futures.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    try {
+                        PendingNotification pending = new PendingNotification(
+                                NotificationType.SYSTEM,
+                                request.title(),
+                                request.message(),
+                                route,
+                                broadcastId + "-user-" + u.getId()
+                        );
+                        if (notificationService.notify(u, pending)) {
+                            successCount.incrementAndGet();
+                        } else {
+                            failedCount.incrementAndGet();
+                        }
+                    } catch (Exception ex) {
+                        log.warn("Failed to dispatch broadcast to user {}: {}", u.getId(), ex.getMessage());
+                        failedCount.incrementAndGet();
                     }
-                } catch (Exception ex) {
-                    log.warn("Failed to dispatch broadcast to user {}: {}", u.getId(), ex.getMessage());
-                    failedCount++;
-                }
+                }, executor));
             }
+            java.util.concurrent.CompletableFuture.allOf(futures.toArray(java.util.concurrent.CompletableFuture[]::new)).join();
             pageable = page.nextPageable();
         } while (page.hasNext());
 
@@ -101,14 +109,14 @@ public class AdminNotificationBroadcastServiceImpl implements AdminNotificationB
                 "NOTIFICATION",
                 audience,
                 String.format("Title: '%s', Targeted: %d, Success: %d, Failed: %d",
-                        request.title(), targeted, successCount, failedCount),
+                        request.title(), targeted.get(), successCount.get(), failedCount.get()),
                 ipAddress,
                 userAgent
         );
 
-        log.info("Broadcast '{}' completed: targeted={}, sent={}", request.title(), targeted, successCount);
+        log.info("Broadcast '{}' completed: targeted={}, sent={}", request.title(), targeted.get(), successCount.get());
 
-        return new AdminBroadcastResultDto(targeted, successCount, failedCount, "COMPLETED");
+        return new AdminBroadcastResultDto(targeted.get(), successCount.get(), failedCount.get(), "COMPLETED");
     }
 
     private static boolean matchesAudience(User user, String audience) {

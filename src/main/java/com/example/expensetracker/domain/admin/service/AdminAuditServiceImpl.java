@@ -28,6 +28,7 @@ public class AdminAuditServiceImpl implements AdminAuditService {
 
     private final AdminAuditLogRepository auditLogRepository;
 
+    @Async
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordAction(Long actorId, String actorUsername, String action,

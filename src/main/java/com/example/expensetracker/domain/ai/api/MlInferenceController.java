@@ -106,20 +106,59 @@ public class MlInferenceController {
     @PostMapping("/forecast/spending")
     public ResponseEntity<Map<String, Object>> forecastSpending(@RequestBody Map<String, Object> request) {
         Map<String, Object> payload = new LinkedHashMap<>();
-        int horizon = request.containsKey("horizon_days") ? ((Number) request.get("horizon_days")).intValue() : 30;
-        payload.put("horizon_days", horizon);
+        int horizon = request.containsKey("horizon_days") ? ((Number) request.get("horizon_days")).intValue() : 7;
+        payload.put("horizon_days", Math.clamp(horizon, 1, 30));
 
-        if (request.containsKey("daily_amounts") && request.get("daily_amounts") instanceof List<?> list && list.size() >= 7) {
-            payload.put("daily_amounts", list);
+        if (request.containsKey("history") && request.get("history") instanceof List<?> list && !list.isEmpty()) {
+            List<Map<String, Object>> history = new ArrayList<>();
+            for (Object item : list) {
+                if (item instanceof Map<?, ?> m) {
+                    Map<String, Object> entry = new LinkedHashMap<>();
+                    m.forEach((k, v) -> entry.put(String.valueOf(k), v));
+                    history.add(entry);
+                }
+            }
+            // FastAPI requires at least 28 history days. If fewer, pad with earlier zero-spend days
+            if (history.size() < 28) {
+                java.time.LocalDate earliest;
+                try {
+                    String firstDateStr = String.valueOf(history.getFirst().get("date"));
+                    earliest = java.time.LocalDate.parse(firstDateStr.split("T")[0]);
+                } catch (Exception _) {
+                    earliest = java.time.LocalDate.now().minusDays(history.size());
+                }
+                int needed = 28 - history.size();
+                List<Map<String, Object>> padding = new ArrayList<>();
+                for (int i = needed; i >= 1; i--) {
+                    padding.add(Map.of("date", earliest.minusDays(i).toString(), "amount", 0.0));
+                }
+                padding.addAll(history);
+                history = padding;
+            }
+            payload.put("history", history);
+        } else if (request.containsKey("daily_amounts") && request.get("daily_amounts") instanceof List<?> list && !list.isEmpty()) {
+            List<Map<String, Object>> history = new ArrayList<>();
+            int size = Math.max(list.size(), 28);
+            java.time.LocalDate start = java.time.LocalDate.now().minusDays(size);
+            for (int i = 0; i < list.size(); i++) {
+                Object val = list.get(i);
+                double amt = (val instanceof Number n) ? n.doubleValue() : 0.0;
+                history.add(Map.of("date", start.plusDays(i).toString(), "amount", amt));
+            }
+            while (history.size() < 28) {
+                history.addFirst(Map.of("date", start.minusDays(28 - history.size()).toString(), "amount", 0.0));
+            }
+            payload.put("history", history);
         } else {
             double base = request.containsKey("historical_base") ? ((Number) request.get("historical_base")).doubleValue() : 45000.0;
             double avgDaily = base / 30.0;
-            List<Double> simulatedHistorical = new ArrayList<>();
+            List<Map<String, Object>> simulated = new ArrayList<>();
+            java.time.LocalDate start = java.time.LocalDate.now().minusDays(30);
             for (int i = 0; i < 30; i++) {
                 double variance = Math.sin(i * 0.5) * (avgDaily * 0.2);
-                simulatedHistorical.add(Math.max(10.0, avgDaily + variance));
+                simulated.add(Map.of("date", start.plusDays(i).toString(), "amount", Math.max(10.0, avgDaily + variance)));
             }
-            payload.put("daily_amounts", simulatedHistorical);
+            payload.put("history", simulated);
         }
 
         Map<String, Object> res = new LinkedHashMap<>(client.forecastSpending(payload));

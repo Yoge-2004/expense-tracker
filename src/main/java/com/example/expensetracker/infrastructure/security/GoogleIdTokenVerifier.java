@@ -43,6 +43,7 @@ public class GoogleIdTokenVerifier {
     private String expectedClientId;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_2)
             .connectTimeout(Duration.ofSeconds(5))
             .build();
 
@@ -77,9 +78,9 @@ public class GoogleIdTokenVerifier {
                 throw new BadCredentialsException("Google sign-in failed: token could not be verified.");
             }
             payload = objectMapper.readTree(response.body());
-        } catch (IOException e) {
+        } catch (IOException _) {
             throw new BadCredentialsException("Google sign-in failed: could not reach Google's verification service.");
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             throw new BadCredentialsException("Google sign-in failed: verification was interrupted.");
         }

@@ -89,7 +89,7 @@ public enum RecurrenceFrequency {
         }
         try {
             return RecurrenceFrequency.valueOf(normalized);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return MONTHLY;
         }
     }

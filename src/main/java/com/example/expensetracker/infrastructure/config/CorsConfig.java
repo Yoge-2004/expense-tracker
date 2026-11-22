@@ -42,8 +42,21 @@ public class CorsConfig {
     @Value("${app.cors.allowed-origins:https://cozy-narwhal-3099ad.netlify.app}")
     private String[] allowedOrigins;
 
+    private final CorsProperties corsProperties;
+
+    public CorsConfig(@org.springframework.beans.factory.annotation.Autowired(required = false) CorsProperties corsProperties) {
+        this.corsProperties = (corsProperties != null) ? corsProperties : new CorsProperties(List.of());
+    }
+
     private List<String> getCleanOrigins() {
         Set<String> origins = new LinkedHashSet<>(DEFAULT_ALLOWED_ORIGINS);
+        if (corsProperties.allowedOrigins() != null) {
+            corsProperties.allowedOrigins().stream()
+                    .flatMap(s -> Arrays.stream(s.split(",")))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty() && !"null".equalsIgnoreCase(s))
+                    .forEach(origins::add);
+        }
         if (allowedOrigins != null) {
             Arrays.stream(allowedOrigins)
                     .flatMap(s -> Arrays.stream(s.split(",")))

@@ -450,6 +450,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
      * failed log write would roll back every record, and the next run (it also fires at startup) would
      * email the same people again. Users are read a page at a time so memory stays flat.</p>
      */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.core.task.TaskExecutor taskExecutor;
+
     @EventListener(ApplicationReadyEvent.class)
     @Scheduled(cron = "0 0 6 1-3 * ?")
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -465,30 +468,35 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         int year = lastMonth.getYear();
         int month = lastMonth.getMonthValue();
 
-        int sentCount = 0;
+        java.util.concurrent.atomic.AtomicInteger sentCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.Executor executor = taskExecutor != null ? taskExecutor : Runnable::run;
         try {
             Pageable pageable = PageRequest.of(0, USER_PAGE_SIZE, Sort.by("id"));
             Page<User> page;
             do {
                 page = userRepository.findAll(pageable);
+                java.util.List<java.util.concurrent.CompletableFuture<Void>> futures = new java.util.ArrayList<>();
                 for (User u : page) {
-                    try {
-                        boolean alreadySent = reportLogRepository
-                                .existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(u, year, month);
-                        if (!alreadySent && sendInOwnTransaction(u.getId(), year, month)) {
-                            sentCount++;
+                    futures.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
+                        try {
+                            boolean alreadySent = reportLogRepository
+                                    .existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(u, year, month);
+                            if (!alreadySent && sendInOwnTransaction(u.getId(), year, month)) {
+                                sentCount.incrementAndGet();
+                            }
+                        } catch (Exception e) {
+                            log.error("Error processing automated monthly report catch-up for user {}", u.getId(), e);
                         }
-                    } catch (Exception e) {
-                        log.error("Error processing automated monthly report catch-up for user {}", u.getId(), e);
-                    }
+                    }, executor));
                 }
+                java.util.concurrent.CompletableFuture.allOf(futures.toArray(java.util.concurrent.CompletableFuture[]::new)).join();
                 pageable = page.nextPageable();
             } while (page.hasNext());
         } catch (Exception e) {
             log.warn("Could not query users for automated monthly reports: {}", e.getMessage());
         }
         log.info("Automated monthly report check complete. Dispatched {} pending reports for {}/{}.",
-                sentCount, month, year);
+                sentCount.get(), month, year);
     }
 
     /**

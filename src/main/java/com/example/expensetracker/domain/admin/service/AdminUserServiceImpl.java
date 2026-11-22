@@ -40,7 +40,6 @@ import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AdminUserServiceImpl implements AdminUserService {
 
     private final UserRepository userRepository;
@@ -52,6 +51,45 @@ public class AdminUserServiceImpl implements AdminUserService {
     private final AdminMetricsService metricsService;
     private final PasswordEncoder passwordEncoder;
     private final StepUpPinVerifier stepUpPinVerifier;
+    private final AdminAuthorizationPolicy authorizationPolicy;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AdminUserServiceImpl(UserRepository userRepository,
+                                UserService userService,
+                                ExpenseRepository expenseRepository,
+                                IncomeRepository incomeRepository,
+                                DeviceTokenRepository deviceTokenRepository,
+                                AdminAuditService auditService,
+                                AdminMetricsService metricsService,
+                                PasswordEncoder passwordEncoder,
+                                StepUpPinVerifier stepUpPinVerifier,
+                                @org.springframework.beans.factory.annotation.Autowired(required = false) AdminAuthorizationPolicy authorizationPolicy) {
+        this.userRepository = userRepository;
+        this.userService = userService;
+        this.expenseRepository = expenseRepository;
+        this.incomeRepository = incomeRepository;
+        this.deviceTokenRepository = deviceTokenRepository;
+        this.auditService = auditService;
+        this.metricsService = metricsService;
+        this.passwordEncoder = passwordEncoder;
+        this.stepUpPinVerifier = stepUpPinVerifier;
+        this.authorizationPolicy = (authorizationPolicy != null)
+                ? authorizationPolicy
+                : new AdminAuthorizationPolicy(stepUpPinVerifier);
+    }
+
+    public AdminUserServiceImpl(UserRepository userRepository,
+                                UserService userService,
+                                ExpenseRepository expenseRepository,
+                                IncomeRepository incomeRepository,
+                                DeviceTokenRepository deviceTokenRepository,
+                                AdminAuditService auditService,
+                                AdminMetricsService metricsService,
+                                PasswordEncoder passwordEncoder,
+                                StepUpPinVerifier stepUpPinVerifier) {
+        this(userRepository, userService, expenseRepository, incomeRepository, deviceTokenRepository,
+                auditService, metricsService, passwordEncoder, stepUpPinVerifier, null);
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -516,33 +554,18 @@ public class AdminUserServiceImpl implements AdminUserService {
     }
 
     private void verifyStepUpPin(User actor, String stepUpPin) {
-        stepUpPinVerifier.verify(actor, stepUpPin);
+        authorizationPolicy.verifyStepUpPin(actor, stepUpPin);
     }
 
     private static int rank(Role role) {
-        if (role == null) return 0;
-        return switch (role) {
-            case ROLE_USER -> 0;
-            case ROLE_SUPPORT -> 1;
-            case ROLE_ADMIN -> 2;
-            case ROLE_SUPER_ADMIN -> 3;
-        };
+        return AdminAuthorizationPolicy.rank(role);
     }
 
-    /** Super admins manage everyone; anyone else only themselves or accounts ranked strictly below them. */
     private void requireCanManage(User actor, User target) {
-        if (actor.isSuperAdmin() || Objects.equals(actor.getId(), target.getId())) {
-            return;
-        }
-        if (rank(actor.getRole()) <= rank(target.getRole())) {
-            throw new ForbiddenException("You do not have permission to manage an account with the "
-                    + target.getRole().name().replace("ROLE_", "").toLowerCase().replace('_', ' ') + " role");
-        }
+        authorizationPolicy.requireCanManage(actor, target);
     }
 
     private void requireSuperAdminForPrivilegedRole(User actor, Role role) {
-        if (rank(role) >= rank(Role.ROLE_ADMIN) && !actor.isSuperAdmin()) {
-            throw new ForbiddenException("Only a Super Administrator can create Administrator or Super Administrator accounts");
-        }
+        authorizationPolicy.requireSuperAdminForPrivilegedRole(actor, role);
     }
 }

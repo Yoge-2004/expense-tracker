@@ -65,7 +65,7 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
 
         response.setHeader(REQUEST_ID_HEADER, traceId);
 
-        long startTime = System.currentTimeMillis();
+        long startNanos = System.nanoTime();
         boolean isApiRequest = uri.startsWith("/api");
 
         if (isApiRequest && log.isDebugEnabled()) {
@@ -77,7 +77,7 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } finally {
-            long durationMs = System.currentTimeMillis() - startTime;
+            long durationMs = (System.nanoTime() - startNanos) / 1_000_000;
             int status = response.getStatus();
 
             if (durationMs > SLOW_REQUEST_THRESHOLD_MS) {

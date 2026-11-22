@@ -69,42 +69,51 @@ public class AppUpdateNotifier {
         return latest.map(this::announce).orElse(0);
     }
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.core.task.TaskExecutor taskExecutor;
+
     int announce(AppReleaseService.Release release) {
-        int notified = 0;
+        java.util.concurrent.atomic.AtomicInteger notified = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.Executor executor = taskExecutor != null ? taskExecutor : Runnable::run;
         // Users are read a page at a time so memory and query size stay flat as the user base grows.
         Pageable pageable = PageRequest.of(0, USER_PAGE_SIZE, Sort.by("id"));
         Page<User> page;
         do {
             page = userRepository.findAll(pageable);
+            java.util.List<java.util.concurrent.CompletableFuture<Void>> futures = new java.util.ArrayList<>();
             for (User user : page) {
-                try {
-                    List<DeviceToken> due = deviceTokenRepository.findByUser(user).stream()
-                            .filter(device -> needsNotice(device, release))
-                            .toList();
-                    if (due.isEmpty()) {
-                        continue;
-                    }
-                    Set<Long> dueIds = new HashSet<>();
-                    due.forEach(device -> dueIds.add(device.getId()));
+                futures.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    try {
+                        List<DeviceToken> due = deviceTokenRepository.findByUser(user).stream()
+                                .filter(device -> needsNotice(device, release))
+                                .toList();
+                        if (due.isEmpty()) {
+                            return;
+                        }
+                        Set<Long> dueIds = due.stream()
+                                .map(DeviceToken::getId)
+                                .collect(java.util.stream.Collectors.toUnmodifiableSet());
 
-                    PendingNotification notice = new PendingNotification(
-                            NotificationType.APP_UPDATE,
-                            "Update available",
-                            "Expense Tracker " + release.tag() + " is ready. Open the app to update.",
-                            "app-update",
-                            "app-update:" + release.version());
-                    if (notificationService.notifyDevices(user, notice, device -> dueIds.contains(device.getId()))) {
-                        due.forEach(device -> device.setUpdateAnnouncedVersion(release.version()));
-                        deviceTokenRepository.saveAll(due);
-                        notified++;
+                        PendingNotification notice = new PendingNotification(
+                                NotificationType.APP_UPDATE,
+                                "Update available",
+                                "Expense Tracker " + release.tag() + " is ready. Open the app to update.",
+                                "app-update",
+                                "app-update:" + release.version());
+                        if (notificationService.notifyDevices(user, notice, device -> dueIds.contains(device.getId()))) {
+                            due.forEach(device -> device.setUpdateAnnouncedVersion(release.version()));
+                            deviceTokenRepository.saveAll(due);
+                            notified.incrementAndGet();
+                        }
+                    } catch (RuntimeException e) {
+                        log.warn("Could not send the app update notice for userId={}: {}", user.getId(), e.getMessage());
                     }
-                } catch (RuntimeException e) {
-                    log.warn("Could not send the app update notice for userId={}: {}", user.getId(), e.getMessage());
-                }
+                }, executor));
             }
+            java.util.concurrent.CompletableFuture.allOf(futures.toArray(java.util.concurrent.CompletableFuture[]::new)).join();
             pageable = page.nextPageable();
         } while (page.hasNext());
-        return notified;
+        return notified.get();
     }
 
     /** True when this phone is behind the release and has not been told about it yet. */

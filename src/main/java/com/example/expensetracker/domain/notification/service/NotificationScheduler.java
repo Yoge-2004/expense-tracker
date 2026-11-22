@@ -73,32 +73,40 @@ public class NotificationScheduler {
         }
     }
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.core.task.TaskExecutor taskExecutor;
+
     /** @return how many notifications were created */
     int process(LocalDate today, boolean weekly) {
-        int created = 0;
+        java.util.concurrent.atomic.AtomicInteger created = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.Executor executor = taskExecutor != null ? taskExecutor : Runnable::run;
         // Users are read a page at a time so memory and query size stay flat as the user base grows.
         Pageable pageable = PageRequest.of(0, USER_PAGE_SIZE, Sort.by("id"));
         Page<User> page;
         do {
             page = userRepository.findAll(pageable);
+            java.util.List<java.util.concurrent.CompletableFuture<Void>> futures = new java.util.ArrayList<>();
             for (User user : page) {
-                try {
-                    List<PendingNotification> due = weekly
-                            ? detector.detectWeeklyDigest(user, today)
-                            : detector.detectDaily(user, today);
-                    for (PendingNotification notification : due) {
-                        if (notificationService.notify(user, notification)) {
-                            created++;
+                futures.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    try {
+                        List<PendingNotification> due = weekly
+                                ? detector.detectWeeklyDigest(user, today)
+                                : detector.detectDaily(user, today);
+                        for (PendingNotification notification : due) {
+                            if (notificationService.notify(user, notification)) {
+                                created.incrementAndGet();
+                            }
                         }
+                    } catch (Exception e) {
+                        // One account's problem must never stop everyone else's notifications.
+                        log.warn("Notification run failed for userId={}: {}", user.getId(), e.getMessage());
                     }
-                } catch (Exception e) {
-                    // One account's problem must never stop everyone else's notifications.
-                    log.warn("Notification run failed for userId={}: {}", user.getId(), e.getMessage());
-                }
+                }, executor));
             }
+            java.util.concurrent.CompletableFuture.allOf(futures.toArray(java.util.concurrent.CompletableFuture[]::new)).join();
             pageable = page.nextPageable();
         } while (page.hasNext());
-        return created;
+        return created.get();
     }
 
     private LocalDate today() {

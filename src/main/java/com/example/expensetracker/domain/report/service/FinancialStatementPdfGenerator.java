@@ -48,14 +48,22 @@ public class FinancialStatementPdfGenerator {
         String pdfSym = ExportServiceImpl.pdfSymbol(curr);
 
         // Money handed back (reimbursements) is not income: it reduces what was spent.
-        BigDecimal totalIncome = incomes.stream()
-                .filter(i -> IncomeRules.effectiveKind(i) != IncomeKind.REIMBURSEMENT)
-                .map(Income::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal reimbursed = incomes.stream()
-                .filter(i -> IncomeRules.effectiveKind(i) == IncomeKind.REIMBURSEMENT)
-                .map(Income::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        record IncomeBreakdown(BigDecimal earned, BigDecimal reimbursed) {}
+        IncomeBreakdown incTotals = incomes.stream().collect(
+                java.util.stream.Collectors.teeing(
+                        java.util.stream.Collectors.filtering(
+                                i -> IncomeRules.effectiveKind(i) != IncomeKind.REIMBURSEMENT && i.getAmount() != null,
+                                java.util.stream.Collectors.reducing(BigDecimal.ZERO, Income::getAmount, BigDecimal::add)
+                        ),
+                        java.util.stream.Collectors.filtering(
+                                i -> IncomeRules.effectiveKind(i) == IncomeKind.REIMBURSEMENT && i.getAmount() != null,
+                                java.util.stream.Collectors.reducing(BigDecimal.ZERO, Income::getAmount, BigDecimal::add)
+                        ),
+                        IncomeBreakdown::new
+                )
+        );
+        BigDecimal totalIncome = incTotals.earned();
+        BigDecimal reimbursed = incTotals.reimbursed();
         BigDecimal totalExpenses = expenses.stream()
                 .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)

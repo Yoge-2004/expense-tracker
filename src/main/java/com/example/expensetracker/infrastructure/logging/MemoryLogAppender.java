@@ -9,17 +9,15 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.example.expensetracker.domain.admin.dto.AdminLogEntryDto;
 
-
-
 /**
- * Thread-safe ring buffer Logback appender capturing recent log events in memory
+ * Thread-safe, lock-free ring buffer Logback appender capturing recent log events in memory
  * for live administrative inspection and UI observability.
  *
  * @author Yogeshwaran
@@ -28,7 +26,8 @@ import com.example.expensetracker.domain.admin.dto.AdminLogEntryDto;
 public class MemoryLogAppender extends AppenderBase<ILoggingEvent> {
 
     private static final int MAX_CAPACITY = 1000;
-    private final Deque<AdminLogEntryDto> buffer = new ArrayDeque<>(MAX_CAPACITY);
+    private final ConcurrentLinkedDeque<AdminLogEntryDto> buffer = new ConcurrentLinkedDeque<>();
+    private final AtomicInteger bufferSize = new AtomicInteger(0);
     private static final DateTimeFormatter ISO_FMT = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(ZoneId.systemDefault());
 
     @PostConstruct
@@ -41,10 +40,7 @@ public class MemoryLogAppender extends AppenderBase<ILoggingEvent> {
     }
 
     @Override
-    protected synchronized void append(ILoggingEvent event) {
-        if (buffer.size() >= MAX_CAPACITY) {
-            buffer.removeFirst();
-        }
+    protected void append(ILoggingEvent event) {
         String formattedTime = ISO_FMT.format(Instant.ofEpochMilli(event.getTimeStamp()));
         String lvl = event.getLevel() != null ? event.getLevel().toString().toUpperCase() : "INFO";
         if ("WARNING".equals(lvl)) lvl = "WARN";
@@ -57,9 +53,12 @@ public class MemoryLogAppender extends AppenderBase<ILoggingEvent> {
                 event.getLoggerName(),
                 event.getFormattedMessage()
         ));
+        if (bufferSize.incrementAndGet() > MAX_CAPACITY && buffer.pollFirst() != null) {
+            bufferSize.decrementAndGet();
+        }
     }
 
-    public synchronized List<AdminLogEntryDto> getRecentLogs(int limit, String levelFilter, String queryFilter) {
+    public List<AdminLogEntryDto> getRecentLogs(int limit, String levelFilter, String queryFilter) {
         List<AdminLogEntryDto> result = new ArrayList<>();
         String lvl = (levelFilter != null) ? levelFilter.trim().toUpperCase() : "ALL";
         String q = (queryFilter != null) ? queryFilter.trim().toLowerCase() : "";

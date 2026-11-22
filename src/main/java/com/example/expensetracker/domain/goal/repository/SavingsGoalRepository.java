@@ -81,7 +81,8 @@ public interface SavingsGoalRepository extends JpaRepository<SavingsGoal, Long> 
      * @return 1 if the row was updated, 0 otherwise (wrong goal ID or not owned by this user)
      */
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE SavingsGoal s SET s.currentAmount = COALESCE(s.currentAmount, 0) + :amount "
-            + "WHERE s.id = :goalId AND s.user = :user")
+    @Query("""
+            UPDATE SavingsGoal s SET s.currentAmount = COALESCE(s.currentAmount, 0) + :amount \
+            WHERE s.id = :goalId AND s.user = :user""")
     int addToCurrentAmount(@Param("goalId") Long goalId, @Param("user") User user, @Param("amount") BigDecimal amount);
 }

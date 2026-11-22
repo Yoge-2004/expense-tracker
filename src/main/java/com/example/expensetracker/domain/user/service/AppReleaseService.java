@@ -33,7 +33,10 @@ public class AppReleaseService {
     private static final Pattern REPO = Pattern.compile("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$");
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+    private final HttpClient http = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_2)
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
 
     @Value("${app.release.repo:Yoge-2004/expense-tracker}")
     private String repo;
@@ -57,7 +60,7 @@ public class AppReleaseService {
                 return Optional.empty();
             }
             return parse(response.body());
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             return Optional.empty();
         } catch (Exception e) {

@@ -107,14 +107,32 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     public HuggingFaceDatabaseFailoverServiceImpl(
             DatabaseSnapshotService snapshotService,
             @Autowired(required = false) FallbackRecoveryCoordinator fallbackCoordinator,
-            @Autowired(required = false) com.example.expensetracker.infrastructure.config.AdminBootstrapRunner adminBootstrapRunner) {
+            @Autowired(required = false) com.example.expensetracker.infrastructure.config.AdminBootstrapRunner adminBootstrapRunner,
+            @Autowired(required = false) HfDatabaseProperties hfProperties) {
         this.snapshotService = snapshotService;
         this.fallbackCoordinator = fallbackCoordinator;
         this.adminBootstrapRunner = adminBootstrapRunner;
+        if (hfProperties != null) {
+            if (hfProperties.token() != null && !hfProperties.token().isBlank()) this.token = hfProperties.token();
+            if (hfProperties.space() != null && !hfProperties.space().isBlank()) this.space = hfProperties.space();
+            if (hfProperties.path() != null && !hfProperties.path().isBlank()) this.path = hfProperties.path();
+            if (hfProperties.repoType() != null && !hfProperties.repoType().isBlank()) this.repoType = hfProperties.repoType();
+            if (hfProperties.encryptionKey() != null && !hfProperties.encryptionKey().isBlank()) this.encryptionKey = hfProperties.encryptionKey();
+            if (hfProperties.maxShrinkPercent() > 0) this.maxShrinkPercent = hfProperties.maxShrinkPercent();
+            if (hfProperties.minCommitIntervalMinutes() > 0) this.minCommitIntervalMinutes = hfProperties.minCommitIntervalMinutes();
+            if (hfProperties.volatileTables() != null && !hfProperties.volatileTables().isBlank()) this.volatileTablesCsv = hfProperties.volatileTables();
+        }
+    }
+
+    public HuggingFaceDatabaseFailoverServiceImpl(
+            DatabaseSnapshotService snapshotService,
+            FallbackRecoveryCoordinator fallbackCoordinator,
+            com.example.expensetracker.infrastructure.config.AdminBootstrapRunner adminBootstrapRunner) {
+        this(snapshotService, fallbackCoordinator, adminBootstrapRunner, null);
     }
 
     public HuggingFaceDatabaseFailoverServiceImpl(DatabaseSnapshotService snapshotService) {
-        this(snapshotService, null, null);
+        this(snapshotService, null, null, null);
     }
 
     @Override
@@ -184,9 +202,9 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         }
     }
 
-    /** Snapshot the currently active database every 10 minutes. */
+    /** Snapshot the currently active database on schedule (default hourly). */
     @Override
-    @Scheduled(cron = "0 */10 * * * *")
+    @Scheduled(cron = "${hf.db.backup-cron:0 0 * * * *}")
     public void scheduledBackup() {
         backupCurrentDatabase();
     }
@@ -326,12 +344,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                 digest.update(buffer, 0, read);
             }
         }
-        byte[] hash = digest.digest();
-        StringBuilder sb = new StringBuilder(hash.length * 2);
-        for (byte b : hash) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
+        return java.util.HexFormat.of().formatHex(digest.digest());
     }
 
     private Set<String> volatileTables() {
@@ -392,11 +405,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                 }
             }
         }
-        StringBuilder hex = new StringBuilder();
-        for (byte b : digest.digest()) {
-            hex.append(String.format("%02x", b));
-        }
-        return hex.toString();
+        return java.util.HexFormat.of().formatHex(digest.digest());
     }
 
     /** Package-private (not private) so its file/directory permission
@@ -413,7 +422,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                                 PosixFilePermission.OWNER_EXECUTE)
                 );
                 Files.createDirectories(tempDir, dirAttr);
-            } catch (UnsupportedOperationException e) {
+            } catch (UnsupportedOperationException _) {
                 Files.createDirectories(tempDir);
                 File dirFile = tempDir.toFile();
                 boolean rOk = dirFile.setReadable(true, true);
@@ -430,7 +439,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                     EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
             );
             return Files.createTempFile(tempDir, prefix, suffix, fileAttr);
-        } catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException _) {
             Path file = Files.createTempFile(tempDir, prefix, suffix);
             File f = file.toFile();
             boolean rOk = f.setReadable(true, true);

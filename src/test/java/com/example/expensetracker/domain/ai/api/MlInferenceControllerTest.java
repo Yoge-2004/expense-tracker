@@ -111,4 +111,32 @@ class MlInferenceControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("ML inference service is unavailable"));
     }
+
+    @Test
+    @DisplayName("POST /api/ml/forecast/spending: formats history and delegates to client")
+    void forecastSpending_withHistory_returnsOk() throws Exception {
+        java.util.Map<String, Object> request = java.util.Map.of(
+                "horizon_days", 7,
+                "history", java.util.List.of(
+                        java.util.Map.of("date", "2026-10-01", "amount", 120.0),
+                        java.util.Map.of("date", "2026-10-02", "amount", 150.0)
+                )
+        );
+
+        when(client.forecastSpending(any())).thenReturn(java.util.Map.of(
+                "horizon_days", 7,
+                "forecast", java.util.List.of(
+                        java.util.Map.of("date", "2026-10-03", "predicted_amount", 130.0)
+                )
+        ));
+
+        mockMvc.perform(post("/api/ml/forecast/spending")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.horizon_days").value(7))
+                .andExpect(jsonPath("$.forecast[0].predicted_amount").value(130.0));
+
+        verify(client).forecastSpending(any());
+    }
 }

@@ -67,3 +67,4 @@ artifacts/
 # Minified copy built by scripts/minify-frontend.mjs
 frontend-min/
 scripts/frontend-tools/node_modules/
+.gradle/

@@ -21,7 +21,16 @@ public class RateLimiterServiceImpl implements RateLimiterService {
     @Value("${app.security.rate-limit.enabled:true}")
     private volatile boolean enabled = true;
 
+    private final java.time.Clock clock;
     private final Map<String, SlidingWindowBucket> buckets = new ConcurrentHashMap<>();
+
+    public RateLimiterServiceImpl(@org.springframework.beans.factory.annotation.Autowired(required = false) java.time.Clock clock) {
+        this.clock = clock != null ? clock : java.time.Clock.systemDefaultZone();
+    }
+
+    public RateLimiterServiceImpl() {
+        this(java.time.Clock.systemDefaultZone());
+    }
 
     @Override
     public boolean isEnabled() {
@@ -39,7 +48,7 @@ public class RateLimiterServiceImpl implements RateLimiterService {
             return true;
         }
         SlidingWindowBucket bucket = buckets.computeIfAbsent(
-                key, _ -> new SlidingWindowBucket(maxRequests, window)
+                key, _ -> new SlidingWindowBucket(maxRequests, window, clock)
         );
         return bucket.tryAcquire();
     }
@@ -95,9 +104,10 @@ public class RateLimiterServiceImpl implements RateLimiterService {
     public static class SlidingWindowBucket {
         private final int capacity;
         private final long windowMillis;
+        private final java.time.Clock clock;
         private final ConcurrentLinkedDeque<Long> timestamps = new ConcurrentLinkedDeque<>();
 
-        public SlidingWindowBucket(int capacity, Duration window) {
+        public SlidingWindowBucket(int capacity, Duration window, java.time.Clock clock) {
             if (capacity <= 0) {
                 throw new IllegalArgumentException("Rate limit capacity must be strictly greater than zero");
             }
@@ -106,10 +116,15 @@ public class RateLimiterServiceImpl implements RateLimiterService {
             }
             this.capacity = capacity;
             this.windowMillis = window.toMillis();
+            this.clock = clock != null ? clock : java.time.Clock.systemDefaultZone();
+        }
+
+        public SlidingWindowBucket(int capacity, Duration window) {
+            this(capacity, window, java.time.Clock.systemDefaultZone());
         }
 
         public synchronized boolean tryAcquire() {
-            long now = System.currentTimeMillis();
+            long now = clock.millis();
             evictExpired(now);
 
             if (timestamps.size() < capacity) {
@@ -120,13 +135,13 @@ public class RateLimiterServiceImpl implements RateLimiterService {
         }
 
         public synchronized int getRemainingAttempts() {
-            long now = System.currentTimeMillis();
+            long now = clock.millis();
             evictExpired(now);
             return Math.max(0, capacity - timestamps.size());
         }
 
         public synchronized long getSecondsUntilReset() {
-            long now = System.currentTimeMillis();
+            long now = clock.millis();
             evictExpired(now);
             if (timestamps.isEmpty()) {
                 return 0;
@@ -140,7 +155,7 @@ public class RateLimiterServiceImpl implements RateLimiterService {
         }
 
         public synchronized boolean isExpired() {
-            long now = System.currentTimeMillis();
+            long now = clock.millis();
             evictExpired(now);
             return timestamps.isEmpty();
         }

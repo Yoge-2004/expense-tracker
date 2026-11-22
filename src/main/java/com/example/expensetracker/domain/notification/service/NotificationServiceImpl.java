@@ -179,7 +179,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public boolean sendTest(User user) {
         return notify(user, new PendingNotification(NotificationType.SYSTEM, "Notifications are working",
-                "This is a test notification from Expense Tracker.", null, "test:" + System.currentTimeMillis()));
+                "This is a test notification from Expense Tracker.", null, "test:" + java.time.Instant.now().toEpochMilli()));
     }
 
     // ------------------------------------------------------------------ internals

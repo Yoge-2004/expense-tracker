@@ -70,7 +70,7 @@ public enum BudgetPeriod {
         }
         try {
             return BudgetPeriod.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return MONTHLY;
         }
     }

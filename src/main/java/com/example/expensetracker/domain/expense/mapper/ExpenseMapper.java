@@ -60,7 +60,7 @@ public final class ExpenseMapper {
                 if (category.getName() != null && !category.getName().isBlank()) {
                     categoryName = category.getName();
                 }
-            } catch (Exception ex) {
+            } catch (Exception _) {
                 try {
                     categoryId = category.getId();
                 } catch (Exception _) {

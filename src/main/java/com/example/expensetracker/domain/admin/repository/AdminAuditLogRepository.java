@@ -21,11 +21,12 @@ public interface AdminAuditLogRepository extends JpaRepository<AdminAuditLog, Lo
 
     Page<AdminAuditLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
-    @Query("SELECT a FROM AdminAuditLog a WHERE " +
-           "(:hasQuery = false OR LOWER(a.actorUsername) LIKE :pattern " +
-           "OR LOWER(a.action) LIKE :pattern " +
-           "OR LOWER(a.targetResource) LIKE :pattern) " +
-           "ORDER BY a.createdAt DESC")
+    @Query("""
+            SELECT a FROM AdminAuditLog a WHERE \
+            (:hasQuery = false OR LOWER(a.actorUsername) LIKE :pattern \
+            OR LOWER(a.action) LIKE :pattern \
+            OR LOWER(a.targetResource) LIKE :pattern) \
+            ORDER BY a.createdAt DESC""")
     Page<AdminAuditLog> searchLogsFiltered(@Param("hasQuery") boolean hasQuery, @Param("pattern") String pattern,
                                            Pageable pageable);
 

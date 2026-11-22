@@ -149,7 +149,7 @@ export async function ensureNotificationChannels(): Promise<void> {
         enableVibrate: true,
         showBadge: true,
       }).catch(() => {}),
-      Notifications.setNotificationChannelAsync("default", {
+      Notifications.setNotificationChannelAsync(ALERTS_CHANNEL_ID, {
         name: "ExpenseTracker Alerts",
         description: "General reminders, savings targets, and server notifications.",
         importance: Notifications.AndroidImportance.HIGH,
@@ -1052,11 +1052,11 @@ export async function registerPushToken(userId: string): Promise<boolean> {
     if (permission.status !== 'granted') return false;
 
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
-        sound: CUSTOM_NOTIFICATION_SOUND,
-        importance: Notifications.AndroidImportance.DEFAULT,
-      });
+      try {
+        await ensureNotificationChannels();
+      } catch (channelErr) {
+        console.warn('[Notifications] Channel setup error during push registration:', channelErr);
+      }
     }
 
     const easConfig = (Constants as unknown as { easConfig?: { projectId?: string } }).easConfig;

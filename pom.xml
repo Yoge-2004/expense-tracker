@@ -90,6 +90,10 @@
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
@@ -302,7 +306,7 @@
                         <include>**/*Tests.java</include>
                         <include>**/CucumberTestRunner.java</include>
                     </includes>
-                    <argLine>@{argLine} -XX:+EnableDynamicAgentLoading -Dfile.encoding=UTF-8</argLine>
+                    <argLine>@{argLine} -Xms256m -Xmx1024m -XX:+UseG1GC -XX:+EnableDynamicAgentLoading -Dfile.encoding=UTF-8</argLine>
                 </configuration>
             </plugin>
             <!-- Coverage is measured and reported, not enforced (no minimum is set yet).

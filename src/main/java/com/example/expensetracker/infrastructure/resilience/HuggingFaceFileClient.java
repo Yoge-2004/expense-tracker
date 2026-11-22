@@ -58,6 +58,7 @@ public final class HuggingFaceFileClient {
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(120);
 
     private static final HttpClient HTTP = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_2)
             .connectTimeout(CONNECT_TIMEOUT)
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
@@ -168,7 +169,7 @@ public final class HuggingFaceFileClient {
                     .build();
             HttpResponse<String> commitResponse = HTTP.send(commitRequest, HttpResponse.BodyHandlers.ofString());
             return commitResponse.statusCode() >= 200 && commitResponse.statusCode() < 300;
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             log.warn("LFS upload interrupted for repo='{}', path='{}'", repo, path);
             return false;
@@ -181,11 +182,7 @@ public final class HuggingFaceFileClient {
     static String sha256Hex(byte[] bytes) {
         try {
             byte[] hash = MessageDigest.getInstance("SHA-256").digest(bytes);
-            StringBuilder sb = new StringBuilder(hash.length * 2);
-            for (byte b : hash) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
+            return java.util.HexFormat.of().formatHex(hash);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 algorithm not available", e);
         }
@@ -261,7 +258,7 @@ public final class HuggingFaceFileClient {
                 }
             }
             return "Hugging Face whoami returned HTTP " + response.statusCode();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             return "Failed to verify HF_TOKEN with Hugging Face API: interrupted";
         } catch (Exception e) {

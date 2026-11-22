@@ -103,7 +103,7 @@ public class MlBackendProcessManager implements SmartLifecycle {
                     log.warn("[MlBackendProcessManager] Python ML backend did not terminate within 3s. Terminating forcibly.");
                     mlProcess.destroyForcibly();
                 }
-            } catch (InterruptedException e) {
+            } catch (InterruptedException _) {
                 Thread.currentThread().interrupt();
                 mlProcess.destroyForcibly();
             }
@@ -129,6 +129,7 @@ public class MlBackendProcessManager implements SmartLifecycle {
 
     private boolean isMlServiceHealthy() {
         try (HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
                 .connectTimeout(Duration.ofMillis(800))
                 .build()) {
             HttpRequest request = HttpRequest.newBuilder()
@@ -138,15 +139,16 @@ public class MlBackendProcessManager implements SmartLifecycle {
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             return response.statusCode() >= 200 && response.statusCode() < 400;
-        } catch (Exception e) {
+        } catch (Exception _) {
             return false;
         }
     }
 
     @SuppressWarnings("BusyWait")
     private boolean waitForHealthCheck(long timeoutMillis) {
-        long start = System.currentTimeMillis();
-        while (System.currentTimeMillis() - start < timeoutMillis) {
+        long timeoutNanos = timeoutMillis * 1_000_000L;
+        long startNanos = System.nanoTime();
+        while (System.nanoTime() - startNanos < timeoutNanos) {
             if (isMlServiceHealthy()) {
                 return true;
             }
@@ -156,7 +158,7 @@ public class MlBackendProcessManager implements SmartLifecycle {
             }
             try {
                 TimeUnit.MILLISECONDS.sleep(400);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException _) {
                 Thread.currentThread().interrupt();
                 return false;
             }

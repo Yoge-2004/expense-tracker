@@ -67,7 +67,7 @@ public class ExecutiveReportData {
         try {
             String name = cat.getName();
             return (name != null && !name.isBlank()) ? name : "Uncategorized";
-        } catch (Exception ex) {
+        } catch (Exception _) {
             return "Uncategorized";
         }
     }

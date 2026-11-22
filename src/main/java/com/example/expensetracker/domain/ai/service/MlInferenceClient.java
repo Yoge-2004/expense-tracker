@@ -33,8 +33,12 @@ public class MlInferenceClient {
             @Value("${ml.inference.url:http://127.0.0.1:8000}") String baseUrl) {
         RestClient.Builder effectiveBuilder = builder != null ? builder : RestClient.builder();
         if (builder == null) {
-            SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-            requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
+            java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
+                    .version(java.net.http.HttpClient.Version.HTTP_2)
+                    .connectTimeout(CONNECT_TIMEOUT)
+                    .build();
+            org.springframework.http.client.JdkClientHttpRequestFactory requestFactory =
+                    new org.springframework.http.client.JdkClientHttpRequestFactory(httpClient);
             requestFactory.setReadTimeout(READ_TIMEOUT);
             effectiveBuilder.requestFactory(requestFactory);
         }
@@ -107,7 +111,7 @@ public class MlInferenceClient {
                     .retrieve()
                     .body(new ParameterizedTypeReference<List<AdminLogEntryDto>>() {});
             return logs != null ? logs : List.of();
-        } catch (Exception e) {
+        } catch (Exception _) {
             return List.of();
         }
     }

@@ -59,16 +59,22 @@ public class FinancialStatementExcelGenerator {
 
         // 1. High-Level Aggregations & Advanced Metrics Calculations
         // Money handed back (reimbursements) is not income: it reduces what was spent.
-        BigDecimal totalIncBd =
-                incomes.stream()
-                .filter(i -> IncomeRules.effectiveKind(i) != IncomeKind.REIMBURSEMENT)
-                .map(Income::getAmount)
-                .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal reimbursedBd =
-                incomes.stream()
-                .filter(i -> IncomeRules.effectiveKind(i) == IncomeKind.REIMBURSEMENT)
-                .map(Income::getAmount)
-                .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+        record IncomeBreakdown(BigDecimal earned, BigDecimal reimbursed) {}
+        IncomeBreakdown incTotals = incomes.stream().collect(
+                java.util.stream.Collectors.teeing(
+                        java.util.stream.Collectors.filtering(
+                                i -> IncomeRules.effectiveKind(i) != IncomeKind.REIMBURSEMENT && i.getAmount() != null,
+                                java.util.stream.Collectors.reducing(BigDecimal.ZERO, Income::getAmount, BigDecimal::add)
+                        ),
+                        java.util.stream.Collectors.filtering(
+                                i -> IncomeRules.effectiveKind(i) == IncomeKind.REIMBURSEMENT && i.getAmount() != null,
+                                java.util.stream.Collectors.reducing(BigDecimal.ZERO, Income::getAmount, BigDecimal::add)
+                        ),
+                        IncomeBreakdown::new
+                )
+        );
+        BigDecimal totalIncBd = incTotals.earned();
+        BigDecimal reimbursedBd = incTotals.reimbursed();
         BigDecimal totalExpBd =
                 expenses.stream().map(Expense::getAmount)
                 .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add)
@@ -295,12 +301,16 @@ public class FinancialStatementExcelGenerator {
                     savingsPct * 100.0, (0.20 - savingsPct) * 100.0);
         }
 
-        double totalGoalTarget =
-                savingsGoals.stream().map(SavingsGoal::getTargetAmount)
-                .filter(Objects::nonNull).mapToDouble(BigDecimal::doubleValue).sum();
-        double totalGoalSaved =
-                savingsGoals.stream().map(SavingsGoal::getCurrentAmount)
-                .filter(Objects::nonNull).mapToDouble(BigDecimal::doubleValue).sum();
+        record GoalAggregation(double target, double saved) {}
+        GoalAggregation goalAgg = savingsGoals.stream().collect(
+                java.util.stream.Collectors.teeing(
+                        java.util.stream.Collectors.summingDouble(g -> g.getTargetAmount() != null ? g.getTargetAmount().doubleValue() : 0.0),
+                        java.util.stream.Collectors.summingDouble(g -> g.getCurrentAmount() != null ? g.getCurrentAmount().doubleValue() : 0.0),
+                        GoalAggregation::new
+                )
+        );
+        double totalGoalTarget = goalAgg.target();
+        double totalGoalSaved = goalAgg.saved();
         double goalProgress = totalGoalTarget > 0 ? (totalGoalSaved / totalGoalTarget) * 100.0 : 0.0;
 
         String p4;

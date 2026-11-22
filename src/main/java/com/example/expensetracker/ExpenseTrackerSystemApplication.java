@@ -29,6 +29,7 @@ import com.example.expensetracker.domain.expense.service.RecurringExpenseSchedul
  */
 @Slf4j
 @EnableScheduling
+@org.springframework.boot.context.properties.ConfigurationPropertiesScan
 @SpringBootApplication
 public class ExpenseTrackerSystemApplication {
 

@@ -26,7 +26,10 @@ public final class ExpoPushClient {
     private static final String ENDPOINT = "https://exp.host/--/api/v2/push/send";
     private static final int MAX_BATCH = 100;   // Expo accepts at most 100 messages per request
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+    private static final HttpClient HTTP = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_2)
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
     private static final Pattern TOKEN = Pattern.compile("^Expo(nent)?PushToken\\[[A-Za-z0-9_\\-]+]$");
 
     private ExpoPushClient() {}

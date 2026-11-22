@@ -249,7 +249,7 @@ public class AdminController {
         byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"audit-trail-" + System.currentTimeMillis() + ".csv\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"audit-trail-" + java.time.Instant.now().toEpochMilli() + ".csv\"")
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .body(bytes);
     }

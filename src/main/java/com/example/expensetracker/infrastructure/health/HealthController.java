@@ -106,7 +106,7 @@ public class HealthController {
     public ResponseEntity<Map<String, Object>> liveness() {
         Map<String, Object> statusMap = new HashMap<>();
         statusMap.put("status", "UP");
-        statusMap.put("timestamp", System.currentTimeMillis());
+        statusMap.put("timestamp", java.time.Instant.now().toEpochMilli());
         return ResponseEntity.ok(statusMap);
     }
 

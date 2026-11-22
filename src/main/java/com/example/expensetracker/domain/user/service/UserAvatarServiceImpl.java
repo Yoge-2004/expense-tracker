@@ -95,7 +95,7 @@ public class UserAvatarServiceImpl implements UserAvatarService {
             Path metaFile = avatarDir.resolve("user_" + userId + ".meta");
             Files.writeString(metaFile, savedContentType);
 
-            String avatarUrl = "/api/users/" + userId + "/avatar?v=" + System.currentTimeMillis();
+            String avatarUrl = "/api/users/" + userId + "/avatar?v=" + java.time.Instant.now().toEpochMilli();
             userService.updateProfilePicture(userId, avatarUrl);
 
             return avatarUrl;

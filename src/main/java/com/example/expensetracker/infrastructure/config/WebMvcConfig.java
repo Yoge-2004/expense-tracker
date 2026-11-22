@@ -51,6 +51,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
         return RestClient.builder().requestFactory(requestFactory);
     }
 
+    @Bean
+    @ConditionalOnMissingBean
+    public java.time.Clock clock() {
+        return java.time.Clock.systemDefaultZone();
+    }
+
     @Override
     public void addInterceptors(@NonNull InterceptorRegistry registry) {
         if (rateLimitInterceptor != null) {
