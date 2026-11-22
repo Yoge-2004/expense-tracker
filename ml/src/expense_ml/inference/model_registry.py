@@ -48,7 +48,7 @@ class ModelRegistry:
         model_revision = os.getenv("MODEL_REVISION", "").strip() or DEFAULT_MODEL_REVISION
         configured_type = os.getenv("MODEL_TYPE", "").strip().lower()
 
-        path, source = cls._resolve_path(model_id, model_revision)
+        path, resolved_revision, source = cls._resolve_path(model_id, model_revision)
 
         if configured_type in {"transformer", "tfidf"}:
             model_type = configured_type
@@ -61,7 +61,7 @@ class ModelRegistry:
             model = TfidfCategoryModel.load(path)
             model_type = "tfidf"
 
-        return cls(LoadedModel(model, model_type, model_revision, source, path=path))
+        return cls(LoadedModel(model, model_type, resolved_revision, source, path=path))
 
     def _find_auxiliary_artifact(self, folder_name: str) -> Path | None:
         aux_env = os.getenv("AUXILIARY_MODEL_DIR", "").strip()
@@ -143,6 +143,36 @@ class ModelRegistry:
                         self._forecast_model = SpendingForecastModel.default_baseline()
         return self._forecast_model
 
+    def auxiliary_status(self) -> dict[str, dict[str, object]]:
+        """Describe loaded auxiliary models without loading large artifacts as a side effect."""
+        merchant = self._merchant_index
+        duplicate = self._duplicate_model
+        anomaly = self._anomaly_model
+        forecast = self._forecast_model
+        return {
+            "merchant_similarity": {
+                "status": "ready" if merchant is not None else "lazy",
+                "indexed_count": len(merchant.merchants) if merchant is not None else None,
+                "vocab_size": len(getattr(getattr(merchant, "vectorizer", None), "vocabulary_", {}))
+                if merchant is not None else None,
+            },
+            "duplicate_similarity": {
+                "status": "ready" if duplicate is not None else "lazy",
+                "vocab_size": len(getattr(getattr(duplicate, "vectorizer", None), "vocabulary_", {}))
+                if duplicate is not None else None,
+            },
+            "transaction_anomaly": {
+                "status": "ready" if anomaly is not None else "lazy",
+                "model_class": type(getattr(anomaly, "model", None)).__name__ if anomaly is not None else None,
+                "features": list(getattr(anomaly, "feature_columns", [])) if anomaly is not None else [],
+            },
+            "spending_forecast": {
+                "status": "ready" if forecast is not None else "lazy",
+                "model_class": type(getattr(forecast, "model", None)).__name__ if forecast is not None else None,
+                "features": list(getattr(forecast, "feature_columns", [])) if forecast is not None else [],
+            },
+        }
+
     @staticmethod
     def _detect_model_type(path: Path) -> str:
         metadata_file = path / "metadata.json"
@@ -163,10 +193,10 @@ class ModelRegistry:
         return "tfidf"
 
     @staticmethod
-    def _resolve_path(model_id: str, revision: str) -> tuple[Path, str]:
+    def _resolve_path(model_id: str, revision: str) -> tuple[Path, str, str]:
         local = Path(model_id)
         if local.exists():
-            return local, str(local)
+            return local, "local", str(local)
 
         try:
             from huggingface_hub import snapshot_download
@@ -176,12 +206,12 @@ class ModelRegistry:
         token = os.getenv("HF_TOKEN")
         try:
             local_path = snapshot_download(repo_id=model_id, revision=revision, token=token)
-            return Path(local_path), f"hf://{model_id}@{revision}"
+            return Path(local_path), revision, f"hf://{model_id}@{revision}"
         except Exception as primary_exc:
             if revision != "main":
                 try:
                     local_path = snapshot_download(repo_id=model_id, revision="main", token=token)
-                    return Path(local_path), f"hf://{model_id}@main"
+                    return Path(local_path), "main", f"hf://{model_id}@main"
                 except Exception as fallback_exc:  # noqa: BLE001
                     logger.debug("Fallback to main revision failed: %s", fallback_exc)
             raise RuntimeError(
@@ -190,6 +220,7 @@ class ModelRegistry:
 
     def metadata(self) -> dict:
         model_metadata = getattr(self.loaded.model, "labels", None)
+        auxiliary = self.auxiliary_status()
         return {
             "model_type": self.loaded.model_type,
             "revision": self.loaded.revision,
@@ -202,20 +233,22 @@ class ModelRegistry:
                     "classes": len(list(model_metadata or [])),
                 },
                 "merchant_similarity": {
-                    "indexed_merchants": len(getattr(self.get_merchant_index(), "merchants", [])),
+                    "status": auxiliary["merchant_similarity"]["status"],
+                    "indexed_merchants": auxiliary["merchant_similarity"]["indexed_count"],
                 },
                 "duplicate_detector": {
-                    "vocab_size": len(
-                        getattr(getattr(self.get_duplicate_model(), "vectorizer", None), "vocabulary_", {})
-                    ),
+                    "status": auxiliary["duplicate_similarity"]["status"],
+                    "vocab_size": auxiliary["duplicate_similarity"]["vocab_size"],
                 },
                 "anomaly_detector": {
-                    "model_class": type(getattr(self.get_anomaly_model(), "model", None)).__name__,
-                    "features": list(getattr(self.get_anomaly_model(), "feature_columns", [])),
+                    "status": auxiliary["transaction_anomaly"]["status"],
+                    "model_class": auxiliary["transaction_anomaly"]["model_class"],
+                    "features": auxiliary["transaction_anomaly"]["features"],
                 },
                 "spending_forecaster": {
-                    "model_class": type(getattr(self.get_forecast_model(), "model", None)).__name__,
-                    "features": list(getattr(self.get_forecast_model(), "feature_columns", [])),
+                    "status": auxiliary["spending_forecast"]["status"],
+                    "model_class": auxiliary["spending_forecast"]["model_class"],
+                    "features": auxiliary["spending_forecast"]["features"],
                 },
             },
         }

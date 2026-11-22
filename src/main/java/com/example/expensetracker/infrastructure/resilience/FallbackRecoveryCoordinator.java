@@ -102,8 +102,9 @@ public class FallbackRecoveryCoordinator implements ResilientRoutingDataSource.R
             return false;
         } catch (Exception e) {
             lastError = message(e);
-            log.warn("Could not prepare the emergency fallback database: {}", lastError);
-            return false;
+            log.warn("Could not determine whether the emergency fallback has unmerged writes ({}); "
+                    + "skipping snapshot restore to protect its contents.", lastError);
+            return true;
         } finally {
             lock.unlock();
         }
@@ -151,8 +152,9 @@ public class FallbackRecoveryCoordinator implements ResilientRoutingDataSource.R
             try {
                 pending = engine.pendingChanges(fallback);
             } catch (Exception e) {
-                log.error("Could not check the fallback for unmerged writes; continuing with the backup: {}", message(e));
-                return true;
+                lastError = message(e);
+                log.error("Could not check the fallback for unmerged writes; keeping the existing snapshot: {}", lastError);
+                return false;
             }
             if (pending == 0) {
                 return true;
@@ -167,8 +169,9 @@ public class FallbackRecoveryCoordinator implements ResilientRoutingDataSource.R
                 return false;
             }
         } catch (Exception e) {
-            log.error("Could not open the fallback database; continuing with the backup: {}", message(e));
-            return true;
+            lastError = message(e);
+            log.error("Could not open the fallback database; keeping the existing snapshot: {}", lastError);
+            return false;
         } finally {
             lock.unlock();
         }

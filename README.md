@@ -1125,7 +1125,7 @@ This section is the working record for whoever picks the project up next. It con
 | `EXPO_TOKEN` | GitHub repository secret | EAS builds for the Android workflow. |
 | `HF_RECOVERY_TOKEN` | GitHub repository secret (create only when needed, delete afterwards) | Used by the recovery workflow. |
 | `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD` | Space secrets | Primary PostgreSQL (Neon). |
-| `JWT_SECRET` | Space secret | Signs sessions. `application.properties` ships a **fallback default for development only**; production must set its own. |
+| `JWT_SECRET` | Space secret | Signs sessions. Required outside dev; dev uses an ephemeral key when unset, so sessions expire on restart. |
 | `DB_BACKUP_KEY` | Space secret | AES-256-GCM key for snapshots. Changing it makes existing snapshots unreadable. |
 | sync token (`app.sync.secret-key`) | Space secret | Authorises `/api/sync/*` calls. |
 

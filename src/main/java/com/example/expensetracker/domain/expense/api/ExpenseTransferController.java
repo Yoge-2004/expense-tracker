@@ -14,7 +14,7 @@ import java.util.Map;
 
 import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.expense.model.Expense;
-import com.example.expensetracker.domain.report.service.ExportService;
+import com.example.expensetracker.domain.expense.service.ExpenseExportService;
 import com.example.expensetracker.domain.report.service.ImportService;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.service.UserService;
@@ -41,7 +41,7 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
 @RequestMapping("/api/expenses")
 public class ExpenseTransferController {
 
-    private final ExportService exportService;
+    private final ExpenseExportService exportService;
     private final ImportService importService;
     private final UserService userService;
     private final UserSecurity userSecurity;

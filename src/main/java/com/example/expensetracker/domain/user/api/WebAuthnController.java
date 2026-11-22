@@ -2,6 +2,8 @@ package com.example.expensetracker.domain.user.api;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -10,8 +12,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.repository.UserRepository;
+import com.example.expensetracker.domain.user.service.UserService;
 import com.example.expensetracker.domain.user.service.WebAuthnService;
+import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -55,7 +58,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class WebAuthnController {
 
     private final WebAuthnService webAuthnService;
-    private final UserRepository users;
+    private final UserService users;
+    private final BrowserSessionCookieService browserSessionCookieService;
 
     @Operation(summary = "Passkey status",
             description = "Tells whether the signed-in user has a passkey registered.")
@@ -115,11 +119,17 @@ public class WebAuthnController {
     @ApiResponse(responseCode = "401", description = "Passkey could not be verified")
     @PostMapping("/login/finish")
     public ResponseEntity<Map<String, Object>> loginFinish(
-            @Valid @RequestBody(required = false) WebAuthnFinishRequest request) {
+            @Valid @RequestBody(required = false) WebAuthnFinishRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
         String txId = request != null ? request.transactionId() : null;
         String cred = request != null ? request.credential() : null;
         log.info("Completing WebAuthn biometric login for transactionId={}", txId);
-        Map<String, Object> result = webAuthnService.finishAuthentication(txId, cred);
+        Map<String, Object> result = new java.util.LinkedHashMap<>(webAuthnService.finishAuthentication(txId, cred));
+        String token = (String) result.get("token");
+        if (token != null && browserSessionCookieService.issueIfBrowser(httpRequest, httpResponse, token)) {
+            result.remove("token");
+        }
         log.info("WebAuthn biometric login successful for transactionId={}", txId);
         return ResponseEntity.ok(result);
     }
@@ -143,8 +153,7 @@ public class WebAuthnController {
                 org.springframework.http.HttpStatus.UNAUTHORIZED, "Authentication required."
             );
         }
-        return users.findByEmailIgnoreCase(authentication.getName())
-            .or(() -> users.findByUsernameIgnoreCase(authentication.getName()))
+        return users.findByIdentifier(authentication.getName())
             .orElseThrow(() -> {
                 log.warn("WebAuthn principal '{}' not found in database", authentication.getName());
                 return new org.springframework.web.server.ResponseStatusException(

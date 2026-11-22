@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.expensetracker.domain.income.model.Income;
-import com.example.expensetracker.domain.report.service.ExportService;
+import com.example.expensetracker.domain.income.service.IncomeExportService;
 import com.example.expensetracker.domain.report.service.ImportService;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.service.UserService;
@@ -45,7 +45,7 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
 public class IncomeTransferController {
 
     private final UserService userService;
-    private final ExportService exportService;
+    private final IncomeExportService exportService;
     private final ImportService importService;
     private final UserSecurity userSecurity;
 

@@ -75,9 +75,9 @@
                         const usage = Number(b.percentage || 0);
                         const catColor = getCategoryColor(b.categoryName);
                         const barColor = usage > 100 ? 'var(--danger)' : usage > 80 ? 'var(--warning)' : (catColor?.color || 'var(--primary)');
-                        const periodLabel = b.period ? b.period.toUpperCase() : 'MONTHLY';
-                        const startStr = b.startDate || '';
-                        const endStr = b.endDate || '';
+                        const periodLabel = b.period ? String(b.period).toUpperCase() : 'MONTHLY';
+                        const startStr = escapeHtml(b.startDate || '');
+                        const endStr = escapeHtml(b.endDate || '');
                         const safeName = jsAttrEscape(b.categoryName || 'Budget');
 
                         return `
@@ -88,7 +88,7 @@
                                     <div class="budget-cat-details">
                                         <div class="budget-cat-title-row">
                                             <span class="budget-cat-title">${escapeHtml(b.categoryName)}</span>
-                                            <span class="status-badge badge-neutral budget-period-badge">${periodLabel}</span>
+                                            <span class="status-badge badge-neutral budget-period-badge">${escapeHtml(periodLabel)}</span>
                                         </div>
                                         <div class="budget-cat-sub">
                                             ${formatCurrency(b.spent)} <span class="text-opacity-70">of</span> ${formatCurrency(b.limit)}
@@ -97,7 +97,7 @@
                                 </div>
                                 <div class="budget-item-actions">
                                     <span class="budget-usage-badge" data-bar-color="${barColor}">${usage.toFixed(0)}%</span>
-                                    <button type="button" class="btn-edit btn-budget-action" data-action="edit-budget" data-budget-id="${b.budgetId || 0}" data-cat-id="${b.categoryId || 0}" data-cat-name="${safeName}" data-limit="${b.limit || 0}" data-period="${periodLabel}" data-start="${startStr}" data-end="${endStr}" data-interval="${b.intervalDays || 30}" title="Edit Budget Limit">
+                                    <button type="button" class="btn-edit btn-budget-action" data-action="edit-budget" data-budget-id="${b.budgetId || 0}" data-cat-id="${b.categoryId || 0}" data-cat-name="${safeName}" data-limit="${b.limit || 0}" data-period="${escapeHtml(periodLabel)}" data-start="${startStr}" data-end="${endStr}" data-interval="${b.intervalDays || 30}" title="Edit Budget Limit">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                     </button>
                                     <button type="button" class="btn-delete btn-budget-action" data-action="delete-budget" data-budget-id="${b.budgetId || 0}" data-cat-id="${b.categoryId || 0}" title="Delete Budget Limit">

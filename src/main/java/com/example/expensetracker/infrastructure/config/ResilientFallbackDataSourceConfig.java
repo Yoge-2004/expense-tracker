@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import javax.sql.DataSource;
+import java.time.Clock;
 import java.io.File;
 
 import com.example.expensetracker.infrastructure.resilience.FallbackRecoveryCoordinator;
@@ -47,7 +48,7 @@ public class ResilientFallbackDataSourceConfig {
 
     @Bean
     @Primary
-    public DataSource dataSource() {
+    public DataSource dataSource(Clock clock) {
         HikariConfig primaryConfig = new HikariConfig();
         primaryConfig.setJdbcUrl(primaryUrl);
         primaryConfig.setDriverClassName(primaryDriver);
@@ -98,6 +99,6 @@ public class ResilientFallbackDataSourceConfig {
         HikariDataSource fallbackDs = new HikariDataSource(fallbackConfig);
 
         log.info("Emergency fallback database path: {}", fallbackFile);
-        return new ResilientRoutingDataSource(primaryDs, fallbackDs);
+        return new ResilientRoutingDataSource(primaryDs, fallbackDs, clock);
     }
 }

@@ -1,29 +1,27 @@
 package com.example.expensetracker.domain.user.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
 
-import com.example.expensetracker.domain.ai.repository.MlFeedbackRepository;
 import com.example.expensetracker.domain.budget.repository.BudgetRepository;
 import com.example.expensetracker.domain.expense.repository.CategoryRepository;
 import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
 import com.example.expensetracker.domain.expense.repository.RecurringExpenseRepository;
 import com.example.expensetracker.domain.goal.repository.SavingsGoalRepository;
 import com.example.expensetracker.domain.income.repository.IncomeRepository;
-import com.example.expensetracker.domain.loan.repository.LoanAdjustmentRepository;
-import com.example.expensetracker.domain.notification.repository.AppNotificationRepository;
-import com.example.expensetracker.domain.notification.repository.DeviceTokenRepository;
-import com.example.expensetracker.domain.notification.repository.NotificationPreferenceRepository;
 import com.example.expensetracker.domain.report.repository.MonthlyReportLogRepository;
 import com.example.expensetracker.domain.user.model.Role;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.repository.UserAppearanceRepository;
 import com.example.expensetracker.domain.user.repository.UserRepository;
 import com.example.expensetracker.domain.user.repository.WebAuthnCredentialRepository;
 
@@ -42,69 +40,23 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final ExpenseRepository expenseRepository;
-    private final CategoryRepository categoryRepository;
-    private final BudgetRepository budgetRepository;
-    private final RecurringExpenseRepository recurringRepository;
-    private final IncomeRepository incomeRepository;
-    private final SavingsGoalRepository savingsGoalRepository;
-    private final MonthlyReportLogRepository reportLogRepository;
-    private final WebAuthnCredentialRepository webAuthnCredentialRepository;
-    private final AppNotificationRepository appNotificationRepository;
-    private final DeviceTokenRepository deviceTokenRepository;
-    private final LoanAdjustmentRepository loanAdjustmentRepository;
-    private final MlFeedbackRepository mlFeedbackRepository;
-    private final NotificationPreferenceRepository notificationPreferenceRepository;
-    private final UserAppearanceRepository userAppearanceRepository;
-    private final com.example.expensetracker.domain.user.service.UserCascadeDeletionService userCascadeDeletionService;
+    private final UserCascadeDeletionService userCascadeDeletionService;
 
     @org.springframework.beans.factory.annotation.Autowired
     public UserServiceImpl(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            ExpenseRepository expenseRepository,
-            CategoryRepository categoryRepository,
-            BudgetRepository budgetRepository,
-            RecurringExpenseRepository recurringRepository,
-            IncomeRepository incomeRepository,
-            SavingsGoalRepository savingsGoalRepository,
-            MonthlyReportLogRepository reportLogRepository,
-            WebAuthnCredentialRepository webAuthnCredentialRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) AppNotificationRepository appNotificationRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) DeviceTokenRepository deviceTokenRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) LoanAdjustmentRepository loanAdjustmentRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) MlFeedbackRepository mlFeedbackRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) NotificationPreferenceRepository notificationPreferenceRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) UserAppearanceRepository userAppearanceRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) com.example.expensetracker.domain.user.service.UserCascadeDeletionService userCascadeDeletionService) {
+            UserCascadeDeletionService userCascadeDeletionService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.expenseRepository = expenseRepository;
-        this.categoryRepository = categoryRepository;
-        this.budgetRepository = budgetRepository;
-        this.recurringRepository = recurringRepository;
-        this.incomeRepository = incomeRepository;
-        this.savingsGoalRepository = savingsGoalRepository;
-        this.reportLogRepository = reportLogRepository;
-        this.webAuthnCredentialRepository = webAuthnCredentialRepository;
-        this.appNotificationRepository = appNotificationRepository;
-        this.deviceTokenRepository = deviceTokenRepository;
-        this.loanAdjustmentRepository = loanAdjustmentRepository;
-        this.mlFeedbackRepository = mlFeedbackRepository;
-        this.notificationPreferenceRepository = notificationPreferenceRepository;
-        this.userAppearanceRepository = userAppearanceRepository;
-        this.userCascadeDeletionService = (userCascadeDeletionService != null)
-                ? userCascadeDeletionService
-                : new UserCascadeDeletionServiceImpl(
-                        expenseRepository, categoryRepository, budgetRepository, recurringRepository,
-                        incomeRepository, savingsGoalRepository, reportLogRepository, webAuthnCredentialRepository,
-                        appNotificationRepository, deviceTokenRepository, loanAdjustmentRepository,
-                        mlFeedbackRepository, notificationPreferenceRepository, userAppearanceRepository);
+        this.userCascadeDeletionService = userCascadeDeletionService;
     }
 
     /**
-     * Backward-compatible constructor for testing without auxiliary repositories.
+     * Compatibility constructor for older direct instantiations.
+     * Spring uses the constructor above and injects the deletion workflow as a boundary.
      */
+    @Deprecated(forRemoval = false)
     public UserServiceImpl(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
@@ -116,9 +68,9 @@ public class UserServiceImpl implements UserService {
             SavingsGoalRepository savingsGoalRepository,
             MonthlyReportLogRepository reportLogRepository,
             WebAuthnCredentialRepository webAuthnCredentialRepository) {
-        this(userRepository, passwordEncoder, expenseRepository, categoryRepository,
-                budgetRepository, recurringRepository, incomeRepository, savingsGoalRepository,
-                reportLogRepository, webAuthnCredentialRepository, null, null, null, null, null, null, null);
+        this(userRepository, passwordEncoder, new UserCascadeDeletionServiceImpl(
+                expenseRepository, categoryRepository, budgetRepository, recurringRepository,
+                incomeRepository, savingsGoalRepository, reportLogRepository, webAuthnCredentialRepository));
     }
 
     @Override
@@ -164,7 +116,7 @@ public class UserServiceImpl implements UserService {
                 throw new IllegalArgumentException(
                         "Currency must be a 3-letter ISO 4217 code (got '" + c + "')");
             }
-            user.setCurrency(c.toUpperCase(java.util.Locale.ROOT));
+            user.setCurrency(c.toUpperCase(Locale.ROOT));
         }
         User savedUser = userRepository.save(user);
         log.info("User registered successfully with id={}", savedUser.getId());
@@ -294,7 +246,7 @@ public class UserServiceImpl implements UserService {
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        user.setCurrency(currency.toUpperCase(java.util.Locale.ROOT));
+        user.setCurrency(currency.toUpperCase(Locale.ROOT));
         userRepository.save(user);
         log.info("Currency updated successfully for userId={} to {}", userId, user.getCurrency());
     }

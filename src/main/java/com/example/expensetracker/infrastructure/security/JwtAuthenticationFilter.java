@@ -6,8 +6,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import io.jsonwebtoken.JwtException;
 import org.jspecify.annotations.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,7 +32,6 @@ import com.example.expensetracker.infrastructure.logging.CorrelationIdFilter;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /** Service used to parse, validate, and extract claims from JWT tokens. */
@@ -40,6 +39,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /** Service used to load user details from the database by email. */
     private final CustomUserDetailsService userDetailsService;
+
+    private final BrowserSessionCookieService browserSessionCookieService;
+
+    @Autowired
+    public JwtAuthenticationFilter(
+            JwtService jwtService,
+            CustomUserDetailsService userDetailsService,
+            BrowserSessionCookieService browserSessionCookieService) {
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
+        this.browserSessionCookieService = browserSessionCookieService;
+    }
+
+    /** Compatibility constructor for bearer-only filter consumers. */
+    public JwtAuthenticationFilter(JwtService jwtService, CustomUserDetailsService userDetailsService) {
+        this(jwtService, userDetailsService, new BrowserSessionCookieService());
+    }
 
     /**
      * Performs JWT extraction, validation, and security context population
@@ -52,17 +68,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
-        final String jwt;
+        final boolean bearerRequest = authHeader != null && authHeader.startsWith("Bearer ");
+        final String jwt = bearerRequest ? authHeader.substring(7) : cookieValue(request, BrowserSessionCookieService.SESSION_COOKIE);
         final String userEmail;
 
-        // Skip filter if Authorization header is absent or malformed
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (jwt == null || jwt.isBlank()) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Extract the JWT token (strip "Bearer " prefix)
-        jwt = authHeader.substring(7);
         try {
             userEmail = jwtService.extractUsername(jwt);
         } catch (JwtException | IllegalArgumentException exception) {
@@ -107,4 +121,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
+    private String cookieValue(HttpServletRequest request, String name) {
+        if (request.getCookies() == null) return null;
+        for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+            if (name.equals(cookie.getName())) return cookie.getValue();
+        }
+        return null;
+    }
+
 }

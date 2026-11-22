@@ -13,6 +13,8 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.function.Function;
@@ -38,6 +40,9 @@ public class JwtServiceImpl implements JwtService {
     @Value("${jwt.expiration}")
     private long jwtExpiration;
 
+    @Value("${spring.profiles.active:}")
+    private String activeProfiles;
+
     /**
      * Cached signing key.
      */
@@ -49,8 +54,18 @@ public class JwtServiceImpl implements JwtService {
     @PostConstruct
     public void init() {
         if (secretKey == null || secretKey.isBlank()) {
-            throw new IllegalStateException(
-                    "JWT secret key is not configured. Set the JWT_SECRET environment variable.");
+            boolean development = activeProfiles != null && Arrays.stream(activeProfiles.split(","))
+                    .map(String::trim)
+                    .anyMatch("dev"::equals);
+            if (!development) {
+                throw new IllegalStateException(
+                        "JWT secret key is not configured. Set the JWT_SECRET environment variable.");
+            }
+            byte[] ephemeralKey = new byte[32];
+            new SecureRandom().nextBytes(ephemeralKey);
+            signingKey = Keys.hmacShaKeyFor(ephemeralKey);
+            log.warn("JWT_SECRET is unset in the dev profile; using an ephemeral key. Sessions will expire on restart.");
+            return;
         }
 
         byte[] keyBytes;

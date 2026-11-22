@@ -23,12 +23,9 @@ import java.util.Locale;
 import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.goal.model.SavingsGoal;
-import com.example.expensetracker.domain.income.mapper.IncomeRules;
 import com.example.expensetracker.domain.income.model.Income;
-import com.example.expensetracker.domain.income.model.IncomeKind;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.infrastructure.exception.ExportException;
-import com.example.expensetracker.domain.report.service.ExportServiceImpl.CurrencyMeta;
 
 
 
@@ -44,31 +41,13 @@ public class FinancialStatementPdfGenerator {
     public byte[] generate(User user, String preferredCurrency,
                            List<Expense> expenses, List<Income> incomes,
                            List<SavingsGoal> savingsGoals) {
-        CurrencyMeta curr = ExportServiceImpl.resolveCurrency(preferredCurrency, user);
-        String pdfSym = ExportServiceImpl.pdfSymbol(curr);
+        CurrencyFormats.Metadata curr = CurrencyFormats.resolve(preferredCurrency, user);
+        String pdfSym = CurrencyFormats.pdfSymbol(curr);
 
-        // Money handed back (reimbursements) is not income: it reduces what was spent.
-        record IncomeBreakdown(BigDecimal earned, BigDecimal reimbursed) {}
-        IncomeBreakdown incTotals = incomes.stream().collect(
-                java.util.stream.Collectors.teeing(
-                        java.util.stream.Collectors.filtering(
-                                i -> IncomeRules.effectiveKind(i) != IncomeKind.REIMBURSEMENT && i.getAmount() != null,
-                                java.util.stream.Collectors.reducing(BigDecimal.ZERO, Income::getAmount, BigDecimal::add)
-                        ),
-                        java.util.stream.Collectors.filtering(
-                                i -> IncomeRules.effectiveKind(i) == IncomeKind.REIMBURSEMENT && i.getAmount() != null,
-                                java.util.stream.Collectors.reducing(BigDecimal.ZERO, Income::getAmount, BigDecimal::add)
-                        ),
-                        IncomeBreakdown::new
-                )
-        );
-        BigDecimal totalIncome = incTotals.earned();
-        BigDecimal reimbursed = incTotals.reimbursed();
-        BigDecimal totalExpenses = expenses.stream()
-                .map(Expense::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .subtract(reimbursed).max(BigDecimal.ZERO);
-        BigDecimal netSavings = totalIncome.subtract(totalExpenses);
+        FinancialStatementTotals totals = FinancialStatementTotals.calculate(expenses, incomes);
+        BigDecimal totalIncome = totals.earnedIncome();
+        BigDecimal totalExpenses = totals.expenses();
+        BigDecimal netSavings = totals.netSavings();
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Document document = new Document(PageSize.A4, 36, 36, 36, 36);

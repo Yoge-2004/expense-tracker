@@ -587,7 +587,7 @@ public class ExecutiveExcelReportGenerator implements ReportExportStrategy {
                 Row totRow = incomeSheet.createRow(row);
                 totRow.setHeightInPoints(22);
                 put(incomeSheet, row, 2, "TOTAL INFLOW (" + symbol + "):", totalLabelStyle);
-                put(incomeSheet, row, 3, "=SUM(D2:D" + row + ")", totalMoneyStyle);
+                putFormula(incomeSheet, row, 3, "SUM(D2:D" + row + ")", totalMoneyStyle);
             }
             widths(incomeSheet, new int[]{16, 24, 46, 18, 16});
 
@@ -642,7 +642,7 @@ public class ExecutiveExcelReportGenerator implements ReportExportStrategy {
                 Row totRow = expenseSheet.createRow(row);
                 totRow.setHeightInPoints(22);
                 put(expenseSheet, row, 2, "TOTAL OUTFLOW (" + symbol + "):", totalLabelStyle);
-                put(expenseSheet, row, 3, "=SUM(D2:D" + row + ")", totalMoneyStyle);
+                putFormula(expenseSheet, row, 3, "SUM(D2:D" + row + ")", totalMoneyStyle);
             }
             widths(expenseSheet, new int[]{16, 24, 46, 18, 14, 30});
 
@@ -985,10 +985,18 @@ public class ExecutiveExcelReportGenerator implements ReportExportStrategy {
         switch (value) {
             case BigDecimal decimal -> cell.setCellValue(decimal.doubleValue());
             case Number number -> cell.setCellValue(number.doubleValue());
-            case String s when s.startsWith("=") -> cell.setCellFormula(s.substring(1));
+            case String s -> cell.setCellValue(s);
             case null -> cell.setCellValue("");
             case Object obj -> cell.setCellValue(String.valueOf(obj));
         }
+        cell.setCellStyle(style);
+    }
+
+    private static void putFormula(Sheet sheet, int row, int column, String formula, CellStyle style) {
+        Row targetRow = sheet.getRow(row);
+        if (targetRow == null) targetRow = sheet.createRow(row);
+        Cell cell = targetRow.createCell(column);
+        cell.setCellFormula(formula);
         cell.setCellStyle(style);
     }
 

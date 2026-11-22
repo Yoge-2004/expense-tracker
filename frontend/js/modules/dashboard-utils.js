@@ -50,7 +50,10 @@
         }
         const symbol = typeof window.getCurrencySymbol === "function" ? window.getCurrencySymbol() : "₹";
         const isAlpha = /^[A-Z]{3}$/.test(symbol);
-        const numStr = Number(amount || 0).toFixed(2);
+        const numStr = new Intl.NumberFormat(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(Number(amount || 0));
         return isAlpha ? `${symbol} ${numStr}` : `${symbol}${numStr}`;
     }
 

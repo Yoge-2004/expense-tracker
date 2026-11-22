@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import com.example.expensetracker.domain.expense.model.Expense;
-import com.example.expensetracker.domain.report.service.ExportServiceImpl.CurrencyMeta;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.infrastructure.exception.ExportException;
 
@@ -33,11 +32,11 @@ public class ExpenseExcelReportGenerator {
     private static final Color PBI_TEXT_DARK     = new Color(15, 23, 42);
 
     public byte[] generate(User user, String preferredCurrency, List<Expense> expenses) {
-        CurrencyMeta curr = ExportServiceImpl.resolveCurrency(preferredCurrency, user);
+        CurrencyFormats.Metadata curr = CurrencyFormats.resolve(preferredCurrency, user);
         return generate(user, preferredCurrency, expenses, curr);
     }
 
-    public byte[] generate(User user, String preferredCurrency, List<Expense> expenses, CurrencyMeta curr) {
+    public byte[] generate(User user, String preferredCurrency, List<Expense> expenses, CurrencyFormats.Metadata curr) {
         try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             DefaultIndexedColorMap colorMap = new DefaultIndexedColorMap();
             DataFormat df = workbook.createDataFormat();
@@ -48,7 +47,7 @@ public class ExpenseExcelReportGenerator {
             sheet.createFreezePane(0, 1);
             sheet.setForceFormulaRecalculation(true);
 
-            String curFmt = curr.getExcelFormat();
+            String curFmt = curr.excelFormat();
             XSSFCellStyle headerStyle = createModernHeaderStyle(workbook, colorMap, new Color(30, 64, 175));
             XSSFCellStyle normalRowStyle = createDataRowStyle(workbook, colorMap, false, null, HorizontalAlignment.LEFT);
             XSSFCellStyle zebraRowStyle = createDataRowStyle(workbook, colorMap, true, null, HorizontalAlignment.LEFT);
@@ -139,11 +138,11 @@ public class ExpenseExcelReportGenerator {
             if (rowIdx > 1) {
                 sheet.setAutoFilter(new CellRangeAddress(0, rowIdx - 1, 0, headers.length - 1));
             }
-            for (int i = 0; i < headers.length; i++) {
-                sheet.autoSizeColumn(i);
-                sheet.setColumnWidth(i, Math.max(sheet.getColumnWidth(i) + 1600, 4200));
+            // Fixed widths avoid POI scanning every populated cell again during auto-sizing.
+            int[] columnWidths = {10, 16, 30, 20, 52, 14};
+            for (int i = 0; i < columnWidths.length; i++) {
+                sheet.setColumnWidth(i, columnWidths[i] * 256);
             }
-            sheet.setColumnWidth(4, Math.max(sheet.getColumnWidth(4), 8500));
 
             try {
                 XSSFFormulaEvaluator.evaluateAllFormulaCells(workbook);
@@ -258,7 +257,7 @@ public class ExpenseExcelReportGenerator {
         return style;
     }
 
-    private String currencyAwareHighExpenseThreshold(CurrencyMeta curr) {
+    private String currencyAwareHighExpenseThreshold(CurrencyFormats.Metadata curr) {
         if (curr == null) return "1000";
         if (!curr.decimals()) {
             return "100000";

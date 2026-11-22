@@ -1,6 +1,5 @@
 package com.example.expensetracker.domain.report.api;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -12,22 +11,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import java.util.List;
 
-import com.example.expensetracker.domain.budget.model.Budget;
-import com.example.expensetracker.domain.budget.repository.BudgetRepository;
-import com.example.expensetracker.domain.expense.model.Expense;
-import com.example.expensetracker.domain.expense.model.RecurringExpense;
-import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
-import com.example.expensetracker.domain.expense.repository.RecurringExpenseRepository;
-import com.example.expensetracker.domain.goal.model.SavingsGoal;
-import com.example.expensetracker.domain.goal.repository.SavingsGoalRepository;
-import com.example.expensetracker.domain.income.model.Income;
-import com.example.expensetracker.domain.income.repository.IncomeRepository;
 import com.example.expensetracker.domain.report.service.ExecutiveExcelReportGenerator;
 import com.example.expensetracker.domain.report.service.ExecutivePdfReportGenerator;
 import com.example.expensetracker.domain.report.service.ExecutiveReportData;
 import com.example.expensetracker.domain.report.service.ExecutiveReportDateRange;
+import com.example.expensetracker.domain.report.service.ExecutiveReportService;
+import com.example.expensetracker.domain.report.service.ReportExportRegistry;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.service.UserService;
 import com.example.expensetracker.infrastructure.security.UserSecurity;
@@ -64,54 +54,26 @@ public class RangeReportController {
     private static final MediaType XLSX = MediaType.parseMediaType(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
-    private final com.example.expensetracker.domain.report.service.ExecutiveReportService executiveReportService;
+    private final ExecutiveReportService executiveReportService;
     private final UserService users;
     private final UserSecurity security;
     private final ExecutiveExcelReportGenerator excelReportGenerator;
     private final ExecutivePdfReportGenerator pdfReportGenerator;
-    private final com.example.expensetracker.domain.report.service.ReportExportRegistry exportRegistry;
+    private final ReportExportRegistry exportRegistry;
 
     @org.springframework.beans.factory.annotation.Autowired
-    public RangeReportController(com.example.expensetracker.domain.report.service.ExecutiveReportService executiveReportService,
+    public RangeReportController(ExecutiveReportService executiveReportService,
                                  UserService users,
                                  UserSecurity security,
                                  ExecutiveExcelReportGenerator excelReportGenerator,
                                  ExecutivePdfReportGenerator pdfReportGenerator,
-                                 @org.springframework.beans.factory.annotation.Autowired(required = false) com.example.expensetracker.domain.report.service.ReportExportRegistry exportRegistry) {
+                                 ReportExportRegistry exportRegistry) {
         this.executiveReportService = executiveReportService;
         this.users = users;
         this.security = security;
         this.excelReportGenerator = excelReportGenerator;
         this.pdfReportGenerator = pdfReportGenerator;
         this.exportRegistry = exportRegistry;
-    }
-
-    public RangeReportController(ExpenseRepository expenses,
-                                 IncomeRepository incomes,
-                                 SavingsGoalRepository savingsGoals,
-                                 RecurringExpenseRepository recurringExpenses,
-                                 BudgetRepository budgets,
-                                 UserService users,
-                                 UserSecurity security,
-                                 ExecutiveExcelReportGenerator excelReportGenerator,
-                                 ExecutivePdfReportGenerator pdfReportGenerator,
-                                 com.example.expensetracker.domain.report.service.ReportExportRegistry exportRegistry) {
-        this(new com.example.expensetracker.domain.report.service.ExecutiveReportServiceImpl(
-                expenses, incomes, savingsGoals, recurringExpenses, budgets),
-                users, security, excelReportGenerator, pdfReportGenerator, exportRegistry);
-    }
-
-    public RangeReportController(ExpenseRepository expenses,
-                                 IncomeRepository incomes,
-                                 SavingsGoalRepository savingsGoals,
-                                 RecurringExpenseRepository recurringExpenses,
-                                 BudgetRepository budgets,
-                                 UserService users,
-                                 UserSecurity security,
-                                 ExecutiveExcelReportGenerator excelReportGenerator,
-                                 ExecutivePdfReportGenerator pdfReportGenerator) {
-        this(expenses, incomes, savingsGoals, recurringExpenses, budgets,
-                users, security, excelReportGenerator, pdfReportGenerator, null);
     }
 
     /**

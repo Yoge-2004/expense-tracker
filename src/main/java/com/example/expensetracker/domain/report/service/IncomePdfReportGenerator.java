@@ -16,7 +16,6 @@ import java.util.*;
 import java.util.List;
 
 import com.example.expensetracker.domain.income.model.Income;
-import com.example.expensetracker.domain.report.service.ExportServiceImpl.CurrencyMeta;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.infrastructure.exception.ExportException;
 
@@ -31,12 +30,13 @@ import com.example.expensetracker.infrastructure.exception.ExportException;
 public class IncomePdfReportGenerator {
 
     public byte[] generate(User user, String preferredCurrency, List<Income> rawIncomes) {
-        CurrencyMeta curr = ExportServiceImpl.resolveCurrency(preferredCurrency, user);
-        String pdfSym = ExportServiceImpl.pdfSymbol(curr);
+        CurrencyFormats.Metadata curr = CurrencyFormats.resolve(preferredCurrency, user);
+        String pdfSym = CurrencyFormats.pdfSymbol(curr);
         return generate(user, preferredCurrency, rawIncomes, curr, pdfSym);
     }
 
-    public byte[] generate(User user, String preferredCurrency, List<Income> rawIncomes, CurrencyMeta curr, String pdfSym) {
+    public byte[] generate(User user, String preferredCurrency, List<Income> rawIncomes,
+                           CurrencyFormats.Metadata curr, String pdfSym) {
         List<Income> incomes = new ArrayList<>(rawIncomes);
         incomes.sort((a, b) -> {
             if (a.getIncomeDate() == null && b.getIncomeDate() == null) return 0;
@@ -198,7 +198,8 @@ public class IncomePdfReportGenerator {
         }
     }
 
-    private void addPdfHeaderBanner(Document doc, String title, String subtitle, Color accentColor, User user, CurrencyMeta curr, String pdfSym) throws DocumentException {
+    private void addPdfHeaderBanner(Document doc, String title, String subtitle, Color accentColor, User user,
+                                    CurrencyFormats.Metadata curr, String pdfSym) throws DocumentException {
         PdfPTable banner = new PdfPTable(1);
         banner.setWidthPercentage(100);
         PdfPCell bannerCell = new PdfPCell();

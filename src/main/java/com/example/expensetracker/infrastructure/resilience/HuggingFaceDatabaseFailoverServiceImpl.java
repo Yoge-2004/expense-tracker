@@ -1,10 +1,8 @@
 package com.example.expensetracker.infrastructure.resilience;
 
 import jakarta.annotation.PreDestroy;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,11 +17,9 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -50,38 +46,28 @@ import com.example.expensetracker.infrastructure.config.AdminBootstrapRunner;
 @Service
 public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDatabaseFailoverService {
 
-    private static final String DEFAULT_SPACE = "Yoge-2004/expense-tracker-backend";
-    private static final String DEFAULT_PATH = "database/expense_tracker.sqlite.enc";
-
-    @Value("${hf.db.token:${HF_TOKEN:}}")
     private String token;
 
-    @Value("${hf.db.space:${HF_SPACE_REPO:" + DEFAULT_SPACE + "}}")
     private String space;
 
-    @Value("${hf.db.path:" + DEFAULT_PATH + "}")
     private String path;
 
     /** space (default, matches existing deployments), dataset or model. */
-    @Value("${hf.db.repo-type:${HF_REPO_TYPE:space}}")
     private String repoType;
 
-    @Value("${hf.db.encryption-key:${DB_BACKUP_KEY:}}")
     private String encryptionKey;
 
     /** Largest drop in row count, in percent, a routine backup may cause before it is refused. */
-    @Value("${hf.db.max-shrink-percent:30}")
     private int maxShrinkPercent = 30;
 
     /** A changed snapshot is committed to the Space (which restarts it) at most this often; shutdown is exempt. */
-    @Value("${hf.db.min-commit-interval-minutes:30}")
     private int minCommitIntervalMinutes = 30;
 
     /** Tables whose rows change without user edits; they ride along in a snapshot but never trigger a commit alone. */
-    @Value("${hf.db.volatile-tables:webauthn_challenges,password_reset_otp,platform_daily_metrics,app_notifications,admin_audit_logs,monthly_report_logs,device_tokens}")
     private String volatileTablesCsv = "webauthn_challenges,password_reset_otp,platform_daily_metrics,app_notifications,admin_audit_logs,monthly_report_logs,device_tokens";
 
     private final DatabaseSnapshotService snapshotService;
+    private final Clock clock;
     /** Order-independent hash of the data that matters, of the snapshot stored on HF (null = unknown). */
     private volatile String lastPushedContentHash = null;
     private volatile boolean shuttingDown = false;
@@ -98,6 +84,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     private volatile String lastError = null;
     private volatile String lastPushedChecksum = null;
     private volatile String lastMirroredChecksum = null;
+    private volatile String tokenDiagnosis;
 
     /** Optional: absent when the app runs against a single database, as in unit tests. */
     private final FallbackRecoveryCoordinator fallbackCoordinator;
@@ -108,20 +95,31 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             DatabaseSnapshotService snapshotService,
             @Autowired(required = false) FallbackRecoveryCoordinator fallbackCoordinator,
             @Autowired(required = false) com.example.expensetracker.infrastructure.config.AdminBootstrapRunner adminBootstrapRunner,
-            @Autowired(required = false) HfDatabaseProperties hfProperties) {
+            @Autowired(required = false) HfDatabaseProperties hfProperties,
+            @Autowired(required = false) Clock clock) {
         this.snapshotService = snapshotService;
+        this.clock = clock != null ? clock : Clock.systemUTC();
         this.fallbackCoordinator = fallbackCoordinator;
         this.adminBootstrapRunner = adminBootstrapRunner;
-        if (hfProperties != null) {
-            if (hfProperties.token() != null && !hfProperties.token().isBlank()) this.token = hfProperties.token();
-            if (hfProperties.space() != null && !hfProperties.space().isBlank()) this.space = hfProperties.space();
-            if (hfProperties.path() != null && !hfProperties.path().isBlank()) this.path = hfProperties.path();
-            if (hfProperties.repoType() != null && !hfProperties.repoType().isBlank()) this.repoType = hfProperties.repoType();
-            if (hfProperties.encryptionKey() != null && !hfProperties.encryptionKey().isBlank()) this.encryptionKey = hfProperties.encryptionKey();
-            if (hfProperties.maxShrinkPercent() > 0) this.maxShrinkPercent = hfProperties.maxShrinkPercent();
-            if (hfProperties.minCommitIntervalMinutes() > 0) this.minCommitIntervalMinutes = hfProperties.minCommitIntervalMinutes();
-            if (hfProperties.volatileTables() != null && !hfProperties.volatileTables().isBlank()) this.volatileTablesCsv = hfProperties.volatileTables();
-        }
+        HfDatabaseProperties settings = hfProperties != null
+                ? hfProperties
+                : new HfDatabaseProperties(null, null, null, null, null, null, null, null);
+        this.token = settings.token();
+        this.space = settings.space();
+        this.path = settings.path();
+        this.repoType = settings.repoType();
+        this.encryptionKey = settings.encryptionKey();
+        this.maxShrinkPercent = settings.maxShrinkPercent();
+        this.minCommitIntervalMinutes = settings.minCommitIntervalMinutes();
+        this.volatileTablesCsv = settings.volatileTables();
+    }
+
+    public HuggingFaceDatabaseFailoverServiceImpl(
+            DatabaseSnapshotService snapshotService,
+            FallbackRecoveryCoordinator fallbackCoordinator,
+            com.example.expensetracker.infrastructure.config.AdminBootstrapRunner adminBootstrapRunner,
+            HfDatabaseProperties hfProperties) {
+        this(snapshotService, fallbackCoordinator, adminBootstrapRunner, hfProperties, null);
     }
 
     public HuggingFaceDatabaseFailoverServiceImpl(
@@ -144,7 +142,8 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                     missingSettings());
             return;
         }
-        log.info("HF failover token scope check: {}", HuggingFaceFileClient.inspectToken(token));
+        tokenDiagnosis = HuggingFaceFileClient.inspectToken(token);
+        log.info("HF failover token scope check: {}", tokenDiagnosis);
         // Mirrors the primary's schema into the local fallback and merges or protects any writes an earlier run left behind.
         boolean keepLocalFallback = fallbackCoordinator != null && fallbackCoordinator.prepareFallback();
         boolean snapshotFound = false;
@@ -229,7 +228,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             }
             return false;
         }
-        lastAttemptAt = Instant.now();
+        lastAttemptAt = Instant.now(clock);
         if (!force && fallbackCoordinator != null && !fallbackCoordinator.safeToOverwriteSnapshot()) {
             // The fallback holds writes the primary has not accepted yet, and the stored snapshot is the only other copy.
             lastError = "Skipped: unmerged fallback writes exist, so the stored snapshot was kept.";
@@ -266,14 +265,14 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                 if (currentChecksum.equals(lastPushedChecksum) || contentHash.equals(lastPushedContentHash)) {
                     log.info("Database snapshot unchanged (content hash {}); skipping redundant Hugging Face backup.",
                             contentHash);
-                    lastSuccessAt = Instant.now();
+                    lastSuccessAt = Instant.now(clock);
                     lastError = null;
                     return true;
                 }
                 // Every upload is a Space commit and restarts the app, so a changed snapshot is committed at most
                 // every N minutes. A forced backup and the shutdown backup are exempt (nothing is left to wait for).
                 if (!force && !shuttingDown && lastUploadAt != null && minCommitIntervalMinutes > 0
-                        && Duration.between(lastUploadAt, Instant.now()).toMinutes() < minCommitIntervalMinutes) {
+                        && Duration.between(lastUploadAt, Instant.now(clock)).toMinutes() < minCommitIntervalMinutes) {
                     log.info("Database changed but the last commit was under {} min ago; deferring the Hugging Face upload.",
                             minCommitIntervalMinutes);
                     return false;
@@ -288,7 +287,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                 lastPushedContentHash = contentHash;
                 knownSnapshotRows = rows;
                 writePermissionWarned = false;
-                lastUploadAt = Instant.now();
+                lastUploadAt = Instant.now(clock);
                 lastSuccessAt = lastUploadAt;
                 lastError = null;
                 log.info("Encrypted database snapshot pushed to HF {} repository {} (SHA-256: {}, {} rows).",
@@ -308,7 +307,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             if (ise.getMessage() != null && ise.getMessage().contains("HTTP 403")) {
                 if (!writePermissionWarned) {
                     writePermissionWarned = true;
-                    String tokenStatus = HuggingFaceFileClient.inspectToken(token);
+                    String tokenStatus = inspectToken();
                     log.warn("HF database failover backup skipped (HTTP 403): HF_TOKEN lacks repository write "
                             + "permissions to {}. Token diagnosis: [{}]. "
                             + "Generate an Access Token with 'Write' role at https://huggingface.co/settings/tokens.",
@@ -384,28 +383,56 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                 if (excludedTables.contains(lower) || lower.startsWith("fb_") || !table.matches("^[a-zA-Z0-9_]+$")) {
                     continue;
                 }
-                List<String> rows = new ArrayList<>();
+
+                List<String> columns = new ArrayList<>();
                 try (Statement s = c.createStatement();
-                     ResultSet rs = s.executeQuery("SELECT * FROM \"" + table + "\"")) {
-                    int cols = rs.getMetaData().getColumnCount();
-                    while (rs.next()) {
-                        StringBuilder row = new StringBuilder();
-                        for (int i = 1; i <= cols; i++) {
-                            Object v = rs.getObject(i);
-                            row.append(v instanceof byte[] b ? Base64.getEncoder().encodeToString(b) : String.valueOf(v))
-                                    .append('\u001f');
-                        }
-                        rows.add(row.toString());
-                    }
+                     ResultSet rs = s.executeQuery("PRAGMA table_info(\"" + table + "\")")) {
+                    while (rs.next()) columns.add(rs.getString("name"));
                 }
-                Collections.sort(rows);
-                digest.update(("T:" + lower + "\n").getBytes(StandardCharsets.UTF_8));
-                for (String row : rows) {
-                    digest.update((row + "\n").getBytes(StandardCharsets.UTF_8));
+                if (columns.isEmpty()) continue;
+
+                digest.update((byte) 'T');
+                updateHashField(digest, lower.getBytes(StandardCharsets.UTF_8));
+                for (String column : columns) {
+                    digest.update((byte) 'C');
+                    updateHashField(digest, column.toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8));
+                }
+
+                String orderBy = columns.stream().map(HuggingFaceDatabaseFailoverServiceImpl::quoteSqliteIdentifier)
+                        .collect(java.util.stream.Collectors.joining(", "));
+                try (Statement s = c.createStatement();
+                     ResultSet rs = s.executeQuery("SELECT * FROM \"" + table + "\" ORDER BY " + orderBy)) {
+                    while (rs.next()) {
+                        digest.update((byte) 'R');
+                        for (int i = 1; i <= columns.size(); i++) {
+                            Object value = rs.getObject(i);
+                            if (value == null) {
+                                digest.update((byte) 0);
+                            } else {
+                                digest.update((byte) 1);
+                                byte[] bytes = value instanceof byte[] binary
+                                        ? binary : String.valueOf(value).getBytes(StandardCharsets.UTF_8);
+                                updateHashField(digest, bytes);
+                            }
+                        }
+                    }
                 }
             }
         }
         return java.util.HexFormat.of().formatHex(digest.digest());
+    }
+
+    private static String quoteSqliteIdentifier(String identifier) {
+        return "\"" + identifier.replace("\"", "\"\"") + "\"";
+    }
+
+    private static void updateHashField(MessageDigest digest, byte[] value) {
+        int length = value.length;
+        digest.update((byte) (length >>> 24));
+        digest.update((byte) (length >>> 16));
+        digest.update((byte) (length >>> 8));
+        digest.update((byte) length);
+        digest.update(value);
     }
 
     /** Package-private (not private) so its file/directory permission
@@ -492,14 +519,25 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         } else if (!spacePresent) {
             diag.put("statusMessage", "HF_SPACE_REPO is missing.");
         } else {
-            String tokenDiagnosis = HuggingFaceFileClient.inspectToken(token);
-            diag.put("tokenDiagnosis", tokenDiagnosis);
-            diag.put("statusMessage", tokenDiagnosis);
+            String diagnosis = inspectToken();
+            diag.put("tokenDiagnosis", diagnosis);
+            diag.put("statusMessage", diagnosis);
         }
         if (fallbackCoordinator != null) {
             diag.put("fallback", fallbackCoordinator.diagnostics());
         }
         return diag;
+    }
+
+    private String inspectToken() {
+        String cached = tokenDiagnosis;
+        if (cached != null) return cached;
+        synchronized (this) {
+            if (tokenDiagnosis == null) {
+                tokenDiagnosis = HuggingFaceFileClient.inspectToken(token);
+            }
+            return tokenDiagnosis;
+        }
     }
 
     @PreDestroy

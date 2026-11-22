@@ -146,6 +146,15 @@ public class CategoryServiceImpl implements CategoryService {
         return globals;
     }
 
+    @Override
+    public Category getCategoryById(Long categoryId) {
+        if (categoryId == null) {
+            throw new IllegalArgumentException("Category ID cannot be null");
+        }
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+    }
+
     /**
      * {@inheritDoc}
      *

@@ -34,7 +34,6 @@ import com.example.expensetracker.domain.user.dto.UserProfileDto;
 import com.example.expensetracker.domain.user.dto.UsernameAvailabilityDto;
 import com.example.expensetracker.domain.user.dto.UsernameSuggestionsDto;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.repository.UserRepository;
 import com.example.expensetracker.domain.user.service.UserAppearanceService;
 import com.example.expensetracker.domain.user.service.UserAvatarService;
 import com.example.expensetracker.domain.user.service.UserService;
@@ -59,7 +58,6 @@ public class UserController {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final UserService userService;
-    private final UserRepository userRepository;
     private final UserSecurity userSecurity;
     private final PasswordEncoder passwordEncoder;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
@@ -89,7 +87,7 @@ public class UserController {
             return ResponseEntity.ok(new UsernameAvailabilityDto(false, null, "Username must be 3-30 alphanumeric characters, dots, or underscores"));
         }
 
-        boolean exists = userRepository.findByUsernameIgnoreCase(trimmed).isPresent();
+        boolean exists = userService.userExistsByUsername(trimmed);
         return ResponseEntity.ok(new UsernameAvailabilityDto(!exists, trimmed, exists ? "Username is already taken" : "Username is available!"));
     }
 
@@ -114,7 +112,7 @@ public class UserController {
             if (uniqueSuggestions.size() >= 3) break;
             String candidate = (p + "_" + clean).replaceAll("[^a-zA-Z0-9_]", "");
             if (candidate.length() > 30) candidate = candidate.substring(0, 30);
-            if (userRepository.findByUsernameIgnoreCase(candidate).isEmpty()) {
+            if (!userService.userExistsByUsername(candidate)) {
                 uniqueSuggestions.add(candidate);
             }
         }
@@ -125,7 +123,7 @@ public class UserController {
             int num = 100 + RANDOM.nextInt(900);
             String candidate = clean + num;
             if (candidate.length() > 30) candidate = candidate.substring(0, 30);
-            if (userRepository.findByUsernameIgnoreCase(candidate).isEmpty()) {
+            if (!userService.userExistsByUsername(candidate)) {
                 uniqueSuggestions.add(candidate);
             }
         }
@@ -423,6 +421,7 @@ public class UserController {
                     return ResponseEntity.ok()
                             .contentType(MediaType.parseMediaType(avatar.contentType()))
                             .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                            .header("X-Content-Type-Options", "nosniff")
                             .body(avatar.data());
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());

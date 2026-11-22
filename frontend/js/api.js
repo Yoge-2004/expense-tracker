@@ -7,7 +7,8 @@ const isDevStaticPort = typeof window !== "undefined" &&
     window.location.port !== "" &&
     window.location.port !== "8080";
 
-const API_BASE_URL = (typeof window !== "undefined" && window.API_BASE_URL)
+const API_BASE_URL = (typeof window !== "undefined" && window.BrowserSession?.apiBaseUrl)
+    || (typeof window !== "undefined" && window.API_BASE_URL)
     || (typeof localStorage !== "undefined" && localStorage.getItem("expense_api_url"))
     || (isDevStaticPort ? "http://localhost:8080/api" : null)
     || (typeof window !== "undefined" && window.location.protocol !== "file:"
@@ -211,6 +212,10 @@ if (typeof window !== "undefined") {
  */
 function invalidateCacheForEndpoint(endpoint) {
     if (!endpoint || typeof endpoint !== "string") return;
+    if (/^\/auth\/(login|oauth\/google|session)(?:\/|$)/.test(endpoint)) {
+        apiCache.clear();
+        return;
+    }
     // Extract the top-level resource stem: leading slash + first path segment.
     // e.g. "/expenses/user/1" -> "/expenses"
     const match = endpoint.match(/^\/[^/]+/);
@@ -344,10 +349,8 @@ async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
     }
 
     const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
-    const token = localStorage.getItem("token");
     const headers = {
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
-        ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers
     };
 
@@ -368,7 +371,8 @@ async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
     }
 
     try {
-        response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers, signal: fetchSignal });
+        const request = window.BrowserSession?.request || fetch;
+        response = await request(`${API_BASE_URL}${endpoint}`, { ...options, headers, signal: fetchSignal });
     } catch {
         if (timeoutTimer) clearTimeout(timeoutTimer);
         if (retriesLeft > 0) {
@@ -417,8 +421,8 @@ async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
     const isVerifyPin = endpoint.includes("/verify-security-pin");
     const shouldSkipAuthRedirect = options.skipAuthRedirect === true || isDeleteAccount || isVerifyPin;
 
-    const isFakeToken = typeof token === "string" && token.startsWith("fake-");
-    if (response.status === 401 && !endpoint.includes("/auth/") && !shouldSkipAuthRedirect && !isFakeToken) {
+    if (response.status === 401 && !endpoint.includes("/auth/") && !shouldSkipAuthRedirect) {
+        window.BrowserSession?.logout().catch(() => {});
         ["token", "userId", "userName", "userEmail", "userRole", "userUsername", "userProfilePicture"].forEach((key) => localStorage.removeItem(key));
         window.location.href = "index.html";
         throw new Error("Your session has expired. Please sign in again.");
@@ -719,7 +723,11 @@ function formatGlobalCurrency(amt) {
         return str.replace(/([^\w\s])\s+([\d,.-]+)/, '$1$2');
     } catch {
         const isAlpha = /^[A-Z]{3}$/.test(info.symbol);
-        return isAlpha ? `${info.symbol} ${Number(amt || 0).toFixed(2)}` : `${info.symbol}${Number(amt || 0).toFixed(2)}`;
+        const value = new Intl.NumberFormat(info.locale, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(Number(amt || 0));
+        return isAlpha ? `${info.symbol} ${value}` : `${info.symbol}${value}`;
     }
 }
 function formatGlobalCompactCurrency(amt) {
@@ -729,7 +737,9 @@ function formatGlobalCompactCurrency(amt) {
         return str.replace(/([^\w\s])\s+([\d,.-]+)/, '$1$2');
     } catch {
         const isAlpha = /^[A-Z]{3}$/.test(info.symbol);
-        return isAlpha ? `${info.symbol} ${Number(amt || 0).toFixed(0)}` : `${info.symbol}${Number(amt || 0).toFixed(0)}`;
+        const value = new Intl.NumberFormat(info.locale, { maximumFractionDigits: 0 })
+            .format(Number(amt || 0));
+        return isAlpha ? `${info.symbol} ${value}` : `${info.symbol}${value}`;
     }
 }
 
@@ -806,7 +816,7 @@ window.addEventListener("error", (event) => {
 // Synchronize authentication and appearance changes across multiple browser tabs
 if (typeof window !== "undefined") {
     window.addEventListener("storage", (e) => {
-        if (e.key === "token" && !e.newValue) {
+        if (e.key === "expense_session_logout" && e.newValue) {
             const path = window.location.pathname;
             const isAuthPage = path.endsWith("index.html") ||
                                path.endsWith("register.html") ||
@@ -824,6 +834,9 @@ if (typeof window !== "undefined") {
 
 if (typeof window !== "undefined") {
     window.apiRequest = apiRequest;
+    window.fetchWithAuth = (input, options = {}) => window.BrowserSession
+        ? window.BrowserSession.request(input, options)
+        : fetch(input, options);
     window.detectClientLocationCurrency = detectClientLocationCurrency;
     window.getCurrenciesSortedByLikelihood = getCurrenciesSortedByLikelihood;
     window.getCurrencySymbol = getCurrencySymbol;

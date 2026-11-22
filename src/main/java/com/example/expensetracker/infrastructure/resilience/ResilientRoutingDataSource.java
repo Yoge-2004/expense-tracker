@@ -4,13 +4,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLTransientConnectionException;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.StampedLock;
 
 
 
@@ -52,27 +59,41 @@ public class ResilientRoutingDataSource implements DataSource {
     private final long failedRecoveryBackoffMs;
     private final long graceMs;
     private final long gateWaitMs;
+    private final Clock clock;
 
     private final AtomicReference<Mode> mode = new AtomicReference<>(Mode.PRIMARY);
+    /** Tracks fallback connections until close, so the final merge waits for active transactions to finish. */
+    private final StampedLock fallbackLeaseLock = new StampedLock();
     private volatile RecoveryHandler recoveryHandler;
     private volatile CountDownLatch gate;
-    private volatile long nextProbeNanos = 0;
-    private volatile Instant lastModeChange = Instant.now();
+    private final AtomicLong nextProbeNanos = new AtomicLong();
+    private volatile Instant lastModeChange;
     private volatile String lastRecoveryError;
 
     public ResilientRoutingDataSource(DataSource primaryDs, DataSource fallbackDs) {
-        this(primaryDs, fallbackDs, 15_000, 60_000, 2_000, 15_000);
+        this(primaryDs, fallbackDs, 15_000, 60_000, 2_000, 15_000, Clock.systemUTC());
+    }
+
+    public ResilientRoutingDataSource(DataSource primaryDs, DataSource fallbackDs, Clock clock) {
+        this(primaryDs, fallbackDs, 15_000, 60_000, 2_000, 15_000, clock);
     }
 
     /** Intervals are injectable so the state machine can be tested quickly. */
     public ResilientRoutingDataSource(DataSource primaryDs, DataSource fallbackDs, long retryIntervalMs,
                                       long failedRecoveryBackoffMs, long graceMs, long gateWaitMs) {
+        this(primaryDs, fallbackDs, retryIntervalMs, failedRecoveryBackoffMs, graceMs, gateWaitMs, Clock.systemUTC());
+    }
+
+    public ResilientRoutingDataSource(DataSource primaryDs, DataSource fallbackDs, long retryIntervalMs,
+                                      long failedRecoveryBackoffMs, long graceMs, long gateWaitMs, Clock clock) {
         this.primaryDs = primaryDs;
         this.fallbackDs = fallbackDs;
         this.retryIntervalMs = retryIntervalMs;
         this.failedRecoveryBackoffMs = failedRecoveryBackoffMs;
         this.graceMs = graceMs;
         this.gateWaitMs = gateWaitMs;
+        this.clock = clock != null ? clock : Clock.systemUTC();
+        this.lastModeChange = Instant.now(this.clock);
         if (primaryDs == null) {
             mode.set(Mode.FALLBACK);
         }
@@ -116,19 +137,92 @@ public class ResilientRoutingDataSource implements DataSource {
     }
 
     private Connection route(String username, String password, boolean explicit) throws SQLException {
-        Mode current = mode.get();
-        if (current == Mode.PRIMARY) {
-            Connection connection = tryPrimary(username, password, explicit);
-            if (connection != null) {
-                return connection;
+        while (true) {
+            Mode current = mode.get();
+            if (current == Mode.PRIMARY) {
+                Connection connection = tryPrimary(username, password, explicit);
+                if (connection != null) {
+                    return connection;
+                }
+                continue;
             }
-        } else if (current == Mode.FALLBACK && primaryDs != null && System.nanoTime() >= nextProbeNanos) {
-            nextProbeNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(failedRecoveryBackoffMs);
+
+            if (current == Mode.FALLBACK) {
+                probePrimaryIfDue();
+                Connection connection = leasedFallbackConnection(username, password, explicit);
+                if (connection != null) return connection;
+                continue;
+            }
+
+            CountDownLatch recoveryGate = gate;
+            if (recoveryGate == null) {
+                // Recovery is doing its first merge while requests continue to use the fallback.
+                Connection connection = leasedFallbackConnection(username, password, explicit);
+                if (connection != null) return connection;
+                continue;
+            }
+            if (!awaitGate(recoveryGate)) {
+                throw new SQLTransientConnectionException(
+                        "Fallback recovery is still merging writes; retry the database operation.", "08001");
+            }
+            // The state may now be PRIMARY or FALLBACK. Choose again so a request that
+            // waited for a successful recovery cannot accidentally return to the old store.
+        }
+    }
+
+    private void probePrimaryIfDue() {
+        long now = System.nanoTime();
+        long nextProbe = nextProbeNanos.get();
+        if (primaryDs != null && now >= nextProbe
+                && nextProbeNanos.compareAndSet(nextProbe, now + TimeUnit.MILLISECONDS.toNanos(failedRecoveryBackoffMs))) {
             Thread.ofVirtual().name("neon-primary-probe").start(this::probePrimary);
         }
-        awaitGate();
-        log.debug("Serving the emergency local datastore. This is only a recovery store and may be stale.");
-        return explicit ? fallbackDs.getConnection(username, password) : fallbackDs.getConnection();
+    }
+
+    private Connection leasedFallbackConnection(String username, String password, boolean explicit) throws SQLException {
+        long lease = fallbackLeaseLock.readLock();
+        try {
+            Mode current = mode.get();
+            if (current == Mode.PRIMARY || current == Mode.RECOVERING && gate != null) {
+                fallbackLeaseLock.unlockRead(lease);
+                return null;
+            }
+
+            log.debug("Serving the emergency local datastore. This is only a recovery store and may be stale.");
+            Connection connection = explicit
+                    ? fallbackDs.getConnection(username, password)
+                    : fallbackDs.getConnection();
+            return trackFallbackLease(connection, lease);
+        } catch (SQLException | RuntimeException e) {
+            fallbackLeaseLock.unlockRead(lease);
+            throw e;
+        }
+    }
+
+    private Connection trackFallbackLease(Connection connection, long lease) {
+        AtomicBoolean closed = new AtomicBoolean();
+        return (Connection) Proxy.newProxyInstance(
+                Connection.class.getClassLoader(),
+                new Class<?>[]{Connection.class},
+                (proxy, method, args) -> {
+                    if (method.getName().equals("close") && method.getParameterCount() == 0) {
+                        if (closed.compareAndSet(false, true)) {
+                            try {
+                                return method.invoke(connection, args);
+                            } catch (InvocationTargetException e) {
+                                throw e.getCause();
+                            } finally {
+                                fallbackLeaseLock.unlockRead(lease);
+                            }
+                        }
+                        return null;
+                    }
+                    try {
+                        return method.invoke(connection, args);
+                    } catch (InvocationTargetException e) {
+                        throw e.getCause();
+                    }
+                });
     }
 
     private Connection tryPrimary(String username, String password, boolean explicit) {
@@ -152,8 +246,8 @@ public class ResilientRoutingDataSource implements DataSource {
 
     private void enterFallback(String reason) {
         if (mode.compareAndSet(Mode.PRIMARY, Mode.FALLBACK)) {
-            nextProbeNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(retryIntervalMs);
-            lastModeChange = Instant.now();
+            nextProbeNanos.set(System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(retryIntervalMs));
+            lastModeChange = Instant.now(clock);
             log.warn("Primary database unavailable; entering emergency fallback mode: {}", reason);
         }
     }
@@ -161,11 +255,11 @@ public class ResilientRoutingDataSource implements DataSource {
     private void probePrimary() {
         try (Connection probe = primaryDs.getConnection()) {
             if (probe == null || !probe.isValid(5)) {
-                nextProbeNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(failedRecoveryBackoffMs);
+                nextProbeNanos.set(System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(failedRecoveryBackoffMs));
                 return;
             }
         } catch (Exception _) {
-            nextProbeNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(failedRecoveryBackoffMs);
+            nextProbeNanos.set(System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(failedRecoveryBackoffMs));
             return;
         }
         beginRecovery();
@@ -175,7 +269,7 @@ public class ResilientRoutingDataSource implements DataSource {
         if (!mode.compareAndSet(Mode.FALLBACK, Mode.RECOVERING)) {
             return;
         }
-        lastModeChange = Instant.now();
+        lastModeChange = Instant.now(clock);
         RecoveryHandler handler = recoveryHandler;
         if (handler == null) {
             log.info("Primary database restored; switching back from the emergency fallback.");
@@ -192,15 +286,23 @@ public class ResilientRoutingDataSource implements DataSource {
             log.info("Primary database restored; merging changes made in the emergency fallback before switching back.");
             SyncResult first = handler.sync(fallback, primary);
 
-            gate = new CountDownLatch(1);
-            Thread.sleep(graceMs);
-            last = handler.sync(fallback, primary);
+            CountDownLatch recoveryGate = new CountDownLatch(1);
+            gate = recoveryGate;
+            long writeStamp = fallbackLeaseLock.tryWriteLock(graceMs, TimeUnit.MILLISECONDS);
+            if (writeStamp == 0) {
+                throw new SQLException("Fallback connections remained open when the final merge started.");
+            }
+            try {
+                last = handler.sync(fallback, primary);
 
-            lastRecoveryError = null;
-            mode.set(Mode.PRIMARY);
-            lastModeChange = Instant.now();
-            success = true;
-            log.info("Switched back to the primary database. Merged during recovery: {} then {}.", first, last);
+                lastRecoveryError = null;
+                mode.set(Mode.PRIMARY);
+                lastModeChange = Instant.now(clock);
+                success = true;
+                log.info("Switched back to the primary database. Merged during recovery: {} then {}.", first, last);
+            } finally {
+                fallbackLeaseLock.unlockWrite(writeStamp);
+            }
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             lastRecoveryError = "interrupted";
@@ -227,22 +329,23 @@ public class ResilientRoutingDataSource implements DataSource {
     private void fail(String reason) {
         log.error("Could not merge the fallback into the primary database ({}); staying on the fallback and retrying later.", reason);
         mode.set(Mode.FALLBACK);
-        lastModeChange = Instant.now();
-        nextProbeNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(failedRecoveryBackoffMs);
+        lastModeChange = Instant.now(clock);
+        nextProbeNanos.set(System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(failedRecoveryBackoffMs));
     }
 
-    private void awaitGate() {
-        CountDownLatch g = gate;
-        if (g == null) {
-            return;
-        }
+    private boolean awaitGate(CountDownLatch g) {
         try {
             if (!g.await(gateWaitMs, TimeUnit.MILLISECONDS)) {
-                log.warn("Gave up waiting for the fallback merge to finish; serving the fallback anyway.");
+                log.warn("Fallback merge did not finish before the connection wait limit; refusing a fallback "
+                        + "connection so writes cannot arrive after the final merge.");
+                return false;
             }
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
+            log.warn("Interrupted while waiting for the fallback merge; refusing a database connection.");
+            return false;
         }
+        return true;
     }
 
     private static void closeQuietly(Connection connection) {

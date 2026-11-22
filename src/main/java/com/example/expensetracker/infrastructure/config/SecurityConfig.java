@@ -15,8 +15,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 
 import com.example.expensetracker.infrastructure.security.JwtAuthenticationFilter;
+import com.example.expensetracker.infrastructure.security.BrowserCsrfFilter;
 import com.example.expensetracker.infrastructure.security.RestAccessDeniedHandler;
 import com.example.expensetracker.infrastructure.security.RestAuthenticationEntryPoint;
 
@@ -42,6 +44,7 @@ public class SecurityConfig {
             "base-uri 'self';";
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final BrowserCsrfFilter browserCsrfFilter;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
 
@@ -110,8 +113,23 @@ public class SecurityConfig {
                                 "Alt-Svc", "h3=\":443\"; ma=86400, h3-29=\":443\"; ma=86400"
                         ))
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(browserCsrfFilter, JwtAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterServletRegistration(JwtAuthenticationFilter filter) {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<BrowserCsrfFilter> browserCsrfFilterServletRegistration(BrowserCsrfFilter filter) {
+        FilterRegistrationBean<BrowserCsrfFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 }

@@ -295,11 +295,9 @@
                     const formData = new FormData();
                     formData.append("file", imageFile);
 
-                    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
                     const headers = {};
-                    if (token) headers["Authorization"] = "Bearer " + token;
 
-                    const res = await fetch("/api/expenses/ocr", {
+                    const res = await window.BrowserSession.request("/api/expenses/ocr", {
                         method: "POST",
                         headers,
                         body: formData

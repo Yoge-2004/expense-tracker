@@ -31,7 +31,7 @@ import com.example.expensetracker.domain.expense.mapper.ExpenseMapper;
 import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.expense.model.RecurringExpense;
-import com.example.expensetracker.domain.expense.repository.CategoryRepository;
+import com.example.expensetracker.domain.expense.service.CategoryService;
 import com.example.expensetracker.domain.expense.service.ExpenseService;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.service.UserService;
@@ -76,7 +76,7 @@ public class ExpenseController {
 
     private final ExpenseService expenseService;
     private final UserService userService;
-    private final CategoryRepository categoryRepository;
+    private final CategoryService categoryService;
     private final UserSecurity userSecurity;
 
     // ═════════════════════════════════════════════════════════════════════
@@ -338,8 +338,7 @@ public class ExpenseController {
             expenseUpdates.setRecurring(expenseDto.isRecurring());
         }
         if (expenseDto.categoryId() != null) {
-            Category category = categoryRepository.findById(expenseDto.categoryId())
-                    .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+            Category category = categoryService.getCategoryById(expenseDto.categoryId());
             // Ownership check: prevent IDOR — user must not be able to assign another user's
             // private category to their own expense. Global categories (user == null) are shared.
             if (category.getUser() != null && !category.getUser().getId().equals(user.getId())) {

@@ -1,0 +1,1538 @@
+/* ==========================================================================
+       ExpenseTracker Pro — Lite & Feature Mobile Edition (CSS 2.1 & Retro-WebKit Compatible)
+       Strictly zero unsupported CSS features; graceful degradation on retro engines.
+       Color Palette: Obsidian (#10120e), Imperial Gold (#c79a3e), Sage Emerald (#10b981)
+       ========================================================================== */
+    * {
+      -webkit-box-sizing: border-box;
+      -moz-box-sizing: border-box;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #10120e;
+      background-image: -webkit-radial-gradient(50% 0%, circle, #1d2119 0%, #10120e 75%);
+      background-image: radial-gradient(circle at 50% 0%, #1d2119 0%, #10120e 75%);
+      background-attachment: fixed;
+      color: #f4f1ea;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.4;
+      padding: 0 0 24px 0;
+      width: 100%;
+      max-width: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    a {
+      color: #c79a3e;
+      text-decoration: none;
+    }
+
+    /* Top Navigation Header */
+    .top-header {
+      background-color: #141712;
+      border-bottom: 1px solid rgba(199, 154, 62, 0.25);
+      padding: 10px 16px;
+      width: 100%;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .top-header-inner {
+      width: 100%;
+      max-width: 1240px;
+      min-height: 34px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #c79a3e;
+      line-height: 24px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .brand-accent-dot {
+      color: #c79a3e;
+      margin-right: 2px;
+      font-size: 11px;
+    }
+
+    .brand-tier {
+      color: #f4f1ea;
+      font-weight: 500;
+    }
+
+    .brand-mode {
+      color: #a8a59b;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      margin-left: 5px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 6px;
+      line-height: 24px;
+    }
+
+    .badge-os {
+      display: inline-block;
+      background-color: #1e2219;
+      background-color: rgba(199, 154, 62, 0.12);
+      color: #e5b85c;
+      border: 1px solid #3d331d;
+      border: 1px solid rgba(199, 154, 62, 0.3);
+      border-radius: 9999px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      padding: 1px 7px;
+      margin-left: 0;
+      text-transform: uppercase;
+      line-height: 16px;
+      vertical-align: middle;
+    }
+
+    .badge-desktop-link {
+      background-color: #1a1d17;
+      background-color: rgba(255, 255, 255, 0.05);
+      color: #a8a59b !important;
+      border: 1px solid rgba(236, 231, 216, 0.15) !important;
+      transition: all 0.2s ease;
+    }
+    .badge-desktop-link:hover {
+      color: #c79a3e !important;
+      border-color: rgba(199, 154, 62, 0.4) !important;
+    }
+
+    .container {
+      width: min(100%, 1240px);
+      padding: 20px 20px 32px;
+      margin: 0 auto;
+    }
+
+    /* Keypad Shortcuts Guide Strip */
+    .keypad-strip {
+      background-color: #171a13;
+      background-color: rgba(23, 26, 19, 0.85);
+      border: 1px solid #282d21;
+      border: 1px solid rgba(199, 154, 62, 0.22);
+      border-radius: 7px;
+      color: #a8a59b;
+      font-size: 10px;
+      padding: 4px 6px;
+      margin-bottom: 6px;
+      text-align: center;
+      white-space: normal;
+      line-height: 1.35;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      display: none;
+    }
+
+    .keypad-strip strong {
+      color: #c79a3e;
+      margin-right: 4px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+
+    /* Account Status Strip */
+    .account-bar {
+      background-color: #171a14;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.1);
+      border-radius: 7px;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #a8a59b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      line-height: 1.4;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .account-text {
+      flex: 1 1 260px;
+      min-width: 0;
+      line-height: 1.45;
+    }
+
+    .account-btn,
+    .account-btn-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      flex: 0 0 auto;
+      background-color: #1e2219;
+      background-color: rgba(199, 154, 62, 0.12);
+      color: #c79a3e;
+      border: 1px solid #3d331d;
+      border: 1px solid rgba(199, 154, 62, 0.4);
+      border-radius: 5px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1.2;
+      text-decoration: none;
+      font-family: inherit;
+    }
+
+    .account-sync-btn {
+      color: #a8a59b;
+      border-color: rgba(236, 231, 216, 0.15);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    /* Executive Overview Card */
+    .card {
+      background-color: #171a14;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.1);
+      border-top: 2px solid #c79a3e;
+      border-radius: 9px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      width: 100%;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    }
+
+    .card-title {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #a8a59b;
+      margin-bottom: 2px;
+    }
+
+    .balance-amount {
+      font-size: 22px;
+      font-weight: 800;
+      color: #f4f1ea;
+      letter-spacing: -0.3px;
+      margin-bottom: 6px;
+    }
+
+    .metric-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 6px 0;
+      margin: 4px -3px 0 -3px;
+    }
+
+    .metric-table td {
+      width: 50%;
+      padding: 6px 8px;
+      vertical-align: top;
+      background-color: #12140f;
+      background-color: rgba(0, 0, 0, 0.3);
+      border: 1px solid #20241b;
+      border: 1px solid rgba(236, 231, 216, 0.08);
+      border-radius: 7px;
+    }
+
+    .metric-table td.border-right {
+      border-right: 1px solid rgba(236, 231, 216, 0.08);
+    }
+
+    .metric-label {
+      font-size: 8.5px;
+      font-weight: 700;
+      color: #8e8b80;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .metric-val-income {
+      font-size: 14px;
+      font-weight: 800;
+      color: #10b981;
+    }
+
+    .metric-val-expense {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ef4444;
+    }
+
+    /* Budget Progress Bar */
+    .progress-bar-bg {
+      background-color: #20241b;
+      height: 5px;
+      border-radius: 9999px;
+      width: 100%;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .progress-bar-fill {
+      background-color: #10b981;
+      height: 5px;
+      border-radius: 9999px;
+      width: 0%;
+    }
+
+    /* Action Buttons (Side by Side) */
+    .action-row {
+      width: 100%;
+      margin-bottom: 6px;
+      overflow: hidden;
+    }
+
+    .btn {
+      display: inline-block;
+      text-align: center;
+      padding: 7px 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .btn-half {
+      width: 48.5%;
+      float: left;
+    }
+
+    .btn-half.right {
+      float: right;
+    }
+
+    .btn-emerald {
+      background-color: #059669;
+      background-image: -webkit-linear-gradient(top, #059669, #047857);
+      background-image: linear-gradient(to bottom, #059669, #047857);
+      border-color: #047857;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-rose {
+      background-color: #dc2626;
+      background-image: -webkit-linear-gradient(top, #dc2626, #b91c1c);
+      background-image: linear-gradient(to bottom, #dc2626, #b91c1c);
+      border-color: #b91c1c;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-sky {
+      background-color: #c79a3e;
+      background-image: -webkit-linear-gradient(top, #c79a3e, #aa7f2b);
+      background-image: linear-gradient(to bottom, #c79a3e, #aa7f2b);
+      border-color: #aa7f2b;
+      color: #10120e;
+      font-weight: 800;
+    }
+
+    .btn-dark {
+      background-color: #22261e;
+      color: #d1cdbf;
+      border: 1px solid #33382c;
+      border: 1px solid rgba(236, 231, 216, 0.15);
+    }
+
+    /* Segmented Navigation Tab Strip */
+    .bottom-tab-bar {
+      width: 100%;
+      display: block;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tab-item {
+      min-width: 0;
+      display: block;
+      float: left;
+      width: 33.333%;
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-align: center;
+      color: #aaa99e;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 650;
+      line-height: 1.25;
+      padding: 8px 10px;
+      border: 1px solid rgba(236, 231, 216, 0.1);
+      border-radius: 10px;
+      background: #171a14;
+      transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .tab-item.active {
+      color: #c79a3e;
+      background-color: rgba(199, 154, 62, 0.12);
+      border-color: rgba(199, 154, 62, 0.45);
+      font-weight: 800;
+      box-shadow: inset 0 0 0 1px rgba(199, 154, 62, 0.1);
+    }
+
+    .tab-item:hover {
+      background-color: rgba(199, 154, 62, 0.08);
+      border-color: rgba(199, 154, 62, 0.35);
+    }
+
+    .tab-item:active {
+      transform: translateY(1px);
+    }
+
+    .tab-icon {
+      display: block;
+      flex: 0 0 auto;
+      font-size: 16px;
+    }
+
+    .tab-shortcut {
+      color: #77766f;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    /* Filter & Search Bar */
+    .search-row {
+      width: 100%;
+      margin-bottom: 6px;
+      overflow: hidden;
+    }
+
+    .search-input {
+      width: 63%;
+      float: left;
+      background-color: #141712;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.12);
+      border-radius: 7px;
+      color: #f4f1ea;
+      padding: 7px 10px;
+      font-size: 12px;
+    }
+
+    .filter-select {
+      width: 34%;
+      float: right;
+      background-color: #141712;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.12);
+      border-radius: 7px;
+      color: #f4f1ea;
+      padding: 7px 6px;
+      font-size: 12px;
+    }
+
+    .search-input:focus, .filter-select:focus {
+      border-color: #c79a3e;
+      outline: 1px solid #c79a3e;
+    }
+
+    /* Transaction Stream */
+    .section-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #8e8b80;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin: 10px 0 6px 0;
+    }
+
+    .tx-item {
+      background-color: #171a14;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.08);
+      border-radius: 8px;
+      padding: 9px 12px;
+      margin-bottom: 6px;
+      overflow: hidden;
+      width: 100%;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .tx-left {
+      float: left;
+      width: 66%;
+    }
+
+    .tx-right {
+      float: right;
+      width: 32%;
+      text-align: right;
+    }
+
+    .tx-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f4f1ea;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tx-meta {
+      font-size: 10px;
+      color: #8e8b80;
+      margin-top: 2px;
+    }
+
+    .tx-tag {
+      display: inline-block;
+      padding: 1px 6px;
+      background-color: #1e2219;
+      background-color: rgba(199, 154, 62, 0.12);
+      color: #e5b85c;
+      border: 1px solid #3d331d;
+      border: 1px solid rgba(199, 154, 62, 0.25);
+      border-radius: 9999px;
+      font-size: 9px;
+      font-weight: 600;
+      margin-right: 4px;
+      letter-spacing: 0.3px;
+    }
+
+    .tx-amount-exp {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ef4444;
+    }
+
+    .tx-amount-inc {
+      font-size: 14px;
+      font-weight: 800;
+      color: #10b981;
+    }
+
+    .tx-btn-del {
+      background-color: transparent;
+      color: #8e8b80;
+      border: 1px solid #33382c;
+      border: 1px solid rgba(236, 231, 216, 0.15);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 9px;
+      font-weight: 600;
+      margin-top: 3px;
+      cursor: pointer;
+    }
+    .tx-btn-del:hover {
+      color: #ef4444;
+      border-color: #ef4444;
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    .form-error {
+      color: #ef4444;
+      font-size: 11px;
+      margin: 4px 0;
+      min-height: 14px;
+    }
+
+    /* Modals / Sheet Overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      background-color: rgba(0, 0, 0, 0.85);
+      z-index: 9999;
+      overflow-y: auto;
+      padding: 16px;
+      overscroll-behavior: contain;
+    }
+
+    dialog.modal-overlay {
+      box-sizing: border-box;
+      margin: 0;
+      max-width: none;
+      max-height: none;
+      color: inherit;
+      border: 0;
+      background: transparent;
+    }
+
+    .modal-overlay[open] {
+      display: block;
+    }
+
+    .modal-overlay.modal-fallback {
+      background-color: rgba(0, 0, 0, 0.85);
+    }
+
+    dialog.modal-overlay::backdrop {
+      background-color: rgba(0, 0, 0, 0.85);
+    }
+
+    .modal-box {
+      position: relative;
+      width: min(100%, 480px);
+      max-width: 480px;
+      max-height: calc(100vh - 32px);
+      max-height: calc(100dvh - 32px);
+      margin: 4vh auto 0;
+      overflow-y: auto;
+      background-color: #171a14;
+      border: 1px solid #3d331d;
+      border: 1px solid rgba(199, 154, 62, 0.35);
+      border-radius: 9px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-title {
+      margin: 0 0 14px;
+      padding: 0 0 9px;
+      border-bottom: 1px solid rgba(199, 154, 62, 0.2);
+      color: #c79a3e;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    .modal-title--expense {
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .modal-title--income {
+      color: #10b981;
+      border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .modal-title--sky {
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.2);
+    }
+
+    .modal-actions {
+      margin-top: 12px;
+    }
+
+    .modal-links {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #282c22;
+      color: #a8a395;
+      font-size: 12px;
+      line-height: 1.8;
+      text-align: center;
+    }
+
+    .budget-progress-area {
+      margin-top: 6px;
+    }
+
+    .form-group {
+      margin-bottom: 9px;
+      overflow: hidden;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: #a8a59b;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-control {
+      width: 100%;
+      background-color: #10120e;
+      border: 1px solid #252820;
+      border: 1px solid rgba(236, 231, 216, 0.15);
+      border-radius: 6px;
+      color: #f4f1ea;
+      padding: 7px 9px;
+      font-size: 12px;
+    }
+    .form-control:focus {
+      border-color: #c79a3e;
+      outline: 1px solid #c79a3e;
+    }
+
+    /* Native Feature Phone Softkey Bar (Strictly on Feature Mobiles) */
+    .fp-softkey-bar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 30px;
+      line-height: 29px;
+      background-color: #0e100c;
+      border-top: 1px solid rgba(199, 154, 62, 0.25);
+      z-index: 10001;
+      overflow: hidden;
+      padding: 0 10px;
+      font-family: inherit;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    body.is-feature-device .fp-softkey-bar {
+      display: block !important;
+    }
+
+    body.is-feature-device {
+      padding-bottom: 34px !important;
+    }
+
+    body.is-feature-device .keypad-strip {
+      display: block;
+    }
+
+    /* Light Theme Adaptation for Feature Mobile */
+    [data-theme="light"] body {
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+    [data-theme="light"] .top-header {
+      background-color: #ffffff;
+      border-bottom-color: rgba(15, 23, 42, 0.12);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    [data-theme="light"] .brand-tier {
+      color: #0f172a;
+    }
+    [data-theme="light"] .badge-os {
+      background-color: rgba(199, 154, 62, 0.12);
+      color: #b45309;
+      border-color: rgba(199, 154, 62, 0.35);
+    }
+    [data-theme="light"] .badge-desktop-link {
+      background-color: #e2e8f0;
+      color: #0f172a;
+      border-color: rgba(15, 23, 42, 0.15);
+    }
+    [data-theme="light"] .tab-item {
+      background-color: #f1f5f9;
+      color: #475569;
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+    [data-theme="light"] .tab-item.active {
+      background-color: #c79a3e;
+      color: #10120e;
+      border-color: rgba(139, 101, 30, 0.45);
+    }
+    [data-theme="light"] .card,
+    [data-theme="light"] .budget-card,
+    [data-theme="light"] .goal-card,
+    [data-theme="light"] .tx-item,
+    [data-theme="light"] .empty-state {
+      background-color: #ffffff;
+      border-color: rgba(15, 23, 42, 0.12);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    [data-theme="light"] .metric-table td {
+      background-color: #f8fafc;
+      border-color: rgba(15, 23, 42, 0.08);
+    }
+    [data-theme="light"] .balance-amount,
+    [data-theme="light"] .tx-title,
+    [data-theme="light"] .card-header-title {
+      color: #0f172a;
+    }
+    [data-theme="light"] .metric-label,
+    [data-theme="light"] .card-title,
+    [data-theme="light"] .section-title,
+    [data-theme="light"] .tx-meta,
+    [data-theme="light"] .empty-state {
+      color: #64748b;
+    }
+    [data-theme="light"] .report-table {
+      background-color: #ffffff;
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+    [data-theme="light"] .report-table th {
+      background-color: #f8fafc;
+      color: #475569;
+      border-bottom-color: rgba(15, 23, 42, 0.12);
+    }
+    [data-theme="light"] .report-table td {
+      border-bottom-color: rgba(15, 23, 42, 0.08);
+      color: #0f172a;
+    }
+    [data-theme="light"] .text-muted {
+      color: #64748b !important;
+    }
+    [data-theme="light"] .fp-softkey-bar {
+      background-color: #ffffff !important;
+      border-top: 1px solid rgba(15, 23, 42, 0.15) !important;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08) !important;
+    }
+    [data-theme="light"] .fp-lsk {
+      color: #dc2626 !important;
+    }
+    [data-theme="light"] .fp-csk {
+      color: #b45309 !important;
+    }
+    [data-theme="light"] .fp-rsk {
+      color: #059669 !important;
+    }
+    [data-theme="light"] .modal-box {
+      background-color: #ffffff;
+      border-color: rgba(15, 23, 42, 0.15);
+      color: #0f172a;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    [data-theme="light"] .modal-links {
+      border-color: rgba(15, 23, 42, 0.12);
+      color: #475569;
+    }
+    [data-theme="light"] .form-control {
+      background-color: #ffffff;
+      border-color: rgba(15, 23, 42, 0.2);
+      color: #0f172a;
+    }
+    [data-theme="light"] .keypad-strip {
+      background-color: #ffffff !important;
+      border-color: rgba(15, 23, 42, 0.12) !important;
+      color: #475569 !important;
+    }
+    [data-theme="light"] .account-bar {
+      background-color: #ffffff !important;
+      border-color: rgba(15, 23, 42, 0.12) !important;
+      color: #475569 !important;
+    }
+    [data-theme="light"] .account-text {
+      color: #475569 !important;
+    }
+    [data-theme="light"] .account-btn,
+    [data-theme="light"] .account-btn-link {
+      background-color: #f1f5f9 !important;
+      border-color: rgba(15, 23, 42, 0.15) !important;
+      color: #0f172a !important;
+    }
+    [data-theme="light"] #emptyState,
+    [data-theme="light"] .empty-state {
+      background-color: #ffffff !important;
+      border: 1px dashed rgba(15, 23, 42, 0.15) !important;
+      color: #64748b !important;
+    }
+    [data-theme="light"] .search-input,
+    [data-theme="light"] .filter-select {
+      background-color: #ffffff !important;
+      border-color: rgba(15, 23, 42, 0.2) !important;
+      color: #0f172a !important;
+    }
+
+    .fp-lsk {
+      float: left;
+      width: 33%;
+      font-size: 10px;
+      font-weight: 700;
+      color: #ef4444;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      text-align: left;
+      cursor: pointer;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .fp-csk {
+      float: left;
+      width: 34%;
+      font-size: 11px;
+      font-weight: 800;
+      color: #c79a3e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: center;
+      cursor: pointer;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .fp-rsk {
+      float: right;
+      width: 33%;
+      font-size: 10px;
+      font-weight: 700;
+      color: #10b981;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      text-align: right;
+      cursor: pointer;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    /* High-contrast Imperial Gold D-Pad focus ring for non-touch button mobiles */
+    .fp-focused,
+    button:focus,
+    a:focus,
+    input:focus,
+    select:focus,
+    .tab-item:focus {
+      outline: 2px solid #c79a3e !important;
+      outline-offset: 1px !important;
+      background-color: rgba(199, 154, 62, 0.18) !important;
+    }
+
+    .empty-state {
+      padding: 20px 12px;
+      text-align: center;
+      color: #8e8b80;
+      font-size: 11px;
+      background-color: #171a14;
+      border: 1px dashed rgba(236, 231, 216, 0.1);
+      border-radius: 8px;
+    }
+
+    @media (max-width: 320px) {
+      body {
+        font-size: 12px;
+      }
+      .brand-title {
+        font-size: 12px;
+      }
+      .badge-os {
+        font-size: 8px;
+        padding: 1px 5px;
+      }
+      .metric-table td {
+        padding: 5px 6px;
+      }
+      .metric-table {
+        border-spacing: 4px 0;
+      }
+    }
+
+    @media (max-width: 260px) {
+      .top-header {
+        padding: 3px 5px;
+        line-height: 16px;
+        text-align: center;
+      }
+      .brand-title {
+        float: none;
+        display: block;
+        font-size: 11px;
+        line-height: 16px;
+        max-width: 100%;
+        margin-bottom: 2px;
+        text-align: center;
+      }
+      .header-actions {
+        float: none;
+        display: block;
+        line-height: 15px;
+        text-align: center;
+      }
+      .badge-os {
+        font-size: 7.5px;
+        padding: 0 4px;
+        max-width: 100%;
+        line-height: 13px;
+      }
+      .container {
+        padding: 3px 5px;
+      }
+      .keypad-strip {
+        padding: 2px 4px;
+        margin-bottom: 3px;
+        font-size: 8px;
+        white-space: normal !important;
+        line-height: 1.25;
+      }
+      .account-bar {
+        padding: 2px 5px;
+        margin-bottom: 3px;
+        font-size: 9px;
+        line-height: 18px;
+        height: 22px;
+      }
+      .account-text {
+        float: left;
+        display: inline-block;
+        width: calc(100% - 56px);
+        max-width: calc(100% - 56px);
+        text-align: left;
+        margin-bottom: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 18px;
+      }
+      .account-btn {
+        float: right;
+        display: inline-block;
+        margin: 0;
+        padding: 0 6px;
+        font-size: 9px;
+        line-height: 16px;
+        height: 18px;
+      }
+      .card {
+        padding: 4px 6px;
+        margin-bottom: 3px;
+      }
+      .card-title {
+        font-size: 8px;
+        margin-bottom: 1px;
+      }
+      .balance-amount {
+        font-size: 15px;
+        margin-bottom: 2px;
+      }
+      .metric-table {
+        margin: 2px -2px 0 -2px;
+      }
+      .metric-table td {
+        padding: 2px 4px;
+      }
+      .metric-label {
+        font-size: 7px;
+        margin-bottom: 1px;
+      }
+      .metric-val-income, .metric-val-expense {
+        font-size: 11.5px;
+      }
+      .progress-bar-bg {
+        height: 3px;
+        margin-top: 2px;
+      }
+      .progress-bar-fill {
+        height: 3px;
+      }
+      .action-row {
+        margin-bottom: 3px;
+      }
+      .btn {
+        padding: 4px 5px;
+        font-size: 10px;
+        line-height: 14px;
+      }
+      .bottom-tab-bar {
+        height: 24px;
+        margin-bottom: 3px;
+      }
+      .tab-item {
+        height: 24px;
+        line-height: 22px;
+        font-size: 9px;
+      }
+      .search-row {
+        margin-bottom: 3px;
+      }
+      .search-input, .filter-select {
+        padding: 3px 5px;
+        font-size: 10px;
+      }
+      .fp-softkey-bar {
+        height: 24px;
+        line-height: 23px;
+        padding: 0 4px;
+      }
+      .fp-lsk {
+        font-size: 8.5px;
+        letter-spacing: 0;
+      }
+      .fp-csk {
+        font-size: 9.5px;
+        letter-spacing: 0;
+      }
+      .fp-rsk {
+        font-size: 8.5px;
+        letter-spacing: 0;
+      }
+    }
+
+    /* Enhanced Views & Tabs */
+    .view-section {
+      display: none;
+    }
+    .view-section.active {
+      display: block;
+    }
+
+    .budget-card, .goal-card {
+      background-color: #171a14;
+      border: 1px solid #282c22;
+      border: 1px solid rgba(199, 154, 62, 0.2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+
+    .card-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 10px 0 12px;
+      line-height: 1.3;
+    }
+    .card-header-title {
+      min-width: 0;
+      font-weight: 700;
+      color: #f4f1ea;
+      font-size: 13px;
+    }
+    .card-header-action {
+      flex: 0 0 auto;
+    }
+
+    .badge-overbudget {
+      background-color: #7f1d1d;
+      color: #fca5a5;
+      font-size: 9.5px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .badge-ontrack {
+      background-color: #064e3b;
+      color: #6ee7b7;
+      font-size: 9.5px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .btn-xs {
+      display: inline-block;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      line-height: 16px;
+    }
+    .btn-xs-emerald {
+      background-color: #10b981;
+      color: #000000;
+    }
+    .btn-xs-rose {
+      background-color: #ef4444;
+      color: #ffffff;
+    }
+    .btn-xs-dark {
+      background-color: #21251c;
+      border: 1px solid #3d4432;
+      color: #d1cbba;
+    }
+    .btn-xs-sky {
+      background-color: #0284c7;
+      color: #ffffff;
+    }
+
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+      margin-bottom: 12px;
+      background-color: #171a14;
+      border: 1px solid #282c22;
+      border-radius: 6px;
+    }
+    .report-table th {
+      background-color: #12140f;
+      color: #a8a395;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid #282c22;
+    }
+    .report-table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid #1c2018;
+      color: #f4f1ea;
+    }
+    .report-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .tx-actions {
+      display: inline-block;
+      margin-top: 3px;
+    }
+    .tx-btn-edit {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 9.5px;
+      font-weight: 700;
+      border-radius: 3px;
+      background-color: #1f2937;
+      color: #93c5fd;
+      border: 1px solid #374151;
+      cursor: pointer;
+      margin-right: 4px;
+    }
+
+    .account-btn-link:hover {
+      background-color: #2a3023;
+      color: #ffffff;
+    }
+
+    .view-section {
+      min-width: 0;
+    }
+
+    .search-input,
+    .filter-select {
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    @supports (display: flex) {
+      .bottom-tab-bar {
+        overflow: visible;
+      }
+
+      .tab-item {
+        display: flex;
+        float: none;
+        width: auto;
+      }
+
+      .search-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        overflow: visible;
+      }
+
+      .search-input {
+        flex: 1 1 auto;
+        width: auto;
+        float: none;
+      }
+
+      .filter-select {
+        flex: 0 0 34%;
+        width: auto;
+        float: none;
+      }
+
+      .action-row {
+        display: flex;
+        align-items: stretch;
+        gap: 10px;
+        overflow: visible;
+      }
+
+      .btn-half,
+      .btn-half.right {
+        width: auto;
+        float: none;
+        flex: 1 1 0;
+      }
+    }
+
+    .btn,
+    .btn-xs,
+    .tx-btn-edit,
+    .tx-btn-del {
+      min-height: 40px;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .btn {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .btn-xs {
+      padding: 8px 12px;
+      font-size: 11px;
+    }
+
+    button,
+    a,
+    input,
+    select {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    @media (max-width: 420px) {
+      .top-header {
+        padding: 8px 12px;
+      }
+
+      .top-header-inner {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .header-actions {
+        justify-content: flex-start;
+      }
+
+      .container {
+        padding: 14px 12px 24px;
+      }
+
+      .account-text {
+        flex-basis: 100%;
+      }
+
+      .account-bar {
+        margin-bottom: 12px;
+      }
+
+      .bottom-tab-bar {
+        height: auto;
+        gap: 7px;
+      }
+
+      .tab-item {
+        height: auto;
+        min-height: 58px;
+        flex-direction: column;
+        gap: 3px;
+        padding: 7px 3px;
+        font-size: 11px;
+        line-height: 1.25;
+      }
+
+      .tab-icon {
+        font-size: 14px;
+      }
+
+      .tab-shortcut {
+        display: none;
+      }
+    }
+
+    @media (max-width: 320px) {
+      body {
+        font-size: 13px;
+      }
+
+      .container {
+        padding: 10px 8px 24px;
+      }
+
+      .brand-title {
+        font-size: 12px;
+      }
+
+      .badge-os {
+        font-size: 8px;
+        padding: 2px 6px;
+      }
+
+      .account-bar {
+        padding: 8px;
+      }
+
+      .account-btn,
+      .account-btn-link {
+        min-height: 34px;
+        padding: 5px 8px;
+        font-size: 11px;
+      }
+
+      .metric-table td {
+        padding: 5px 6px;
+      }
+
+      .metric-table {
+        border-spacing: 4px 0;
+      }
+
+      .tab-item {
+        height: auto;
+        min-height: 52px;
+        font-size: 10px;
+        line-height: 1.25;
+      }
+    }
+
+    @media (max-width: 260px) {
+      .top-header {
+        padding: 6px 8px;
+        text-align: left;
+      }
+
+      .container {
+        padding: 8px 6px 24px;
+      }
+
+      .account-bar {
+        height: auto;
+        line-height: 1.4;
+      }
+
+      .account-text {
+        flex-basis: 100%;
+        width: auto;
+        max-width: none;
+        white-space: normal;
+      }
+
+      .account-btn,
+      .account-btn-link {
+        display: inline-flex;
+        float: none;
+        height: auto;
+        min-height: 32px;
+        padding: 4px 6px;
+        font-size: 10px;
+      }
+
+      .bottom-tab-bar {
+        height: auto;
+      }
+
+      .tab-item {
+        height: auto;
+        min-height: 48px;
+        font-size: 9px;
+        line-height: 1.25;
+      }
+
+      .tab-shortcut {
+        display: none;
+      }
+
+      .fp-softkey-bar {
+        height: 24px;
+        line-height: 23px;
+        padding: 0 4px;
+      }
+    }
+
+    @media (min-width: 900px) {
+      #legacyApp {
+        display: grid;
+        grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.22fr);
+        grid-template-areas:
+          "account account"
+          "summary tabs"
+          "actions workspace";
+        align-items: start;
+        gap: 16px 24px;
+        padding: 28px 28px 40px;
+      }
+
+      #accountBar {
+        grid-area: account;
+        margin-bottom: 0;
+      }
+
+      #summaryCard {
+        grid-area: summary;
+        margin-bottom: 0;
+        padding: 20px;
+      }
+
+      #summaryCard .card-title {
+        font-size: 11px;
+      }
+
+      #summaryCard .balance-amount {
+        font-size: 30px;
+        margin: 6px 0 14px;
+      }
+
+      #summaryCard .metric-table {
+        border-spacing: 8px 0;
+      }
+
+      #summaryCard .metric-table td {
+        padding: 12px;
+      }
+
+      #summaryCard .metric-val-income,
+      #summaryCard .metric-val-expense {
+        font-size: 18px;
+      }
+
+      #legacyApp > .action-row {
+        grid-area: actions;
+        margin-bottom: 0;
+      }
+
+      #bottomTabBar {
+        grid-area: tabs;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 8px;
+        margin: 0;
+      }
+
+      #bottomTabBar .tab-item {
+        min-height: 64px;
+        flex-direction: column;
+        gap: 6px;
+        padding: 10px 5px;
+        font-size: 12px;
+      }
+
+      #bottomTabBar .tab-icon {
+        font-size: 17px;
+      }
+
+      #bottomTabBar .tab-shortcut {
+        display: none;
+      }
+
+      #viewTransactions,
+      #viewBudgets,
+      #viewGoals,
+      #viewReports {
+        grid-area: workspace;
+        min-width: 0;
+      }
+
+      .section-title {
+        font-size: 13px;
+      }
+
+      .search-row {
+        margin-bottom: 12px;
+      }
+
+      .filter-select {
+        flex-basis: 190px;
+      }
+    }

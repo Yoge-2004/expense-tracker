@@ -217,7 +217,7 @@ const WebBiometrics = (() => {
             skipAuthRedirect: true,
             body: JSON.stringify(assertion)
         });
-        if (!finish?.token || !finish?.userId) throw new Error("Biometric sign-in returned an incomplete session.");
+        if (!finish?.userId) throw new Error("Biometric sign-in returned an incomplete session.");
         return finish;
     };
 
@@ -253,14 +253,13 @@ const WebBiometrics = (() => {
 
 window.WebBiometrics = WebBiometrics;
 
-// Keep logout focused on authentication state. Preferences and dashboard
-// caches should survive sign-out.
+// Keep logout focused on authentication state. Preferences and dashboard caches survive sign-out.
 const logoutBtn = document.getElementById("logoutBtn");
 if (logoutBtn) {
-    logoutBtn.addEventListener("click", (event) => {
+    logoutBtn.addEventListener("click", async (event) => {
         event.preventDefault();
         event.stopImmediatePropagation();
-        ["token", "userId", "userName", "userEmail", "userRole", "userUsername", "userProfilePicture"].forEach((key) => localStorage.removeItem(key));
+        await window.BrowserSession.logout().catch(() => {});
         window.location.href = "index.html";
     }, true);
 }

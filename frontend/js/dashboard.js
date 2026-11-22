@@ -1,8 +1,7 @@
-const token = localStorage.getItem("token");
 const userId = localStorage.getItem("userId");
 const userName = localStorage.getItem("userName") || "User";
 
-if (!token || !userId) {
+if (!userId) {
     window.location.href = "index.html";
     throw new Error("Redirecting to login: missing auth session");
 }
@@ -12,25 +11,56 @@ const topBarP = document.querySelector(".top-bar p");
 if (topBarP) topBarP.textContent = `Welcome back, ${userName}`;
 function resolveAvatarUrl(photoUrl) {
     if (!photoUrl) return "";
-    const clean = photoUrl.trim();
+    const clean = String(photoUrl).trim();
     if (!clean) return "";
-    if (clean.startsWith("http://") || clean.startsWith("https://") || clean.startsWith("data:")) return clean;
+    if (/^data:image\/(?:png|jpeg|gif|webp);base64,[a-z0-9+/]+=*$/i.test(clean)) return clean;
+    if (/^https?:\/\//i.test(clean)) {
+        try {
+            const external = new URL(clean);
+            if (external.protocol === "https:") return external.href;
+            const localHost = ["localhost", "127.0.0.1", "[::1]"].includes(external.hostname.toLowerCase());
+            return localHost ? external.href : "";
+        } catch {
+            return "";
+        }
+    }
     const base = (window.API_BASE_URL || "").replace(/\/api\/?$/, "");
     const path = clean.startsWith("/") ? clean : "/" + clean;
-    return `${base}${path}`;
+    try {
+        const resolved = new URL(path, base || window.location.origin);
+        if (resolved.protocol === "https:") return resolved.href;
+        const localHost = ["localhost", "127.0.0.1", "[::1]"].includes(resolved.hostname.toLowerCase());
+        return resolved.protocol === "http:" && localHost ? resolved.href : "";
+    } catch {
+        return "";
+    }
+}
+
+function renderAvatarContent(container, name, photoUrl, imageClass) {
+    const initial = Array.from(String(name || "U").trim())[0]?.toLocaleUpperCase() || "U";
+    const photo = resolveAvatarUrl(photoUrl);
+    container.replaceChildren();
+    if (!photo) {
+        container.textContent = initial;
+        return false;
+    }
+
+    const image = document.createElement("img");
+    image.src = photo;
+    image.alt = initial;
+    image.className = imageClass;
+    image.addEventListener("error", () => {
+        container.textContent = initial;
+    }, { once: true });
+    container.append(image);
+    return true;
 }
 
 function renderDashboardAvatar(name, photoUrl) {
     const avatarEl = document.querySelector(".avatar");
     if (!avatarEl) return;
-    const initial = (name || "U").charAt(0).toUpperCase();
     const rawPhoto = photoUrl !== undefined ? photoUrl : localStorage.getItem("userProfilePicture");
-    const photo = resolveAvatarUrl(rawPhoto);
-    if (photo && photo.trim().length > 0) {
-        avatarEl.innerHTML = `<img src="${photo}" alt="${initial}" class="avatar-img" onerror="this.onerror=null; this.parentElement.textContent='${initial}';" />`;
-    } else {
-        avatarEl.textContent = initial;
-    }
+    renderAvatarContent(avatarEl, name, rawPhoto, "avatar-img");
 }
 renderDashboardAvatar(userName, localStorage.getItem("userProfilePicture"));
 function checkAdminLink() {
@@ -1110,11 +1140,7 @@ void (async () => {
 })();
 
 // --- EXPORT & IMPORT CONTROLS ---
-const authToken = localStorage.getItem("token");
-
-// Exports must carry the JWT as an Authorization header, not a URL query
-// param — the backend's JwtAuthenticationFilter only ever reads the header,
-// so a plain window.open(url?token=...) request always comes back 401.
+// Downloads and uploads share the browser's HttpOnly cookie session transport.
 function escapeSpreadsheetXml(str) {
     if (str == null) return "";
     return String(str)
@@ -1544,10 +1570,9 @@ function uploadFileWithProgress(url, formData, onProgress) {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", url);
-        const currentToken = localStorage.getItem("token") || (typeof authToken !== "undefined" ? authToken : "") || (typeof token !== "undefined" ? token : "");
-        if (currentToken) {
-            xhr.setRequestHeader("Authorization", `Bearer ${currentToken}`);
-        }
+        const browserHeaders = window.BrowserSession.headersFor("POST", url, {});
+        Object.entries(browserHeaders).forEach(([name, value]) => xhr.setRequestHeader(name, value));
+        xhr.withCredentials = true;
         if (xhr.upload && typeof onProgress === "function") {
             xhr.upload.onprogress = (evt) => {
                 if (evt.lengthComputable && evt.total > 0) {
@@ -1580,7 +1605,7 @@ function uploadFileWithProgress(url, formData, onProgress) {
     });
 }
 
-// Fetching with streaming chunks keeps the token safe and displays download progress.
+// Fetching with streaming chunks preserves download progress for large reports.
 async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fallbackFn = null) {
     TransferDock.show({
         filename: fallbackFilename,
@@ -1588,21 +1613,17 @@ async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fall
         status: loadingMessage || "Preparing document..."
     });
     try {
-        const currentToken = localStorage.getItem("token") || (typeof authToken !== "undefined" ? authToken : "") || (typeof token !== "undefined" ? token : "");
         const activeCurr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : (localStorage.getItem("userCurrency") || "INR"));
         const sep = url.includes("?") ? "&" : "?";
         const finalUrl = `${url}${sep}currency=${encodeURIComponent(activeCurr)}`;
         
         const reqHeaders = {};
-        if (currentToken) {
-            reqHeaders["Authorization"] = `Bearer ${currentToken}`;
-        }
         if (activeCurr) {
             reqHeaders["X-Currency"] = activeCurr;
         }
 
         TransferDock.updateProgress(15, "Connecting to reporting engine...", "Compiling ledger records");
-        const res = await fetch(finalUrl, { headers: reqHeaders });
+        const res = await window.BrowserSession.request(finalUrl, { headers: reqHeaders });
         if (!res.ok) {
             if (res.status === 401) {
                 throw new Error("Authentication session expired. Please log in again.");
@@ -1766,11 +1787,9 @@ reconcileStatementInput?.addEventListener("change", async (e) => {
 
     try {
         TransferDock.start("Reconciling bank statement...", "import");
-        const token = getAuthToken();
         const headers = {};
-        if (token) headers["Authorization"] = `Bearer ${token}`;
 
-        const res = await fetch(`${API_BASE_URL}/expenses/user/${userId}/import/statement`, {
+        const res = await window.BrowserSession.request(`${API_BASE_URL}/expenses/user/${userId}/import/statement`, {
             method: "POST",
             headers,
             body: formData,
@@ -2465,16 +2484,10 @@ function updateModalAvatarPreview(name, photoUrl) {
     const previewEl = document.getElementById("modalAvatarPreview");
     const removeBtn = document.getElementById("removeAvatarBtn");
     if (!previewEl) return;
-    const initial = (name || localStorage.getItem("userName") || "U").charAt(0).toUpperCase();
     const rawPhoto = photoUrl !== undefined ? photoUrl : localStorage.getItem("userProfilePicture");
-    const photo = resolveAvatarUrl(rawPhoto);
-    if (photo && photo.trim().length > 0) {
-        previewEl.innerHTML = `<img src="${photo}" alt="${initial}" class="avatar-preview-img" onerror="this.onerror=null; this.parentElement.textContent='${initial}';" />`;
-        if (removeBtn) removeBtn.style.display = "inline-flex";
-    } else {
-        previewEl.textContent = initial;
-        if (removeBtn) removeBtn.style.display = "none";
-    }
+    const hasPhoto = renderAvatarContent(previewEl, name || localStorage.getItem("userName"), rawPhoto,
+        "avatar-preview-img");
+    if (removeBtn) removeBtn.style.display = hasPhoto ? "inline-flex" : "none";
 }
 
 function compressImageFile(file, maxDim = 256, quality = 0.82) {
@@ -4109,8 +4122,8 @@ async function openMonthlyReportPreview(year = selectedReportYear, month = selec
         const monthObj = ALL_REPORT_MONTHS.find(m => m.num === viewedReportMonth) || { name: `M${month}`, full: `Month ${month}` };
 
         setLoading(true, `Compiling financial report for ${monthObj.full} ${viewedReportYear}...`);
-        const res = await fetch(`${API_BASE_URL}/reports/monthly/user/${userId}/html?year=${viewedReportYear}&month=${viewedReportMonth}`, {
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token") || token}` }
+        const res = await window.BrowserSession.request(`${API_BASE_URL}/reports/monthly/user/${userId}/html?year=${viewedReportYear}&month=${viewedReportMonth}`, {
+            headers: { "Accept": "text/html" }
         });
         if (!res.ok) throw new Error(`Failed to load monthly report (${res.status})`);
         cachedReportHtml = await res.text();
@@ -4151,8 +4164,8 @@ async function downloadMonthlyReport(year = selectedReportYear, month = selected
         setLoading(true, `Preparing ${monthObj.full} ${year} statement download...`);
         let htmlContent = cachedReportHtml;
         if (!htmlContent || viewedReportYear !== year || viewedReportMonth !== month) {
-            const res = await fetch(`${API_BASE_URL}/reports/monthly/user/${userId}/html?year=${year}&month=${month}`, {
-                headers: { "Authorization": `Bearer ${localStorage.getItem("token") || token}` }
+            const res = await window.BrowserSession.request(`${API_BASE_URL}/reports/monthly/user/${userId}/html?year=${year}&month=${month}`, {
+                headers: { "Accept": "text/html" }
             });
             if (!res.ok) throw new Error(`Failed to generate report download (${res.status})`);
             htmlContent = await res.text();
@@ -4851,10 +4864,9 @@ async function renderBiometricsModal() {
 async function handleEnrollBiometrics() {
     const btn = document.getElementById("registerAnotherPasskeyBtn") || document.getElementById("enablePasskeyBtn");
     if (btn) btn.disabled = true;
-    const token = localStorage.getItem("token");
     const userEmail = localStorage.getItem("userEmail") || (window.currentUser && window.currentUser.email) || "user";
     try {
-        await window.WebBiometrics.enroll(userEmail, token);
+        await window.WebBiometrics.enroll(userEmail, null);
         showToast("Biometric passkey registered successfully!", "success");
         await renderBiometricsModal();
     } catch (err) {

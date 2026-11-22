@@ -39,10 +39,7 @@
     }
 
     function getAuthHeaders() {
-        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-        const headers = { "Content-Type": "application/json" };
-        if (token) headers["Authorization"] = "Bearer " + token;
-        return headers;
+        return window.BrowserSession.headersFor("GET", getApiBase(), { "Content-Type": "application/json" });
     }
 
     function getCurrencySymbol() {
@@ -170,7 +167,7 @@
         try {
             const fetchFn = (typeof window !== "undefined" && typeof window.apiRequest === "function")
                 ? (endpoint) => window.apiRequest(endpoint)
-                : (endpoint) => fetch(`${getApiBase()}${endpoint}`, { headers: getAuthHeaders() }).then(r => r.ok ? r.json() : Promise.reject(r));
+                : (endpoint) => window.BrowserSession.request(`${getApiBase()}${endpoint}`, { headers: getAuthHeaders() }).then(r => r.ok ? r.json() : Promise.reject(r));
 
             const [loansRes, metricsRes] = await Promise.all([
                 fetchFn(`/loans/user/${userId}`),
@@ -577,7 +574,7 @@
         if (!userId) return;
 
         try {
-            const res = await fetch(`${getApiBase()}/loans/${id}/settle/user/${userId}`, {
+            const res = await window.BrowserSession.request(`${getApiBase()}/loans/${id}/settle/user/${userId}`, {
                 method: "PUT",
                 headers: getAuthHeaders()
             });
@@ -608,7 +605,7 @@
         if (!userId) return;
 
         try {
-            const res = await fetch(`${getApiBase()}/loans/${id}/user/${userId}`, {
+            const res = await window.BrowserSession.request(`${getApiBase()}/loans/${id}/user/${userId}`, {
                 method: "DELETE",
                 headers: getAuthHeaders()
             });
@@ -815,7 +812,7 @@
             };
 
             try {
-                const res = await fetch(`${getApiBase()}/loans/user/${userId}`, {
+                const res = await window.BrowserSession.request(`${getApiBase()}/loans/user/${userId}`, {
                     method: "POST",
                     headers: getAuthHeaders(),
                     body: JSON.stringify(payload)

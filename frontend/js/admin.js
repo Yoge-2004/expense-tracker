@@ -7,8 +7,7 @@
     "use strict";
 
     // ── Authentication & Security Guard ──────────────────────────────────────
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!localStorage.getItem("userId")) {
         window.location.replace("index.html");
         return;
     }
@@ -1616,9 +1615,7 @@
         document.getElementById("sidebarLogoutBtn")?.addEventListener("click", async () => {
             const canConfirm = typeof window.appConfirm === "function" ? window.appConfirm : (msg) => Promise.resolve(confirm(msg));
             if (await canConfirm("Sign out of the Admin Command Center?")) {
-                localStorage.removeItem("token");
-                localStorage.removeItem("userId");
-                localStorage.removeItem("userRole");
+                await window.BrowserSession.logout().catch(() => {});
                 window.location.replace("index.html");
             }
         });
@@ -2367,9 +2364,7 @@
             const apiBase = window.API_BASE_URL || (typeof window !== "undefined" && window.location.protocol !== "file:" ? `${window.location.origin}/api` : "http://localhost:8080/api");
             const url = `${apiBase}/admin/audit-logs/export`;
 
-            fetch(url, {
-                headers: { "Authorization": `Bearer ${token}` }
-            })
+            window.BrowserSession.request(url)
             .then(res => res.blob())
             .then(blob => {
                 const downloadUrl = window.URL.createObjectURL(blob);

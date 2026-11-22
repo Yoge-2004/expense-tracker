@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.UUID;
@@ -41,6 +44,7 @@ import com.example.expensetracker.infrastructure.security.CustomUserDetails;
 import com.example.expensetracker.infrastructure.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.infrastructure.security.JwtService;
 import com.example.expensetracker.infrastructure.security.LoginAttemptGuard;
+import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
 import com.example.expensetracker.infrastructure.security.RateLimited;
 
 
@@ -71,6 +75,7 @@ public class AuthController {
     private final PasswordResetService passwordResetService;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
     private final LoginAttemptGuard loginAttemptGuard;
+    private final BrowserSessionCookieService browserSessionCookieService;
 
     @Value("${app.auth.email-verification-enabled:false}")
     private boolean emailVerificationEnabled;
@@ -126,7 +131,9 @@ public class AuthController {
     @PostMapping("/login")
     @RateLimited(key = "auth-login", message = "Too many login attempts. Please try again in %d seconds.")
     public ResponseEntity<AuthResponse> login(
-            @Valid @org.springframework.web.bind.annotation.RequestBody LoginRequest request) {
+            @Valid @org.springframework.web.bind.annotation.RequestBody LoginRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
         String identifier = request.email() != null ? request.email().trim() : "";
         log.info("Login attempt received for user identifier={}", LoggingUtils.maskEmail(identifier));
         loginAttemptGuard.checkAllowed(identifier);
@@ -153,9 +160,10 @@ public class AuthController {
         }
         user = ensureAdminRole(user);
         String token = jwtService.generateToken(user.getEmail());
+        boolean browserSession = browserSessionCookieService.issueIfBrowser(httpRequest, httpResponse, token);
         log.info("User successfully authenticated; userId={}", user.getId());
         return ResponseEntity.ok(new AuthResponse(
-                token,
+                browserSession ? null : token,
                 user.getId(),
                 user.getName(),
                 user.getUsername(),
@@ -165,6 +173,50 @@ public class AuthController {
                 user.getProfilePictureUrl(),
                 user.getRole().name()
         ));
+    }
+
+    @Operation(summary = "Restore a browser session", description = "Returns the signed-in profile without exposing a JWT to browser JavaScript.")
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/session")
+    public ResponseEntity<Map<String, Object>> browserSession(Authentication authentication) {
+        User user = userService.findByEmail(authentication.getName())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return ResponseEntity.ok(browserProfile(user));
+    }
+
+    @Operation(summary = "Exchange a legacy browser bearer token for an HttpOnly session cookie")
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/session")
+    public ResponseEntity<Map<String, Object>> exchangeLegacyBrowserSession(
+            Authentication authentication,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        if (!browserSessionCookieService.isBrowserRequest(request)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Browser session mode is required."));
+        }
+        User user = userService.findByEmail(authentication.getName())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        browserSessionCookieService.issue(request, response, jwtService.generateToken(user.getEmail()));
+        return ResponseEntity.ok(browserProfile(user));
+    }
+
+    @Operation(summary = "Sign out of the browser session")
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+        browserSessionCookieService.clear(request, response);
+        return ResponseEntity.noContent().build();
+    }
+
+    private Map<String, Object> browserProfile(User user) {
+        return Map.of(
+                "userId", user.getId(),
+                "name", user.getName() == null ? "" : user.getName(),
+                "username", user.getUsername() == null ? "" : user.getUsername(),
+                "email", user.getEmail() == null ? "" : user.getEmail(),
+                "currency", user.getCurrency() == null ? "INR" : user.getCurrency(),
+                "hasSecurityPin", user.hasSecurityPin(),
+                "profilePictureUrl", user.getProfilePictureUrl() == null ? "" : user.getProfilePictureUrl(),
+                "role", user.getRole() == null ? "ROLE_USER" : user.getRole().name());
     }
 
     @Operation(summary = "Send signup verification OTP",
@@ -320,7 +372,9 @@ public class AuthController {
     @RateLimited(key = "auth-oauth", maxRequests = 15,
                  message = "Too many OAuth login attempts. Please try again in %d seconds.")
     public ResponseEntity<AuthResponse> oauthLogin(
-            @Valid @org.springframework.web.bind.annotation.RequestBody OAuthRequest request) {
+            @Valid @org.springframework.web.bind.annotation.RequestBody OAuthRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
         log.info("Google OAuth login verification initiated");
         GoogleIdTokenVerifier.VerifiedIdentity identity = googleIdTokenVerifier.verify(request.idToken());
         log.info("Google OAuth token verified for email={}", LoggingUtils.maskEmail(identity.email()));
@@ -379,9 +433,10 @@ public class AuthController {
         }
 
         String token = jwtService.generateToken(user.getEmail());
+        boolean browserSession = browserSessionCookieService.issueIfBrowser(httpRequest, httpResponse, token);
         log.info("Google OAuth login successful for userId={}", user.getId());
         return ResponseEntity.ok(new AuthResponse(
-                token,
+                browserSession ? null : token,
                 user.getId(),
                 user.getName(),
                 user.getUsername(),

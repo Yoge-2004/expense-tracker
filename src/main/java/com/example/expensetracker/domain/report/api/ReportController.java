@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.ContentDisposition;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,12 +23,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.Map;
 
 import com.example.expensetracker.domain.report.dto.MonthlyReportDto;
+import com.example.expensetracker.domain.report.service.FinancialStatementExportService;
 import com.example.expensetracker.domain.report.service.MonthlyReportService;
 import com.example.expensetracker.domain.user.model.User;
+import com.example.expensetracker.domain.user.service.UserService;
 import com.example.expensetracker.infrastructure.security.UserSecurity;
 
 
@@ -48,8 +50,9 @@ public class ReportController {
     private static final String CURRENCY_HEADER_KEY = "X-Currency";
 
     private final MonthlyReportService monthlyReportService;
+    private final FinancialStatementExportService financialStatementExportService;
+    private final UserService userService;
     private final UserSecurity userSecurity;
-    private final RangeReportController rangeReportController;
 
     @Operation(summary = "Get monthly financial report JSON",
             description = "Aggregates total inflow, outflow, net savings, savings rate, " +
@@ -103,7 +106,7 @@ public class ReportController {
         int y = year != null ? year : now.getYear();
         int m = month != null ? month : now.getMonthValue();
         monthlyReportService.sendMonthlyReportEmail(userId, y, m);
-        return ResponseEntity.ok(Collections.singletonMap("message", "Monthly report email successfully sent."));
+        return ResponseEntity.ok(Map.of("message", "Monthly report email successfully sent."));
     }
 
     @Operation(summary = "Export complete financial workbook to Excel (.xlsx)",
@@ -114,14 +117,12 @@ public class ReportController {
             @RequestParam(value = "currency", required = false) String currencyParam,
             @RequestHeader(required = false) HttpHeaders headers) {
         String currencyHeader = headers != null ? headers.getFirst(CURRENCY_HEADER_KEY) : null;
-        String preferredCurrency = (currencyParam != null && !currencyParam.isBlank())
-                ? currencyParam : currencyHeader;
-        ResponseEntity<byte[]> response = rangeReportController.excel(userId, null, null,
-                preferredCurrency == null || preferredCurrency.isBlank() ? "INR" : preferredCurrency);
-        byte[] body = response.getBody();
-        byte[] payload = (body != null) ? body : new byte[0];
+        String currency = preferredCurrency(currencyParam, currencyHeader);
+        User user = reportUser(userId);
+        byte[] payload = financialStatementExportService.exportFinancialStatementExcel(user, currency);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial-summary.xlsx\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename("financial-summary.xlsx").build().toString())
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .contentLength(payload.length)
@@ -136,16 +137,30 @@ public class ReportController {
             @RequestParam(value = "currency", required = false) String currencyParam,
             @RequestHeader(required = false) HttpHeaders headers) {
         String currencyHeader = headers != null ? headers.getFirst(CURRENCY_HEADER_KEY) : null;
-        String preferredCurrency = (currencyParam != null && !currencyParam.isBlank())
-                ? currencyParam : currencyHeader;
-        ResponseEntity<byte[]> response = rangeReportController.pdf(userId, null, null,
-                preferredCurrency == null || preferredCurrency.isBlank() ? "INR" : preferredCurrency);
-        byte[] body = response.getBody();
-        byte[] payload = (body != null) ? body : new byte[0];
+        String currency = preferredCurrency(currencyParam, currencyHeader);
+        User user = reportUser(userId);
+        byte[] payload = financialStatementExportService.exportFinancialStatementPdf(user, currency);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial-statement.pdf\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename("financial-statement.pdf").build().toString())
                 .contentType(MediaType.APPLICATION_PDF)
                 .contentLength(payload.length)
                 .body(payload);
+    }
+
+    private String preferredCurrency(String requestedCurrency, String headerCurrency) {
+        if (requestedCurrency != null && !requestedCurrency.isBlank()) {
+            return requestedCurrency;
+        }
+        if (headerCurrency != null && !headerCurrency.isBlank()) {
+            return headerCurrency;
+        }
+        return "INR";
+    }
+
+    private User reportUser(Long userId) {
+        userSecurity.validateUserAccess(userId);
+        return userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 }

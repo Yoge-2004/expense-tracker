@@ -14,8 +14,8 @@ public record HfDatabaseProperties(
         String path,
         String repoType,
         String encryptionKey,
-        int maxShrinkPercent,
-        int minCommitIntervalMinutes,
+        Integer maxShrinkPercent,
+        Integer minCommitIntervalMinutes,
         String volatileTables
 ) {
     private static final String DEFAULT_SPACE = "Yoge-2004/expense-tracker-backend";
@@ -26,8 +26,8 @@ public record HfDatabaseProperties(
         if (space == null || space.isBlank()) space = DEFAULT_SPACE;
         if (path == null || path.isBlank()) path = DEFAULT_PATH;
         if (repoType == null || repoType.isBlank()) repoType = "space";
-        if (maxShrinkPercent <= 0) maxShrinkPercent = 30;
-        if (minCommitIntervalMinutes <= 0) minCommitIntervalMinutes = 30;
+        if (maxShrinkPercent == null || maxShrinkPercent <= 0) maxShrinkPercent = 30;
+        if (minCommitIntervalMinutes == null || minCommitIntervalMinutes < 0) minCommitIntervalMinutes = 30;
         if (volatileTables == null || volatileTables.isBlank()) volatileTables = DEFAULT_VOLATILE;
         if (token == null) token = "";
         if (encryptionKey == null) encryptionKey = "";

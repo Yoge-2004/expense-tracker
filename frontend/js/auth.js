@@ -13,22 +13,11 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
             body: JSON.stringify({ email, password })
         });
 
-        if (!response?.token || !response?.userId) {
+        if (!response?.userId) {
             throw new Error("The sign-in service returned an incomplete response. Please try again.");
         }
 
-        localStorage.setItem("token", response.token);
-        localStorage.setItem("userId", response.userId);
-        localStorage.setItem("userRole", response.role || "ROLE_USER");
-        localStorage.setItem("userName", response.name || "User");
-        localStorage.setItem("userEmail", response.email || email);
-        if (response.username) localStorage.setItem("userUsername", response.username);
-        if (response.currency) localStorage.setItem("userCurrency", response.currency);
-        if (response.profilePictureUrl) {
-            localStorage.setItem("userProfilePicture", response.profilePictureUrl);
-        } else {
-            localStorage.removeItem("userProfilePicture");
-        }
+        window.BrowserSession.storeProfile({ ...response, email: response.email || email });
         showToast("Signed in successfully!", "success");
         setTimeout(() => { window.location.href = "dashboard.html"; }, 500);
     } catch (error) {
@@ -111,23 +100,16 @@ async function handleCredentialResponse(credentialResponse) {
             })
         });
 
-        if (!response?.token || !response?.userId) {
+        if (!response?.userId) {
             throw new Error("Google sign-in completed, but authentication credentials were not returned.");
         }
 
-        localStorage.setItem("token", response.token);
-        localStorage.setItem("userId", response.userId);
-        localStorage.setItem("userRole", response.role || "ROLE_USER");
-        localStorage.setItem("userName", response.name || (payload?.name) || "Google User");
-        localStorage.setItem("userEmail", response.email || (payload?.email) || "");
-        if (response.username) localStorage.setItem("userUsername", response.username);
-        if (response.currency) localStorage.setItem("userCurrency", response.currency);
-        const photoUrl = response.profilePictureUrl || payload?.picture || "";
-        if (photoUrl) {
-            localStorage.setItem("userProfilePicture", photoUrl);
-        } else {
-            localStorage.removeItem("userProfilePicture");
-        }
+        window.BrowserSession.storeProfile({
+            ...response,
+            name: response.name || payload?.name || "Google User",
+            email: response.email || payload?.email || "",
+            profilePictureUrl: response.profilePictureUrl || payload?.picture || ""
+        });
         showToast("Signed in with Google! Redirecting...", "success");
         setTimeout(() => { window.location.href = "dashboard.html"; }, 500);
     } catch (error) {
@@ -285,15 +267,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             bioBtn.disabled = true;
             try {
                 const res = await WebBiometrics.authenticate();
-                localStorage.setItem("token", res.token);
-                localStorage.setItem("userId", res.userId);
-                localStorage.setItem("userName", res.name || "User");
-                localStorage.setItem("userEmail", res.email || "");
-                if (res.username) localStorage.setItem("userUsername", res.username);
-                if (res.currency) localStorage.setItem("userCurrency", res.currency);
-                if (res.profilePictureUrl) {
-                    localStorage.setItem("userProfilePicture", res.profilePictureUrl);
-                }
+                if (!res?.userId) throw new Error("Biometric sign-in returned an incomplete session.");
+                window.BrowserSession.storeProfile(res);
                 showToast("Biometric sign-in verified. Welcome back!", "success");
                 setTimeout(() => { window.location.href = "dashboard.html"; }, 400);
             } catch (err) {

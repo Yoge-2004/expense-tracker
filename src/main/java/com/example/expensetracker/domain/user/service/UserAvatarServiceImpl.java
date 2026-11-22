@@ -16,12 +16,16 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.infrastructure.exception.FileStorageException;
@@ -36,6 +40,12 @@ import com.example.expensetracker.infrastructure.exception.FileStorageException;
 @Service
 @RequiredArgsConstructor
 public class UserAvatarServiceImpl implements UserAvatarService {
+
+    private static final long MAX_UPLOAD_BYTES = 5L * 1024 * 1024;
+    private static final long MAX_IMAGE_PIXELS = 16_777_216L;
+    private static final int MAX_IMAGE_DIMENSION = 8_192;
+    private static final int AVATAR_DIMENSION = 256;
+    private static final List<String> AVATAR_EXTENSIONS = List.of(".jpg", ".png", ".webp", ".gif", ".img");
 
     private final UserService userService;
 
@@ -52,53 +62,38 @@ public class UserAvatarServiceImpl implements UserAvatarService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Avatar file must not be empty");
         }
-        if (file.getSize() > 5 * 1024 * 1024) {
+        if (file.getSize() > MAX_UPLOAD_BYTES) {
             throw new IllegalArgumentException("Avatar file size must not exceed 5MB");
-        }
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
-            throw new IllegalArgumentException("Only image files (JPEG, PNG, WebP, GIF) are supported");
         }
 
         try {
+            byte[] rawBytes = file.getBytes();
+            EncodedAvatar encodedAvatar = encodeAvatar(rawBytes);
             Path avatarDir = getAvatarDir();
             Files.createDirectories(avatarDir);
-
-            String ext = ".jpg";
-            String lower = contentType.toLowerCase(Locale.ROOT);
-            if (lower.contains("png")) ext = ".png";
-            else if (lower.contains("webp")) ext = ".webp";
-            else if (lower.contains("gif")) ext = ".gif";
-
-            // Remove existing avatar files for this user
-            for (String oldExt : List.of(".jpg", ".png", ".webp", ".gif", ".img")) {
-                try {
-                    Files.deleteIfExists(avatarDir.resolve("user_" + userId + oldExt));
-                } catch (Exception ex) {
-                    log.debug("Notice while replacing previous avatar extension {} during upload for userId={}: {}", oldExt, userId, ex.getMessage());
-                }
-            }
-
-            byte[] rawBytes = file.getBytes();
-            byte[] compressedBytes = compressAvatarImage(rawBytes, contentType);
-            boolean isCompressed = compressedBytes != null && compressedBytes.length < rawBytes.length;
-            String savedContentType = isCompressed && !contentType.toLowerCase(Locale.ROOT).contains("png")
-                    ? "image/jpeg"
-                    : contentType;
-            if (isCompressed && "image/jpeg".equals(savedContentType)) {
-                ext = ".jpg";
-            }
-
-            Path targetFile = avatarDir.resolve("user_" + userId + ext);
-            Files.write(targetFile, isCompressed ? compressedBytes : rawBytes);
-
+            Path targetFile = avatarDir.resolve("user_" + userId + encodedAvatar.extension());
+            Path temporaryFile = Files.createTempFile(avatarDir, "avatar-", ".tmp");
             Path metaFile = avatarDir.resolve("user_" + userId + ".meta");
-            Files.writeString(metaFile, savedContentType);
-
-            String avatarUrl = "/api/users/" + userId + "/avatar?v=" + java.time.Instant.now().toEpochMilli();
-            userService.updateProfilePicture(userId, avatarUrl);
-
-            return avatarUrl;
+            try {
+                Files.write(temporaryFile, encodedAvatar.bytes());
+                try {
+                    Files.move(temporaryFile, targetFile, StandardCopyOption.ATOMIC_MOVE,
+                            StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException _) {
+                    Files.move(temporaryFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                }
+                Files.writeString(metaFile, encodedAvatar.contentType());
+                for (String oldExt : AVATAR_EXTENSIONS) {
+                    if (!oldExt.equals(encodedAvatar.extension())) {
+                        Files.deleteIfExists(avatarDir.resolve("user_" + userId + oldExt));
+                    }
+                }
+                String avatarUrl = "/api/users/" + userId + "/avatar?v=" + java.time.Instant.now().toEpochMilli();
+                userService.updateProfilePicture(userId, avatarUrl);
+                return avatarUrl;
+            } finally {
+                Files.deleteIfExists(temporaryFile);
+            }
         } catch (IOException e) {
             log.error("Failed to store avatar file for userId={}: {}", userId, e.getMessage(), e);
             throw new com.example.expensetracker.infrastructure.exception.FileStorageException("Could not store avatar image", e);
@@ -115,16 +110,14 @@ public class UserAvatarServiceImpl implements UserAvatarService {
                 try {
                     byte[] data = Files.readAllBytes(file);
                     Path metaFile = avatarDir.resolve("user_" + userId + ".meta");
-                    String contentType = "image/jpeg";
+                    String contentType = contentTypeForExtension(ext);
                     if (Files.exists(metaFile)) {
-                        contentType = Files.readString(metaFile).trim();
-                    } else if (ext.equals(".png")) {
-                        contentType = "image/png";
-                    } else if (ext.equals(".webp")) {
-                        contentType = "image/webp";
-                    } else if (ext.equals(".gif")) {
-                        contentType = "image/gif";
+                        String savedType = Files.readString(metaFile).trim().toLowerCase(Locale.ROOT);
+                        if (savedType.equals("image/jpeg") || savedType.equals("image/png")) {
+                            contentType = savedType;
+                        }
                     }
+                    if (!contentType.equals(contentTypeForExtension(ext))) continue;
                     return Optional.of(new AvatarContent(data, contentType, null));
                 } catch (IOException ex) {
                     log.warn("Could not read avatar file {} for userId={}: {}", file, userId, ex.getMessage());
@@ -162,87 +155,90 @@ public class UserAvatarServiceImpl implements UserAvatarService {
         userService.updateProfilePicture(userId, null);
     }
 
-    private byte[] compressAvatarImage(byte[] rawBytes, String contentType) {
-        if (rawBytes == null || rawBytes.length == 0) return rawBytes;
-        try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(rawBytes);
-            BufferedImage original = ImageIO.read(bais);
-            if (original == null) {
-                return rawBytes;
-            }
-
-            int origWidth = original.getWidth();
-            int origHeight = original.getHeight();
-            int maxDim = 256;
-            int targetWidth = origWidth;
-            int targetHeight = origHeight;
-
-            if (origWidth > maxDim || origHeight > maxDim) {
-                if (origWidth > origHeight) {
-                    targetWidth = maxDim;
-                    targetHeight = Math.max(1, (int) Math.round((double) origHeight * maxDim / origWidth));
-                } else {
-                    targetHeight = maxDim;
-                    targetWidth = Math.max(1, (int) Math.round((double) origWidth * maxDim / origHeight));
-                }
-            }
-
-            boolean isPng = contentType != null && contentType.toLowerCase(Locale.ROOT).contains("png");
-            boolean hasAlpha = original.getColorModel().hasAlpha();
-
-            int imageType = (hasAlpha && isPng)
-                    ? BufferedImage.TYPE_INT_ARGB
-                    : BufferedImage.TYPE_INT_RGB;
-            BufferedImage resized = new BufferedImage(targetWidth, targetHeight, imageType);
-
-            Graphics2D g2d = resized.createGraphics();
+    private EncodedAvatar encodeAvatar(byte[] rawBytes) throws IOException {
+        if (rawBytes.length == 0) throw new IllegalArgumentException("Avatar file must not be empty");
+        try (ImageInputStream input = ImageIO.createImageInputStream(new ByteArrayInputStream(rawBytes))) {
+            if (input == null) throw new IllegalArgumentException("Avatar must be a valid JPEG, PNG, or GIF image");
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+            if (!readers.hasNext()) throw new IllegalArgumentException("Avatar must be a valid JPEG, PNG, or GIF image");
+            ImageReader reader = readers.next();
             try {
-                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                if (imageType == BufferedImage.TYPE_INT_RGB) {
-                    g2d.setColor(Color.WHITE);
-                    g2d.fillRect(0, 0, targetWidth, targetHeight);
+                reader.setInput(input, true, true);
+                String format = reader.getFormatName().toLowerCase(Locale.ROOT);
+                if (!List.of("jpeg", "jpg", "png", "gif").contains(format)) {
+                    throw new IllegalArgumentException("Only JPEG, PNG, and GIF avatars are supported");
                 }
-                g2d.drawImage(original, 0, 0, targetWidth, targetHeight, null);
-            } finally {
-                g2d.dispose();
-            }
+                int width = reader.getWidth(0);
+                int height = reader.getHeight(0);
+                if (width <= 0 || height <= 0 || width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION
+                        || (long) width * height > MAX_IMAGE_PIXELS) {
+                    throw new IllegalArgumentException("Avatar dimensions exceed the supported limit");
+                }
+                BufferedImage original = reader.read(0);
+                if (original == null) throw new IllegalArgumentException("Avatar image could not be decoded");
+                boolean keepAlpha = format.equals("png") && original.getColorModel().hasAlpha();
+                int targetWidth = Math.min(width, AVATAR_DIMENSION);
+                int targetHeight = Math.min(height, AVATAR_DIMENSION);
+                if (width > height) targetHeight = Math.max(1, (int) Math.round((double) height * targetWidth / width));
+                else targetWidth = Math.max(1, (int) Math.round((double) width * targetHeight / height));
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            if (hasAlpha && isPng) {
-                ImageIO.write(resized, "png", baos);
-            } else {
-                Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpg");
-                if (writers.hasNext()) {
+                int imageType = keepAlpha ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
+                BufferedImage resized = new BufferedImage(targetWidth, targetHeight, imageType);
+                Graphics2D graphics = resized.createGraphics();
+                try {
+                    graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                            RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                    graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                    graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    if (!keepAlpha) {
+                        graphics.setColor(Color.WHITE);
+                        graphics.fillRect(0, 0, targetWidth, targetHeight);
+                    }
+                    graphics.drawImage(original, 0, 0, targetWidth, targetHeight, null);
+                } finally {
+                    graphics.dispose();
+                }
+                String outputFormat = keepAlpha ? "png" : "jpg";
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                if (keepAlpha) {
+                    ImageIO.write(resized, outputFormat, output);
+                } else {
+                    Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(outputFormat);
+                    if (!writers.hasNext()) throw new IOException("No JPEG encoder is available");
                     ImageWriter writer = writers.next();
-                    try (ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
-                        writer.setOutput(ios);
-                        ImageWriteParam param = writer.getDefaultWriteParam();
-                        if (param.canWriteCompressed()) {
-                            param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-                            param.setCompressionQuality(0.82f);
+                    try (ImageOutputStream imageOutput = ImageIO.createImageOutputStream(output)) {
+                        writer.setOutput(imageOutput);
+                        ImageWriteParam parameters = writer.getDefaultWriteParam();
+                        if (parameters.canWriteCompressed()) {
+                            parameters.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                            parameters.setCompressionQuality(0.82f);
                         }
-                        writer.write(null, new IIOImage(resized, null, null), param);
+                        writer.write(null, new IIOImage(resized, null, null), parameters);
                     } finally {
                         writer.dispose();
                     }
-                } else {
-                    ImageIO.write(resized, "jpg", baos);
                 }
+                String contentType = keepAlpha ? "image/png" : "image/jpeg";
+                String extension = keepAlpha ? ".png" : ".jpg";
+                log.debug("Normalized avatar from {}x{} {} to {}x{} {}", width, height, format,
+                        targetWidth, targetHeight, contentType);
+                return new EncodedAvatar(output.toByteArray(), contentType, extension);
+            } finally {
+                reader.dispose();
             }
-
-            byte[] compressed = baos.toByteArray();
-            if (compressed.length > 0 && compressed.length < rawBytes.length) {
-                log.info("Compressed avatar image for storage: {} bytes -> {} bytes ({}% reduction)",
-                        rawBytes.length, compressed.length,
-                        Math.round((1.0 - (double) compressed.length / rawBytes.length) * 100));
-                return compressed;
-            }
-            return rawBytes;
-        } catch (Exception e) {
-            log.warn("Avatar image compression failed, preserving original: {}", e.getMessage());
-            return rawBytes;
         }
+    }
+
+    private String contentTypeForExtension(String extension) {
+        return switch (extension) {
+            case ".png" -> "image/png";
+            case ".webp" -> "image/webp";
+            case ".gif" -> "image/gif";
+            case ".img" -> "application/octet-stream";
+            default -> "image/jpeg";
+        };
+    }
+
+    private record EncodedAvatar(byte[] bytes, String contentType, String extension) {
     }
 }

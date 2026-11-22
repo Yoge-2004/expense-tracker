@@ -58,12 +58,12 @@ public class UserCascadeDeletionServiceImpl implements UserCascadeDeletionServic
             SavingsGoalRepository savingsGoalRepository,
             MonthlyReportLogRepository reportLogRepository,
             WebAuthnCredentialRepository webAuthnCredentialRepository,
-            @Autowired(required = false) AppNotificationRepository appNotificationRepository,
-            @Autowired(required = false) DeviceTokenRepository deviceTokenRepository,
-            @Autowired(required = false) LoanAdjustmentRepository loanAdjustmentRepository,
-            @Autowired(required = false) MlFeedbackRepository mlFeedbackRepository,
-            @Autowired(required = false) NotificationPreferenceRepository notificationPreferenceRepository,
-            @Autowired(required = false) UserAppearanceRepository userAppearanceRepository) {
+            AppNotificationRepository appNotificationRepository,
+            DeviceTokenRepository deviceTokenRepository,
+            LoanAdjustmentRepository loanAdjustmentRepository,
+            MlFeedbackRepository mlFeedbackRepository,
+            NotificationPreferenceRepository notificationPreferenceRepository,
+            UserAppearanceRepository userAppearanceRepository) {
         this.expenseRepository = expenseRepository;
         this.categoryRepository = categoryRepository;
         this.budgetRepository = budgetRepository;
@@ -78,6 +78,22 @@ public class UserCascadeDeletionServiceImpl implements UserCascadeDeletionServic
         this.mlFeedbackRepository = mlFeedbackRepository;
         this.notificationPreferenceRepository = notificationPreferenceRepository;
         this.userAppearanceRepository = userAppearanceRepository;
+    }
+
+    /** Compatibility path used by older direct service instantiations without auxiliary repositories. */
+    @Deprecated(forRemoval = false)
+    UserCascadeDeletionServiceImpl(
+            ExpenseRepository expenseRepository,
+            CategoryRepository categoryRepository,
+            BudgetRepository budgetRepository,
+            RecurringExpenseRepository recurringRepository,
+            IncomeRepository incomeRepository,
+            SavingsGoalRepository savingsGoalRepository,
+            MonthlyReportLogRepository reportLogRepository,
+            WebAuthnCredentialRepository webAuthnCredentialRepository) {
+        this(expenseRepository, categoryRepository, budgetRepository, recurringRepository,
+                incomeRepository, savingsGoalRepository, reportLogRepository, webAuthnCredentialRepository,
+                null, null, null, null, null, null);
     }
 
     @Override

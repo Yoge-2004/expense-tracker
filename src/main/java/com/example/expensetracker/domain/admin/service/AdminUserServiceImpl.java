@@ -63,7 +63,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                                 AdminMetricsService metricsService,
                                 PasswordEncoder passwordEncoder,
                                 StepUpPinVerifier stepUpPinVerifier,
-                                @org.springframework.beans.factory.annotation.Autowired(required = false) AdminAuthorizationPolicy authorizationPolicy) {
+                                AdminAuthorizationPolicy authorizationPolicy) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.expenseRepository = expenseRepository;
@@ -73,11 +73,10 @@ public class AdminUserServiceImpl implements AdminUserService {
         this.metricsService = metricsService;
         this.passwordEncoder = passwordEncoder;
         this.stepUpPinVerifier = stepUpPinVerifier;
-        this.authorizationPolicy = (authorizationPolicy != null)
-                ? authorizationPolicy
-                : new AdminAuthorizationPolicy(stepUpPinVerifier);
+        this.authorizationPolicy = authorizationPolicy;
     }
 
+    @Deprecated(forRemoval = false)
     public AdminUserServiceImpl(UserRepository userRepository,
                                 UserService userService,
                                 ExpenseRepository expenseRepository,
@@ -88,7 +87,8 @@ public class AdminUserServiceImpl implements AdminUserService {
                                 PasswordEncoder passwordEncoder,
                                 StepUpPinVerifier stepUpPinVerifier) {
         this(userRepository, userService, expenseRepository, incomeRepository, deviceTokenRepository,
-                auditService, metricsService, passwordEncoder, stepUpPinVerifier, null);
+                auditService, metricsService, passwordEncoder, stepUpPinVerifier,
+                new AdminAuthorizationPolicy(stepUpPinVerifier));
     }
 
     @Override

@@ -66,6 +66,9 @@ public interface CategoryService {
      */
     List<Category> getGlobalCategories();
 
+    /** Retrieves a category by identifier for ownership validation in application workflows. */
+    Category getCategoryById(Long categoryId);
+
     /**
      * Deletes a user-owned category, but only if it is not currently in use.
      *

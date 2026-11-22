@@ -87,7 +87,11 @@
             return str.replace(/([^\w\s])\s+([\d,.-]+)/, '$1$2');
         } catch {
             const isAlpha = /^[A-Z]{3}$/.test(info.symbol);
-            return isAlpha ? `${info.symbol} ${Number(amt || 0).toFixed(2)}` : `${info.symbol}${Number(amt || 0).toFixed(2)}`;
+            const value = new Intl.NumberFormat(info.locale, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(Number(amt || 0));
+            return isAlpha ? `${info.symbol} ${value}` : `${info.symbol}${value}`;
         }
     }
 
@@ -103,7 +107,9 @@
             return str.replace(/([^\w\s])\s+([\d,.-]+)/, '$1$2');
         } catch {
             const isAlpha = /^[A-Z]{3}$/.test(info.symbol);
-            return isAlpha ? `${info.symbol} ${Number(amt || 0).toFixed(0)}` : `${info.symbol}${Number(amt || 0).toFixed(0)}`;
+            const value = new Intl.NumberFormat(info.locale, { maximumFractionDigits: 0 })
+                .format(Number(amt || 0));
+            return isAlpha ? `${info.symbol} ${value}` : `${info.symbol}${value}`;
         }
     }
 

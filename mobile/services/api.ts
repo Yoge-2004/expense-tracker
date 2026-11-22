@@ -17,19 +17,36 @@ const REMOTE_API_URL = 'https://yoge-2004-expense-tracker-backend.hf.space/api';
 const CUSTOM_SERVER_KEY = 'custom_server_base_url';
 
 let memoryCustomServerUrl: string | null = null;
+const legacyCredentialFallbackCleanup = new Map<string, Promise<void>>();
+
+function discardLegacyCredentialFallback(key: string): Promise<void> {
+  const existing = legacyCredentialFallbackCleanup.get(key);
+  if (existing) return existing;
+  const cleanup = AsyncStorage.removeItem(`fallback_${key}`).catch(() => undefined);
+  legacyCredentialFallbackCleanup.set(key, cleanup);
+  return cleanup;
+}
 
 export async function getCustomServerUrl(): Promise<string | null> {
   if (memoryCustomServerUrl !== null) return memoryCustomServerUrl;
   try {
-    memoryCustomServerUrl = await AsyncStorage.getItem(CUSTOM_SERVER_KEY);
+    const stored = await AsyncStorage.getItem(CUSTOM_SERVER_KEY);
+    if (stored === null) return null;
+    memoryCustomServerUrl = validateCustomServerUrl(stored);
     return memoryCustomServerUrl;
   } catch {
+    memoryCustomServerUrl = null;
+    try {
+      await AsyncStorage.removeItem(CUSTOM_SERVER_KEY);
+    } catch {
+      // Invalid persisted overrides are ignored if cleanup also fails.
+    }
     return null;
   }
 }
 
 export async function setCustomServerUrl(url: string | null): Promise<void> {
-  const sanitized = url ? url.trim().replace(/\/+$/, '') : null;
+  const sanitized = url ? validateCustomServerUrl(url) : null;
   memoryCustomServerUrl = sanitized;
   try {
     if (sanitized) {
@@ -40,6 +57,27 @@ export async function setCustomServerUrl(url: string | null): Promise<void> {
   } catch {
     // Ignore storage errors
   }
+}
+
+function validateCustomServerUrl(value: string): string {
+  const candidate = value.trim().replace(/\/+$/, '');
+  let parsed: URL;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new Error('Server URL must be a valid absolute URL.');
+  }
+  const localHost = ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname.toLowerCase());
+  if (parsed.username || parsed.password || parsed.search || parsed.hash) {
+    throw new Error('Server URL must not contain credentials, a query, or a fragment.');
+  }
+  if (parsed.protocol !== 'https:' && !(localHost && parsed.protocol === 'http:')) {
+    throw new Error('Server URL must use HTTPS. HTTP is allowed only for loopback development servers.');
+  }
+  if (!parsed.pathname.endsWith('/api')) {
+    parsed.pathname = `${parsed.pathname.replace(/\/$/, '')}/api`;
+  }
+  return parsed.toString().replace(/\/$/, '');
 }
 
 export function getEffectiveApiBaseUrl(): string {
@@ -141,7 +179,7 @@ export async function safeStorageSet(key: string, value: string): Promise<void> 
   } catch (secureError) {
     console.warn(`[API] SecureStore setItem failed for ${key}:`, secureError);
     // Never fall back to unencrypted storage for sensitive credentials
-    if (key === TOKEN_KEY || key.includes('token') || key.includes('biometric')) {
+    if (isSensitiveCredentialKey(key)) {
       throw secureError;
     }
   }
@@ -156,6 +194,9 @@ export async function safeStorageSet(key: string, value: string): Promise<void> 
 }
 
 export async function safeStorageGet(key: string): Promise<string | null> {
+  const sensitive = isSensitiveCredentialKey(key);
+  if (sensitive) await discardLegacyCredentialFallback(key);
+
   try {
     const val = await SecureStore.getItemAsync(key);
     if (val !== null) return val;
@@ -163,12 +204,19 @@ export async function safeStorageGet(key: string): Promise<string | null> {
     console.warn(`[API] SecureStore getItem failed for ${key}:`, secureError);
   }
 
+  if (sensitive) return null;
+
   try {
     return await AsyncStorage.getItem(`fallback_${key}`);
   } catch (asyncError) {
     console.warn(`[API] AsyncStorage fallback getItem failed for ${key}:`, asyncError);
     return null;
   }
+}
+
+function isSensitiveCredentialKey(key: string): boolean {
+  const normalized = key.toLowerCase();
+  return key === TOKEN_KEY || normalized.includes('token') || normalized.includes('biometric');
 }
 
 export async function safeStorageDelete(key: string): Promise<void> {

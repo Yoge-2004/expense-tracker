@@ -301,49 +301,7 @@ def health() -> dict:
     except HTTPException:
         return {"status": "degraded", "model_error": _load_error or "model not loaded"}
 
-    aux_status = {}
-    try:
-        merchant_idx = service.get_merchant_index()
-        aux_status["merchant_similarity"] = {
-            "status": "ready",
-            "indexed_count": len(getattr(merchant_idx, "merchants", [])),
-            "vocab_size": len(getattr(getattr(merchant_idx, "vectorizer", None), "vocabulary_", {})),
-        }
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Merchant similarity health check failed: %s", exc)
-        aux_status["merchant_similarity"] = {"status": "error", "error": str(exc)}
-
-    try:
-        dup_model = service.get_duplicate_model()
-        aux_status["duplicate_similarity"] = {
-            "status": "ready",
-            "vocab_size": len(getattr(getattr(dup_model, "vectorizer", None), "vocabulary_", {})),
-        }
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Duplicate similarity health check failed: %s", exc)
-        aux_status["duplicate_similarity"] = {"status": "error", "error": str(exc)}
-
-    try:
-        anomaly_model = service.get_anomaly_model()
-        aux_status["transaction_anomaly"] = {
-            "status": "ready",
-            "model_class": type(getattr(anomaly_model, "model", None)).__name__,
-            "features": list(getattr(anomaly_model, "feature_columns", [])),
-        }
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Transaction anomaly health check failed: %s", exc)
-        aux_status["transaction_anomaly"] = {"status": "error", "error": str(exc)}
-
-    try:
-        forecast_model = service.get_forecast_model()
-        aux_status["spending_forecast"] = {
-            "status": "ready",
-            "model_class": type(getattr(forecast_model, "model", None)).__name__,
-            "features": list(getattr(forecast_model, "feature_columns", [])),
-        }
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Spending forecast health check failed: %s", exc)
-        aux_status["spending_forecast"] = {"status": "error", "error": str(exc)}
+    aux_status = service.registry.auxiliary_status()
 
     return {
         "status": "ok",
