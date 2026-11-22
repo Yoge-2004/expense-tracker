@@ -56,33 +56,33 @@ body {
 }
 
 [data-theme="light"] .auth-form-section {
-  background: rgba(247, 246, 240, 0.76);
+  background: rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-left: 1px solid rgba(0, 0, 0, 0.08);
+  border-left: 1px solid var(--border);
 }
 
 [data-theme="light"] .card,
 [data-theme="light"] .auth-card,
 [data-theme="light"] .recent-transactions,
 [data-theme="light"] .profile-menu {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-color: rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border);
   color: var(--text-main);
   box-shadow:
-    0 10px 30px -5px rgba(var(--primary-rgb), 0.12),
-    0 0 16px rgba(var(--primary-rgb), 0.08);
+    0 20px 45px -12px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(var(--primary-rgb), 0.12);
 }
 
 [data-theme="light"] .metric-card {
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-top-color: rgba(0, 0, 0, 0.08);
-  border-right-color: rgba(0, 0, 0, 0.08);
-  border-bottom-color: rgba(0, 0, 0, 0.08);
+  border-top-color: var(--border);
+  border-right-color: var(--border);
+  border-bottom-color: var(--border);
   color: var(--text-main);
   box-shadow:
     0 10px 30px -5px rgba(var(--primary-rgb), 0.12),
@@ -91,11 +91,11 @@ body {
 
 [data-theme="light"] .float-card,
 [data-theme="light"] .perk-item {
-  background: rgba(255, 255, 255, 0.76);
+  background: var(--container-bg-glass, rgba(255, 255, 255, 0.85));
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid var(--border-accent, rgba(var(--primary-rgb), 0.24));
-  box-shadow: 0 12px 32px -8px rgba(var(--primary-rgb), 0.18);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06);
   color: var(--text-main);
 }
 

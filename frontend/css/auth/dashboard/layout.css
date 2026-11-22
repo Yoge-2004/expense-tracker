@@ -176,8 +176,19 @@
     height: 30px;
   }
 
-  .float-card:nth-child(3) {
-    grid-column: auto;
+  .hero-float-cards:not(.perks-grid) .float-card-1 {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .hero-float-cards:not(.perks-grid) .float-card-2 {
+    grid-column: 1;
+    width: 100%;
+  }
+
+  .hero-float-cards:not(.perks-grid) .float-card-3 {
+    grid-column: 2;
+    width: 100%;
   }
 
   .perks-grid {
@@ -192,8 +203,8 @@
   .perk-item {
     padding: 10px 14px;
     border-radius: 14px;
-    background: var(--card-bg, rgba(23, 26, 20, 0.78));
-    border: 1px solid rgba(236, 231, 216, 0.12);
+    background: var(--container-bg-glass, rgba(23, 26, 20, 0.78));
+    border: 1px solid var(--border);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -212,15 +223,16 @@
 
   .auth-form-section {
     width: 100%;
-    padding: 16px 18px 40px;
+    padding: 20px 20px 48px;
     box-sizing: border-box;
     min-height: auto;
     height: auto;
     overflow-y: visible;
+    border-left: none;
   }
 
   .auth-card {
-    max-width: 100%;
+    max-width: 480px;
     width: 100%;
     margin: 0 auto;
     padding: 32px 24px;
@@ -236,6 +248,26 @@
 }
 
 @media (max-width: 480px) {
+  .auth-top-actions {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .hero-brand {
+    gap: 8px;
+  }
+  .hero-brand-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .hero-brand-name {
+    font-size: 15px;
+  }
+  .hero-back-link {
+    height: 34px;
+    padding: 0 12px;
+    font-size: 12px;
+    gap: 6px;
+  }
   .perks-grid {
     grid-template-columns: 1fr 1fr;
     margin-bottom: 6px;
@@ -265,10 +297,17 @@
     margin-bottom: 16px;
   }
 
-  .hero-float-cards {
+  .hero-float-cards:not(.perks-grid) {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     padding: 0;
+  }
+  .hero-float-cards:not(.perks-grid) .float-card {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
   }
 
   .float-card,
@@ -311,3 +350,29 @@
     overflow: hidden;
   }
 }
+
+/* Prevent floating overlay widgets (calculator, status badges) from occluding auth forms */
+body:has(.auth-page) #floatingCalcContainer,
+body:has(.auth-page) #floatingCalcTrigger,
+body:has(.auth-page) .floating-calc-trigger,
+body:has(.auth-page) #floatingCalcPanel,
+body:has(.auth-page) .floating-calculator-panel {
+  display: none !important;
+}
+
+body:has(.auth-page) .server-status-badge.online,
+.auth-page ~ .server-status-badge.online {
+  display: none !important;
+}
+
+body:has(.auth-page) .server-status-badge.offline,
+.auth-page ~ .server-status-badge.offline {
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: auto;
+  right: auto;
+  z-index: 10000;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+

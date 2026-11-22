@@ -3,8 +3,10 @@
   min-height: 100vh;
   height: auto;
   width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: 1.15fr 1fr;
+  grid-template-columns: minmax(480px, 1.15fr) minmax(420px, 1fr);
   overflow: visible;
   overflow-x: visible;
   overflow-y: visible;

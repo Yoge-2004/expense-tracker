@@ -43,19 +43,20 @@
 /* ── Right Form Panel ── */
 .auth-form-section {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  background: rgba(16, 18, 14, 0.7);
+  background: transparent;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  padding: clamp(32px, 4vh, 48px) clamp(24px, 3.5vw, 48px);
+  padding: clamp(32px, 4.5vh, 60px) clamp(24px, 4vw, 64px);
   min-height: 100vh;
   height: auto;
   overflow: visible;
   overflow-y: visible;
   scrollbar-width: none;
   box-sizing: border-box;
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: 1px solid var(--border);
 }
 
 .auth-form-section::-webkit-scrollbar {
@@ -293,6 +294,11 @@
 
 .btn-full {
   width: 100%;
+  box-sizing: border-box;
+}
+
+.btn-primary.btn-full {
+  width: 100%;
   padding: 15px 24px;
   margin-top: 4px;
   font-size: 15px;
@@ -314,13 +320,52 @@
   box-shadow: 0 8px 24px -4px rgba(var(--primary-rgb), 0.35);
 }
 
-.btn-full:hover {
+.btn-primary.btn-full:hover {
   transform: translateY(-2px);
   box-shadow: 0 14px 32px -4px rgba(var(--primary-rgb), 0.45);
   filter: brightness(1.06);
 }
-.btn-full:active {
+.btn-primary.btn-full:active {
   transform: translateY(0);
+}
+
+.btn-secondary.btn-full {
+  margin-top: 10px;
+}
+
+.btn-biometric {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  height: 44px;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 12px;
+  background: var(--card-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+
+.btn-biometric:hover {
+  background: var(--card-bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+[data-theme="light"] .btn-biometric {
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  color: var(--text-main);
+}
+
+[data-theme="light"] .btn-biometric:hover {
+  background: #e2e8f0;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .auth-divider {
@@ -474,6 +519,17 @@
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.16);
   background: rgba(255, 255, 255, 0.08);
+}
+[data-theme="light"] #googleOAuthBtn.btn-oauth {
+  background: #ffffff !important;
+  border-color: var(--border) !important;
+  color: var(--text-main) !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+}
+[data-theme="light"] #googleOAuthBtn.btn-oauth:hover {
+  background: #f8fafc !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.16) !important;
 }
 #googleOAuthBtn svg,
 #googleOAuthBtn svg.google-g-icon {

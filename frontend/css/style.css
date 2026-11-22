@@ -29,6 +29,8 @@
   --bg-dark: #10120e;
   --card-bg: #171a14;
   --card-bg-hover: #1d2117;
+  --container-bg-glass: rgba(23, 26, 20, 0.82);
+  --container-border-glass: rgba(236, 231, 216, 0.1);
   --text-main: #ece7d8;
   --text-muted: #a8a395;
   --border: rgba(236, 231, 216, 0.08);
@@ -189,6 +191,8 @@
   --bg-dark: #eef1f6;
   --card-bg: #ffffff;
   --card-bg-hover: #ffffff;
+  --container-bg-glass: rgba(255, 255, 255, 0.85);
+  --container-border-glass: rgba(15, 23, 42, 0.1);
   --text-main: #0f172a;
   --text-muted: #475569;
   --border: rgba(15, 23, 42, 0.12);
@@ -358,33 +362,33 @@ body {
 }
 
 [data-theme="light"] .auth-form-section {
-  background: rgba(247, 246, 240, 0.76);
+  background: rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-left: 1px solid rgba(0, 0, 0, 0.08);
+  border-left: 1px solid var(--border);
 }
 
 [data-theme="light"] .card,
 [data-theme="light"] .auth-card,
 [data-theme="light"] .recent-transactions,
 [data-theme="light"] .profile-menu {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-color: rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border);
   color: var(--text-main);
   box-shadow:
-    0 10px 30px -5px rgba(var(--primary-rgb), 0.12),
-    0 0 16px rgba(var(--primary-rgb), 0.08);
+    0 20px 45px -12px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(var(--primary-rgb), 0.12);
 }
 
 [data-theme="light"] .metric-card {
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-top-color: rgba(0, 0, 0, 0.08);
-  border-right-color: rgba(0, 0, 0, 0.08);
-  border-bottom-color: rgba(0, 0, 0, 0.08);
+  border-top-color: var(--border);
+  border-right-color: var(--border);
+  border-bottom-color: var(--border);
   color: var(--text-main);
   box-shadow:
     0 10px 30px -5px rgba(var(--primary-rgb), 0.12),
@@ -393,11 +397,11 @@ body {
 
 [data-theme="light"] .float-card,
 [data-theme="light"] .perk-item {
-  background: rgba(255, 255, 255, 0.76);
+  background: var(--container-bg-glass, rgba(255, 255, 255, 0.85));
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid var(--border-accent, rgba(var(--primary-rgb), 0.24));
-  box-shadow: 0 12px 32px -8px rgba(var(--primary-rgb), 0.18);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06);
   color: var(--text-main);
 }
 
@@ -3786,8 +3790,10 @@ button[type="submit"]:hover {
   min-height: 100vh;
   height: auto;
   width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: 1.15fr 1fr;
+  grid-template-columns: minmax(480px, 1.15fr) minmax(420px, 1fr);
   overflow: visible;
   overflow-x: visible;
   overflow-y: visible;
@@ -3937,6 +3943,7 @@ button[type="submit"]:hover {
   font-weight: 800;
   color: var(--text-main);
   letter-spacing: -0.3px;
+  white-space: nowrap;
 }
 
 .pro-badge {
@@ -3947,6 +3954,8 @@ button[type="submit"]:hover {
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 1px;
+  white-space: nowrap;
+  display: inline-block;
 }
 
 .hero-headline {
@@ -4004,8 +4013,8 @@ button[type="submit"]:hover {
   align-items: center;
   gap: 14px;
   padding: 14px 18px;
-  background: var(--card-bg, rgba(23, 26, 20, 0.78));
-  border: 1px solid rgba(236, 231, 216, 0.12);
+  background: var(--container-bg-glass, rgba(23, 26, 20, 0.78));
+  border: 1px solid var(--border);
   border-radius: 16px;
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
@@ -4146,9 +4155,9 @@ button[type="submit"]:hover {
   border-radius: 999px;
   font-size: 13.5px;
   font-weight: 700;
-  color: #ffffff !important;
-  background: rgba(15, 23, 42, 0.78) !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  color: var(--text-main);
+  background: var(--container-bg-glass, rgba(23, 26, 20, 0.82));
+  border: 1px solid var(--border);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   text-decoration: none;
@@ -4161,68 +4170,46 @@ button[type="submit"]:hover {
   width: fit-content;
   white-space: nowrap;
   flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
 }
 
 .hero-back-link svg {
   flex-shrink: 0;
-  color: #ffffff !important;
-  stroke: #ffffff !important;
+  color: inherit;
+  stroke: currentColor;
   transition: transform 0.2s var(--ease);
 }
 
 .hero-back-link span {
-  color: #ffffff !important;
-  font-weight: 700 !important;
+  color: inherit;
+  font-weight: 700;
 }
 
 .hero-back-link:hover {
-  color: #ffffff !important;
-  border-color: var(--primary) !important;
-  background: rgba(15, 23, 42, 0.95) !important;
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--card-bg-hover, rgba(23, 26, 20, 0.95));
   transform: translateX(-3px);
-  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.45);
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.25);
 }
 
 .hero-back-link:hover svg {
   transform: translateX(-3px);
-  stroke: var(--primary) !important;
-}
-
-.hero-back-link:hover span {
-  color: var(--primary) !important;
+  stroke: var(--primary);
 }
 
 [data-theme="light"] .hero-back-link {
-  color: #0f172a !important;
-  background: #ffffff !important;
-  border: 1.5px solid rgba(15, 23, 42, 0.16) !important;
+  color: var(--text-main);
+  background: #ffffff;
+  border: 1px solid var(--border);
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
-[data-theme="light"] .hero-back-link svg {
-  color: #0f172a !important;
-  stroke: #0f172a !important;
-}
-
-[data-theme="light"] .hero-back-link span {
-  color: #0f172a !important;
-}
-
 [data-theme="light"] .hero-back-link:hover {
-  color: #0f172a !important;
-  border-color: var(--primary) !important;
-  background: #ffffff !important;
+  color: var(--primary);
+  border-color: var(--primary);
+  background: #ffffff;
   box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.25);
-}
-
-[data-theme="light"] .hero-back-link:hover svg {
-  color: #0f172a !important;
-  stroke: #0f172a !important;
-}
-
-[data-theme="light"] .hero-back-link:hover span {
-  color: #0f172a !important;
 }
 
 /* Perk grid */
@@ -4321,19 +4308,20 @@ button[type="submit"]:hover {
 /* ── Right Form Panel ── */
 .auth-form-section {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  background: rgba(16, 18, 14, 0.7);
+  background: transparent;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  padding: clamp(32px, 4vh, 48px) clamp(24px, 3.5vw, 48px);
+  padding: clamp(32px, 4.5vh, 60px) clamp(24px, 4vw, 64px);
   min-height: 100vh;
   height: auto;
   overflow: visible;
   overflow-y: visible;
   scrollbar-width: none;
   box-sizing: border-box;
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: 1px solid var(--border);
 }
 
 .auth-form-section::-webkit-scrollbar {
@@ -4571,6 +4559,11 @@ button[type="submit"]:hover {
 
 .btn-full {
   width: 100%;
+  box-sizing: border-box;
+}
+
+.btn-primary.btn-full {
+  width: 100%;
   padding: 15px 24px;
   margin-top: 4px;
   font-size: 15px;
@@ -4592,13 +4585,52 @@ button[type="submit"]:hover {
   box-shadow: 0 8px 24px -4px rgba(var(--primary-rgb), 0.35);
 }
 
-.btn-full:hover {
+.btn-primary.btn-full:hover {
   transform: translateY(-2px);
   box-shadow: 0 14px 32px -4px rgba(var(--primary-rgb), 0.45);
   filter: brightness(1.06);
 }
-.btn-full:active {
+.btn-primary.btn-full:active {
   transform: translateY(0);
+}
+
+.btn-secondary.btn-full {
+  margin-top: 10px;
+}
+
+.btn-biometric {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  height: 44px;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 12px;
+  background: var(--card-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+
+.btn-biometric:hover {
+  background: var(--card-bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+[data-theme="light"] .btn-biometric {
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  color: var(--text-main);
+}
+
+[data-theme="light"] .btn-biometric:hover {
+  background: #e2e8f0;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .auth-divider {
@@ -4752,6 +4784,17 @@ button[type="submit"]:hover {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.16);
   background: rgba(255, 255, 255, 0.08);
+}
+[data-theme="light"] #googleOAuthBtn.btn-oauth {
+  background: #ffffff !important;
+  border-color: var(--border) !important;
+  color: var(--text-main) !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+}
+[data-theme="light"] #googleOAuthBtn.btn-oauth:hover {
+  background: #f8fafc !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.16) !important;
 }
 #googleOAuthBtn svg,
 #googleOAuthBtn svg.google-g-icon {
@@ -4976,8 +5019,19 @@ button[type="submit"]:hover {
     height: 30px;
   }
 
-  .float-card:nth-child(3) {
-    grid-column: auto;
+  .hero-float-cards:not(.perks-grid) .float-card-1 {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .hero-float-cards:not(.perks-grid) .float-card-2 {
+    grid-column: 1;
+    width: 100%;
+  }
+
+  .hero-float-cards:not(.perks-grid) .float-card-3 {
+    grid-column: 2;
+    width: 100%;
   }
 
   .perks-grid {
@@ -4992,8 +5046,8 @@ button[type="submit"]:hover {
   .perk-item {
     padding: 10px 14px;
     border-radius: 14px;
-    background: var(--card-bg, rgba(23, 26, 20, 0.78));
-    border: 1px solid rgba(236, 231, 216, 0.12);
+    background: var(--container-bg-glass, rgba(23, 26, 20, 0.78));
+    border: 1px solid var(--border);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -5012,15 +5066,16 @@ button[type="submit"]:hover {
 
   .auth-form-section {
     width: 100%;
-    padding: 16px 18px 40px;
+    padding: 20px 20px 48px;
     box-sizing: border-box;
     min-height: auto;
     height: auto;
     overflow-y: visible;
+    border-left: none;
   }
 
   .auth-card {
-    max-width: 100%;
+    max-width: 480px;
     width: 100%;
     margin: 0 auto;
     padding: 32px 24px;
@@ -5036,6 +5091,26 @@ button[type="submit"]:hover {
 }
 
 @media (max-width: 480px) {
+  .auth-top-actions {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .hero-brand {
+    gap: 8px;
+  }
+  .hero-brand-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .hero-brand-name {
+    font-size: 15px;
+  }
+  .hero-back-link {
+    height: 34px;
+    padding: 0 12px;
+    font-size: 12px;
+    gap: 6px;
+  }
   .perks-grid {
     grid-template-columns: 1fr 1fr;
     margin-bottom: 6px;
@@ -5065,10 +5140,17 @@ button[type="submit"]:hover {
     margin-bottom: 16px;
   }
 
-  .hero-float-cards {
+  .hero-float-cards:not(.perks-grid) {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     padding: 0;
+  }
+  .hero-float-cards:not(.perks-grid) .float-card {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
   }
 
   .float-card,
@@ -5110,6 +5192,31 @@ button[type="submit"]:hover {
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+}
+
+/* Prevent floating overlay widgets (calculator, status badges) from occluding auth forms */
+body:has(.auth-page) #floatingCalcContainer,
+body:has(.auth-page) #floatingCalcTrigger,
+body:has(.auth-page) .floating-calc-trigger,
+body:has(.auth-page) #floatingCalcPanel,
+body:has(.auth-page) .floating-calculator-panel {
+  display: none !important;
+}
+
+body:has(.auth-page) .server-status-badge.online,
+.auth-page ~ .server-status-badge.online {
+  display: none !important;
+}
+
+body:has(.auth-page) .server-status-badge.offline,
+.auth-page ~ .server-status-badge.offline {
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: auto;
+  right: auto;
+  z-index: 10000;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
 }
 
 /* --- End of dashboard/layout.css --- */
@@ -5212,8 +5319,8 @@ button[type="submit"]:hover {
   }
 
   .hero-visual-card {
-    background: var(--card-bg, rgba(23, 26, 20, 0.78));
-    border: 1px solid rgba(236, 231, 216, 0.12);
+    background: var(--container-bg-glass, rgba(23, 26, 20, 0.78));
+    border: 1px solid var(--border);
     border-radius: 16px;
     padding: 15px 18px;
     box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.38);
@@ -5437,8 +5544,8 @@ button[type="submit"]:hover {
   }
 
   .hero-quote-card {
-    background: var(--card-bg, rgba(23, 26, 20, 0.78));
-    border: 1px solid rgba(236, 231, 216, 0.1);
+    background: var(--container-bg-glass, rgba(23, 26, 20, 0.78));
+    border: 1px solid var(--border);
     border-radius: 14px;
     padding: 13px 16px;
     backdrop-filter: blur(16px) saturate(160%);
@@ -5569,14 +5676,15 @@ button[type="submit"]:hover {
   }
 
   [data-theme="light"] .hero-visual-card {
-    background: rgba(255, 255, 255, 0.78);
-    border-color: rgba(16, 18, 14, 0.1);
-    box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.08);
+    background: var(--container-bg-glass, rgba(255, 255, 255, 0.85));
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06);
   }
 
   [data-theme="light"] .hero-quote-card {
-    background: rgba(255, 255, 255, 0.68);
-    border-color: rgba(16, 18, 14, 0.08);
+    background: var(--container-bg-glass, rgba(255, 255, 255, 0.85));
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06);
   }
 
   [data-theme="light"] .hero-budget-track {
@@ -14678,8 +14786,8 @@ body {
 
   .hero-float-cards .float-card:nth-child(3):last-child {
     grid-column: 1 / -1;
-    max-width: 220px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
   }
 
   .float-card,

@@ -20,6 +20,8 @@
   --bg-dark: #10120e;
   --card-bg: #171a14;
   --card-bg-hover: #1d2117;
+  --container-bg-glass: rgba(23, 26, 20, 0.82);
+  --container-border-glass: rgba(236, 231, 216, 0.1);
   --text-main: #ece7d8;
   --text-muted: #a8a395;
   --border: rgba(236, 231, 216, 0.08);

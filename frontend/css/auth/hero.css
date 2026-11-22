@@ -129,6 +129,7 @@
   font-weight: 800;
   color: var(--text-main);
   letter-spacing: -0.3px;
+  white-space: nowrap;
 }
 
 .pro-badge {
@@ -139,6 +140,8 @@
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 1px;
+  white-space: nowrap;
+  display: inline-block;
 }
 
 .hero-headline {
@@ -196,8 +199,8 @@
   align-items: center;
   gap: 14px;
   padding: 14px 18px;
-  background: var(--card-bg, rgba(23, 26, 20, 0.78));
-  border: 1px solid rgba(236, 231, 216, 0.12);
+  background: var(--container-bg-glass, rgba(23, 26, 20, 0.78));
+  border: 1px solid var(--border);
   border-radius: 16px;
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
@@ -338,9 +341,9 @@
   border-radius: 999px;
   font-size: 13.5px;
   font-weight: 700;
-  color: #ffffff !important;
-  background: rgba(15, 23, 42, 0.78) !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  color: var(--text-main);
+  background: var(--container-bg-glass, rgba(23, 26, 20, 0.82));
+  border: 1px solid var(--border);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   text-decoration: none;
@@ -353,68 +356,46 @@
   width: fit-content;
   white-space: nowrap;
   flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
 }
 
 .hero-back-link svg {
   flex-shrink: 0;
-  color: #ffffff !important;
-  stroke: #ffffff !important;
+  color: inherit;
+  stroke: currentColor;
   transition: transform 0.2s var(--ease);
 }
 
 .hero-back-link span {
-  color: #ffffff !important;
-  font-weight: 700 !important;
+  color: inherit;
+  font-weight: 700;
 }
 
 .hero-back-link:hover {
-  color: #ffffff !important;
-  border-color: var(--primary) !important;
-  background: rgba(15, 23, 42, 0.95) !important;
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--card-bg-hover, rgba(23, 26, 20, 0.95));
   transform: translateX(-3px);
-  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.45);
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.25);
 }
 
 .hero-back-link:hover svg {
   transform: translateX(-3px);
-  stroke: var(--primary) !important;
-}
-
-.hero-back-link:hover span {
-  color: var(--primary) !important;
+  stroke: var(--primary);
 }
 
 [data-theme="light"] .hero-back-link {
-  color: #0f172a !important;
-  background: #ffffff !important;
-  border: 1.5px solid rgba(15, 23, 42, 0.16) !important;
+  color: var(--text-main);
+  background: #ffffff;
+  border: 1px solid var(--border);
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
-[data-theme="light"] .hero-back-link svg {
-  color: #0f172a !important;
-  stroke: #0f172a !important;
-}
-
-[data-theme="light"] .hero-back-link span {
-  color: #0f172a !important;
-}
-
 [data-theme="light"] .hero-back-link:hover {
-  color: #0f172a !important;
-  border-color: var(--primary) !important;
-  background: #ffffff !important;
+  color: var(--primary);
+  border-color: var(--primary);
+  background: #ffffff;
   box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.25);
-}
-
-[data-theme="light"] .hero-back-link:hover svg {
-  color: #0f172a !important;
-  stroke: #0f172a !important;
-}
-
-[data-theme="light"] .hero-back-link:hover span {
-  color: #0f172a !important;
 }
 
 /* Perk grid */

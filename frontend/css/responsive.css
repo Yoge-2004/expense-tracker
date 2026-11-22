@@ -468,8 +468,8 @@ body {
 
   .hero-float-cards .float-card:nth-child(3):last-child {
     grid-column: 1 / -1;
-    max-width: 220px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
   }
 
   .float-card,
