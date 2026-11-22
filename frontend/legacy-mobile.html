@@ -21,7 +21,7 @@
 
   <style type="text/css">
     /* ==========================================================================
-       Ledger & Lumina Mobile Edition (CSS 2.1 & Retro-WebKit Compatible)
+       ExpenseTracker Pro — Lite & Feature Mobile Edition (CSS 2.1 & Retro-WebKit Compatible)
        Strictly zero unsupported CSS features; graceful degradation on retro engines.
        Color Palette: Obsidian (#10120e), Imperial Gold (#c79a3e), Sage Emerald (#10b981)
        ========================================================================== */
@@ -697,6 +697,41 @@
       border-color: rgba(15, 23, 42, 0.2);
       color: #0f172a;
     }
+    [data-theme="light"] .top-header {
+      background-color: #ffffff !important;
+      border-bottom-color: rgba(15, 23, 42, 0.12) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    [data-theme="light"] .keypad-strip {
+      background-color: #ffffff !important;
+      border-color: rgba(15, 23, 42, 0.12) !important;
+      color: #475569 !important;
+    }
+    [data-theme="light"] .account-bar {
+      background-color: #ffffff !important;
+      border-color: rgba(15, 23, 42, 0.12) !important;
+      color: #475569 !important;
+    }
+    [data-theme="light"] .account-text {
+      color: #475569 !important;
+    }
+    [data-theme="light"] .account-btn {
+      background-color: #f1f5f9 !important;
+      border-color: rgba(15, 23, 42, 0.15) !important;
+      color: #0f172a !important;
+    }
+    [data-theme="light"] #emptyState,
+    [data-theme="light"] .empty-state {
+      background-color: #ffffff !important;
+      border: 1px dashed rgba(15, 23, 42, 0.15) !important;
+      color: #64748b !important;
+    }
+    [data-theme="light"] .search-input,
+    [data-theme="light"] .filter-select {
+      background-color: #ffffff !important;
+      border-color: rgba(15, 23, 42, 0.2) !important;
+      color: #0f172a !important;
+    }
 
     .fp-lsk {
       float: left;
@@ -1075,7 +1110,7 @@
 
   <!-- Top Navigation Header -->
   <div class="top-header">
-    <div class="brand-title"><span class="brand-accent-dot">&#9670;</span> Ledger <span>&amp;</span> Lumina</div>
+    <div class="brand-title"><span class="brand-accent-dot">&#9670;</span> ExpenseTracker <span>PRO</span> <span style="font-size:10px; opacity:0.8; font-weight:600;">LITE</span></div>
     <div class="header-actions">
       <span class="badge-os" id="deviceBadge">Mobile 1.0</span>
       <a href="index.html?nomobile=1" class="badge-os badge-desktop-link" id="linkDesktop">Desktop &rarr;</a>
@@ -1407,7 +1442,7 @@
   <!-- Modal: Sign in -->
   <div class="modal-overlay" id="loginModal">
     <div class="modal-box">
-      <div style="font-size:14px; font-weight:800; color:#c79a3e; letter-spacing:0.3px; margin-bottom:10px; border-bottom:1px solid rgba(199,154,62,0.2); padding-bottom:6px;">Sign in &bull; Ledger &amp; Lumina</div>
+      <div style="font-size:14px; font-weight:800; color:#c79a3e; letter-spacing:0.3px; margin-bottom:10px; border-bottom:1px solid rgba(199,154,62,0.2); padding-bottom:6px;">Sign in &bull; ExpenseTracker Pro</div>
       <form id="formLogin">
         <div class="form-group">
           <label class="form-label" for="loginEmail">Email or username</label>
