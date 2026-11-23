@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.2</version>
+        <version>4.2.0</version>
         <relativePath/>
     </parent>
 
@@ -47,10 +47,10 @@
         <postgresql.version>42.7.14</postgresql.version>
         <snakeyaml.version>2.7</snakeyaml.version>
         <junit-jupiter.version>6.1.3</junit-jupiter.version>
-        <cucumber.version>8.0.4</cucumber.version>
+        <cucumber.version>8.1.0</cucumber.version>
         <rest-assured.version>6.3.0</rest-assured.version>
         <groovy.version>6.0.0</groovy.version>
-        <sonar-maven-plugin.version>5.8.0.7211</sonar-maven-plugin.version>
+        <sonar-maven-plugin.version>5.9.0.7382</sonar-maven-plugin.version>
         <sonar.projectKey>expense-tracker</sonar.projectKey>
         <sonar.projectName>Expense Tracker System</sonar.projectName>
         <logback.version>1.6.6</logback.version>
