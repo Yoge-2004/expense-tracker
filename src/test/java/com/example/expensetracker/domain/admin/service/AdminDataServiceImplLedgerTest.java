@@ -14,7 +14,7 @@ import com.example.expensetracker.domain.income.repository.IncomeRepository;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
 import com.example.expensetracker.infrastructure.resilience.DatabaseSnapshotService;
-import com.example.expensetracker.infrastructure.resilience.HuggingFaceDatabaseFailoverService;
+import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -54,7 +54,8 @@ class AdminDataServiceImplLedgerTest {
                 userRepository,
                 categoryRepository,
                 mock(DatabaseSnapshotService.class),
-                mock(HuggingFaceDatabaseFailoverService.class),
+                mock(AdminAuditService.class),
+                mock(StepUpPinVerifier.class),
                 objectMapper);
 
         when(expenseRepository.findAllWithCategory(any(Pageable.class))).thenReturn(Page.empty());

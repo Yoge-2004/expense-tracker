@@ -32,7 +32,9 @@ import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
 import com.example.expensetracker.infrastructure.exception.ResourceNotFoundException;
 import com.example.expensetracker.infrastructure.resilience.DatabaseSnapshotService;
-import com.example.expensetracker.infrastructure.resilience.HuggingFaceDatabaseFailoverService;
+import com.example.expensetracker.infrastructure.exception.BadRequestException;
+import com.example.expensetracker.infrastructure.exception.ForbiddenException;
+import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
 
 
 
@@ -52,7 +54,8 @@ public class AdminDataServiceImpl implements AdminDataService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final DatabaseSnapshotService snapshotService;
-    private final HuggingFaceDatabaseFailoverService failoverService;
+    private final AdminAuditService auditService;
+    private final StepUpPinVerifier stepUpPinVerifier;
     private final ObjectMapper objectMapper;
 
     /** Rows read per query when streaming the platform ledger. */
@@ -153,27 +156,36 @@ public class AdminDataServiceImpl implements AdminDataService {
     }
 
     @Override
-    public byte[] exportSqliteSnapshot() throws IOException, SQLException {
+    public Path createSqliteSnapshotFile() throws IOException, SQLException {
         Path temp = Files.createTempFile("et_snapshot_", ".sqlite");
         try {
             int rows = snapshotService.exportCurrentDatabase(temp);
             log.info("Administrative snapshot generated with {} rows at {}", rows, temp);
-            return Files.readAllBytes(temp);
-        } finally {
+            return temp;
+        } catch (IOException | SQLException | RuntimeException e) {
             Files.deleteIfExists(temp);
+            throw e;
         }
     }
 
     @Override
-    public Map<String, Object> triggerManualBackup() {
-        boolean success = failoverService.forceBackupCurrentDatabase();
-        Map<String, Object> diag = failoverService.getDiagnostics();
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("success", success);
-        response.put("status", success ? "success" : "error");
-        response.put("message", success ? "Database snapshot committed and pushed to Hugging Face Space repository."
-                : "Snapshot backup skipped or failed. Reason: " + diag.get("lastError"));
-        response.put("diagnostics", diag);
-        return response;
+    public void authorizeBulkExport(User actor, String stepUpPin, String action, String ipAddress, String userAgent) {
+        if (actor == null || !actor.isSuperAdmin()) {
+            throw new ForbiddenException("Only a Super Admin may export platform data");
+        }
+        if (stepUpPin == null || stepUpPin.isBlank()) {
+            throw new BadRequestException("Security PIN is required to export platform data");
+        }
+        stepUpPinVerifier.verify(actor, stepUpPin);
+
+        auditService.recordAction(
+                actor.getId(),
+                actor.getUsername() != null ? actor.getUsername() : actor.getEmail(),
+                action,
+                "PLATFORM_DATA",
+                action,
+                "Bulk platform export authorised",
+                ipAddress,
+                userAgent);
     }
 }

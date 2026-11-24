@@ -15,6 +15,7 @@ import java.util.Map;
 
 import com.example.expensetracker.domain.admin.dto.AdminDatabaseTopologyDto;
 import com.example.expensetracker.domain.user.model.User;
+import com.example.expensetracker.infrastructure.exception.BadRequestException;
 import com.example.expensetracker.infrastructure.exception.ForbiddenException;
 import com.example.expensetracker.infrastructure.resilience.FallbackRecoveryCoordinator;
 import com.example.expensetracker.infrastructure.resilience.HuggingFaceDatabaseFailoverService;
@@ -199,9 +200,10 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
             throw new ForbiddenException("Only a Super Admin is authorized to trigger manual failover snapshots");
         }
 
-        if (stepUpPin != null && !stepUpPin.isBlank()) {
-            stepUpPinVerifier.verify(actor, stepUpPin);
+        if (stepUpPin == null || stepUpPin.isBlank()) {
+            throw new BadRequestException("Security PIN is required to trigger a failover snapshot");
         }
+        stepUpPinVerifier.verify(actor, stepUpPin);
 
         log.info("Admin actor={} triggered on-demand Hugging Face backup snapshot", actor.getEmail());
         boolean success = failoverService.forceBackupCurrentDatabase();
