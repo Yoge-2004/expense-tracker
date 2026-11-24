@@ -1,5 +1,6 @@
 package com.example.expensetracker.domain.ai.api;
 
+import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ import com.example.expensetracker.infrastructure.security.JwtService;
                 classes = JwtAuthenticationFilter.class))
 @AutoConfigureMockMvc(addFilters = false)
 class MlInferenceControllerTest {
+    @MockitoBean BrowserSessionCookieService browserSessionCookieService;
 
     @Autowired private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();

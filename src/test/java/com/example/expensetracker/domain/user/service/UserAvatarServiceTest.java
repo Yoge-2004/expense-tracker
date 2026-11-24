@@ -60,7 +60,7 @@ class UserAvatarServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "test.pdf", "application/pdf", new byte[]{1, 2, 3});
         assertThatThrownBy(() -> userAvatarService.storeAvatar(1L, file))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Only image files");
+                .hasMessageContaining("valid JPEG, PNG, or GIF image");
     }
 
     @Test

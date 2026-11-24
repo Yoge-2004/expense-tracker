@@ -1,5 +1,6 @@
 package com.example.expensetracker.infrastructure.resilience;
 
+import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ import com.example.expensetracker.infrastructure.security.RateLimiterService;
 @WebMvcTest(controllers = SyncController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class SyncControllerTest {
+    @MockitoBean BrowserSessionCookieService browserSessionCookieService;
 
     @Autowired MockMvc mockMvc;
     @Autowired SyncController controller;

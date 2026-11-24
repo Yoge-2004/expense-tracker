@@ -1,5 +1,7 @@
 package com.example.expensetracker.infrastructure.health;
 
+import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
+import com.example.expensetracker.infrastructure.resilience.FallbackRecoveryCoordinator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,8 @@ import com.example.expensetracker.infrastructure.security.JwtService;
                 classes = JwtAuthenticationFilter.class))
 @AutoConfigureMockMvc(addFilters = false)
 class HealthControllerTest {
+    @MockitoBean FallbackRecoveryCoordinator fallbackRecoveryCoordinator;
+    @MockitoBean BrowserSessionCookieService browserSessionCookieService;
 
     @Autowired
     private MockMvc mockMvc;

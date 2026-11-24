@@ -1,5 +1,6 @@
 package com.example.expensetracker.domain.admin.api;
 
+import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,6 +59,7 @@ import com.example.expensetracker.infrastructure.security.JwtService;
 @WebMvcTest(AdminController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class AdminControllerTest {
+    @MockitoBean BrowserSessionCookieService browserSessionCookieService;
 
     @Autowired MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
