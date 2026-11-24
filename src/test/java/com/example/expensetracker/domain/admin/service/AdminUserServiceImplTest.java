@@ -3,7 +3,6 @@ package com.example.expensetracker.domain.admin.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -33,6 +32,7 @@ import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
 import com.example.expensetracker.infrastructure.exception.BadRequestException;
 import com.example.expensetracker.infrastructure.exception.ForbiddenException;
+import com.example.expensetracker.domain.user.service.UserService;
 import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
 
 
@@ -50,7 +50,10 @@ class AdminUserServiceImplTest {
     @Mock PasswordEncoder passwordEncoder;
     @Mock StepUpPinVerifier stepUpPinVerifier;
 
-    @InjectMocks AdminUserServiceImpl adminUserService;
+    @Mock UserService userService;
+
+    // The authorisation rules are part of what these tests assert (Forbidden / BadRequest), so the real policy is used.
+    private AdminUserServiceImpl adminUserService;
 
     private User superAdmin;
     private User normalAdmin;
@@ -58,6 +61,10 @@ class AdminUserServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        adminUserService = new AdminUserServiceImpl(
+                userRepository, userService, expenseRepository, incomeRepository, deviceTokenRepository,
+                auditService, metricsService, passwordEncoder, stepUpPinVerifier,
+                new AdminAuthorizationPolicy(stepUpPinVerifier));
         superAdmin = User.builder()
                 .id(1L)
                 .name("Super Admin")
