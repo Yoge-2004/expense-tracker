@@ -50,11 +50,15 @@ public class MonthlyHtmlReportGenerator {
      */
     public String buildMonthlyReportHtml(String userName, MonthlyReportDto report, Long userId) {
         String rawCurr = report.currency() != null ? report.currency() : "INR";
+        // userName and the currency code are user-controlled and are interpolated into HTML below.
+        String safeUserName = escapeHtml(userName != null && !userName.isBlank() ? userName : "User");
+        String safePeriod = escapeHtml(report.period());
+        String safeCurrency = escapeHtml(rawCurr);
         String currSymbol = "INR".equalsIgnoreCase(rawCurr) ? "₹"
                 : ("USD".equalsIgnoreCase(rawCurr) ? "$"
                 : ("EUR".equalsIgnoreCase(rawCurr) ? "€"
                 : ("GBP".equalsIgnoreCase(rawCurr) ? "£"
-                : ("JPY".equalsIgnoreCase(rawCurr) ? "¥" : rawCurr))));
+                : ("JPY".equalsIgnoreCase(rawCurr) ? "¥" : safeCurrency))));
 
         long effectiveUserId = userId != null ? userId : 1L;
         String refCode = String.format("ET-STMT-%04d%02d-%04d", report.year(), report.month(), effectiveUserId % 10000L);
@@ -798,15 +802,15 @@ public class MonthlyHtmlReportGenerator {
             </body>
             </html>
             """.formatted(
-                report.period(),
+                safePeriod,
                 refCode,
                 generationDate,
-                userName != null ? userName : "User",
-                report.period(),
-                rawCurr,
+                safeUserName,
+                safePeriod,
+                safeCurrency,
                 currSymbol,
-                report.period(),
-                userName != null ? userName : "User",
+                safePeriod,
+                safeUserName,
                 currSymbol,
                 formatCurrencyAmount(report.totalOutflow()),
                 report.transactionCount(),
@@ -853,8 +857,8 @@ public class MonthlyHtmlReportGenerator {
                       </tbody>
                     </table>
                     """.formatted(topExpenseRows.toString()) : "",
-                userName != null ? userName : "User",
-                report.period(),
+                safeUserName,
+                safePeriod,
                 generationDate
             );
     }

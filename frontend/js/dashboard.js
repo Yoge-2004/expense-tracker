@@ -4414,6 +4414,9 @@ function executeMonthlyReportPrint() {
     printFrame = document.createElement("iframe");
     printFrame.id = "hiddenMonthlyReportPrintFrame";
     printFrame.setAttribute("aria-hidden", "true");
+    // The report is server-rendered HTML that contains user-supplied text. Without a sandbox, a script in it would
+    // run with this page's origin; allow-same-origin (no allow-scripts) keeps document.write/print working only.
+    printFrame.setAttribute("sandbox", "allow-same-origin allow-modals");
     printFrame.style.position = "fixed";
     printFrame.style.right = "0";
     printFrame.style.bottom = "0";

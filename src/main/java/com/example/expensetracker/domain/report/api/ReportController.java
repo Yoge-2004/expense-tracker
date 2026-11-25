@@ -92,6 +92,12 @@ public class ReportController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "inline; filename=\"financial-report-" + y + "-" + m + ".html\"")
+                // The report embeds user-supplied text. It needs no script, so forbid all of it
+                // (sandbox also gives the document an opaque origin if it is opened directly).
+                .header("Content-Security-Policy",
+                        "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; "
+                                + "base-uri 'none'; form-action 'none'; sandbox")
+                .header("X-Content-Type-Options", "nosniff")
                 .body(html);
     }
 
