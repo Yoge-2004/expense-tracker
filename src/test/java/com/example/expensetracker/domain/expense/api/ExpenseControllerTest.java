@@ -160,7 +160,7 @@ class ExpenseControllerTest {
         Expense updated = expense(42L, new BigDecimal("225.00"), "Lunch + dessert",
                 LocalDate.of(2026, 9, 1), food);
         when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(food));
+        when(categoryService.getCategoryById(1L)).thenReturn(food);
         when(expenseService.updateExpense(eq(42L), any(Expense.class), same(user))).thenReturn(updated);
 
         mockMvc.perform(put("/api/expenses/42/user/7")
@@ -188,7 +188,7 @@ class ExpenseControllerTest {
         Category foreignCategory = Category.builder().id(9L).name("Private").user(someoneElse).build();
 
         when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(categoryRepository.findById(9L)).thenReturn(Optional.of(foreignCategory));
+        when(categoryService.getCategoryById(9L)).thenReturn(foreignCategory);
 
         mockMvc.perform(put("/api/expenses/42/user/7")
                         .contentType(MediaType.APPLICATION_JSON)

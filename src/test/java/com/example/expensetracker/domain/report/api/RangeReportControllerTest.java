@@ -51,7 +51,20 @@ class RangeReportControllerTest {
     @Mock UserSecurity security;
     @Spy ExecutiveExcelReportGenerator excelReportGenerator = new ExecutiveExcelReportGenerator();
     @Spy ExecutivePdfReportGenerator pdfReportGenerator = new ExecutivePdfReportGenerator();
-    @InjectMocks RangeReportController controller;
+    RangeReportController controller;
+
+    /**
+     * RangeReportController now delegates report assembly to ExecutiveReportService instead of reading
+     * the repositories itself, so the real implementation is wired over the mocked repositories.
+     */
+    @org.junit.jupiter.api.BeforeEach
+    void wireController() {
+        controller = new RangeReportController(
+                new com.example.expensetracker.domain.report.service.ExecutiveReportServiceImpl(
+                        expenses, incomes, savingsGoals, recurringExpenses, budgets),
+                users, security, excelReportGenerator, pdfReportGenerator,
+                new com.example.expensetracker.domain.report.service.ReportExportRegistry(java.util.List.of()));
+    }
 
     @Test
     void invalidFromDateFormat_screamsIllegalArgumentException() {

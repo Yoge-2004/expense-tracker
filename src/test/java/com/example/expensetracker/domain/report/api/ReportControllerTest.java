@@ -1,7 +1,6 @@
 package com.example.expensetracker.domain.report.api;
 
 import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
-import com.example.expensetracker.domain.report.service.FinancialStatementExportService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +42,6 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
                 classes = JwtAuthenticationFilter.class))
 @AutoConfigureMockMvc(addFilters = false)
 class ReportControllerTest {
-    @MockitoBean FinancialStatementExportService financialStatementExportService;
     @MockitoBean BrowserSessionCookieService browserSessionCookieService;
 
     @Autowired private MockMvc mockMvc;
