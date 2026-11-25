@@ -34,9 +34,29 @@ class FallbackRecoveryCoordinatorTest {
 
     private final AtomicBoolean primaryDown = new AtomicBoolean(false);
     private JdbcDataSource primaryRaw;
+    private JdbcDataSource fallbackRaw;
     private ResilientRoutingDataSource routing;
     private DatabaseSnapshotServiceImpl snapshots;
     private FallbackRecoveryCoordinator coordinator;
+
+    /**
+     * The fallback is an H2 file database opened with AUTO_SERVER, whose lock file is rewritten by a background
+     * thread for as long as the database is open. Without an explicit shutdown that thread races JUnit's @TempDir
+     * cleanup and the run fails with "Failed to close extension context".
+     */
+    @org.junit.jupiter.api.AfterEach
+    void shutDownFallbackDatabase() {
+        if (routing != null) {
+            routing.close();
+        }
+        if (fallbackRaw != null) {
+            try (Connection c = fallbackRaw.getConnection(); java.sql.Statement s = c.createStatement()) {
+                s.execute("SHUTDOWN");
+            } catch (Exception ignored) {
+                // already closed
+            }
+        }
+    }
 
     private void start() throws Exception {
         primaryRaw = new JdbcDataSource();
@@ -45,7 +65,7 @@ class FallbackRecoveryCoordinatorTest {
         primaryRaw.setPassword("");
 
         Path fallbackFile = tmp.resolve("fallback");
-        JdbcDataSource fallbackRaw = new JdbcDataSource();
+        fallbackRaw = new JdbcDataSource();
         fallbackRaw.setURL("jdbc:h2:file:" + fallbackFile + ";MODE=PostgreSQL;AUTO_SERVER=TRUE");
         fallbackRaw.setUser("sa");
         fallbackRaw.setPassword("");
