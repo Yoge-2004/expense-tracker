@@ -312,10 +312,11 @@
             document.getElementById("metricActiveUsersSub").textContent = `${(summary.activeUsers || 0).toLocaleString()} Active`;
             document.getElementById("metricLockedUsers").textContent = (summary.lockedUsers || 0).toLocaleString();
 
-            document.getElementById("metricExpenseAmount").textContent = formatCurrency(summary.totalExpenseVolume);
-            document.getElementById("metricExpenseCountSub").textContent = `${(summary.totalExpenseCount || 0).toLocaleString()} debits`;
+            // Field names mirror AdminSummaryMetricsDto (totalExpensesAmount / totalExpensesCount / totalIncomesAmount).
+            document.getElementById("metricExpenseAmount").textContent = formatCurrency(summary.totalExpensesAmount);
+            document.getElementById("metricExpenseCountSub").textContent = `${(summary.totalExpensesCount || 0).toLocaleString()} debits`;
 
-            document.getElementById("metricIncomeAmount").textContent = formatCurrency(summary.totalIncomeVolume);
+            document.getElementById("metricIncomeAmount").textContent = formatCurrency(summary.totalIncomesAmount);
 
             // Update badge on nav tab
             const userBadge = document.getElementById("navUsersCount");
@@ -544,12 +545,18 @@
             data.content.forEach(u => {
                 const tr = document.createElement("tr");
 
+                // A locked account outranks a disabled one; both outrank "Active".
                 const isLocked = u.accountLocked;
+                const isDisabled = u.enabled === false;
                 const statusHtml = isLocked
                     ? `<span class="status-badge badge-subs">● Locked</span>`
-                    : `<span class="status-badge badge-success">● Active</span>`;
+                    : isDisabled
+                        ? `<span class="status-badge badge-warning">● Disabled</span>`
+                        : `<span class="status-badge badge-success">● Active</span>`;
 
-                const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—";
+                const dateStr = u.createdAt
+                    ? new Date(u.createdAt).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
+                    : "—";
 
                 tr.innerHTML = `
                     <td class="admin-td-mono">#${escapeHtml(u.id)}</td>
@@ -630,8 +637,13 @@
             roleBadge.textContent = d.role;
 
             const statusBadge = document.getElementById("drawerStatusBadge");
-            statusBadge.className = d.accountLocked ? "status-badge badge-subs" : "status-badge badge-success";
-            statusBadge.textContent = d.accountLocked ? "● Account Locked" : "● Account Active";
+            const drawerDisabled = d.enabled === false;
+            statusBadge.className = d.accountLocked
+                ? "status-badge badge-subs"
+                : drawerDisabled ? "status-badge badge-warning" : "status-badge badge-success";
+            statusBadge.textContent = d.accountLocked
+                ? "● Account Locked"
+                : drawerDisabled ? "● Account Disabled" : "● Account Active";
 
             document.getElementById("drawerHasPin").textContent = d.hasSecurityPin ? "Configured & Active" : "Not Set";
             document.getElementById("drawerFailedPin").textContent = `${d.failedPinAttempts || 0} / 5 attempts`;
@@ -2309,23 +2321,30 @@
             loadPlatformDatabase();
         });
 
-        document.getElementById("exportLedgerJsonBtn")?.addEventListener("click", async () => {
-            try {
-                showToast("Generating multi-tenant ledger export…", "info");
-                const data = await apiRequest("/admin/data/export-ledger");
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-                const downloadUrl = window.URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = downloadUrl;
-                a.download = `platform-ledger-export-${Date.now()}.json`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(downloadUrl);
-                showToast("Full platform ledger JSON exported!", "success");
-            } catch (err) {
-                showToast("Export failed: " + err.message, "error");
-            }
+        // Bulk exports copy every user's data, so the server requires a Super Admin, the
+        // operator's PIN, and writes an audit entry. They are POSTs and are saved from a Blob.
+        document.getElementById("exportLedgerJsonBtn")?.addEventListener("click", () => {
+            triggerStepUpVerification({
+                title: "Export Full Platform Ledger",
+                desc: "Downloads every user's expenses, incomes and categories as one JSON file. The export is recorded in the compliance audit trail. Requires 6-digit Security PIN.",
+                onConfirm: async (pin) => {
+                    showToast("Generating multi-tenant ledger export…", "info");
+                    await downloadProtectedExport("/admin/database/export/json", pin, `platform-ledger-export-${Date.now()}.json`);
+                    showToast("Full platform ledger JSON exported!", "success");
+                }
+            });
+        });
+
+        document.getElementById("downloadSnapshotSqliteBtn")?.addEventListener("click", () => {
+            triggerStepUpVerification({
+                title: "Download Database Snapshot",
+                desc: "Downloads a portable SQLite copy of the entire platform database. The download is recorded in the compliance audit trail. Requires 6-digit Security PIN.",
+                onConfirm: async (pin) => {
+                    showToast("Preparing database snapshot…", "info");
+                    await downloadProtectedExport("/admin/database/snapshot/download", pin, "expense_tracker_snapshot.sqlite");
+                    showToast("Database snapshot downloaded", "success");
+                }
+            });
         });
 
         // Drawer Ledger Tab Switchers
@@ -2501,6 +2520,37 @@
                 }
             });
         });
+    }
+
+    /**
+     * POSTs the operator's PIN to a protected export endpoint and saves the response as a file.
+     * Throws an Error carrying the server's message when the request is refused, so the PIN
+     * dialog can show it instead of saving an error body as if it were the export.
+     */
+    async function downloadProtectedExport(path, pin, filename) {
+        const apiBase = window.API_BASE_URL || (typeof window !== "undefined" && window.location.protocol !== "file:" ? `${window.location.origin}/api` : "http://localhost:8080/api");
+        const res = await window.BrowserSession.request(`${apiBase}${path}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ stepUpPin: pin })
+        });
+        if (!res.ok) {
+            let message = `Export failed (HTTP ${res.status})`;
+            try {
+                const err = await res.json();
+                message = err.message || err.error || message;
+            } catch (_ignored) { /* the error body was not JSON */ }
+            throw new Error(message);
+        }
+        const blob = await res.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(downloadUrl);
     }
 
     function triggerStepUpVerification(opts) {

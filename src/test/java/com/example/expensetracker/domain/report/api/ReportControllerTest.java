@@ -1,5 +1,6 @@
 package com.example.expensetracker.domain.report.api;
 
+import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,7 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
                 classes = JwtAuthenticationFilter.class))
 @AutoConfigureMockMvc(addFilters = false)
 class ReportControllerTest {
+    @MockitoBean BrowserSessionCookieService browserSessionCookieService;
 
     @Autowired private MockMvc mockMvc;
 
@@ -150,16 +152,13 @@ class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/reports/user/{userId}/export/excel delegates to range report controller")
+    @DisplayName("GET /api/reports/user/{userId}/export/excel streams the financial statement workbook")
     void testExportExcel() throws Exception {
         byte[] dummyBytes = "DummyExcelData".getBytes();
-        ResponseEntity<byte[]> mockResponse = ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"ExpenseTracker_Executive_Dashboard.xlsx\"")
-                .body(dummyBytes);
-
-        when(rangeReportController.excel(eq(1L), isNull(), isNull(), eq("INR")))
-                .thenReturn(mockResponse);
+        com.example.expensetracker.domain.user.model.User user = new com.example.expensetracker.domain.user.model.User();
+        user.setId(1L);
+        when(userService.findById(1L)).thenReturn(java.util.Optional.of(user));
+        when(exportService.exportFinancialStatementExcel(user, "INR")).thenReturn(dummyBytes);
 
         mockMvc.perform(get("/api/reports/user/1/export/excel"))
                 .andExpect(status().isOk())
@@ -167,19 +166,17 @@ class ReportControllerTest {
                         "attachment; filename=\"financial-summary.xlsx\""))
                 .andExpect(content().bytes(dummyBytes));
 
-        verify(rangeReportController).excel(1L, null, null, "INR");
+        verify(exportService).exportFinancialStatementExcel(user, "INR");
     }
 
     @Test
-    @DisplayName("GET /api/reports/user/{userId}/export/pdf delegates to range report controller with currency param")
+    @DisplayName("GET /api/reports/user/{userId}/export/pdf streams the financial statement with the requested currency")
     void testExportPdf() throws Exception {
         byte[] dummyPdfBytes = "%PDF-1.4 DummyPdf".getBytes();
-        ResponseEntity<byte[]> mockResponse = ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"ExpenseTracker_Executive_Report.pdf\"")
-                .body(dummyPdfBytes);
-
-        when(rangeReportController.pdf(eq(1L), isNull(), isNull(), eq("USD")))
-                .thenReturn(mockResponse);
+        com.example.expensetracker.domain.user.model.User user = new com.example.expensetracker.domain.user.model.User();
+        user.setId(1L);
+        when(userService.findById(1L)).thenReturn(java.util.Optional.of(user));
+        when(exportService.exportFinancialStatementPdf(user, "USD")).thenReturn(dummyPdfBytes);
 
         mockMvc.perform(get("/api/reports/user/1/export/pdf")
                         .param("currency", "USD"))
@@ -189,6 +186,6 @@ class ReportControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_PDF))
                 .andExpect(content().bytes(dummyPdfBytes));
 
-        verify(rangeReportController).pdf(1L, null, null, "USD");
+        verify(exportService).exportFinancialStatementPdf(user, "USD");
     }
 }

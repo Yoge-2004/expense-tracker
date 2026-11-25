@@ -1,5 +1,6 @@
 package com.example.expensetracker.domain.user.api;
 
+import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,7 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class UserControllerTest {
+    @MockitoBean BrowserSessionCookieService browserSessionCookieService;
 
     @Autowired MockMvc mockMvc;
 
@@ -85,7 +87,7 @@ class UserControllerTest {
 
     @Test
     void checkUsernameAllowsDotsInHandle() throws Exception {
-        when(userRepository.findByUsernameIgnoreCase("john.doe")).thenReturn(Optional.empty());
+        when(userService.userExistsByUsername("john.doe")).thenReturn(false);
 
         mockMvc.perform(get("/api/users/check-username").queryParam("username", "john.doe"))
                 .andExpect(status().isOk())
@@ -93,12 +95,12 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.available").value(true))
                 .andExpect(jsonPath("$.message").value("Username is available!"));
 
-        verify(userRepository).findByUsernameIgnoreCase("john.doe");
+        verify(userService).userExistsByUsername("john.doe");
     }
 
     @Test
-    void checkUsernameTrimsValidInputAndUsesCaseInsensitiveRepositoryLookup() throws Exception {
-        when(userRepository.findByUsernameIgnoreCase("Alice_01")).thenReturn(Optional.of(user));
+    void checkUsernameTrimsValidInputAndDelegatesToUserService() throws Exception {
+        when(userService.userExistsByUsername("Alice_01")).thenReturn(true);
 
         mockMvc.perform(get("/api/users/check-username").queryParam("username", "  Alice_01  "))
                 .andExpect(status().isOk())
@@ -106,12 +108,12 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.available").value(false))
                 .andExpect(jsonPath("$.message").value("Username is already taken"));
 
-        verify(userRepository).findByUsernameIgnoreCase("Alice_01");
+        verify(userService).userExistsByUsername("Alice_01");
     }
 
     @Test
     void checkUsernameReportsAvailableWhenNoCaseInsensitiveMatchExists() throws Exception {
-        when(userRepository.findByUsernameIgnoreCase("alice_01")).thenReturn(Optional.empty());
+        when(userService.userExistsByUsername("alice_01")).thenReturn(false);
 
         mockMvc.perform(get("/api/users/check-username").queryParam("username", "alice_01"))
                 .andExpect(status().isOk())
@@ -122,7 +124,7 @@ class UserControllerTest {
 
     @Test
     void suggestUsernamesReturnsExactlyThreeUniqueAvailableCandidates() throws Exception {
-        when(userRepository.findByUsernameIgnoreCase(anyString())).thenReturn(Optional.empty());
+        when(userService.userExistsByUsername(anyString())).thenReturn(false);
 
         mockMvc.perform(get("/api/users/suggest-usernames").queryParam("base", "Jane Doe"))
                 .andExpect(status().isOk())
@@ -132,14 +134,14 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.suggestions[1]").value("the_janedoe"))
                 .andExpect(jsonPath("$.suggestions[2]").value("real_janedoe"));
 
-        verify(userRepository).findByUsernameIgnoreCase("iam_janedoe");
-        verify(userRepository).findByUsernameIgnoreCase("the_janedoe");
-        verify(userRepository).findByUsernameIgnoreCase("real_janedoe");
+        verify(userService).userExistsByUsername("iam_janedoe");
+        verify(userService).userExistsByUsername("the_janedoe");
+        verify(userService).userExistsByUsername("real_janedoe");
     }
 
     @Test
     void suggestUsernamesFallsBackToUserBaseWhenInputSanitizesToEmpty() throws Exception {
-        when(userRepository.findByUsernameIgnoreCase(anyString())).thenReturn(Optional.empty());
+        when(userService.userExistsByUsername(anyString())).thenReturn(false);
 
         mockMvc.perform(get("/api/users/suggest-usernames").queryParam("base", "!!!"))
                 .andExpect(status().isOk())
@@ -150,21 +152,21 @@ class UserControllerTest {
 
     @Test
     void suggestUsernamesGeneratesRandomSuffixesWhenPrefixCandidatesCollided() throws Exception {
-        when(userRepository.findByUsernameIgnoreCase("iam_jane")).thenReturn(Optional.of(user));
-        when(userRepository.findByUsernameIgnoreCase("the_jane")).thenReturn(Optional.of(user));
-        when(userRepository.findByUsernameIgnoreCase("real_jane")).thenReturn(Optional.of(user));
-        when(userRepository.findByUsernameIgnoreCase("hey_jane")).thenReturn(Optional.of(user));
-        when(userRepository.findByUsernameIgnoreCase("go_jane")).thenReturn(Optional.of(user));
-        when(userRepository.findByUsernameIgnoreCase(startsWith("jane"))).thenReturn(Optional.empty());
+        when(userService.userExistsByUsername("iam_jane")).thenReturn(true);
+        when(userService.userExistsByUsername("the_jane")).thenReturn(true);
+        when(userService.userExistsByUsername("real_jane")).thenReturn(true);
+        when(userService.userExistsByUsername("hey_jane")).thenReturn(true);
+        when(userService.userExistsByUsername("go_jane")).thenReturn(true);
+        when(userService.userExistsByUsername(startsWith("jane"))).thenReturn(false);
 
         mockMvc.perform(get("/api/users/suggest-usernames").queryParam("base", "Jane"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.suggestions").isArray())
                 .andExpect(jsonPath("$.suggestions.length()").value(3));
 
-        verify(userRepository).findByUsernameIgnoreCase("iam_jane");
-        verify(userRepository).findByUsernameIgnoreCase("the_jane");
-        verify(userRepository).findByUsernameIgnoreCase("real_jane");
+        verify(userService).userExistsByUsername("iam_jane");
+        verify(userService).userExistsByUsername("the_jane");
+        verify(userService).userExistsByUsername("real_jane");
     }
 
     @Test

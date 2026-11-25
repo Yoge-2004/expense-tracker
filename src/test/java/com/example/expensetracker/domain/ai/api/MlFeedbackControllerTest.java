@@ -1,5 +1,6 @@
 package com.example.expensetracker.domain.ai.api;
 
+import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -54,6 +55,7 @@ import com.example.expensetracker.infrastructure.security.JwtService;
 @TestPropertySource(properties = "ml.feedback.token=test-ml-training-secret-token")
 @Import(MlFeedbackControllerTest.SecurityTestConfig.class)
 class MlFeedbackControllerTest {
+    @MockitoBean BrowserSessionCookieService browserSessionCookieService;
 
     private static final String VALID_TOKEN = "test-ml-training-secret-token";
     private static final String INVALID_TOKEN = "wrong-token-value";

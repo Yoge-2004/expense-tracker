@@ -1,5 +1,6 @@
 package com.example.expensetracker.domain.admin.api;
 
+import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,6 +59,7 @@ import com.example.expensetracker.infrastructure.security.JwtService;
 @WebMvcTest(AdminController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class AdminControllerTest {
+    @MockitoBean BrowserSessionCookieService browserSessionCookieService;
 
     @Autowired MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
@@ -319,6 +321,8 @@ class AdminControllerTest {
                 .andExpect(jsonPath("$.content").isArray());
     }
 
+    private static final String PIN_BODY = "{\"stepUpPin\":\"123456\"}";
+
     @Test
     void exportPlatformLedgerJsonStreamsDump() throws Exception {
         org.mockito.Mockito.doAnswer(invocation -> {
@@ -327,27 +331,74 @@ class AdminControllerTest {
             return null;
         }).when(adminDataService).writePlatformLedger(any());
 
-        mockMvc.perform(get("/api/admin/database/export/json"))
+        mockMvc.perform(post("/api/admin/database/export/json")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(PIN_BODY))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$.totalUsers").value(12));
+
+        org.mockito.Mockito.verify(adminDataService).authorizeBulkExport(
+                any(), eq("123456"), eq("EXPORT_PLATFORM_LEDGER"), any(), any());
     }
 
     @Test
-    void downloadDatabaseSnapshotReturnsSqliteFile() throws Exception {
-        when(adminDataService.exportSqliteSnapshot()).thenReturn("SQLite format 3".getBytes());
+    void exportPlatformLedgerJsonIsNoLongerReachableWithGet() throws Exception {
+        mockMvc.perform(get("/api/admin/database/export/json"))
+                .andExpect(status().isMethodNotAllowed());
+    }
 
-        mockMvc.perform(get("/api/admin/database/snapshot/download"))
+    @Test
+    void exportPlatformLedgerJsonWritesNothingWhenAuthorisationFails() throws Exception {
+        org.mockito.Mockito.doThrow(new com.example.expensetracker.infrastructure.exception.BadRequestException("Invalid security PIN"))
+                .when(adminDataService).authorizeBulkExport(any(), any(), any(), any(), any());
+
+        mockMvc.perform(post("/api/admin/database/export/json")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().is4xxClientError());
+
+        org.mockito.Mockito.verify(adminDataService, org.mockito.Mockito.never()).writePlatformLedger(any());
+    }
+
+    @Test
+    void downloadDatabaseSnapshotStreamsSqliteFileAndDeletesIt() throws Exception {
+        java.nio.file.Path temp = java.nio.file.Files.createTempFile("et_snapshot_test_", ".sqlite");
+        java.nio.file.Files.writeString(temp, "SQLite format 3");
+        when(adminDataService.createSqliteSnapshotFile()).thenReturn(temp);
+
+        org.springframework.test.web.servlet.MvcResult started = mockMvc.perform(
+                        post("/api/admin/database/snapshot/download")
+                                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                                .content(PIN_BODY))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(started))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("expense_tracker_snapshot.sqlite")))
-                .andExpect(content().contentType("application/x-sqlite3"));
+                .andExpect(content().contentType("application/x-sqlite3"))
+                .andExpect(content().string("SQLite format 3"));
+
+        org.junit.jupiter.api.Assertions.assertFalse(java.nio.file.Files.exists(temp),
+                "the temporary snapshot must be removed once it has been sent");
+        org.mockito.Mockito.verify(adminDataService).authorizeBulkExport(
+                any(), eq("123456"), eq("EXPORT_DATABASE_SNAPSHOT"), any(), any());
     }
 
     @Test
-    void triggerDatabaseSnapshotReturnsSuccess() throws Exception {
-        when(adminDataService.triggerManualBackup()).thenReturn(Map.of("status", "success", "success", true));
+    void downloadDatabaseSnapshotIsNoLongerReachableWithGet() throws Exception {
+        mockMvc.perform(get("/api/admin/database/snapshot/download"))
+                .andExpect(status().isMethodNotAllowed());
+    }
 
-        mockMvc.perform(post("/api/admin/database/snapshot/trigger"))
+    @Test
+    void triggerDatabaseSnapshotRequiresAndForwardsThePin() throws Exception {
+        when(resilienceService.triggerSnapshotBackup(any(), eq("123456"), any(), any())).thenReturn(true);
+
+        mockMvc.perform(post("/api/admin/database/snapshot/trigger")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(PIN_BODY))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

@@ -18,8 +18,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import java.nio.charset.StandardCharsets;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -411,33 +415,64 @@ public class AdminController {
 
     @Operation(summary = "Export complete platform ledger",
             description = "Streams the complete multi-tenant ledger (users, expenses, incomes, categories) as "
-                    + "one JSON object. Rows are written page by page, so large databases do not exhaust memory.")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    @GetMapping({"/database/export/json", "/data/export-ledger"})
-    public void exportPlatformLedgerJson(HttpServletResponse response) throws IOException {
+                    + "one JSON object. Rows are written page by page, so large databases do not exhaust memory. "
+                    + "Requires SUPER_ADMIN and the operator's security PIN (body field stepUpPin); every call is audited.")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PostMapping({"/database/export/json", "/data/export-ledger"})
+    public void exportPlatformLedgerJson(
+            @RequestBody(required = false) Map<String, String> body,
+            @AuthenticationPrincipal CustomUserDetails principal,
+            HttpServletRequest httpRequest,
+            HttpServletResponse response) throws IOException {
+        adminDataService.authorizeBulkExport(principal.getUser(), stepUpPinFrom(body),
+                "EXPORT_PLATFORM_LEDGER", extractClientIp(httpRequest), httpRequest.getHeader("User-Agent"));
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
         adminDataService.writePlatformLedger(response.getOutputStream());
     }
 
-    @Operation(summary = "Download portable SQLite database snapshot", description = "Generates and streams immediate portable SQLite database snapshot file")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    @GetMapping({"/database/snapshot/download", "/data/snapshot"})
-    public ResponseEntity<byte[]> downloadDatabaseSnapshot() throws Exception {
-        byte[] bytes = adminDataService.exportSqliteSnapshot();
+    @Operation(summary = "Download portable SQLite database snapshot",
+            description = "Generates a portable SQLite snapshot and streams it from disk. "
+                    + "Requires SUPER_ADMIN and the operator's security PIN (body field stepUpPin); every call is audited.")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PostMapping({"/database/snapshot/download", "/data/snapshot"})
+    public ResponseEntity<StreamingResponseBody> downloadDatabaseSnapshot(
+            @RequestBody(required = false) Map<String, String> body,
+            @AuthenticationPrincipal CustomUserDetails principal,
+            HttpServletRequest httpRequest) throws Exception {
+        adminDataService.authorizeBulkExport(principal.getUser(), stepUpPinFrom(body),
+                "EXPORT_DATABASE_SNAPSHOT", extractClientIp(httpRequest), httpRequest.getHeader("User-Agent"));
+
+        Path file = adminDataService.createSqliteSnapshotFile();
+        long size = Files.size(file);
+        StreamingResponseBody stream = out -> {
+            try (InputStream in = Files.newInputStream(file)) {
+                in.transferTo(out);
+            } finally {
+                Files.deleteIfExists(file);
+            }
+        };
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expense_tracker_snapshot.sqlite\"")
                 .contentType(MediaType.parseMediaType("application/x-sqlite3"))
-                .contentLength(bytes.length)
-                .body(bytes);
+                .contentLength(size)
+                .body(stream);
     }
 
-    @Operation(summary = "Trigger immediate database snapshot to Hugging Face", description = "Forces immediate export and push of current database")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Trigger immediate database snapshot to Hugging Face",
+            description = "Same operation as /resilience/hf-backup: requires SUPER_ADMIN and the security PIN.")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping("/database/snapshot/trigger")
-    public ResponseEntity<Map<String, Object>> triggerDatabaseSnapshot() {
-        return ResponseEntity.ok(adminDataService.triggerManualBackup());
+    public ResponseEntity<Map<String, Object>> triggerDatabaseSnapshot(
+            @RequestBody(required = false) Map<String, String> body,
+            @AuthenticationPrincipal CustomUserDetails principal,
+            HttpServletRequest httpRequest) {
+        return triggerBackup(body, principal, httpRequest);
+    }
+
+    private static String stepUpPinFrom(Map<String, String> body) {
+        return body != null ? body.get("stepUpPin") : null;
     }
 
     private String extractClientIp(HttpServletRequest request) {
