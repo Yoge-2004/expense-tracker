@@ -151,7 +151,10 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     }
 
     @Override
-    @Transactional
+    // Failed attempts are recorded (attempt counters, lockout, spent OTP) and then reported with a
+    // BadCredentialsException. A plain @Transactional rolls back on that RuntimeException, which silently
+    // discarded every counter, so the lockout never engaged. Keep the writes when this exception is thrown.
+    @Transactional(noRollbackFor = BadCredentialsException.class)
     public void resetPassword(String email, String otp, String newPassword) {
         if (email == null || otp == null || newPassword == null
                 || email.isBlank() || otp.isBlank() || newPassword.isBlank()) {
@@ -328,7 +331,10 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     }
 
     @Override
-    @Transactional
+    // Failed attempts are recorded (attempt counters, lockout, spent OTP) and then reported with a
+    // BadCredentialsException. A plain @Transactional rolls back on that RuntimeException, which silently
+    // discarded every counter, so the lockout never engaged. Keep the writes when this exception is thrown.
+    @Transactional(noRollbackFor = BadCredentialsException.class)
     public void verifySignupOtp(String email, String otp) {
         if (email == null || otp == null || otp.isBlank()) {
             log.warn("Signup OTP verification rejected: missing parameters");
