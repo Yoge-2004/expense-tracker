@@ -44,7 +44,6 @@ class WebAuthnControllerTest {
     @Autowired MockMvc mockMvc;
 
     @MockitoBean WebAuthnService webAuthnService;
-    @MockitoBean UserRepository users;
     @MockitoBean JwtService jwtService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
 
@@ -63,7 +62,7 @@ class WebAuthnControllerTest {
     void registrationOptionsRequiresAuthenticatedUserAndFindsByEmail() throws Exception {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 "jane@example.com", null, java.util.List.of());
-        when(users.findByEmailIgnoreCase("jane@example.com")).thenReturn(Optional.of(user));
+        when(userService.findByIdentifier("jane@example.com")).thenReturn(Optional.of(user));
         when(webAuthnService.startRegistration(user)).thenReturn(Map.of("transactionId", "tx-1", "challenge", "abc"));
 
         mockMvc.perform(post("/api/webauthn/register/options").principal(authentication))
@@ -72,14 +71,13 @@ class WebAuthnControllerTest {
                 .andExpect(jsonPath("$.challenge").value("abc"));
 
         verify(webAuthnService).startRegistration(user);
-        verify(users).findByEmailIgnoreCase("jane@example.com");
+        verify(userService).findByIdentifier("jane@example.com");
     }
 
     @Test
-    void registrationOptionsFallsBackToUsernameLookup() throws Exception {
+    void registrationOptionsResolvesUsernamePrincipalThroughIdentifierLookup() throws Exception {
         Authentication authentication = new UsernamePasswordAuthenticationToken("jane_01", null, java.util.List.of());
-        when(users.findByEmailIgnoreCase("jane_01")).thenReturn(Optional.empty());
-        when(users.findByUsernameIgnoreCase("jane_01")).thenReturn(Optional.of(user));
+        when(userService.findByIdentifier("jane_01")).thenReturn(Optional.of(user));
         when(webAuthnService.startRegistration(user)).thenReturn(Map.of("transactionId", "tx-2"));
 
         mockMvc.perform(post("/api/webauthn/register/options").principal(authentication))
@@ -87,7 +85,7 @@ class WebAuthnControllerTest {
                 .andExpect(jsonPath("$.transactionId").value("tx-2"));
 
         verify(webAuthnService).startRegistration(user);
-        verify(users).findByUsernameIgnoreCase("jane_01");
+        verify(userService).findByIdentifier("jane_01");
     }
 
     @Test
@@ -103,8 +101,7 @@ class WebAuthnControllerTest {
     void registrationOptionsRejectsUnknownAuthenticatedUser() throws Exception {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 "missing@example.com", null, java.util.List.of());
-        when(users.findByEmailIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
-        when(users.findByUsernameIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
+        when(userService.findByIdentifier("missing@example.com")).thenReturn(Optional.empty());
 
         mockMvc.perform(post("/api/webauthn/register/options").principal(authentication))
                 .andExpect(status().isUnauthorized())
@@ -117,7 +114,7 @@ class WebAuthnControllerTest {
     void registrationFinishPassesTransactionAndCredentialToService() throws Exception {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 "jane@example.com", null, java.util.List.of());
-        when(users.findByEmailIgnoreCase("jane@example.com")).thenReturn(Optional.of(user));
+        when(userService.findByIdentifier("jane@example.com")).thenReturn(Optional.of(user));
 
         mockMvc.perform(post("/api/webauthn/register/finish")
                         .principal(authentication)
@@ -133,7 +130,7 @@ class WebAuthnControllerTest {
     void registrationFinishAllowsNullFieldsToReachServiceForValidation() throws Exception {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 "jane@example.com", null, java.util.List.of());
-        when(users.findByEmailIgnoreCase("jane@example.com")).thenReturn(Optional.of(user));
+        when(userService.findByIdentifier("jane@example.com")).thenReturn(Optional.of(user));
 
         mockMvc.perform(post("/api/webauthn/register/finish")
                         .principal(authentication)
@@ -177,7 +174,7 @@ class WebAuthnControllerTest {
     void disableCredentialsRequiresAuthenticatedUserAndDeletesForResolvedAccount() throws Exception {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 "jane@example.com", null, java.util.List.of());
-        when(users.findByEmailIgnoreCase("jane@example.com")).thenReturn(Optional.of(user));
+        when(userService.findByIdentifier("jane@example.com")).thenReturn(Optional.of(user));
 
         mockMvc.perform(delete("/api/webauthn/credentials").principal(authentication))
                 .andExpect(status().isNoContent());
@@ -189,8 +186,7 @@ class WebAuthnControllerTest {
     void disableCredentialsRejectsUnknownUser() throws Exception {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 "missing@example.com", null, java.util.List.of());
-        when(users.findByEmailIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
-        when(users.findByUsernameIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
+        when(userService.findByIdentifier("missing@example.com")).thenReturn(Optional.empty());
 
         mockMvc.perform(delete("/api/webauthn/credentials").principal(authentication))
                 .andExpect(status().isUnauthorized())
