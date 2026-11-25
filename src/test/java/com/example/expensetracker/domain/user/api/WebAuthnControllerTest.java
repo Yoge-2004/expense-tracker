@@ -94,7 +94,7 @@ class WebAuthnControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Authentication required."));
 
-        verifyNoInteractions(users, webAuthnService);
+        verifyNoInteractions(userService, webAuthnService);
     }
 
     @Test
@@ -152,7 +152,7 @@ class WebAuthnControllerTest {
                 .andExpect(jsonPath("$.challenge").value("challenge"));
 
         verify(webAuthnService).startAuthentication();
-        verifyNoInteractions(users);
+        verifyNoInteractions(userService);
     }
 
     @Test
