@@ -74,9 +74,15 @@ public class AdminBootstrapRunner implements CommandLineRunner {
                     ? properties.username().trim()
                     : "admin";
 
-            String rawPass = (properties.password() != null && !properties.password().isBlank())
-                    ? properties.password()
-                    : "Admin@123456";
+            // There is deliberately no default password: a well-known credential on a ROLE_SUPER_ADMIN account
+            // would be a standing backdoor on every fresh deployment that forgot to set ADMIN_PASSWORD.
+            if (properties.password() == null || properties.password().isBlank()) {
+                log.warn("Not creating the bootstrap Super Administrator for {}: no password is configured "
+                        + "(set app.admin.bootstrap.password / ADMIN_PASSWORD). No default password is ever used.",
+                        targetEmail);
+                return;
+            }
+            String rawPass = properties.password();
 
             log.info("Bootstrapping default Super Administrator: email={}, username={}", targetEmail, fallbackUser);
 
