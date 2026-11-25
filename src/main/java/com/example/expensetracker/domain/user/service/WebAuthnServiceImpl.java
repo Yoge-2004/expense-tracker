@@ -138,7 +138,9 @@ public class WebAuthnServiceImpl implements WebAuthnService {
     }
 
     @Override
-    @Transactional
+    // A failed ceremony still has to consume its challenge: the challenge is single-use, but the delete was
+    // rolled back together with the ResponseStatusException, leaving it replayable until it expired.
+    @Transactional(noRollbackFor = ResponseStatusException.class)
     public void finishRegistration(User user, String transactionId, String credentialJson) {
         if (user == null || user.getId() == null) {
             throw new IllegalArgumentException("User and User ID cannot be null");
@@ -215,7 +217,9 @@ public class WebAuthnServiceImpl implements WebAuthnService {
     }
 
     @Override
-    @Transactional
+    // A failed ceremony still has to consume its challenge: the challenge is single-use, but the delete was
+    // rolled back together with the ResponseStatusException, leaving it replayable until it expired.
+    @Transactional(noRollbackFor = ResponseStatusException.class)
     public Map<String, Object> finishAuthentication(String transactionId, String assertionJson) {
         User user = verifyAssertion(transactionId, assertionJson);
         Map<String, Object> response = new HashMap<>();
@@ -229,7 +233,10 @@ public class WebAuthnServiceImpl implements WebAuthnService {
         return response;
     }
 
+    // The class is read-only, but verifying an assertion deletes the challenge and advances the credential's
+    // signature counter. Without this override those writes failed (or were never flushed) on PostgreSQL.
     @Override
+    @Transactional(noRollbackFor = ResponseStatusException.class)
     public User verifyAssertionForRecovery(String transactionId, String assertionJson) {
         return verifyAssertion(transactionId, assertionJson);
     }
