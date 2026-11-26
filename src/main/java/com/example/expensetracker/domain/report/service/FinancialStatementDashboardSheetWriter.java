@@ -168,17 +168,23 @@ public class FinancialStatementDashboardSheetWriter {
             short kpiCurFormat = df.getFormat(curFmt);
             short kpiPctFormat = df.getFormat("0.0%");
 
+            // The PDF statement and the monthly report total these with FinancialStatementTotals: reimbursements are
+            // not income, and they reduce spending. A plain SUM over the sheets counted them as income and left the
+            // expenses gross, so the workbook disagreed with every other output. The cards below take the same
+            // figures; they are values rather than live SUMs because the sheets do not carry the income kind.
+            FinancialStatementTotals totals = FinancialStatementTotals.calculate(expenses, incomes);
+
             // Card 1: TOTAL INFLOW (Cols A–B / 0–1)
             styles.createPowerBiKpiCard(workbook, colorMap, dashSheet, 4, 5, 6, 0, 1,
                     "\u25B2 TOTAL REVENUE & INFLOW",
-                    incomes.isEmpty() ? "0" : "SUM(Incomes!D2:D" + (incomes.size() + 1) + ")",
-                    FinancialStatementExcelStyles.PBI_EMERALD_GREEN, kpiCurFormat, "Active & recurring revenue streams");
+                    totals.earnedIncome().toPlainString(),
+                    FinancialStatementExcelStyles.PBI_EMERALD_GREEN, kpiCurFormat, "Earned income, excl. reimbursements");
 
             // Card 2: TOTAL OUTFLOW (Cols C–D / 2–3)
             styles.createPowerBiKpiCard(workbook, colorMap, dashSheet, 4, 5, 6, 2, 3,
                     "\u25BC TOTAL OPERATING EXPENDITURES",
-                    expenses.isEmpty() ? "0" : "SUM(Expenses!D2:D" + (expenses.size() + 1) + ")",
-                    FinancialStatementExcelStyles.PBI_ROSE_RED, kpiCurFormat, "Discretionary & operational burn");
+                    totals.expenses().toPlainString(),
+                    FinancialStatementExcelStyles.PBI_ROSE_RED, kpiCurFormat, "Spending, net of reimbursements");
 
             // Card 3: NET CASH FLOW (Cols E–F / 4–5)
             styles.createPowerBiKpiCard(workbook, colorMap, dashSheet, 4, 5, 6, 4, 5,
