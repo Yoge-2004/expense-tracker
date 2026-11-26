@@ -94,7 +94,7 @@ class RangeReportControllerTest {
         when(users.findById(7L)).thenReturn(Optional.of(user));
         when(expenses.findByUserAndExpenseDateBetween(user, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
                 .thenReturn(List.of(expense(100, LocalDate.of(2026, 9, 1), "Lunch", food)));
-        when(incomes.findByUserAndIncomeDateBetween(user, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+        when(incomes.findByUserAndIncomeDateBetween(user, LocalDate.of(2026, 6, 1), LocalDate.of(2026, 12, 30)))
                 .thenReturn(List.of(income(3000, LocalDate.of(2026, 9, 5), "Salary")));
         // Stub the additional repository mocks so the controller's export path doesn't NPE.
         when(savingsGoals.findByUser(user)).thenReturn(List.of());
@@ -112,7 +112,8 @@ class RangeReportControllerTest {
         assertTrue(response.getBody().length > 1000);
         verify(security).validateUserAccess(7L);
         verify(expenses).findByUserAndExpenseDateBetween(user, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30));
-        verify(incomes).findByUserAndIncomeDateBetween(user, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30));
+        // Incomes are fetched with the allowed month-shift margin on each side, then placed by their effective date.
+        verify(incomes).findByUserAndIncomeDateBetween(user, LocalDate.of(2026, 6, 1), LocalDate.of(2026, 12, 30));
     }
 
     @Test
