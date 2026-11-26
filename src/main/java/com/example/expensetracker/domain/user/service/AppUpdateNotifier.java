@@ -72,6 +72,10 @@ public class AppUpdateNotifier {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private org.springframework.core.task.TaskExecutor taskExecutor;
 
+    /** Most users processed at once; keep it below the database pool size so live requests still get connections. */
+    @org.springframework.beans.factory.annotation.Value("${app.async.batch-concurrency:4}")
+    private int batchConcurrency = 4;
+
     int announce(AppReleaseService.Release release) {
         java.util.concurrent.atomic.AtomicInteger notified = new java.util.concurrent.atomic.AtomicInteger(0);
         java.util.concurrent.Executor executor = taskExecutor != null ? taskExecutor : Runnable::run;
@@ -80,37 +84,34 @@ public class AppUpdateNotifier {
         Page<User> page;
         do {
             page = userRepository.findAll(pageable);
-            java.util.List<java.util.concurrent.CompletableFuture<Void>> futures = new java.util.ArrayList<>();
-            for (User user : page) {
-                futures.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
-                    try {
-                        List<DeviceToken> due = deviceTokenRepository.findByUser(user).stream()
-                                .filter(device -> needsNotice(device, release))
-                                .toList();
-                        if (due.isEmpty()) {
-                            return;
-                        }
-                        Set<Long> dueIds = due.stream()
-                                .map(DeviceToken::getId)
-                                .collect(java.util.stream.Collectors.toUnmodifiableSet());
-
-                        PendingNotification notice = new PendingNotification(
-                                NotificationType.APP_UPDATE,
-                                "Update available",
-                                "Expense Tracker " + release.tag() + " is ready. Open the app to update.",
-                                "app-update",
-                                "app-update:" + release.version());
-                        if (notificationService.notifyDevices(user, notice, device -> dueIds.contains(device.getId()))) {
-                            due.forEach(device -> device.setUpdateAnnouncedVersion(release.version()));
-                            deviceTokenRepository.saveAll(due);
-                            notified.incrementAndGet();
-                        }
-                    } catch (RuntimeException e) {
-                        log.warn("Could not send the app update notice for userId={}: {}", user.getId(), e.getMessage());
+            com.example.expensetracker.infrastructure.concurrent.BoundedFanOut.forEach(
+                page.getContent(), batchConcurrency, executor, user -> {
+                try {
+                    List<DeviceToken> due = deviceTokenRepository.findByUser(user).stream()
+                            .filter(device -> needsNotice(device, release))
+                            .toList();
+                    if (due.isEmpty()) {
+                        return;
                     }
-                }, executor));
-            }
-            java.util.concurrent.CompletableFuture.allOf(futures.toArray(java.util.concurrent.CompletableFuture[]::new)).join();
+                    Set<Long> dueIds = due.stream()
+                            .map(DeviceToken::getId)
+                            .collect(java.util.stream.Collectors.toUnmodifiableSet());
+
+                    PendingNotification notice = new PendingNotification(
+                            NotificationType.APP_UPDATE,
+                            "Update available",
+                            "Expense Tracker " + release.tag() + " is ready. Open the app to update.",
+                            "app-update",
+                            "app-update:" + release.version());
+                    if (notificationService.notifyDevices(user, notice, device -> dueIds.contains(device.getId()))) {
+                        due.forEach(device -> device.setUpdateAnnouncedVersion(release.version()));
+                        deviceTokenRepository.saveAll(due);
+                        notified.incrementAndGet();
+                    }
+                } catch (RuntimeException e) {
+                    log.warn("Could not send the app update notice for userId={}: {}", user.getId(), e.getMessage());
+                }
+                });
             pageable = page.nextPageable();
         } while (page.hasNext());
         return notified.get();
