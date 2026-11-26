@@ -16,7 +16,6 @@ import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
 import com.example.expensetracker.domain.income.model.Income;
 import com.example.expensetracker.domain.income.repository.IncomeRepository;
-import com.example.expensetracker.domain.notification.model.PendingNotification;
 import com.example.expensetracker.domain.user.model.User;
 import java.math.BigDecimal;
 import java.time.LocalDate;
