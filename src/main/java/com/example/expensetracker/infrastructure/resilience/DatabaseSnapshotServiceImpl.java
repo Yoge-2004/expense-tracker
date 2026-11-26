@@ -579,12 +579,16 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
         SECURE_RANDOM.nextBytes(iv);
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, key(password, salt), new GCMParameterSpec(128, iv));
-        byte[] ciphertext = cipher.doFinal(Files.readAllBytes(input));
+        // Streamed, so memory use no longer grows with the database. The file layout is unchanged:
+        // MAGIC | salt | iv | ciphertext+tag, so existing snapshots still decrypt.
         try (var out = Files.newOutputStream(output)) {
             out.write(MAGIC);
             out.write(salt);
             out.write(iv);
-            out.write(ciphertext);
+            try (var in = Files.newInputStream(input);
+                 var encrypted = new javax.crypto.CipherOutputStream(out, cipher)) {
+                in.transferTo(encrypted);
+            }
         }
     }
 
@@ -598,21 +602,34 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
         if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("Decryption password cannot be null or blank");
         }
-        byte[] all = Files.readAllBytes(input);
-        if (all.length < MAGIC.length + SALT_LENGTH + IV_LENGTH + 16) {
+        int headerLength = MAGIC.length + SALT_LENGTH + IV_LENGTH;
+        if (Files.size(input) < headerLength + 16) {
             throw new SecurityException("Invalid encrypted database snapshot");
         }
-        for (int i = 0; i < MAGIC.length; i++) {
-            if (all[i] != MAGIC[i]) {
-                throw new SecurityException("Invalid encrypted database snapshot header");
+        try (var raw = Files.newInputStream(input)) {
+            byte[] header = raw.readNBytes(headerLength);
+            for (int i = 0; i < MAGIC.length; i++) {
+                if (header[i] != MAGIC[i]) {
+                    throw new SecurityException("Invalid encrypted database snapshot header");
+                }
+            }
+            byte[] salt = Arrays.copyOfRange(header, MAGIC.length, MAGIC.length + SALT_LENGTH);
+            byte[] iv = Arrays.copyOfRange(header, MAGIC.length + SALT_LENGTH, headerLength);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, key(password, salt), new GCMParameterSpec(128, iv));
+            // Streamed instead of reading the whole file and copying it twice. GCM only releases plaintext once the
+            // tag has verified, so a wrong password or tampered file fails here, and the partial output is removed.
+            try (var decrypted = new javax.crypto.CipherInputStream(raw, cipher);
+                 var out = Files.newOutputStream(output)) {
+                decrypted.transferTo(out);
+            } catch (IOException failure) {
+                Files.deleteIfExists(output);
+                if (failure.getCause() instanceof GeneralSecurityException security) {
+                    throw security;
+                }
+                throw failure;
             }
         }
-        byte[] salt = Arrays.copyOfRange(all, MAGIC.length, MAGIC.length + SALT_LENGTH);
-        byte[] iv = Arrays.copyOfRange(all, MAGIC.length + SALT_LENGTH, MAGIC.length + SALT_LENGTH + IV_LENGTH);
-        byte[] ciphertext = Arrays.copyOfRange(all, MAGIC.length + SALT_LENGTH + IV_LENGTH, all.length);
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, key(password, salt), new GCMParameterSpec(128, iv));
-        Files.write(output, cipher.doFinal(ciphertext));
     }
 
     private static SecretKeySpec key(String password, byte[] salt)
