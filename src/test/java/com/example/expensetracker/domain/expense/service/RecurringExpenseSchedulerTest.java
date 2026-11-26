@@ -202,4 +202,54 @@ class RecurringExpenseSchedulerTest {
 
         verify(recurringExpenseRepository, times(1)).findByNextDueDateLessThanEqual(any(LocalDate.class));
     }
+
+    private RecurringExpense dueSubscription(long id) {
+        RecurringExpense rec = new RecurringExpense();
+        rec.setId(id);
+        rec.setAmount(new BigDecimal("10.00"));
+        rec.setDescription("Sub " + id);
+        rec.setFrequency("MONTHLY");
+        rec.setNextDueDate(LocalDate.now());
+        rec.setUser(testUser);
+        rec.setCategory(testCategory);
+        return rec;
+    }
+
+    @Test
+    @DisplayName("auto-generated expenses are flagged recurring so reports count them as recurring spend")
+    void generatedExpenseIsFlaggedRecurring() {
+        when(recurringExpenseRepository.findByNextDueDateLessThanEqual(any(LocalDate.class)))
+                .thenReturn(List.of(dueSubscription(1L)));
+
+        scheduler.processRecurringExpenses();
+
+        ArgumentCaptor<Expense> captor = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(captor.capture());
+        org.junit.jupiter.api.Assertions.assertTrue(captor.getValue().isRecurring());
+    }
+
+    @Test
+    @DisplayName("each subscription commits in its own transaction, so one failure rolls back only that one")
+    void eachSubscriptionHasItsOwnTransaction() {
+        org.springframework.transaction.PlatformTransactionManager tm =
+                org.mockito.Mockito.mock(org.springframework.transaction.PlatformTransactionManager.class);
+        org.springframework.test.util.ReflectionTestUtils.setField(scheduler, "transactionTemplate",
+                new org.springframework.transaction.support.TransactionTemplate(tm));
+
+        RecurringExpense failing = dueSubscription(1L);
+        RecurringExpense healthy = dueSubscription(2L);
+        when(recurringExpenseRepository.findByNextDueDateLessThanEqual(any(LocalDate.class)))
+                .thenReturn(List.of(failing, healthy));
+        when(recurringExpenseRepository.findById(1L)).thenReturn(java.util.Optional.of(failing));
+        when(recurringExpenseRepository.findById(2L)).thenReturn(java.util.Optional.of(healthy));
+        when(expenseRepository.save(any(Expense.class)))
+                .thenThrow(new IllegalStateException("database hiccup"))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        scheduler.processRecurringExpenses();
+
+        verify(tm, times(1)).rollback(any());
+        verify(tm, times(1)).commit(any());
+        assertEquals(LocalDate.now().plusMonths(1), healthy.getNextDueDate());
+    }
 }
