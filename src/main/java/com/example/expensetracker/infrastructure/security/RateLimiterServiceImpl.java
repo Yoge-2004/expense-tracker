@@ -24,6 +24,12 @@ public class RateLimiterServiceImpl implements RateLimiterService {
     private final java.time.Clock clock;
     private final Map<String, SlidingWindowBucket> buckets = new ConcurrentHashMap<>();
 
+    /**
+     * Upper bound on tracked keys. Keys are caller-controlled (IP addresses, identifiers), so without a ceiling a
+     * flood of distinct values grows this map until the heap is exhausted; the five-minute cleanup is too slow to help.
+     */
+    static final int MAX_TRACKED_KEYS = 50_000;
+
     public RateLimiterServiceImpl(@org.springframework.beans.factory.annotation.Autowired(required = false) java.time.Clock clock) {
         this.clock = clock != null ? clock : java.time.Clock.systemDefaultZone();
     }
@@ -47,10 +53,33 @@ public class RateLimiterServiceImpl implements RateLimiterService {
         if (!enabled) {
             return true;
         }
+        if (buckets.size() >= MAX_TRACKED_KEYS && !buckets.containsKey(key)) {
+            makeRoom();
+        }
         SlidingWindowBucket bucket = buckets.computeIfAbsent(
                 key, _ -> new SlidingWindowBucket(maxRequests, window, clock)
         );
         return bucket.tryAcquire();
+    }
+
+    /** Drops expired buckets and, if the map is still full, a tenth of the rest, so it never grows past the cap. */
+    private void makeRoom() {
+        cleanupExpiredBuckets();
+        int excess = buckets.size() - (MAX_TRACKED_KEYS - MAX_TRACKED_KEYS / 10);
+        if (excess <= 0) {
+            return;
+        }
+        java.util.Iterator<String> it = buckets.keySet().iterator();
+        while (excess > 0 && it.hasNext()) {
+            it.next();
+            it.remove();
+            excess--;
+        }
+    }
+
+    /** @return how many keys are currently tracked (exposed for tests). */
+    int trackedKeys() {
+        return buckets.size();
     }
 
     @Override
