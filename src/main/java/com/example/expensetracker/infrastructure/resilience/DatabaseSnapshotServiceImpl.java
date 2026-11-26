@@ -113,46 +113,65 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
         try (Connection source = DriverManager.getConnection("jdbc:sqlite:" + sqliteFile.toAbsolutePath());
              Connection target = DriverManager.getConnection(h2Url, props)) {
             target.setAutoCommit(false);
-            try (Statement s = target.createStatement()) {
-                s.execute(/* language=none */ "SET REFERENTIAL_INTEGRITY FALSE");
-            }
-            Map<String, String> actualTables = actualTableNames(target);
-            for (String sourceTable : tableNames(source)) {
-                String targetTable = actualTables.get(sourceTable.toLowerCase(Locale.ROOT));
-                List<Column> sourceColumns = columns(source, sourceTable);
-                if (targetTable == null) {
-                    createH2Table(target, sourceTable, sourceColumns);
-                    actualTables = actualTableNames(target);
-                    targetTable = actualTables.get(sourceTable.toLowerCase(Locale.ROOT));
+            // SET REFERENTIAL_INTEGRITY is database-wide in H2. It must be switched back on even when the import
+            // fails half-way, otherwise the fallback database keeps running with foreign keys unenforced.
+            boolean integrityDisabled = false;
+            try {
+                try (Statement s = target.createStatement()) {
+                    s.execute(/* language=none */ "SET REFERENTIAL_INTEGRITY FALSE");
                 }
-                if (targetTable != null) {
-                    Map<String, TargetColumn> initialCols = actualColumns(target, targetTable);
-                    for (Column sc : sourceColumns) {
-                        if (!initialCols.containsKey(sc.name.toLowerCase(Locale.ROOT))) {
-                            try (Statement s = target.createStatement()) {
-                                s.execute(/* language=none */ "ALTER TABLE " + q(targetTable) + " ADD COLUMN IF NOT EXISTS "
-                                        + q(sc.name.toUpperCase(Locale.ROOT)) + " " + h2Type(sc));
+                integrityDisabled = true;
+                Map<String, String> actualTables = actualTableNames(target);
+                for (String sourceTable : tableNames(source)) {
+                    String targetTable = actualTables.get(sourceTable.toLowerCase(Locale.ROOT));
+                    List<Column> sourceColumns = columns(source, sourceTable);
+                    if (targetTable == null) {
+                        createH2Table(target, sourceTable, sourceColumns);
+                        actualTables = actualTableNames(target);
+                        targetTable = actualTables.get(sourceTable.toLowerCase(Locale.ROOT));
+                    }
+                    if (targetTable != null) {
+                        Map<String, TargetColumn> initialCols = actualColumns(target, targetTable);
+                        for (Column sc : sourceColumns) {
+                            if (!initialCols.containsKey(sc.name.toLowerCase(Locale.ROOT))) {
+                                try (Statement s = target.createStatement()) {
+                                    s.execute(/* language=none */ "ALTER TABLE " + q(targetTable) + " ADD COLUMN IF NOT EXISTS "
+                                            + q(sc.name.toUpperCase(Locale.ROOT)) + " " + h2Type(sc));
+                                }
                             }
                         }
-                    }
-                    Map<String, TargetColumn> targetCols = actualColumns(target, targetTable);
-                    List<ColumnPair> common = sourceColumns.stream()
-                            .filter(c -> targetCols.containsKey(c.name.toLowerCase(Locale.ROOT)))
-                            .map(c -> new ColumnPair(c.name, targetCols.get(c.name.toLowerCase(Locale.ROOT)).name))
-                            .toList();
-                    if (!common.isEmpty()) {
-                        List<MissingColumnDefault> missingDefaults = determineMissingDefaults(targetTable, targetCols, common);
-                        try (Statement s = target.createStatement()) {
-                            s.executeUpdate(/* language=none */ "DELETE FROM " + q(targetTable));
+                        Map<String, TargetColumn> targetCols = actualColumns(target, targetTable);
+                        List<ColumnPair> common = sourceColumns.stream()
+                                .filter(c -> targetCols.containsKey(c.name.toLowerCase(Locale.ROOT)))
+                                .map(c -> new ColumnPair(c.name, targetCols.get(c.name.toLowerCase(Locale.ROOT)).name))
+                                .toList();
+                        if (!common.isEmpty()) {
+                            List<MissingColumnDefault> missingDefaults = determineMissingDefaults(targetTable, targetCols, common);
+                            try (Statement s = target.createStatement()) {
+                                s.executeUpdate(/* language=none */ "DELETE FROM " + q(targetTable));
+                            }
+                            rows += insertRows(source, target, sourceTable, targetTable, common, missingDefaults);
                         }
-                        rows += insertRows(source, target, sourceTable, targetTable, common, missingDefaults);
+                    }
+                }
+                target.commit();
+            } catch (IOException | SQLException | RuntimeException failure) {
+                try {
+                    target.rollback();
+                } catch (SQLException rollbackFailure) {
+                    failure.addSuppressed(rollbackFailure);
+                }
+                throw failure;
+            } finally {
+                if (integrityDisabled) {
+                    try (Statement s = target.createStatement()) {
+                        s.execute(/* language=none */ "SET REFERENTIAL_INTEGRITY TRUE");
+                    } catch (SQLException restoreFailure) {
+                        log.error("Could not re-enable referential integrity on the fallback database",
+                                restoreFailure);
                     }
                 }
             }
-            try (Statement s = target.createStatement()) {
-                s.execute(/* language=none */ "SET REFERENTIAL_INTEGRITY TRUE");
-            }
-            target.commit();
         }
         log.info("Imported {} rows into fallback H2 database", rows);
         return rows;
