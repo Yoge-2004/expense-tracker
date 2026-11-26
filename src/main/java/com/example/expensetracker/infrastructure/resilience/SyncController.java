@@ -186,7 +186,8 @@ public class SyncController {
         if (accessError != null) return accessError;
 
         log.info("Authorized Push JSON backup to Hugging Face Spaces requested");
-        syncService.syncDbToFile();
+        // Both facade methods run the same full export-and-upload, so calling syncDbToFile() first only made
+        // every request export and encrypt the whole database twice.
         Map<String, Object> result = syncService.pushJsonBackupToHuggingFace();
         log.info("Push to Hugging Face completed: status={}", result.get("status"));
         if ("error".equals(result.get("status"))) {
