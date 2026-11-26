@@ -141,7 +141,6 @@ class SyncControllerTest {
                 new UsernamePasswordAuthenticationToken("admin@example.com", null,
                         List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"))));
 
-        when(syncService.syncDbToFile()).thenReturn(Map.of("status", "success"));
         when(syncService.pushJsonBackupToHuggingFace()).thenReturn(Map.of("status", "success", "pushed", true));
 
         mockMvc.perform(post("/api/sync/push-to-hf"))
@@ -152,17 +151,16 @@ class SyncControllerTest {
     }
 
     @Test
-    void hfPushGeneratesLocalBackupBeforeUploading() throws Exception {
-        when(syncService.syncDbToFile()).thenReturn(Map.of("status", "success"));
+    void hfPushRunsExactlyOneBackup() throws Exception {
         when(syncService.pushJsonBackupToHuggingFace()).thenReturn(Map.of("status", "success", "pushed", true));
 
         mockMvc.perform(post("/api/sync/push-to-hf").header("X-Sync-Token", "sync-secret"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.pushed").value(true));
 
-        var inOrder = inOrder(syncService);
-        inOrder.verify(syncService).syncDbToFile();
-        inOrder.verify(syncService).pushJsonBackupToHuggingFace();
+        // syncDbToFile() and pushJsonBackupToHuggingFace() both export the whole database; one is enough.
+        verify(syncService, never()).syncDbToFile();
+        verify(syncService, times(1)).pushJsonBackupToHuggingFace();
     }
 
     @Test
