@@ -155,7 +155,7 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
                     }
                 }
                 target.commit();
-            } catch (IOException | SQLException | RuntimeException failure) {
+            } catch (SQLException | RuntimeException failure) {
                 try {
                     target.rollback();
                 } catch (SQLException rollbackFailure) {
