@@ -189,4 +189,58 @@ class RecurringSavingsSchedulerTest {
 
         verify(savingsGoalRepository, times(1)).findByIsRecurringTrueAndNextDueDateLessThanEqual(any(LocalDate.class));
     }
+
+    private SavingsGoal dueGoal(String status, LocalDate nextDue) {
+        SavingsGoal goal = new SavingsGoal();
+        goal.setId(20L);
+        goal.setName("Chit");
+        goal.setTargetAmount(new BigDecimal("5000.00"));
+        goal.setCurrentAmount(new BigDecimal("1000.00"));
+        goal.setRecurringAmount(new BigDecimal("500.00"));
+        goal.setIsRecurring(true);
+        goal.setFrequency("MONTHLY");
+        goal.setStatus(status);
+        goal.setNextDueDate(nextDue);
+        goal.setUser(testUser);
+        when(savingsGoalRepository.findByIsRecurringTrueAndNextDueDateLessThanEqual(any(LocalDate.class)))
+                .thenReturn(List.of(goal));
+        return goal;
+    }
+
+    @Test
+    @DisplayName("an already COMPLETED goal stops recurring and receives no further deposits")
+    void completedGoalStopsRecurring() {
+        SavingsGoal goal = dueGoal("COMPLETED", LocalDate.now());
+
+        scheduler.processRecurringSavings();
+
+        assertEquals(new BigDecimal("1000.00"), goal.getCurrentAmount());
+        org.junit.jupiter.api.Assertions.assertFalse(goal.getIsRecurring());
+    }
+
+    @Test
+    @DisplayName("a PAUSED goal skips the installment but still moves to its next date")
+    void pausedGoalSkipsDeposit() {
+        LocalDate today = LocalDate.now();
+        SavingsGoal goal = dueGoal("PAUSED", today);
+
+        scheduler.processRecurringSavings();
+
+        assertEquals(new BigDecimal("1000.00"), goal.getCurrentAmount());
+        assertEquals(today.plusMonths(1), goal.getNextDueDate());
+        assertEquals("PAUSED", goal.getStatus());
+    }
+
+    @Test
+    @DisplayName("a goal whose next installment falls after its end date stops recurring")
+    void goalPastEndDateStopsRecurring() {
+        LocalDate today = LocalDate.now();
+        SavingsGoal goal = dueGoal("IN_PROGRESS", today);
+        goal.setEndDate(today.minusDays(1));
+
+        scheduler.processRecurringSavings();
+
+        assertEquals(new BigDecimal("1000.00"), goal.getCurrentAmount());
+        org.junit.jupiter.api.Assertions.assertFalse(goal.getIsRecurring());
+    }
 }

@@ -45,12 +45,37 @@ import com.example.expensetracker.domain.expense.repository.RecurringExpenseRepo
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Transactional
 @SuppressWarnings("java:S6809")
 public class RecurringExpenseScheduler {
 
     private final RecurringExpenseRepository recurringExpenseRepository;
     private final ExpenseRepository expenseRepository;
+
+    /** Each record is committed on its own, so one bad row cannot roll back everyone else's occurrences. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.transaction.support.TransactionTemplate transactionTemplate;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.cache.CacheManager cacheManager;
+
+    /** Calendar zone that decides what "today" is; blank means the server's zone. */
+    @org.springframework.beans.factory.annotation.Value("${app.notifications.zone:}")
+    private String zone = "";
+
+    private LocalDate today() {
+        return zone == null || zone.isBlank() ? LocalDate.now() : LocalDate.now(java.time.ZoneId.of(zone));
+    }
+
+    /** These services write straight to the repositories, so the cached per-user lists must be dropped by hand. */
+    private void evictCache(String cacheName, Long userId) {
+        if (cacheManager == null || userId == null) {
+            return;
+        }
+        org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
+        if (cache != null) {
+            cache.evict(userId);
+        }
+    }
 
     /**
      * Processes all recurring expenses that are due on or before today.
@@ -65,49 +90,69 @@ public class RecurringExpenseScheduler {
      *
      * <p>Cron expression: {@code "0 0 0 * * *"} — runs at 00:00:00 every day.</p>
      */
-    @Transactional
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 0 * * *", zone = "${app.notifications.zone:Asia/Kolkata}")
     public void processRecurringExpenses() {
         log.info("Processing due recurring expenses...");
         List<RecurringExpense> dueExpenses =
-                recurringExpenseRepository.findByNextDueDateLessThanEqual(LocalDate.now());
+                recurringExpenseRepository.findByNextDueDateLessThanEqual(today());
 
         int processedCount = 0;
         int failedCount = 0;
         for (RecurringExpense rec : dueExpenses) {
+            if (rec == null || rec.getNextDueDate() == null) {
+                continue;
+            }
             try {
-                if (rec == null || rec.getNextDueDate() == null) {
-                    continue;
+                int created = processInOwnTransaction(rec);
+                processedCount += created;
+                if (created > 0) {
+                    evictCache("userExpenses", rec.getUser() != null ? rec.getUser().getId() : null);
                 }
-                // Catch up every missed occurrence and preserve its actual due date.
-                while (rec.getNextDueDate() != null && !rec.getNextDueDate().isAfter(LocalDate.now())) {
-                    Expense expense = new Expense();
-                    expense.setAmount(rec.getAmount());
-                    expense.setDescription(rec.getDescription() + " (Auto)");
-                    expense.setExpenseDate(rec.getNextDueDate());
-                    expense.setUser(rec.getUser());
-                    expense.setCategory(rec.getCategory());
-                    expenseRepository.save(expense);
-                    LocalDate nextDate = nextOccurrence(rec);
-                    if (!nextDate.isAfter(rec.getNextDueDate())) {
-                        log.warn("Recurring expense {} next date {} is not after current due date {}",
-                                rec.getId(), nextDate, rec.getNextDueDate());
-                        rec.setNextDueDate(rec.getNextDueDate().plusMonths(1));
-                    } else {
-                        rec.setNextDueDate(nextDate);
-                    }
-                    processedCount++;
-                }
-                recurringExpenseRepository.save(rec);
             } catch (Exception itemEx) {
                 failedCount++;
                 log.error("CRITICAL: Failed to process recurring expense subscription id={} for userId={}: {}",
                         rec.getId(), rec.getUser() != null ? rec.getUser().getId() : "null",
-                                itemEx.getMessage(), itemEx);
+                        itemEx.getMessage(), itemEx);
             }
         }
         log.info("Finished processing recurring expenses. Processed {} occurrences, {} failures.",
                 processedCount, failedCount);
+    }
+
+    private int processInOwnTransaction(RecurringExpense listed) {
+        if (transactionTemplate == null) {
+            return processOccurrences(listed);
+        }
+        Integer created = transactionTemplate.execute(status ->
+                recurringExpenseRepository.findById(listed.getId()).map(this::processOccurrences).orElse(0));
+        return created == null ? 0 : created;
+    }
+
+    /** Creates every missed occurrence of one subscription, keeping each occurrence's real due date. */
+    private int processOccurrences(RecurringExpense rec) {
+        int created = 0;
+        while (rec.getNextDueDate() != null && !rec.getNextDueDate().isAfter(today())) {
+            Expense expense = new Expense();
+            expense.setAmount(rec.getAmount());
+            expense.setDescription(rec.getDescription() + " (Auto)");
+            expense.setExpenseDate(rec.getNextDueDate());
+            expense.setUser(rec.getUser());
+            expense.setCategory(rec.getCategory());
+            // Reports total recurring spend from this flag; auto-billed occurrences were being left out.
+            expense.setRecurring(true);
+            expenseRepository.save(expense);
+            LocalDate nextDate = nextOccurrence(rec);
+            if (!nextDate.isAfter(rec.getNextDueDate())) {
+                log.warn("Recurring expense {} next date {} is not after current due date {}",
+                        rec.getId(), nextDate, rec.getNextDueDate());
+                rec.setNextDueDate(rec.getNextDueDate().plusMonths(1));
+            } else {
+                rec.setNextDueDate(nextDate);
+            }
+            created++;
+        }
+        recurringExpenseRepository.save(rec);
+        return created;
     }
 
     /**
