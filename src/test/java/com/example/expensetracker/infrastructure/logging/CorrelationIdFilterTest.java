@@ -87,9 +87,32 @@ class CorrelationIdFilterTest {
     }
 
     @Test
-    @DisplayName("doFilterInternal extracts client IP from X-Forwarded-For header")
-    void doFilterInternal_extractsClientIpFromXForwardedFor() throws ServletException, IOException {
+    @DisplayName("doFilterInternal ignores a forged X-Forwarded-For when no trusted proxy is configured")
+    void doFilterInternal_ignoresForgedForwardedFor() throws ServletException, IOException {
+        request.setRemoteAddr("198.51.100.7");
         request.addHeader("X-Forwarded-For", "203.0.113.195, 70.41.3.18");
+
+        AtomicReference<String> mdcIp = new AtomicReference<>();
+        doAnswer(invocation -> {
+            mdcIp.set(MDC.get(CorrelationIdFilter.CLIENT_IP_MDC_KEY));
+            return null;
+        }).when(filterChain).doFilter(any(), any());
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertEquals("198.51.100.7", mdcIp.get());
+    }
+
+    @Test
+    @DisplayName("doFilterInternal uses the address the trusted-proxy resolver selects, not the left-most forged entry")
+    void doFilterInternal_usesTrustedProxyResolver() throws ServletException, IOException {
+        org.springframework.test.util.ReflectionTestUtils.setField(filter, "clientIpResolver",
+                new com.example.expensetracker.infrastructure.security.ClientIpResolver(
+                        new com.example.expensetracker.infrastructure.security.TrustedProxyProperties(
+                                true, "127.0.0.1/32", 0)));
+        request.setRemoteAddr("127.0.0.1");
+        // 1.2.3.4 is whatever the client claimed; 203.0.113.195 is what the proxy itself appended.
+        request.addHeader("X-Forwarded-For", "1.2.3.4, 203.0.113.195");
 
         AtomicReference<String> mdcIp = new AtomicReference<>();
         doAnswer(invocation -> {

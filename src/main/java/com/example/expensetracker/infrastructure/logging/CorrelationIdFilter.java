@@ -109,16 +109,17 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
         return UUID.randomUUID().toString();
     }
 
+    /**
+     * Optional so the filter still works when constructed by hand; without it the socket address is used.
+     * X-Forwarded-For is never read here directly: any client can send that header, so trusting its left-most entry
+     * let anyone forge the {@code clientIp} that appears in request logs and audit trails.
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.example.expensetracker.infrastructure.security.ClientIpResolver clientIpResolver;
+
     private String resolveClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            String[] ips = xForwardedFor.split(",");
-            if (ips.length > 0 && !ips[0].trim().equalsIgnoreCase("unknown")) {
-                return sanitize(ips[0].trim());
-            }
-        }
-        String remoteAddr = request.getRemoteAddr();
-        return remoteAddr != null ? sanitize(remoteAddr) : "unknown";
+        String ip = clientIpResolver != null ? clientIpResolver.resolve(request) : request.getRemoteAddr();
+        return ip != null ? sanitize(ip) : "unknown";
     }
 
     private String sanitize(String input) {

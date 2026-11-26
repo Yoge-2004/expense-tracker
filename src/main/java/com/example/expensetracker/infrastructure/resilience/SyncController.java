@@ -53,6 +53,20 @@ public class SyncController {
     private final FileDbSyncService syncService;
     private final RateLimiterService rateLimiterService;
 
+    /**
+     * Rate-limit keys must reflect the real caller. Behind nginx the socket address is always the proxy, which put
+     * every client into one shared bucket; the resolver applies the trusted-proxy rules instead.
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.example.expensetracker.infrastructure.security.ClientIpResolver clientIpResolver;
+
+    private String clientIp(HttpServletRequest request) {
+        if (request == null) {
+            return "unknown";
+        }
+        return clientIpResolver != null ? clientIpResolver.resolve(request) : request.getRemoteAddr();
+    }
+
     @Value("${app.sync.secret-key:}")
     private String syncSecretKey;
 
@@ -94,7 +108,7 @@ public class SyncController {
     }
 
     private ResponseEntity<Map<String, Object>> validateLocalSyncAccess(String syncToken, HttpServletRequest request) {
-        String clientIp = request != null ? request.getRemoteAddr() : "unknown";
+        String clientIp = clientIp(request);
 
         if (isUnproxiedLoopbackRequest(request) || hasValidSyncToken(syncToken) || isAdministratorSession()) {
             if (!rateLimiterService.tryAcquire("sync:" + clientIp, 15, Duration.ofMinutes(1))) {
@@ -117,7 +131,7 @@ public class SyncController {
     }
 
     private ResponseEntity<Map<String, Object>> validateHfSyncAccess(String syncToken, HttpServletRequest request) {
-        String clientIp = request != null ? request.getRemoteAddr() : "unknown";
+        String clientIp = clientIp(request);
 
         if (hasValidSyncToken(syncToken) || isAdministratorSession()) {
             if (!rateLimiterService.tryAcquire("sync-hf:" + clientIp, 5, Duration.ofMinutes(1))) {
@@ -229,7 +243,7 @@ public class SyncController {
     public ResponseEntity<Map<String, Object>> huggingFaceStatus(
             @RequestHeader(value = "X-Sync-Token", required = false) String syncToken,
             HttpServletRequest request) {
-        String clientIp = request != null ? request.getRemoteAddr() : "unknown";
+        String clientIp = clientIp(request);
         if (!hasValidSyncToken(syncToken) && !isAdministratorSession()) {
             if (!rateLimiterService.tryAcquire("sync-fail:" + clientIp, 20, Duration.ofMinutes(1))) {
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
