@@ -20,9 +20,10 @@ import { saveFileToDevice } from '../utils/fileDownloader';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { Colors } from '../constants/theme';
-import { apiRequest, API_BASE_URL } from '../services/api';
+import { apiRequest, getEffectiveApiBaseUrl } from '../services/api';
 import { applyRestore, computeRestorePlan, exportDeviceCopy, importDeviceCopyFile } from '../services/ledgerVault';
 import { planSamples } from '../utils/ledgerReconcile';
+import { toDateOnly, toLocalDateString } from '../utils/date';
 
 export interface ExportExpenseItem {
   id?: number | string;
@@ -214,8 +215,10 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
       if (range.from) params.set('from', range.from);
       if (range.to) params.set('to', range.to);
       params.set('currency', currency || 'INR');
-      const uri = `${FileSystem.cacheDirectory || FileSystem.documentDirectory}${filename}`;
-      const url = `${API_BASE_URL}/reports/user/${userId}/export/range/${type}?${params.toString()}`;
+      const storageDir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
+      if (!storageDir) throw new Error('Device storage directory is unavailable.');
+      const uri = `${storageDir}${filename}`;
+      const url = `${getEffectiveApiBaseUrl()}/reports/user/${userId}/export/range/${type}?${params.toString()}`;
 
       updateProgress({
         active: true,
@@ -302,12 +305,14 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
       });
       const safeLabel = range.label.replace(/[^A-Za-z0-9]+/g, '_');
       const filename = `ExpenseTracker_Statement_${safeLabel}.html`;
-      const uri = `${FileSystem.cacheDirectory || FileSystem.documentDirectory}${filename}`;
+      const storageDir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
+      if (!storageDir) throw new Error('Device storage directory is unavailable.');
+      const uri = `${storageDir}${filename}`;
       const params = new URLSearchParams();
       if (range.from) params.set('from', range.from);
       if (range.to) params.set('to', range.to);
       params.set('currency', currency || 'INR');
-      const url = `${API_BASE_URL}/reports/user/${userId}/export/html?${params.toString()}`;
+      const url = `${getEffectiveApiBaseUrl()}/reports/user/${userId}/export/html?${params.toString()}`;
 
       updateProgress({
         active: true,
@@ -370,15 +375,18 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
         percent: 20,
       });
       const latest = await freshExpenses();
-      const filtered = latest.filter(
-        (e: ExportExpenseItem) => !range.from || (((e.expenseDate || e.date) ?? '') >= range.from && ((e.expenseDate || e.date) ?? '') <= range.to)
-      );
+      const filtered = latest.filter((e: ExportExpenseItem) => {
+        if (!range.from) return true;
+        const itemDate = toDateOnly(e.expenseDate || e.date);
+        return Boolean(itemDate && itemDate >= range.from && itemDate <= range.to);
+      });
       if (!filtered.length) {
         updateProgress(null);
         showAlert('No data', 'There are no transactions in the selected period.');
         return;
       }
-      const base = FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
+      const base = FileSystem.cacheDirectory || FileSystem.documentDirectory;
+      if (!base) throw new Error('Device storage directory is unavailable.');
       let filename = '',
         fileData = '',
         mime = 'text/plain',
@@ -544,7 +552,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
       });
 
       const uploadTask = FileSystem.createUploadTask(
-        `${API_BASE_URL}/expenses/user/${userId}/import/${kind}`,
+        `${getEffectiveApiBaseUrl()}/expenses/user/${userId}/import/${kind}`,
         asset.uri,
         {
           fieldName: 'file',
@@ -711,7 +719,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
                 body: JSON.stringify({
                   description: String(item.description),
                   amount: Number(item.amount),
-                  expenseDate: (item.expenseDate as string) || new Date().toISOString().slice(0, 10),
+                  expenseDate: (item.expenseDate as string) || toLocalDateString(),
                   categoryId: (item.categoryId as number) || 1,
                 }),
               });
@@ -906,7 +914,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
                 >
                   <Text
                     style={{
-                      color: mode === x ? '#111' : c.text,
+                      color: mode === x ? c.onPrimary : c.text,
                       fontWeight: '800',
                       fontSize: 12,
                     }}
@@ -942,7 +950,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
                     >
                       <Text
                         style={{
-                          color: month === i ? '#111' : c.text,
+                          color: month === i ? c.onPrimary : c.text,
                           fontSize: 12,
                           fontWeight: '700',
                         }}
@@ -1092,7 +1100,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
                   onPress={importJson}
                   style={[styles.ingest, { backgroundColor: c.primary }]}
                 >
-                  <Text style={{ fontWeight: '800', color: '#111' }}>Ingest & Refresh</Text>
+                  <Text style={{ fontWeight: '800', color: c.onPrimary }}>Ingest & Refresh</Text>
                 </TouchableOpacity>
               </View>
             )}

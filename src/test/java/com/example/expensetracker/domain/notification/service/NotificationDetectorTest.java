@@ -316,4 +316,18 @@ class NotificationDetectorTest {
             assertTrue(detector.detectWeeklyDigest(user, SUNDAY).isEmpty());
         }
     }
+
+    @Test
+    @DisplayName("accepts custom NotificationRule strategies without modifying NotificationDetector (OCP + DIP)")
+    void supportsCustomNotificationRuleStrategy() {
+        NotificationRule customRule = (u, date) -> List.of(new PendingNotification(
+                NotificationType.LARGE_EXPENSE, "Custom", "Triggered on " + date, "expenses", "custom:" + u.getId()));
+        NotificationDetector customDetector = new NotificationDetector(expenseRepository, List.of(customRule));
+
+        List<PendingNotification> result = customDetector.detectDaily(user, TODAY);
+
+        assertEquals(1, result.size());
+        assertEquals("custom:1", result.get(0).dedupeKey());
+        assertEquals("Triggered on " + TODAY, result.get(0).body());
+    }
 }

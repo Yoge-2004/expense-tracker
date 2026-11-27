@@ -1,6 +1,8 @@
 package com.example.expensetracker.domain.notification.api;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -15,11 +17,12 @@ import com.example.expensetracker.domain.notification.dto.NotificationPreference
 import com.example.expensetracker.domain.notification.dto.NotificationRequests;
 import com.example.expensetracker.domain.notification.service.NotificationService;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.service.UserProfileService;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
-
-
+/**
+ * REST controller for notification inbox, per-category preferences, and push device registration.
+ */
 @Tag(name = "Notifications",
         description = "The notification inbox, per-kind preferences and the phones that receive push. "
                 + "All endpoints require Bearer JWT authentication.")
@@ -30,10 +33,14 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final UserService userService;
+    private final UserProfileService userService;
     private final UserSecurity userSecurity;
 
     @Operation(summary = "Newest notifications and the unread count")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Inbox returned"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping
     public ResponseEntity<NotificationInboxDto> inbox(@PathVariable Long userId,
                                                       @RequestParam(defaultValue = "50") int limit) {
@@ -42,6 +49,10 @@ public class NotificationController {
 
     @Operation(summary = "Mark notifications as read",
             description = "Send {\"ids\": [..]} to mark some, or an empty body / empty list to mark all.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Updated count returned"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping("/read")
     public ResponseEntity<Map<String, Integer>> markRead(@PathVariable Long userId,
                                                          @Valid @RequestBody(required = false) NotificationRequests.MarkRead request) {
@@ -50,6 +61,10 @@ public class NotificationController {
     }
 
     @Operation(summary = "Clear or delete a notification")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Notification deleted"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteNotification(@PathVariable Long userId, @PathVariable Long id) {
         notificationService.deleteNotification(owner(userId), id);
@@ -57,6 +72,10 @@ public class NotificationController {
     }
 
     @Operation(summary = "Clear all notifications for user")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Deleted count returned"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @DeleteMapping
     public ResponseEntity<Map<String, Integer>> clearAll(@PathVariable Long userId) {
         int deleted = notificationService.clearAll(owner(userId));
@@ -64,6 +83,10 @@ public class NotificationController {
     }
 
     @Operation(summary = "Which kinds of notification are on")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Preference list returned"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping("/preferences")
     public ResponseEntity<List<NotificationPreferenceDto>> preferences(@PathVariable Long userId) {
         return ResponseEntity.ok(notificationService.getPreferences(owner(userId)));
@@ -71,6 +94,11 @@ public class NotificationController {
 
     @Operation(summary = "Switch notification kinds on or off",
             description = "Send the kinds to switch OFF; everything else stays on.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Updated preferences returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid preference payload"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PutMapping("/preferences")
     public ResponseEntity<List<NotificationPreferenceDto>> updatePreferences(
             @PathVariable Long userId, @Valid @RequestBody NotificationRequests.Preferences request) {
@@ -78,6 +106,11 @@ public class NotificationController {
     }
 
     @Operation(summary = "Register this phone for push notifications")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Device registered"),
+        @ApiResponse(responseCode = "400", description = "Invalid device token"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping("/devices")
     public ResponseEntity<Void> registerDevice(@PathVariable Long userId,
                                                @Valid @RequestBody NotificationRequests.Device request) {
@@ -86,6 +119,10 @@ public class NotificationController {
     }
 
     @Operation(summary = "Stop sending push notifications to this phone")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Device unregistered"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @DeleteMapping("/devices")
     public ResponseEntity<Void> unregisterDevice(@PathVariable Long userId, @RequestParam String token) {
         notificationService.unregisterDevice(owner(userId), token);
@@ -93,6 +130,10 @@ public class NotificationController {
     }
 
     @Operation(summary = "Send myself a test notification")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Test notification dispatch status returned"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping("/test")
     public ResponseEntity<Map<String, Boolean>> test(@PathVariable Long userId) {
         return ResponseEntity.ok(Map.of("sent", notificationService.sendTest(owner(userId))));

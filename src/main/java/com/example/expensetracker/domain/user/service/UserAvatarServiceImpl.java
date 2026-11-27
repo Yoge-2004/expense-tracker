@@ -47,7 +47,7 @@ public class UserAvatarServiceImpl implements UserAvatarService {
     private static final int AVATAR_DIMENSION = 256;
     private static final List<String> AVATAR_EXTENSIONS = List.of(".jpg", ".png", ".webp", ".gif", ".img");
 
-    private final UserService userService;
+    private final UserProfileService userService;
 
     private Path getAvatarDir() {
         String dataDir = System.getenv("DATA_DIR");

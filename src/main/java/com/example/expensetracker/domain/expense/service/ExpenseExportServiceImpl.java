@@ -2,19 +2,23 @@ package com.example.expensetracker.domain.expense.service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.expensetracker.common.CurrencyAwareDocumentExporter;
+import com.example.expensetracker.common.export.CsvExportSupport;
 import com.example.expensetracker.domain.expense.dto.ExpenseDto;
 import com.example.expensetracker.domain.expense.mapper.ExpenseMapper;
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
-import com.example.expensetracker.common.export.CsvExportSupport;
-import com.example.expensetracker.domain.report.service.ExpenseExcelReportGenerator;
-import com.example.expensetracker.domain.report.service.ExpensePdfReportGenerator;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.infrastructure.exception.ExportException;
 
@@ -25,17 +29,44 @@ public class ExpenseExportServiceImpl implements ExpenseExportService {
 
     private final ExpenseRepository expenses;
     private final ObjectMapper objectMapper;
-    private final ExpensePdfReportGenerator pdfGenerator;
-    private final ExpenseExcelReportGenerator excelGenerator;
+    private final Map<String, CurrencyAwareDocumentExporter<User, List<Expense>>> exporters;
 
-    public ExpenseExportServiceImpl(ExpenseRepository expenses,
-                                    ObjectMapper objectMapper,
-                                    ExpensePdfReportGenerator pdfGenerator,
-                                    ExpenseExcelReportGenerator excelGenerator) {
+    /**
+     * Constructs the expense export service wired to all registered document exporter strategies.
+     *
+     * @param expenses     expense repository
+     * @param objectMapper JSON mapper
+     * @param exporters    available document exporter strategies keyed by format
+     */
+    @Autowired
+    public ExpenseExportServiceImpl(
+            ExpenseRepository expenses,
+            ObjectMapper objectMapper,
+            List<CurrencyAwareDocumentExporter<User, List<Expense>>> exporters) {
         this.expenses = expenses;
         this.objectMapper = objectMapper;
-        this.pdfGenerator = pdfGenerator;
-        this.excelGenerator = excelGenerator;
+        this.exporters = exporters == null
+                ? Map.of()
+                : exporters.stream().collect(Collectors.toMap(
+                        e -> e.getFormat().toUpperCase(Locale.ROOT),
+                        Function.identity(),
+                        (first, _) -> first));
+    }
+
+    /**
+     * Compatibility constructor accepting explicit PDF and Excel exporter abstractions.
+     *
+     * @param expenses      expense repository
+     * @param objectMapper  JSON mapper
+     * @param pdfExporter   PDF exporter strategy
+     * @param excelExporter Excel exporter strategy
+     */
+    public ExpenseExportServiceImpl(
+            ExpenseRepository expenses,
+            ObjectMapper objectMapper,
+            CurrencyAwareDocumentExporter<User, List<Expense>> pdfExporter,
+            CurrencyAwareDocumentExporter<User, List<Expense>> excelExporter) {
+        this(expenses, objectMapper, List.of(pdfExporter, excelExporter));
     }
 
     @Override
@@ -74,8 +105,7 @@ public class ExpenseExportServiceImpl implements ExpenseExportService {
 
     @Override
     public byte[] exportExpensesToPdf(User user, String preferredCurrency) {
-        User validUser = requireUser(user);
-        return pdfGenerator.generate(validUser, preferredCurrency, expenses.findByUser(validUser));
+        return exportWithFormat("PDF", user, preferredCurrency);
     }
 
     @Override
@@ -85,8 +115,16 @@ public class ExpenseExportServiceImpl implements ExpenseExportService {
 
     @Override
     public byte[] exportExpensesToExcel(User user, String preferredCurrency) {
+        return exportWithFormat("EXCEL", user, preferredCurrency);
+    }
+
+    private byte[] exportWithFormat(String format, User user, String preferredCurrency) {
         User validUser = requireUser(user);
-        return excelGenerator.generate(validUser, preferredCurrency, expenses.findByUser(validUser));
+        CurrencyAwareDocumentExporter<User, List<Expense>> exporter = exporters.get(format);
+        if (exporter == null) {
+            throw new ExportException("No expense exporter configured for format: " + format, null);
+        }
+        return exporter.export(validUser, preferredCurrency, expenses.findByUser(validUser));
     }
 
     private User requireUser(User user) {

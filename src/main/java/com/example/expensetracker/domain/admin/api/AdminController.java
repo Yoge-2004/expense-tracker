@@ -1,6 +1,8 @@
 package com.example.expensetracker.domain.admin.api;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -57,12 +59,9 @@ import com.example.expensetracker.domain.ai.dto.MlClassificationResponse;
 import com.example.expensetracker.domain.expense.dto.ExpenseDto;
 import com.example.expensetracker.domain.income.dto.IncomeDto;
 import com.example.expensetracker.domain.user.model.Role;
-import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.infrastructure.exception.BadRequestException;
 import com.example.expensetracker.infrastructure.security.ClientIpResolver;
-import com.example.expensetracker.infrastructure.security.CustomUserDetails;
-
-
+import com.example.expensetracker.domain.user.security.CustomUserDetails;
 
 /**
  * Controller exposing administrative operations, system telemetry,
@@ -92,6 +91,7 @@ public class AdminController {
     private final AdminDataService adminDataService;
 
     @Operation(summary = "Get admin permissions matrix", description = "Returns dynamic RBAC authority permissions for the active operator")
+    @ApiResponse(responseCode = "200", description = "Operator permission matrix returned")
     @GetMapping("/me/permissions")
     public ResponseEntity<AdminPermissionsDto> getPermissions(
             @AuthenticationPrincipal CustomUserDetails principal) {
@@ -99,12 +99,14 @@ public class AdminController {
     }
 
     @Operation(summary = "Get high-level summary metrics", description = "Cached KPIs: Total users, total income, total expense, and locked users")
+    @ApiResponse(responseCode = "200", description = "Platform summary metrics returned")
     @GetMapping("/metrics/summary")
     public ResponseEntity<AdminSummaryMetricsDto> getSummaryMetrics() {
         return ResponseEntity.ok(metricsService.getSummaryMetrics());
     }
 
     @Operation(summary = "Purge and refresh summary metrics", description = "Forces eviction of in-memory metrics cache")
+    @ApiResponse(responseCode = "200", description = "Refreshed summary metrics returned")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/metrics/purge-cache")
     public ResponseEntity<AdminSummaryMetricsDto> purgeMetricsCache() {
@@ -113,6 +115,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Get platform volume trends", description = "Pre-aggregated daily volume trends for the requested time window (7, 30, 90 days)")
+    @ApiResponse(responseCode = "200", description = "Volume trends returned")
     @GetMapping("/metrics/trends")
     public ResponseEntity<List<AdminVolumeTrendDto>> getVolumeTrends(
             @RequestParam(defaultValue = "30") int days) {
@@ -120,6 +123,7 @@ public class AdminController {
     }
 
     @Operation(summary = "List users", description = "Returns paginated list of users with search and role filtering")
+    @ApiResponse(responseCode = "200", description = "Paginated users returned")
     @GetMapping("/users")
     public ResponseEntity<Page<AdminUserDto>> getUsers(
             @RequestParam(required = false) String query,
@@ -132,6 +136,10 @@ public class AdminController {
     }
 
     @Operation(summary = "Deep inspect user profile", description = "Returns complete security state, failed PIN attempts, and financial summary for a user")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "User details returned"),
+        @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/users/{userId}/details")
     public ResponseEntity<AdminUserDetailDto> getUserDetails(@PathVariable Long userId) {
@@ -139,6 +147,11 @@ public class AdminController {
     }
 
     @Operation(summary = "Provision a new user account", description = "Creates a new user account with assigned role and credentials. Requires ADMIN or SUPER_ADMIN and valid step-up PIN.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "User account created"),
+        @ApiResponse(responseCode = "400", description = "Validation error or invalid step-up PIN"),
+        @ApiResponse(responseCode = "403", description = "Insufficient administrative clearance")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/users")
     public ResponseEntity<AdminUserDto> createUser(
@@ -152,6 +165,11 @@ public class AdminController {
     }
 
     @Operation(summary = "Update user account", description = "Modifies user details, role, status, password, or PIN. Requires ADMIN or SUPER_ADMIN and valid step-up PIN.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "User updated"),
+        @ApiResponse(responseCode = "400", description = "Invalid payload or step-up PIN"),
+        @ApiResponse(responseCode = "403", description = "Insufficient administrative clearance")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PutMapping("/users/{userId}")
     public ResponseEntity<AdminUserDto> updateUser(
@@ -165,6 +183,11 @@ public class AdminController {
     }
 
     @Operation(summary = "Delete user account", description = "Permanently deletes a user and cascades deletion to child records. Requires SUPER_ADMIN and valid step-up PIN.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "User deleted"),
+        @ApiResponse(responseCode = "400", description = "Missing or invalid step-up PIN"),
+        @ApiResponse(responseCode = "403", description = "Requires SUPER_ADMIN role")
+    })
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @DeleteMapping("/users/{userId}")
     public ResponseEntity<Map<String, String>> deleteUser(
@@ -182,6 +205,11 @@ public class AdminController {
     }
 
     @Operation(summary = "Update user account status", description = "Lock or unlock a user account, with mandatory audit logging")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Account status updated"),
+        @ApiResponse(responseCode = "400", description = "Invalid status request or PIN"),
+        @ApiResponse(responseCode = "403", description = "Insufficient administrative clearance")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PatchMapping("/users/{userId}/status")
     public ResponseEntity<AdminUserDto> updateUserStatus(
@@ -195,6 +223,11 @@ public class AdminController {
     }
 
     @Operation(summary = "Update user role", description = "Elevate or demote a user role. Requires SUPER_ADMIN and valid step-up PIN.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "User role updated"),
+        @ApiResponse(responseCode = "400", description = "Invalid role update or step-up PIN"),
+        @ApiResponse(responseCode = "403", description = "Requires SUPER_ADMIN role")
+    })
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping("/users/{userId}/role")
     public ResponseEntity<AdminUserDto> updateUserRole(
@@ -208,6 +241,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Reset failed Security PIN lockout", description = "Unlocks a user account locked due to consecutive wrong PIN attempts")
+    @ApiResponse(responseCode = "200", description = "PIN lockout reset")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SUPPORT')")
     @PostMapping("/users/{userId}/reset-pin-lockout")
     public ResponseEntity<Map<String, String>> resetPinLockout(
@@ -221,6 +255,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Revoke user sessions", description = "Administratively invalidate active tokens for a user")
+    @ApiResponse(responseCode = "204", description = "User sessions revoked")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/users/{userId}/revoke-sessions")
     public ResponseEntity<Void> revokeSessions(
@@ -234,6 +269,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Query audit logs", description = "Returns immutable records of administrative actions taken")
+    @ApiResponse(responseCode = "200", description = "Paginated audit logs returned")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/audit-logs")
     public ResponseEntity<Page<AdminAuditLogDto>> getAuditLogs(
@@ -246,6 +282,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Export audit logs CSV", description = "Streams immutable audit trail as a downloadable CSV for compliance")
+    @ApiResponse(responseCode = "200", description = "Audit log CSV returned")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/audit-logs/export")
     public ResponseEntity<byte[]> exportAuditLogsCsv() {
@@ -259,12 +296,14 @@ public class AdminController {
     }
 
     @Operation(summary = "Get ML model health & stats", description = "Returns categorization model health, feedback volumes, and accuracy")
+    @ApiResponse(responseCode = "200", description = "ML stats returned")
     @GetMapping("/ml/stats")
     public ResponseEntity<AdminMlStatsDto> getMlStats() {
         return ResponseEntity.ok(mlGovernanceService.getModelStats());
     }
 
     @Operation(summary = "Get ML feedback queue", description = "Paginated list of user category corrections for model retraining review")
+    @ApiResponse(responseCode = "200", description = "ML feedback queue returned")
     @GetMapping({"/ml/feedback", "/ml/feedback/pending"})
     public ResponseEntity<Page<AdminMlFeedbackItemDto>> getMlFeedback(
             @RequestParam(defaultValue = "0") int page,
@@ -275,6 +314,10 @@ public class AdminController {
     }
 
     @Operation(summary = "Review ML feedback", description = "Approve or dismiss a user correction in the training queue")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Feedback decision recorded"),
+        @ApiResponse(responseCode = "400", description = "Invalid decision or feedback ID")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/ml/feedback/{feedbackId}/review")
     public ResponseEntity<Map<String, String>> reviewMlFeedback(
@@ -290,6 +333,10 @@ public class AdminController {
     }
 
     @Operation(summary = "Test ML prediction sandbox", description = "Executes real-time inference on a test description")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Prediction returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid test prediction request")
+    })
     @PostMapping("/ml/test-prediction")
     public ResponseEntity<MlClassificationResponse> testMlPrediction(
             @Valid @RequestBody MlClassificationRequest request) {
@@ -297,6 +344,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Get ML Retraining Automation Logs & History", description = "Returns retraining history, automated cron schedule status, evaluation benchmarks, and logs")
+    @ApiResponse(responseCode = "200", description = "Retraining logs returned")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/ml/retrain/logs")
     public ResponseEntity<Map<String, Object>> getMlRetrainingLogs() {
@@ -304,6 +352,10 @@ public class AdminController {
     }
 
     @Operation(summary = "Trigger on-demand ML retraining", description = "Executes model retraining evaluation pipeline. Requires ADMIN or SUPER_ADMIN and valid step-up PIN.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Retraining outcome returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid step-up PIN")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/ml/retrain/trigger")
     public ResponseEntity<Map<String, Object>> triggerMlRetraining(
@@ -317,6 +369,10 @@ public class AdminController {
     }
 
     @Operation(summary = "Broadcast announcement", description = "Dispatches push notifications & inbox announcements to targeted users. Requires PIN.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Announcement broadcast summary returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid payload or step-up PIN")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/notifications/broadcast")
     public ResponseEntity<AdminBroadcastResultDto> broadcastAnnouncement(
@@ -329,6 +385,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Resilience diagnostics", description = "Check database status and Hugging Face snapshot health")
+    @ApiResponse(responseCode = "200", description = "Resilience diagnostics returned")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/resilience/status")
     public ResponseEntity<Map<String, Object>> getResilienceStatus() {
@@ -336,6 +393,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Multi-cloud database cluster topology state", description = "Returns real-time health and connection metrics across Server Engine, Neon PostgreSQL, and Hugging Face Spaces")
+    @ApiResponse(responseCode = "200", description = "Topology metrics returned")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/resilience/database-state")
     public ResponseEntity<AdminDatabaseTopologyDto> getDatabaseTopology() {
@@ -343,6 +401,11 @@ public class AdminController {
     }
 
     @Operation(summary = "Trigger on-demand Hugging Face backup", description = "Uploads encrypted database snapshot to Hugging Face. Requires SUPER_ADMIN & PIN.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Backup operation status returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid step-up PIN"),
+        @ApiResponse(responseCode = "403", description = "Requires SUPER_ADMIN role")
+    })
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping("/resilience/hf-backup")
     public ResponseEntity<Map<String, Object>> triggerBackup(
@@ -361,6 +424,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Get live application logs", description = "Retrieves recent in-memory and rolling application logs with optional level/query filtering")
+    @ApiResponse(responseCode = "200", description = "Log entries returned")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/system/logs")
     public ResponseEntity<List<AdminLogEntryDto>> getApplicationLogs(
@@ -371,6 +435,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Get system runtime telemetry", description = "Live JVM memory, thread pool, and HikariCP connection status")
+    @ApiResponse(responseCode = "200", description = "Telemetry snapshot returned")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/system/telemetry")
     public ResponseEntity<AdminTelemetryDto> getTelemetry() {
@@ -378,6 +443,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Purge runtime cache", description = "Clears and rebuilds platform in-memory caches")
+    @ApiResponse(responseCode = "200", description = "Runtime cache purged")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/system/cache/purge")
     public ResponseEntity<Map<String, String>> purgeCache(
@@ -390,6 +456,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Get all platform expenses", description = "Paginated list of all expenses across all users")
+    @ApiResponse(responseCode = "200", description = "Paginated expenses returned")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping({"/expenses", "/data/expenses"})
     public ResponseEntity<Page<ExpenseDto>> getAllExpenses(
@@ -402,6 +469,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Get all platform incomes", description = "Paginated list of all incomes across all users")
+    @ApiResponse(responseCode = "200", description = "Paginated incomes returned")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping({"/incomes", "/data/incomes"})
     public ResponseEntity<Page<IncomeDto>> getAllIncomes(
@@ -417,6 +485,11 @@ public class AdminController {
             description = "Streams the complete multi-tenant ledger (users, expenses, incomes, categories) as "
                     + "one JSON object. Rows are written page by page, so large databases do not exhaust memory. "
                     + "Requires SUPER_ADMIN and the operator's security PIN (body field stepUpPin); every call is audited.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Platform ledger JSON streamed"),
+        @ApiResponse(responseCode = "400", description = "Invalid step-up PIN"),
+        @ApiResponse(responseCode = "403", description = "Requires SUPER_ADMIN role")
+    })
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping({"/database/export/json", "/data/export-ledger"})
     public void exportPlatformLedgerJson(
@@ -435,6 +508,11 @@ public class AdminController {
     @Operation(summary = "Download portable SQLite database snapshot",
             description = "Generates a portable SQLite snapshot and streams it from disk. "
                     + "Requires SUPER_ADMIN and the operator's security PIN (body field stepUpPin); every call is audited.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "SQLite database snapshot streamed"),
+        @ApiResponse(responseCode = "400", description = "Invalid step-up PIN"),
+        @ApiResponse(responseCode = "403", description = "Requires SUPER_ADMIN role")
+    })
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping({"/database/snapshot/download", "/data/snapshot"})
     public ResponseEntity<StreamingResponseBody> downloadDatabaseSnapshot(
@@ -462,6 +540,11 @@ public class AdminController {
 
     @Operation(summary = "Trigger immediate database snapshot to Hugging Face",
             description = "Same operation as /resilience/hf-backup: requires SUPER_ADMIN and the security PIN.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Backup operation status returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid step-up PIN"),
+        @ApiResponse(responseCode = "403", description = "Requires SUPER_ADMIN role")
+    })
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping("/database/snapshot/trigger")
     public ResponseEntity<Map<String, Object>> triggerDatabaseSnapshot(

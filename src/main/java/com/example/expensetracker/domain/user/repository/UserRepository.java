@@ -94,9 +94,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     @Query("""
             SELECT u FROM User u WHERE \
-            (:hasQuery = false OR LOWER(u.name) LIKE :pattern \
-            OR LOWER(u.email) LIKE :pattern \
-            OR LOWER(u.username) LIKE :pattern) \
+            (:hasQuery = false OR LOWER(u.name) LIKE :pattern ESCAPE '\\' \
+            OR LOWER(u.email) LIKE :pattern ESCAPE '\\' \
+            OR LOWER(u.username) LIKE :pattern ESCAPE '\\') \
             AND (:hasRole = false OR u.role = :role) \
             ORDER BY u.id DESC""")
     Page<User> searchUsersFiltered(@Param("hasQuery") boolean hasQuery, @Param("pattern") String pattern,

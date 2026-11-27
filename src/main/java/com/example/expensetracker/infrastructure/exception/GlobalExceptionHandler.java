@@ -22,7 +22,6 @@ import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 import com.example.expensetracker.common.ErrorResponse;
-import com.example.expensetracker.domain.expense.model.Expense;
 
 
 
@@ -356,11 +355,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDateTimeParseException(
             java.time.format.DateTimeParseException ex,
             HttpServletRequest request) {
+        String rawInput = ex.getParsedString() != null ? ex.getParsedString() : "";
+        String sanitized = rawInput.replaceAll("[\\r\\n\\p{Cntrl}]", "");
+        if (sanitized.length() > 64) {
+            sanitized = sanitized.substring(0, 64) + "...";
+        }
         log.warn("Invalid date format at '{}': parsedString='{}', errorIndex={}",
-                request.getRequestURI(), ex.getParsedString(), ex.getErrorIndex());
+                request.getRequestURI(), sanitized, ex.getErrorIndex());
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
-                "Invalid date format: '" + ex.getParsedString() + "'. Expected format: yyyy-MM-dd",
+                "Invalid date format: '" + sanitized + "'. Expected format: yyyy-MM-dd",
                 request
         );
     }
@@ -404,7 +408,7 @@ public class GlobalExceptionHandler {
         log.error("Mail service error at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
         return buildResponse(
                 HttpStatus.SERVICE_UNAVAILABLE,
-                "Email delivery service is currently unavailable: " + ex.getMessage(),
+                "Email delivery service is currently unavailable.",
                 request
         );
     }

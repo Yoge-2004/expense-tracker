@@ -52,8 +52,8 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [visible, setVisible] = useState(false);
   const [config, setConfig] = useState<AlertConfig>({ title: '' });
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const [scaleAnim] = useState(new Animated.Value(0.92));
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+  const [scaleAnim] = useState(() => new Animated.Value(0.92));
 
   const showAlert = useCallback(
     (
@@ -172,6 +172,7 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   onPress={hideAlert}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   style={[styles.closeXBtn, { backgroundColor: c.inputBg }]}
+                  accessibilityRole="button"
                   accessibilityLabel="Close alert"
                 >
                   <Ionicons name="close" size={16} color={c.textMuted} />
@@ -205,10 +206,10 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
                     if (isDestructive || btn.style === 'accent') {
                       btnBg = c.accent;
-                      textColor = '#FFFFFF';
+                      textColor = c.onAccent;
                     } else if (btn.style === 'teal') {
                       btnBg = c.teal;
-                      textColor = '#FFFFFF';
+                      textColor = c.onHighlight;
                     } else if (btn.style === 'secondary') {
                       btnBg = c.inputBg;
                       borderColor = c.border;
@@ -229,6 +230,8 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                         key={idx}
                         activeOpacity={0.8}
                         onPress={() => handleButtonPress(btn)}
+                        accessibilityRole="button"
+                        accessibilityLabel={btn.text}
                         style={[
                           styles.actionBtn,
                           {

@@ -6,10 +6,6 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.example.expensetracker.domain.expense.model.Category;
-import com.example.expensetracker.domain.expense.model.Expense;
-
-
 /** Request body for POST /api/expenses/user/{userId}. */
 @Schema(description = "Data required to create a new expense record")
 public record ExpenseRequest(

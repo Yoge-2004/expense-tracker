@@ -16,6 +16,9 @@ import java.util.concurrent.TimeUnit;
 
 
 
+/**
+ * Default {@link ReceiptOcrService} implementation combining image preprocessing, Tesseract/ML extraction, and receipt parsing.
+ */
 @Slf4j
 @Service
 public class ReceiptOcrServiceImpl implements ReceiptOcrService {

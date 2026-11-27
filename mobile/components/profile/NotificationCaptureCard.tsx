@@ -31,15 +31,24 @@ export const NotificationCaptureCard = memo(function NotificationCaptureCard({
   const [hasSms, setHasSms] = useState(false);
   const [hasNotif, setHasNotif] = useState(false);
   const waitingForGrant = useRef(false);
+  const mountedRef = useRef(true);
 
   const refresh = useCallback(async () => {
-    setState(getCaptureState());
-    setHasNotif(isNotificationAccessGranted());
-    setHasSms(await hasSmsPermission());
+    const nextState = getCaptureState();
+    const nextNotif = isNotificationAccessGranted();
+    const nextSms = await hasSmsPermission();
+    if (!mountedRef.current) return;
+    setState(nextState);
+    setHasNotif(nextNotif);
+    setHasSms(nextSms);
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     void refresh();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [refresh]);
 
   const showRestrictedHelp = useCallback(() => {
@@ -56,9 +65,11 @@ export const NotificationCaptureCard = memo(function NotificationCaptureCard({
 
   // On return from Settings: re-check
   useEffect(() => {
+    let active = true;
     const sub = AppState.addEventListener('change', (next) => {
       if (next !== 'active') return;
       void refresh().then(() => {
+        if (!active || !mountedRef.current) return;
         const now = getCaptureState();
         if (waitingForGrant.current) {
           waitingForGrant.current = false;
@@ -69,15 +80,28 @@ export const NotificationCaptureCard = memo(function NotificationCaptureCard({
         }
       });
     });
-    return () => sub.remove();
+    return () => {
+      active = false;
+      sub.remove();
+    };
   }, [showAlert, showRestrictedHelp, refresh]);
 
   const enableAll = useCallback(async () => {
-    // 1. Request SMS permission
-    const smsOk = await requestSmsPermission();
-    setHasSms(smsOk);
+    // 1. Request SMS permission only if not already granted
+    let smsOk = hasSms;
+    if (!smsOk) {
+      smsOk = await requestSmsPermission();
+      if (!mountedRef.current) return;
+      setHasSms(smsOk);
+    }
 
-    // 2. Guide user to Notification Access for UPI apps
+    // 2. Skip Android Notification Access prompt if already granted
+    if (isNotificationAccessGranted()) {
+      await refresh();
+      return;
+    }
+
+    // 3. Guide user to Notification Access for UPI apps
     showAlert(
       'Record UPI and Bank Debits?',
       'Android will ask you to switch on Notification access so Google Pay, PhonePe, and Paytm alerts can also be read. Only money transactions are kept; OTPs and personal chats are completely ignored. Nothing leaves your phone.',
@@ -93,7 +117,7 @@ export const NotificationCaptureCard = memo(function NotificationCaptureCard({
       ],
       'info'
     );
-  }, [showAlert, refresh]);
+  }, [hasSms, showAlert, refresh]);
 
   const togglePause = useCallback(() => {
     setCapturePaused(state === 'active');
@@ -130,7 +154,7 @@ export const NotificationCaptureCard = memo(function NotificationCaptureCard({
         </View>
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={!isPartiallyActive ? enableAll : togglePause}
+          onPress={!isPartiallyActive ? () => { void enableAll(); } : togglePause}
           accessibilityRole="button"
           accessibilityLabel="Automatic transaction capture action"
           style={[styles.button, { backgroundColor: c.primary + '18', borderColor: c.primary + '55' }]}
@@ -146,8 +170,10 @@ export const NotificationCaptureCard = memo(function NotificationCaptureCard({
             {!hasSms ? '• Bank SMS permission is missing' : '• UPI Notification access is missing'}
           </Text>
           <TouchableOpacity
-            onPress={enableAll}
+            onPress={() => { void enableAll(); }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Complete transaction capture setup"
           >
             <Text style={[styles.completeBtnText, { color: c.primary }]}>Complete Setup</Text>
           </TouchableOpacity>

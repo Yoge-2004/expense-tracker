@@ -5,12 +5,16 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import com.example.expensetracker.domain.budget.repository.BudgetRepository;
 import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
+import com.example.expensetracker.domain.expense.service.ExpenseExcelReportGenerator;
 import com.example.expensetracker.domain.expense.service.ExpenseExportService;
 import com.example.expensetracker.domain.expense.service.ExpenseExportServiceImpl;
+import com.example.expensetracker.domain.expense.service.ExpensePdfReportGenerator;
 import com.example.expensetracker.domain.goal.repository.SavingsGoalRepository;
 import com.example.expensetracker.domain.income.repository.IncomeRepository;
+import com.example.expensetracker.domain.income.service.IncomeExcelReportGenerator;
 import com.example.expensetracker.domain.income.service.IncomeExportService;
 import com.example.expensetracker.domain.income.service.IncomeExportServiceImpl;
+import com.example.expensetracker.domain.income.service.IncomePdfReportGenerator;
 import com.example.expensetracker.domain.user.model.User;
 
 /** Compatibility facade for callers that still require the composite export contract. */

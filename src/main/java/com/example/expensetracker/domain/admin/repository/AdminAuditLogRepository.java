@@ -23,9 +23,9 @@ public interface AdminAuditLogRepository extends JpaRepository<AdminAuditLog, Lo
 
     @Query("""
             SELECT a FROM AdminAuditLog a WHERE \
-            (:hasQuery = false OR LOWER(a.actorUsername) LIKE :pattern \
-            OR LOWER(a.action) LIKE :pattern \
-            OR LOWER(a.targetResource) LIKE :pattern) \
+            (:hasQuery = false OR LOWER(a.actorUsername) LIKE :pattern ESCAPE '\\' \
+            OR LOWER(a.action) LIKE :pattern ESCAPE '\\' \
+            OR LOWER(a.targetResource) LIKE :pattern ESCAPE '\\') \
             ORDER BY a.createdAt DESC""")
     Page<AdminAuditLog> searchLogsFiltered(@Param("hasQuery") boolean hasQuery, @Param("pattern") String pattern,
                                            Pageable pageable);

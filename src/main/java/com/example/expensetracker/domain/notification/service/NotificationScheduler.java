@@ -1,10 +1,12 @@
 package com.example.expensetracker.domain.notification.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -27,7 +29,6 @@ import com.example.expensetracker.domain.user.repository.UserRepository;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class NotificationScheduler {
 
     private static final int KEEP_DAYS = 90;
@@ -41,12 +42,42 @@ public class NotificationScheduler {
     private final NotificationDetector detector;
     private final NotificationService notificationService;
     private final AppNotificationRepository notificationRepository;
+    private final TaskExecutor taskExecutor;
+    private final Clock clock;
 
     @Value("${app.notifications.zone:Asia/Kolkata}")
     private String zone;
 
     @Value("${app.notifications.scheduler.enabled:true}")
     private boolean enabled;
+
+    /** Most users processed at once; keep it below the database pool size so live requests still get connections. */
+    @Value("${app.async.batch-concurrency:4}")
+    private int batchConcurrency = 4;
+
+    public NotificationScheduler(
+            UserRepository userRepository,
+            NotificationDetector detector,
+            NotificationService notificationService,
+            AppNotificationRepository notificationRepository) {
+        this(userRepository, detector, notificationService, notificationRepository, null, null);
+    }
+
+    @Autowired
+    public NotificationScheduler(
+            UserRepository userRepository,
+            NotificationDetector detector,
+            NotificationService notificationService,
+            AppNotificationRepository notificationRepository,
+            @Autowired(required = false) TaskExecutor taskExecutor,
+            @Autowired(required = false) Clock clock) {
+        this.userRepository = userRepository;
+        this.detector = detector;
+        this.notificationService = notificationService;
+        this.notificationRepository = notificationRepository;
+        this.taskExecutor = taskExecutor;
+        this.clock = clock != null ? clock : Clock.systemDefaultZone();
+    }
 
     /** Budgets, bills, goals and large expenses, every morning. */
     @Scheduled(cron = "0 0 9 * * *", zone = "${app.notifications.zone:Asia/Kolkata}")
@@ -68,17 +99,10 @@ public class NotificationScheduler {
     @Scheduled(cron = "0 30 3 * * *", zone = "${app.notifications.zone:Asia/Kolkata}")
     public void purgeOld() {
         if (enabled) {
-            long removed = notificationRepository.deleteByCreatedAtBefore(LocalDateTime.now().minusDays(KEEP_DAYS));
+            long removed = notificationRepository.deleteByCreatedAtBefore(LocalDateTime.now(clock).minusDays(KEEP_DAYS));
             log.info("Removed {} notifications older than {} days", removed, KEEP_DAYS);
         }
     }
-
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private org.springframework.core.task.TaskExecutor taskExecutor;
-
-    /** Most users processed at once; keep it below the database pool size so live requests still get connections. */
-    @org.springframework.beans.factory.annotation.Value("${app.async.batch-concurrency:4}")
-    private int batchConcurrency = 4;
 
     /** @return how many notifications were created */
     int process(LocalDate today, boolean weekly) {
@@ -111,6 +135,6 @@ public class NotificationScheduler {
     }
 
     private LocalDate today() {
-        return LocalDate.now(ZoneId.of(zone));
+        return LocalDate.now(clock.withZone(ZoneId.of(zone)));
     }
 }

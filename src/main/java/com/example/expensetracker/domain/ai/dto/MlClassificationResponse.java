@@ -7,6 +7,15 @@ import java.util.Map;
 
 
 
+/**
+ * Response payload returned by ML expense-category classification.
+ *
+ * @param category      predicted top category
+ * @param confidence    confidence score for the top prediction
+ * @param topK          ranked candidate category predictions with scores
+ * @param modelRevision active ML model revision identifier
+ * @param modelType     active ML model architecture/type name
+ */
 public record MlClassificationResponse(
         String category,
         double confidence,

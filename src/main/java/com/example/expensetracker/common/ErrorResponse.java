@@ -3,9 +3,6 @@ package com.example.expensetracker.common;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
-import com.example.expensetracker.infrastructure.exception.GlobalExceptionHandler;
-
-
 /** Standardised immutable error response returned by the GlobalExceptionHandler. */
 @Schema(description = "Standard error response body returned when a request fails")
 public record ErrorResponse(

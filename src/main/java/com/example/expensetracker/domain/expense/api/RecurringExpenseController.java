@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -21,14 +20,8 @@ import java.util.Map;
 
 import com.example.expensetracker.common.ErrorResponse;
 import com.example.expensetracker.domain.expense.dto.ExpenseDto;
-import com.example.expensetracker.domain.expense.model.Category;
-import com.example.expensetracker.domain.expense.model.Expense;
-import com.example.expensetracker.domain.expense.model.RecurringExpense;
 import com.example.expensetracker.domain.expense.service.RecurringExpenseService;
-import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
-
-
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 /**
  * Controller dedicated exclusively to recurring expense (subscription) lifecycle management.
@@ -83,7 +76,7 @@ public class RecurringExpenseController {
             Historical expense records created by the subscription are **not** deleted.
             """
     )
-    @RequestBody(required = true, content = @Content(
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, content = @Content(
         mediaType = MediaType.APPLICATION_JSON_VALUE,
         schema = @Schema(implementation = ExpenseDto.class),
         examples = @ExampleObject(
@@ -127,7 +120,7 @@ public class RecurringExpenseController {
             @Parameter(description = "ID of user registering recurring expense.",
                     required = true, example = "1")
             @PathVariable Long userId,
-            @org.springframework.web.bind.annotation.RequestBody ExpenseDto dto) {
+            @RequestBody ExpenseDto dto) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to setup recurring expense for userId={}: amount={}, frequency={}, intervalDays={}, categoryId={}",
                 userId, dto.amount(), dto.frequency(), dto.intervalDays(), dto.categoryId());
@@ -179,7 +172,7 @@ public class RecurringExpenseController {
                     required = true, example = "3")
             @PathVariable(value = "recId", required = false) Long recId,
             @PathVariable(value = "userId", required = false) Long userId,
-            @org.springframework.web.bind.annotation.RequestBody Map<String, Object> updates) {
+            @RequestBody Map<String, Object> updates) {
         log.info("Received request to update subscription id={}, userId={}: fields={}",
                 recId, userId, updates != null ? updates.keySet() : Collections.emptySet());
         if (userId != null) {

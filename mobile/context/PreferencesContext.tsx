@@ -16,7 +16,7 @@ import { AppState, useColorScheme } from 'react-native';
 import * as Font from 'expo-font';
 import { safeStorageGet, safeStorageSet, readSavedTheme, persistSavedTheme, apiRequest, getSession } from '../services/api';
 import { Colors, ThemeColors, FontChoice, FontTokens, FontPresets, ensureColorContrast, buildCategoryPalette } from '../constants/theme';
-import { ExtractedPalette, PRESET_BACKGROUNDS, PresetBackground } from '../services/paletteExtractor';
+import { ExtractedPalette, PRESET_BACKGROUNDS } from '../services/paletteExtractor';
 import { buildBootTheme, writeBootTheme } from '../utils/bootTheme';
 import { cloudUriToLocalWallpaper, wallpaperToCloudUri } from '../utils/wallpaperSync';
 
@@ -326,66 +326,99 @@ export function PreferencesProvider({
     }
   }, [initialTheme, theme]);
 
-  const activePreset: PresetBackground = useMemo(() => {
-    return (
-      PRESET_BACKGROUNDS.find((p) => p.id === backgroundAsset.presetId) ||
-      PRESET_BACKGROUNDS[0]
-    );
-  }, [backgroundAsset.presetId]);
+  const latestAppearanceRef = useRef({
+    fontChoice,
+    customFontFamily,
+    backgroundAsset,
+    customPalette,
+    theme,
+  });
+  useEffect(() => {
+    latestAppearanceRef.current = {
+      fontChoice,
+      customFontFamily,
+      backgroundAsset,
+      customPalette,
+      theme,
+    };
+  }, [fontChoice, customFontFamily, backgroundAsset, customPalette, theme]);
+  const pushChainRef = useRef<Promise<void>>(Promise.resolve());
 
-  // Push appearance to cloud backend (non-blocking)
+  // Push appearance to cloud backend (non-blocking, serialized)
   const pushAppearanceToCloud = useCallback(
-    async (overrides?: {
+    (overrides?: {
       font?: FontChoice;
       customFont?: string | null;
       bg?: BackgroundAssetConfig;
       palette?: ExtractedPalette | null;
     }) => {
-      try {
-        const session = await getSession();
-        if (!session || !session.userId) return;
-
-        const f = overrides && 'font' in overrides ? overrides.font : fontChoice;
-        const cf = overrides && 'customFont' in overrides ? overrides.customFont : customFontFamily;
-        const bg = overrides && 'bg' in overrides ? overrides.bg : backgroundAsset;
-        const pal = overrides && 'palette' in overrides ? overrides.palette : customPalette;
-
-        const activePal =
-          pal ?? (theme === 'light' ? activePreset.lightPalette : activePreset.darkPalette);
-
-        // A wallpaper picked in the app is a local file the website cannot load: send a compressed copy.
-        // '' clears a previous cloud wallpaper (the server only overwrites non-null fields). If a custom
-        // wallpaper cannot be prepared, leave the cloud's wallpaper fields alone rather than send a path.
-        const isCustomWallpaper = bg?.type === 'custom' && !!bg.uri;
-        const cloudWallpaperUri = isCustomWallpaper ? await wallpaperToCloudUri(bg?.uri) : '';
-        const wallpaperUnsyncable = isCustomWallpaper && cloudWallpaperUri === null;
-
-        const payload = {
-          fontChoice: f,
-          customFontFamily: cf,
-          presetId: bg?.presetId || 'default',
-          primaryColor: activePal?.primary,
-          primaryGradientEnd: activePal?.primaryGradientEnd,
-          accentColor: activePal?.accent,
-          highlightColor: activePal?.highlight,
-          cardSurface: activePal?.card,
-          surface: activePal?.surface,
-          borderAccent: activePal?.borderAccent,
-          wallpaperType: wallpaperUnsyncable ? undefined : bg?.type || 'preset',
-          wallpaperUri: wallpaperUnsyncable ? undefined : cloudWallpaperUri,
-          overlayOpacity: bg?.overlayOpacity ?? 0.35,
-          blurIntensity: bg?.blurIntensity ?? 0,
-        };
-
-        await apiRequest(`/users/${session.userId}/appearance`, {
-          method: 'PUT',
-          body: JSON.stringify(payload),
-        });
-      } catch (e) {
-        console.warn('[PreferencesContext] Cloud appearance push skipped/failed:', e);
+      if (overrides) {
+        if ('font' in overrides && overrides.font !== undefined) {
+          latestAppearanceRef.current.fontChoice = overrides.font;
+        }
+        if ('customFont' in overrides) {
+          latestAppearanceRef.current.customFontFamily = overrides.customFont ?? null;
+        }
+        if ('bg' in overrides && overrides.bg !== undefined) {
+          latestAppearanceRef.current.backgroundAsset = overrides.bg;
+        }
+        if ('palette' in overrides) {
+          latestAppearanceRef.current.customPalette = overrides.palette ?? null;
+        }
       }
+
+      const task = async () => {
+        try {
+          const session = await getSession();
+          if (!session || !session.userId) return;
+
+          const snap = latestAppearanceRef.current;
+          const preset =
+            PRESET_BACKGROUNDS.find((p) => p.id === snap.backgroundAsset.presetId) ||
+            PRESET_BACKGROUNDS[0];
+          const activePal =
+            snap.customPalette ?? (snap.theme === 'light' ? preset.lightPalette : preset.darkPalette);
+
+          // A wallpaper picked in the app is a local file the website cannot load: send a compressed copy.
+          // '' clears a previous cloud wallpaper (the server only overwrites non-null fields). If a custom
+          // wallpaper cannot be prepared, leave the cloud's wallpaper fields alone rather than send a path.
+          const isCustomWallpaper = snap.backgroundAsset?.type === 'custom' && !!snap.backgroundAsset.uri;
+          const cloudWallpaperUri = isCustomWallpaper
+            ? await wallpaperToCloudUri(snap.backgroundAsset?.uri)
+            : '';
+          const wallpaperUnsyncable = isCustomWallpaper && cloudWallpaperUri === null;
+
+          const payload = {
+            fontChoice: snap.fontChoice,
+            customFontFamily: snap.customFontFamily,
+            presetId: snap.backgroundAsset?.presetId || 'default',
+            primaryColor: activePal?.primary,
+            primaryGradientEnd: activePal?.primaryGradientEnd,
+            accentColor: activePal?.accent,
+            highlightColor: activePal?.highlight,
+            cardSurface: activePal?.card,
+            surface: activePal?.surface,
+            borderAccent: activePal?.borderAccent,
+            wallpaperType: wallpaperUnsyncable ? undefined : snap.backgroundAsset?.type || 'preset',
+            wallpaperUri: wallpaperUnsyncable ? undefined : cloudWallpaperUri,
+            overlayOpacity: snap.backgroundAsset?.overlayOpacity ?? 0.35,
+            blurIntensity: snap.backgroundAsset?.blurIntensity ?? 0,
+          };
+
+          await apiRequest(`/users/${session.userId}/appearance`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+          });
+        } catch (e) {
+          console.warn('[PreferencesContext] Cloud appearance push skipped/failed:', e);
+        }
+      };
+
+      const next = pushChainRef.current.then(task, task);
+      pushChainRef.current = next;
+      return next;
     },
-    [fontChoice, customFontFamily, backgroundAsset, customPalette, theme, activePreset]
+    []
   );
 
   // Pull appearance from cloud backend
@@ -408,6 +441,9 @@ export function PreferencesProvider({
         if (remote.customFontFamily) {
           setCustomFontFamilyState(remote.customFontFamily);
           safeStorageSet('app_custom_font_family', remote.customFontFamily).catch(() => {});
+        } else if ('customFontFamily' in remote && remote.customFontFamily === null) {
+          setCustomFontFamilyState(null);
+          safeStorageSet('app_custom_font_family', '').catch(() => {});
         }
         if (remote.primaryColor) {
           const pal: ExtractedPalette = {
@@ -421,6 +457,9 @@ export function PreferencesProvider({
           };
           setCustomPaletteState(pal);
           safeStorageSet('app_custom_palette', JSON.stringify(pal)).catch(() => {});
+        } else if ('primaryColor' in remote && remote.primaryColor === null) {
+          setCustomPaletteState(null);
+          safeStorageSet('app_custom_palette', '').catch(() => {});
         }
         if (remote.wallpaperType) {
           const remoteType = (remote.wallpaperType as 'preset' | 'custom' | 'none') || 'preset';

@@ -19,16 +19,13 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.goal.dto.SavingsDepositRequest;
 import com.example.expensetracker.domain.goal.dto.SavingsGoalDto;
 import com.example.expensetracker.domain.goal.dto.SavingsGoalRequest;
 import com.example.expensetracker.domain.goal.service.SavingsGoalService;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
-
-
+import com.example.expensetracker.domain.user.service.UserProfileService;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 /**
  * REST controller exposing endpoints for managing savings goals, milestone targets, and deposit contributions.
@@ -55,9 +52,8 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
 public class SavingsGoalController {
 
     private final SavingsGoalService savingsGoalService;
-    private final UserService userService;
-    private final com.example.expensetracker.infrastructure.security.UserSecurity userSecurity;
-
+    private final UserProfileService userService;
+    private final com.example.expensetracker.domain.user.security.UserSecurity userSecurity;
 
     /**
      * Creates a new savings goal for the authenticated user.
@@ -234,6 +230,11 @@ public class SavingsGoalController {
      */
     @Operation(summary = "Get recurring savings goals",
             description = "Retrieves all recurring savings goals and chits for the user.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Recurring savings goals returned"),
+        @ApiResponse(responseCode = "400", description = "User not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping("/recurring/user/{userId}")
     public ResponseEntity<List<SavingsGoalDto>> getRecurringGoals(
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")

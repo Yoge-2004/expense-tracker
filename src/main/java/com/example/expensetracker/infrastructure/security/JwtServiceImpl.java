@@ -141,10 +141,10 @@ public class JwtServiceImpl implements JwtService {
      * which keeps a login made right after a password reset working.</p>
      */
     private boolean isRevoked(String token, UserDetails userDetails) {
-        if (!(userDetails instanceof CustomUserDetails details) || details.getUser() == null) {
+        if (!(userDetails instanceof RevocableUserDetails details)) {
             return false;
         }
-        Instant cutoff = details.getUser().getTokensValidAfter();
+        Instant cutoff = details.getTokensValidAfter();
         if (cutoff == null) {
             return false;
         }

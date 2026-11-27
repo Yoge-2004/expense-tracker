@@ -9,11 +9,6 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-import com.example.expensetracker.domain.expense.model.Category;
-import com.example.expensetracker.domain.expense.model.Expense;
-
-
-
 /**
  * Abstract base entity that provides automatic audit timestamp fields
  * for all JPA entities in the Expense Tracker application.
@@ -25,7 +20,7 @@ import com.example.expensetracker.domain.expense.model.Expense;
  *
  * <p>This class is annotated with {@code @MappedSuperclass}, meaning it is
  * not mapped to its own database table. Instead, its fields are included
- * in the table of each concrete subclass (e.g., {@link Expense}, {@link Category}).</p>
+ * in the table of each concrete subclass (e.g., {@link com.example.expensetracker.domain.expense.model.Expense}, {@link com.example.expensetracker.domain.expense.model.Category}).</p>
  *
  * @author Yogeshwaran
  * @version 1.0

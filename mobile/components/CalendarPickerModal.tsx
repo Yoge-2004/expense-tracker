@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
+import { parseLocalDate, toLocalDateString } from '../utils/date';
 
 // Dynamic window dimensions calculated inside component
 
@@ -32,6 +33,7 @@ interface CalendarPickerModalProps {
   visible: boolean;
   title?: string;
   initialDate?: string; // YYYY-MM-DD
+  allowClear?: boolean;
   onClose: () => void;
   onSelectDate: (date: string) => void;
 }
@@ -40,6 +42,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
   visible,
   title = 'Select Date',
   initialDate,
+  allowClear = true,
   onClose,
   onSelectDate,
 }) => {
@@ -56,16 +59,14 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
   const [prevTrigger, setPrevTrigger] = useState({ initialDate, visible });
   if (prevTrigger.initialDate !== initialDate || prevTrigger.visible !== visible) {
     setPrevTrigger({ initialDate, visible });
-    if (initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
-      const parts = initialDate.split('-');
-      const y = Number.parseInt(parts[0], 10);
-      const m = Number.parseInt(parts[1], 10) - 1;
-      if (!Number.isNaN(y) && !Number.isNaN(m)) {
-        setViewYear(y);
-        setViewMonth(m);
-        setDecadeBase(Math.floor(y / 12) * 12);
-        setSelectedDateStr(initialDate);
-      }
+    const parsedInitial = initialDate ? parseLocalDate(initialDate) : null;
+    if (parsedInitial) {
+      const y = parsedInitial.getFullYear();
+      const m = parsedInitial.getMonth();
+      setViewYear(y);
+      setViewMonth(m);
+      setDecadeBase(Math.floor(y / 12) * 12);
+      setSelectedDateStr(toLocalDateString(parsedInitial));
     } else {
       const now = new Date();
       setViewYear(now.getFullYear());
@@ -109,9 +110,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
 
   const handleSelectDay = (day: number) => {
     Haptics.selectionAsync().catch(() => {});
-    const mm = String(viewMonth + 1).padStart(2, '0');
-    const dd = String(day).padStart(2, '0');
-    const dateStr = `${viewYear}-${mm}-${dd}`;
+    const dateStr = toLocalDateString(new Date(viewYear, viewMonth, day));
     setSelectedDateStr(dateStr);
     onSelectDate(dateStr);
     onClose();
@@ -119,10 +118,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
 
   const handleQuickSelectToday = () => {
     Haptics.selectionAsync().catch(() => {});
-    const now = new Date();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const dateStr = `${now.getFullYear()}-${mm}-${dd}`;
+    const dateStr = toLocalDateString(new Date());
     setSelectedDateStr(dateStr);
     onSelectDate(dateStr);
     onClose();
@@ -150,7 +146,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
     }
   }
 
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const todayStr = toLocalDateString(today);
 
   return (
     <Modal
@@ -439,16 +435,18 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
                   <Text style={[styles.todayBtnText, { color: c.primary }]}>Select Today</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    onSelectDate('');
-                    onClose();
-                  }}
-                  style={[styles.clearBtn, { borderColor: c.border }]}
-                >
-                  <Text style={[styles.clearBtnText, { color: c.textMuted }]}>Clear Filter</Text>
-                </TouchableOpacity>
+                {allowClear && (
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      onSelectDate('');
+                      onClose();
+                    }}
+                    style={[styles.clearBtn, { borderColor: c.border }]}
+                  >
+                    <Text style={[styles.clearBtnText, { color: c.textMuted }]}>Clear Filter</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </TouchableWithoutFeedback>

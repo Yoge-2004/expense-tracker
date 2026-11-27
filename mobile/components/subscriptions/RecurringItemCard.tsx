@@ -116,6 +116,7 @@ export const RecurringItemCard = memo(function RecurringItemCard({
                 activeOpacity={0.7}
                 onPress={onEdit}
                 style={[styles.actionBtn, { backgroundColor: c.inputBg }]}
+                accessibilityRole="button"
                 accessibilityLabel="Edit income stream"
               >
                 <Ionicons name="pencil" size={14} color={c.primary} />
@@ -124,6 +125,7 @@ export const RecurringItemCard = memo(function RecurringItemCard({
                 activeOpacity={0.7}
                 onPress={onDelete}
                 style={[styles.actionBtn, { backgroundColor: c.inputBg }]}
+                accessibilityRole="button"
                 accessibilityLabel="Delete income stream"
               >
                 <Ionicons name="trash-outline" size={14} color={c.accent} />
@@ -226,6 +228,7 @@ export const RecurringItemCard = memo(function RecurringItemCard({
                 activeOpacity={0.7}
                 onPress={onEdit}
                 style={[styles.actionBtn, { backgroundColor: c.inputBg }]}
+                accessibilityRole="button"
                 accessibilityLabel="Edit chit plan"
               >
                 <Ionicons name="pencil" size={14} color={c.warning} />
@@ -234,6 +237,7 @@ export const RecurringItemCard = memo(function RecurringItemCard({
                 activeOpacity={0.7}
                 onPress={onDelete}
                 style={[styles.actionBtn, { backgroundColor: c.inputBg }]}
+                accessibilityRole="button"
                 accessibilityLabel="Delete chit plan"
               >
                 <Ionicons name="trash-outline" size={14} color={c.accent} />
@@ -243,6 +247,7 @@ export const RecurringItemCard = memo(function RecurringItemCard({
                   activeOpacity={0.7}
                   onPress={() => onDeposit(goal)}
                   style={[styles.depositBtn, { backgroundColor: c.warning }]}
+                  accessibilityRole="button"
                   accessibilityLabel="Deposit installment"
                 >
                   <Ionicons name="add-circle-outline" size={13} color={c.onWarning} />
@@ -319,7 +324,9 @@ export const RecurringItemCard = memo(function RecurringItemCard({
                 { color: isUrgent ? c.accent : isOverdue ? c.warning : c.textMuted },
               ]}
             >
-              {isOverdue
+              {days === 999
+                ? 'Active cycle'
+                : isOverdue
                 ? `Overdue by ${Math.abs(days)}d`
                 : days === 0
                 ? 'Due Today!'
@@ -332,6 +339,7 @@ export const RecurringItemCard = memo(function RecurringItemCard({
               activeOpacity={0.7}
               onPress={onEdit}
               style={[styles.actionBtn, { backgroundColor: c.inputBg }]}
+              accessibilityRole="button"
               accessibilityLabel="Edit subscription"
             >
               <Ionicons name="pencil" size={14} color={c.primary} />
@@ -340,6 +348,7 @@ export const RecurringItemCard = memo(function RecurringItemCard({
               activeOpacity={0.7}
               onPress={onDelete}
               style={[styles.actionBtn, { backgroundColor: c.inputBg }]}
+              accessibilityRole="button"
               accessibilityLabel="Delete subscription"
             >
               <Ionicons name="trash-outline" size={14} color={c.accent} />

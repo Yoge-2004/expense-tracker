@@ -68,6 +68,7 @@ import {
   getLoanMetrics,
 } from '../../services/loans';
 import { captureVaultIfMissing, deviceCopyGap, preserveBeforeOverwrite } from '../../services/ledgerVault';
+import { parseLocalDate, toDateOnly, toLocalDateString } from '../../utils/date';
 
 // Responsive dimensions handled dynamically via useWindowDimensions()
 
@@ -246,7 +247,11 @@ export default function DashboardScreen() {
    * Merges global categories and user custom categories.
    */
   const fetchData = async (silent: boolean = false) => {
-    if (!userId) return;
+    if (!userId) {
+      setIsLoading(false);
+      setRefreshing(false);
+      return;
+    }
     if (!silent) setIsLoading(true);
     else setRefreshing(true);
 
@@ -288,6 +293,7 @@ export default function DashboardScreen() {
       const nextCategories = categoriesLoaded ? safeCat : categories;
       const nextIncomes = Array.isArray(incomesData) ? incomesData : incomes;
       const nextSavingsGoals = Array.isArray(savingsData) ? savingsData : savingsGoals;
+      const nextLoans = Array.isArray(loansData) ? loansData : loans;
 
       setExpenses(safeExp);
       setBudgets(safeBud);
@@ -295,11 +301,10 @@ export default function DashboardScreen() {
       setSubscriptions(safeSub);
       setIncomes(nextIncomes);
       setSavingsGoals(nextSavingsGoals);
-      const safeLoans = Array.isArray(loansData) ? loansData : [];
-      setLoans(safeLoans);
+      setLoans(nextLoans);
       if (loanMetricsData) setLoanMetrics(loanMetricsData);
       setFetchError(null);
-      setPartialError(!categoriesLoaded || !Array.isArray(incomesData) || !Array.isArray(savingsData));
+      setPartialError(!categoriesLoaded || !Array.isArray(incomesData) || !Array.isArray(savingsData) || !Array.isArray(loansData));
       setCachedTime(null);
 
       const freshLedger = {
@@ -309,7 +314,7 @@ export default function DashboardScreen() {
         subscriptions: safeSub,
         incomes: nextIncomes,
         savingsGoals: nextSavingsGoals,
-        loans: safeLoans,
+        loans: nextLoans,
         loanMetrics: loanMetricsData,
       };
       void saveCache(freshLedger)
@@ -331,6 +336,10 @@ export default function DashboardScreen() {
    * Hydrates from offline storage first then initiates network sync.
    */
   const loadWithCache = async () => {
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
     const cached = await loadCache();
     if (cached) {
       // Protect the device copy before the first network sync can replace it.
@@ -473,7 +482,7 @@ export default function DashboardScreen() {
                           counterparty: "Friend",
                           type: "LENT",
                           amount: tx.amount,
-                          adjustmentDate: tx.date || new Date().toISOString().split('T')[0],
+                          adjustmentDate: tx.date || toLocalDateString(),
                           notes: `Split from: ${tx.title}`,
                           expenseId: tx.id,
                         });
@@ -558,7 +567,7 @@ export default function DashboardScreen() {
         editType: "budget",
         editId: String(b.budgetId || b.categoryId),
         editCategoryId: String(b.categoryId),
-        editAmount: String(b.limit),
+        editAmount: String(b.limit ?? b.amount ?? ""),
         editPeriod: b.period || "MONTHLY",
         editIntervalDays: String(b.intervalDays || "30"),
       },
@@ -605,8 +614,8 @@ export default function DashboardScreen() {
     const isLast30 = datePreset === 'last30';
     const isCustom = datePreset === 'custom';
     const nowD = new Date();
-    const todayStr = isToday ? nowD.toISOString().split('T')[0] : '';
-    const thirtyAgo = isLast30 ? new Date(nowD.getTime() - 30 * 24 * 60 * 60 * 1000) : null;
+    const todayStr = isToday ? toLocalDateString(nowD) : '';
+    const thirtyAgo = isLast30 ? new Date(nowD.getFullYear(), nowD.getMonth(), nowD.getDate() - 30) : null;
 
     return expenses.filter((e) => {
       const matchSearch =
@@ -621,14 +630,15 @@ export default function DashboardScreen() {
       let matchDate = true;
       if (e.expenseDate) {
         try {
-          const expDStr = e.expenseDate.split('T')[0];
+          const expDStr = toDateOnly(e.expenseDate) || e.expenseDate.split('T')[0];
 
           if (isToday) {
             matchDate = expDStr === todayStr;
           } else if (isMonth) {
             matchDate = monthKey(e.expenseDate) === monthKey(nowD);
           } else if (isLast30 && thirtyAgo) {
-            matchDate = new Date(e.expenseDate) >= thirtyAgo;
+            const parsed = parseLocalDate(e.expenseDate) ?? new Date(e.expenseDate);
+            matchDate = !Number.isNaN(parsed.getTime()) && parsed >= thirtyAgo;
           } else if (isCustom) {
             if (startDate.trim() && expDStr < startDate.trim()) matchDate = false;
             if (endDate.trim() && expDStr > endDate.trim()) matchDate = false;
@@ -650,9 +660,9 @@ export default function DashboardScreen() {
     const isLast30 = datePreset === 'last30';
     const isCustom = datePreset === 'custom';
     const nowD = new Date();
-    const todayStr = isToday ? nowD.toISOString().split('T')[0] : '';
+    const todayStr = isToday ? toLocalDateString(nowD) : '';
     const thisMonth = isMonth ? monthKey(nowD) : '';
-    const thirtyAgo = isLast30 ? new Date(nowD.getTime() - 30 * 24 * 60 * 60 * 1000) : null;
+    const thirtyAgo = isLast30 ? new Date(nowD.getFullYear(), nowD.getMonth(), nowD.getDate() - 30) : null;
 
     return incomes.filter((inc) => {
       const matchSearch =
@@ -664,14 +674,15 @@ export default function DashboardScreen() {
       const dateStr = inc.incomeDate;
       if (dateStr) {
         try {
-          const incDStr = dateStr.split('T')[0];
+          const incDStr = toDateOnly(dateStr) || dateStr.split('T')[0];
 
           if (isToday) {
             matchDate = incDStr === todayStr;
           } else if (isMonth) {
             matchDate = effectiveMonth(inc) === thisMonth;
           } else if (isLast30 && thirtyAgo) {
-            matchDate = new Date(dateStr) >= thirtyAgo;
+            const parsed = parseLocalDate(dateStr) ?? new Date(dateStr);
+            matchDate = !Number.isNaN(parsed.getTime()) && parsed >= thirtyAgo;
           } else if (isCustom) {
             if (startDate.trim() && incDStr < startDate.trim()) matchDate = false;
             if (endDate.trim() && incDStr > endDate.trim()) matchDate = false;

@@ -56,4 +56,15 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
     @Query(value = "SELECT i FROM Income i WHERE i.user = :user ORDER BY i.incomeDate DESC, i.id DESC",
            countQuery = "SELECT COUNT(i) FROM Income i WHERE i.user = :user")
     org.springframework.data.domain.Page<Income> findByUserIncomes(@Param("user") User user, org.springframework.data.domain.Pageable pageable);
+
+    @Query("""
+            SELECT i FROM Income i
+            WHERE i.user = :user
+              AND UPPER(TRIM(i.kind)) = 'REIMBURSEMENT'
+              AND i.reimbursedCategoryId IS NOT NULL
+              AND i.incomeDate BETWEEN :startDate AND :endDate""")
+    List<Income> findReimbursementsByUserAndIncomeDateBetween(
+            @Param("user") User user,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

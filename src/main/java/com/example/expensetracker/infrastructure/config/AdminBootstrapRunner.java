@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.expensetracker.domain.user.model.Role;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
+import com.example.expensetracker.infrastructure.resilience.PostRestoreHook;
 
 import java.time.LocalDateTime;
 
@@ -23,7 +24,7 @@ import java.time.LocalDateTime;
 @Slf4j
 @Component
 @Order(10)
-public class AdminBootstrapRunner implements CommandLineRunner {
+public class AdminBootstrapRunner implements CommandLineRunner, PostRestoreHook {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -38,6 +39,12 @@ public class AdminBootstrapRunner implements CommandLineRunner {
         this.properties = (properties != null)
                 ? properties
                 : new AdminBootstrapProperties(true, "", "", "", "");
+    }
+
+    @Override
+    @Transactional
+    public void onDatabaseRestored() {
+        run();
     }
 
     @Override

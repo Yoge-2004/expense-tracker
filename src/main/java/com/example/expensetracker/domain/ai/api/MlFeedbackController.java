@@ -23,7 +23,7 @@ import com.example.expensetracker.domain.ai.dto.MlFeedbackPageResponse;
 import com.example.expensetracker.domain.ai.dto.MlFeedbackRequest;
 import com.example.expensetracker.domain.ai.dto.MlFeedbackResponse;
 import com.example.expensetracker.domain.ai.service.MlFeedbackService;
-import com.example.expensetracker.infrastructure.security.CustomUserDetails;
+import com.example.expensetracker.domain.user.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -32,6 +32,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 
+/**
+ * REST controller for recording user category-prediction feedback and exposing feedback batches to training jobs.
+ */
 @Tag(
     name = "ML Feedback",
     description = """

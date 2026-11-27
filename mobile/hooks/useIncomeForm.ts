@@ -5,6 +5,7 @@ import { incomeRepository } from '../services/repositories';
 import { notifyTransactionRecorded } from '../services/notifications';
 import { IncomeKind, monthKey, monthLabel, shiftMonth } from '../utils/moneyFlow';
 import { AlertButton, AlertType } from '../context/AlertContext';
+import { toLocalDateString } from '../utils/date';
 
 export interface UseIncomeFormOptions {
   userId: string | number | null;
@@ -39,7 +40,7 @@ export function useIncomeForm({
   const [incomeSource, setIncomeSource] = useState(initialParams?.source || '');
   const [incomeAmount, setIncomeAmount] = useState(initialParams?.amount || '');
   const [incomeDate, setIncomeDate] = useState(
-    initialParams?.date || new Date().toISOString().split('T')[0]
+    initialParams?.date || toLocalDateString()
   );
   const [incomeDesc, setIncomeDesc] = useState(initialParams?.description || '');
   const [incomeIsRecurring, setIncomeIsRecurring] = useState(initialParams?.isRecurring || false);
@@ -94,7 +95,7 @@ export function useIncomeForm({
   const resetForm = useCallback(() => {
     setIncomeSource('');
     setIncomeAmount('');
-    setIncomeDate(new Date().toISOString().split('T')[0]);
+    setIncomeDate(toLocalDateString());
     setIncomeDesc('');
     setIncomeIsRecurring(false);
     setIncomeFrequency('MONTHLY');

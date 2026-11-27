@@ -8,6 +8,9 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.SimpleAsyncTaskScheduler;
 
+/**
+ * Virtual-thread task executor and scheduler configuration for asynchronous and background workloads.
+ */
 @Configuration
 @EnableAsync
 public class AsyncConfig {

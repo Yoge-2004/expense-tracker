@@ -5,10 +5,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.example.expensetracker.domain.income.model.Income;
-
-
-
 /**
  * Data Transfer Object representing an income transaction response.
  *

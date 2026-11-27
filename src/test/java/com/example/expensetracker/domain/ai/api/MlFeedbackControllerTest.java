@@ -37,8 +37,8 @@ import com.example.expensetracker.domain.ai.dto.MlFeedbackRequest;
 import com.example.expensetracker.domain.ai.dto.MlFeedbackResponse;
 import com.example.expensetracker.domain.ai.service.MlFeedbackService;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.infrastructure.security.CustomUserDetails;
-import com.example.expensetracker.infrastructure.security.CustomUserDetailsService;
+import com.example.expensetracker.domain.user.security.CustomUserDetails;
+import com.example.expensetracker.domain.user.security.CustomUserDetailsService;
 import com.example.expensetracker.infrastructure.security.JwtAuthenticationFilter;
 import com.example.expensetracker.infrastructure.security.JwtService;
 

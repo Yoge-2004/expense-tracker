@@ -96,6 +96,16 @@ export const DashboardLedger = memo(function DashboardLedger({
   const [ledgerContentHeight, setLedgerContentHeight] = useState(0);
   const [ledgerViewHeight, setLedgerViewHeight] = useState(0);
   const ledgerFlatListRef = useRef<FlatList<UnifiedTxItem>>(null);
+  const loadMoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (loadMoreTimerRef.current) {
+        clearTimeout(loadMoreTimerRef.current);
+        loadMoreTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const toggleFilterPanel = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -139,15 +149,21 @@ export const DashboardLedger = memo(function DashboardLedger({
     setIsLoadingMore(false);
   }
 
-  // Changing filters resets the list view to top
+  // Changing filters resets the list view to top and cancels pending pagination
   useEffect(() => {
+    if (loadMoreTimerRef.current) {
+      clearTimeout(loadMoreTimerRef.current);
+      loadMoreTimerRef.current = null;
+    }
     ledgerFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
   }, [filterKey]);
 
   const handleEndReached = useCallback(() => {
     if (isLoadingMore || displayLimit >= unifiedTransactions.length) return;
     setIsLoadingMore(true);
-    setTimeout(() => {
+    if (loadMoreTimerRef.current) clearTimeout(loadMoreTimerRef.current);
+    loadMoreTimerRef.current = setTimeout(() => {
+      loadMoreTimerRef.current = null;
       setDisplayLimit((prev) => Math.min(prev + 25, unifiedTransactions.length));
       setIsLoadingMore(false);
     }, 120);
@@ -380,17 +396,17 @@ export const DashboardLedger = memo(function DashboardLedger({
         <View style={[styles.advancedPanel, { backgroundColor: c.inputBg, borderColor: c.border }]}>
           <Text style={[styles.advancedLabel, { color: c.textMuted }]}>Sort Order:</Text>
           <View style={styles.sortChipsWrap}>
-            {[
+            {([
               { id: 'date-desc', label: 'Latest First' },
               { id: 'date-asc', label: 'Oldest First' },
               { id: 'amount-desc', label: 'Highest Amount' },
               { id: 'amount-asc', label: 'Lowest Amount' },
-            ].map((s) => {
+            ] as const).map((s) => {
               const isSelected = sortOption === s.id;
               return (
                 <TouchableOpacity
                   key={s.id}
-                  onPress={() => setSortOption(s.id as any)}
+                  onPress={() => setSortOption(s.id)}
                   style={[
                     styles.sortChip,
                     {

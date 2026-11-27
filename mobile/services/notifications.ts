@@ -1143,8 +1143,14 @@ export async function scheduleLoanReminders(loans: LoanAdjustment[], currSymbol:
       let minute = 0;
       if (loan.reminderTime && loan.reminderTime.includes(':')) {
         const parts = loan.reminderTime.split(':');
-        hour = Number.parseInt(parts[0], 10) || 10;
-        minute = Number.parseInt(parts[1], 10) || 0;
+        const parsedHour = Number.parseInt(parts[0], 10);
+        const parsedMinute = Number.parseInt(parts[1], 10);
+        if (!Number.isNaN(parsedHour) && parsedHour >= 0 && parsedHour <= 23) {
+          hour = parsedHour;
+        }
+        if (!Number.isNaN(parsedMinute) && parsedMinute >= 0 && parsedMinute <= 59) {
+          minute = parsedMinute;
+        }
       }
 
       const freq = (loan.reminderFrequency || 'ONCE').toUpperCase();
@@ -1204,17 +1210,20 @@ export async function scheduleLoanReminders(loans: LoanAdjustment[], currSymbol:
         }).catch(() => {});
       } else {
         // ONE-TIME on reminderDate or dueDate
-        const targetDateStr = loan.reminderDate || loan.dueDate || loan.adjustmentDate;
-        if (targetDateStr) {
+        const rawTargetDate = loan.reminderDate || loan.dueDate || loan.adjustmentDate;
+        const targetDateStr = rawTargetDate ? rawTargetDate.slice(0, 10) : '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(targetDateStr)) {
           const targetDate = new Date(`${targetDateStr}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`);
-          if (targetDate.getTime() > Date.now()) {
+          if (!Number.isNaN(targetDate.getTime()) && targetDate.getTime() > Date.now()) {
             await Notifications.scheduleNotificationAsync({
               identifier: id,
               content: {
                 title,
                 body,
                 sound: await resolveNotificationSound(),
+                color: '#D4AF37',
                 data: { appInternal: true, screen: '/(tabs)' },
+                ...(Platform.OS === 'android' ? { channelId: REMINDERS_CHANNEL_ID } : {}),
               },
               trigger: {
                 type: Notifications.SchedulableTriggerInputTypes.DATE,

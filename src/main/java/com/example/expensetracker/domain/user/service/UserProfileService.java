@@ -66,6 +66,16 @@ public interface UserProfileService {
     void updateProfilePicture(Long userId, String profilePictureUrl);
 
     /**
+     * Updates the display name and optional avatar picture URL atomically for a user account.
+     *
+     * @param userId            user identifier
+     * @param name              updated display name
+     * @param profilePictureUrl optional avatar picture URL (ignored when blank/null)
+     * @return updated user entity
+     */
+    User updateProfile(Long userId, String name, String profilePictureUrl);
+
+    /**
      * Generates creative unique username suggestions based on a seed name.
      *
      * @param base seed word or raw name

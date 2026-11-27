@@ -1,7 +1,8 @@
 package com.example.expensetracker.domain.admin.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +20,7 @@ import com.example.expensetracker.domain.notification.service.PendingNotificatio
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
 import com.example.expensetracker.infrastructure.exception.BadRequestException;
-import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
+import com.example.expensetracker.domain.user.security.StepUpPinVerifier;
 
 
 
@@ -32,7 +33,6 @@ import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AdminNotificationBroadcastServiceImpl implements AdminNotificationBroadcastService {
 
     private static final int BATCH_SIZE = 200;
@@ -42,9 +42,21 @@ public class AdminNotificationBroadcastServiceImpl implements AdminNotificationB
     private final NotificationService notificationService;
     private final AdminAuditService auditService;
     private final StepUpPinVerifier stepUpPinVerifier;
+    private final TaskExecutor taskExecutor;
 
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private org.springframework.core.task.TaskExecutor taskExecutor;
+    @Autowired
+    public AdminNotificationBroadcastServiceImpl(
+            UserRepository userRepository,
+            NotificationService notificationService,
+            AdminAuditService auditService,
+            StepUpPinVerifier stepUpPinVerifier,
+            @Autowired(required = false) TaskExecutor taskExecutor) {
+        this.userRepository = userRepository;
+        this.notificationService = notificationService;
+        this.auditService = auditService;
+        this.stepUpPinVerifier = stepUpPinVerifier;
+        this.taskExecutor = taskExecutor;
+    }
 
     @Override
     public AdminBroadcastResultDto broadcastAnnouncement(AdminBroadcastRequest request,

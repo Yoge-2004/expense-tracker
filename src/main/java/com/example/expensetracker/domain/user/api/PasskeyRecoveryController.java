@@ -1,7 +1,10 @@
 package com.example.expensetracker.domain.user.api;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +30,7 @@ import com.example.expensetracker.infrastructure.security.RateLimited;
  *   <li>{@code POST /finish} verifies the signed assertion and sets the new password.</li>
  * </ol>
  */
+@Tag(name = "Passkey Recovery", description = "Password reset flows authenticated with registered WebAuthn passkeys")
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -37,6 +41,10 @@ public class PasskeyRecoveryController {
 
     @Operation(summary = "Start password reset with a passkey",
             description = "Returns the assertion challenge to sign with a registered passkey.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Recovery challenge generated"),
+        @ApiResponse(responseCode = "429", description = "Too many recovery option requests")
+    })
     @SecurityRequirements
     @PostMapping("/options")
     @RateLimited(key = "webauthn-recovery-options", maxRequests = 10, windowSeconds = 600,
@@ -48,6 +56,12 @@ public class PasskeyRecoveryController {
     @Operation(summary = "Reset the password with a signed passkey assertion",
             description = "Verifies the assertion (signature, single-use challenge, user verification) and, only "
                     + "then, sets the new password.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Password reset successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request or malformed assertion"),
+        @ApiResponse(responseCode = "401", description = "Passkey assertion failed verification"),
+        @ApiResponse(responseCode = "429", description = "Too many password reset attempts")
+    })
     @SecurityRequirements
     @PostMapping("/finish")
     @RateLimited(key = "webauthn-recovery-finish", maxRequests = 5, windowSeconds = 600,

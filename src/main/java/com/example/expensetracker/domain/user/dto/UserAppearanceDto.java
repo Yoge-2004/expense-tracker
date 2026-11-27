@@ -8,9 +8,9 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-import com.example.expensetracker.domain.user.model.User;
-
-
+/**
+ * DTO carrying per-user theme palette, typography, and studio appearance settings.
+ */
 @Schema(description = "User appearance, dynamic theming palette, and studio preferences")
 public record UserAppearanceDto(
         @Schema(description = "Selected font choice ('grotesk', 'fraunces', 'mono', 'system', 'custom')", example = "grotesk")

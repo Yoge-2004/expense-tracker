@@ -19,8 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.net.URI;
-import java.security.SecureRandom;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -34,15 +33,21 @@ import com.example.expensetracker.domain.user.dto.UserProfileDto;
 import com.example.expensetracker.domain.user.dto.UsernameAvailabilityDto;
 import com.example.expensetracker.domain.user.dto.UsernameSuggestionsDto;
 import com.example.expensetracker.domain.user.model.User;
+import com.example.expensetracker.domain.user.service.UserAccountManagementService;
 import com.example.expensetracker.domain.user.service.UserAppearanceService;
 import com.example.expensetracker.domain.user.service.UserAvatarService;
-import com.example.expensetracker.domain.user.service.UserService;
+import com.example.expensetracker.domain.user.service.UserProfileService;
+import com.example.expensetracker.domain.user.service.UserRegistrationService;
+import com.example.expensetracker.domain.user.service.UserSecurityPinService;
 import com.example.expensetracker.infrastructure.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.infrastructure.security.RateLimited;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 
 
+/**
+ * REST controller for user account lookup, profile updates, appearance preferences, avatar uploads, and deletion.
+ */
 @Tag(
     name        = "User Management",
     description = """
@@ -55,9 +60,10 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
 @RequestMapping("/api/users")
 public class UserController {
 
-    private static final SecureRandom RANDOM = new SecureRandom();
-
-    private final UserService userService;
+    private final UserProfileService userProfileService;
+    private final UserRegistrationService userRegistrationService;
+    private final UserSecurityPinService userSecurityPinService;
+    private final UserAccountManagementService userAccountManagementService;
     private final UserSecurity userSecurity;
     private final PasswordEncoder passwordEncoder;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
@@ -87,7 +93,7 @@ public class UserController {
             return ResponseEntity.ok(new UsernameAvailabilityDto(false, null, "Username must be 3-30 alphanumeric characters, dots, or underscores"));
         }
 
-        boolean exists = userService.userExistsByUsername(trimmed);
+        boolean exists = userRegistrationService.userExistsByUsername(trimmed);
         return ResponseEntity.ok(new UsernameAvailabilityDto(!exists, trimmed, exists ? "Username is already taken" : "Username is available!"));
     }
 
@@ -95,41 +101,20 @@ public class UserController {
 
     @Operation(
         summary = "Generate username suggestions",
-        description = "Generates exactly 3 unique, creative username suggestions based on a name or keyword."
+        description = "Generates up to 3 unique username suggestions based on a name or keyword."
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Username suggestions generated"),
+        @ApiResponse(responseCode = "429", description = "Too many suggestion requests")
+    })
     @RateLimited(key = "user-suggest-usernames", maxRequests = 20,
                  message = "Too many username suggestion requests. Please try again later.")
     @GetMapping("/suggest-usernames")
     public ResponseEntity<UsernameSuggestionsDto> suggestUsernames(
             @RequestParam(required = false, defaultValue = "user") String base) {
-        String clean = base.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT);
-        if (clean.isEmpty()) clean = "user";
-
-        java.util.Set<String> uniqueSuggestions = new java.util.LinkedHashSet<>();
-
-        String[] prefixes = {"iam", "the", "real", "hey", "go"};
-        for (String p : prefixes) {
-            if (uniqueSuggestions.size() >= 3) break;
-            String candidate = (p + "_" + clean).replaceAll("[^a-zA-Z0-9_]", "");
-            if (candidate.length() > 30) candidate = candidate.substring(0, 30);
-            if (!userService.userExistsByUsername(candidate)) {
-                uniqueSuggestions.add(candidate);
-            }
-        }
-
-        int attempts = 0;
-        while (uniqueSuggestions.size() < 3 && attempts < 100) {
-            attempts++;
-            int num = 100 + RANDOM.nextInt(900);
-            String candidate = clean + num;
-            if (candidate.length() > 30) candidate = candidate.substring(0, 30);
-            if (!userService.userExistsByUsername(candidate)) {
-                uniqueSuggestions.add(candidate);
-            }
-        }
-
-        log.info("Generated {} username suggestions for base='{}'", uniqueSuggestions.size(), base);
-        return ResponseEntity.ok(new UsernameSuggestionsDto(new java.util.ArrayList<>(uniqueSuggestions)));
+        List<String> suggestions = userProfileService.suggestUsernames(base);
+        log.info("Generated {} username suggestions for base='{}'", suggestions.size(), base);
+        return ResponseEntity.ok(new UsernameSuggestionsDto(suggestions));
     }
 
     // ─── GET /api/users/{userId} ──────────────────────────────────────────────
@@ -150,7 +135,7 @@ public class UserController {
             @PathVariable Long userId) {
         log.info("Received request for user profile: userId={}", userId);
         userSecurity.validateUserAccess(userId);
-        User user = userService.findById(userId)
+        User user = userProfileService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return ResponseEntity.ok(UserProfileDto.from(user));
     }
@@ -159,7 +144,7 @@ public class UserController {
 
     @Operation(
         summary = "Update user profile",
-        description = "Updates editable profile fields such as display name."
+        description = "Updates editable profile fields such as display name and avatar picture URL."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Profile updated successfully"),
@@ -174,13 +159,7 @@ public class UserController {
             @Valid @RequestBody UpdateProfileRequest request) {
         log.info("Received request to update profile for userId={}", userId);
         userSecurity.validateUserAccess(userId);
-
-        userService.updateName(userId, request.name());
-        if (request.profilePictureUrl() != null && !request.profilePictureUrl().isBlank()) {
-            userService.updateProfilePicture(userId, request.profilePictureUrl().trim());
-        }
-        User updated = userService.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User updated = userProfileService.updateProfile(userId, request.name(), request.profilePictureUrl());
         return ResponseEntity.ok(UserProfileDto.from(updated));
     }
 
@@ -214,7 +193,7 @@ public class UserController {
             throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits");
         }
 
-        userService.updateSecurityPin(userId, pin.trim());
+        userSecurityPinService.updateSecurityPin(userId, pin.trim());
         log.info("Security PIN successfully updated for userId={}", userId);
         return ResponseEntity.ok(Map.of("message", "Security PIN updated successfully"));
     }
@@ -249,7 +228,7 @@ public class UserController {
             throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits");
         }
 
-        boolean valid = userService.verifySecurityPin(userId, pin.trim());
+        boolean valid = userSecurityPinService.verifySecurityPin(userId, pin.trim());
         return ResponseEntity.ok(new PinVerificationResponse(valid, valid ? null : "Incorrect Security PIN"));
     }
 
@@ -288,7 +267,7 @@ public class UserController {
         log.info("Received request to permanently delete account for userId={}", userId);
         userSecurity.validateUserAccess(userId);
 
-        User user = userService.findById(userId)
+        User user = userProfileService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         boolean verified = false;
@@ -296,7 +275,7 @@ public class UserController {
             if (request.password() != null && !request.password().isBlank()) {
                 verified = passwordEncoder.matches(request.password(), user.getPassword());
             } else if (request.securityPin() != null && !request.securityPin().isBlank()) {
-                verified = userService.verifySecurityPin(userId, request.securityPin().trim());
+                verified = userSecurityPinService.verifySecurityPin(userId, request.securityPin().trim());
             } else if (request.googleIdToken() != null && !request.googleIdToken().isBlank()) {
                 try {
                     GoogleIdTokenVerifier.VerifiedIdentity identity =
@@ -318,7 +297,7 @@ public class UserController {
             throw new BadCredentialsException(errorMsg);
         }
 
-        userService.deleteUser(userId);
+        userAccountManagementService.deleteUser(userId);
         log.info("Account userId={} permanently deleted", userId);
         return ResponseEntity.noContent().build();
     }
@@ -349,10 +328,11 @@ public class UserController {
             throw new IllegalArgumentException("Currency must be a valid 3-letter ISO 4217 code (e.g., USD, EUR, INR)");
         }
 
-        userService.updateCurrency(userId, currency.trim().toUpperCase(Locale.ROOT));
-        log.info("Currency successfully updated to '{}' for userId={}", currency.toUpperCase(Locale.ROOT), userId);
+        String normalizedCurrency = currency.trim().toUpperCase(Locale.ROOT);
+        userProfileService.updateCurrency(userId, normalizedCurrency);
+        log.info("Currency successfully updated to '{}' for userId={}", normalizedCurrency, userId);
         return ResponseEntity.ok(Map.of("message", "Currency preference updated successfully",
-                "currency", currency.trim().toUpperCase(Locale.ROOT)));
+                "currency", normalizedCurrency));
     }
 
     // ─── GET /api/users/{userId}/appearance ───────────────────────────────────
@@ -361,6 +341,10 @@ public class UserController {
         summary = "Get user appearance preferences",
         description = "Returns font, theme palette, and studio personalization preferences for cross-device cloud sync."
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Appearance preferences returned"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping("/{userId}/appearance")
     public ResponseEntity<UserAppearanceDto> getUserAppearance(
             @Parameter(description = "Database ID of the user whose appearance to fetch.", required = true, example = "1")
@@ -376,6 +360,11 @@ public class UserController {
         summary = "Update user appearance preferences",
         description = "Updates typography, custom hex palette, wallpaper, and dynamic theming preferences."
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Appearance preferences updated"),
+        @ApiResponse(responseCode = "400", description = "Invalid appearance payload"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PutMapping("/{userId}/appearance")
     public ResponseEntity<UserAppearanceDto> updateUserAppearance(
             @Parameter(description = "Database ID of the user whose appearance to update.", required = true, example = "1")
@@ -392,6 +381,11 @@ public class UserController {
         summary = "Upload user avatar image",
         description = "Uploads a profile picture image (JPEG, PNG, WebP, GIF) directly from device files."
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Avatar image uploaded"),
+        @ApiResponse(responseCode = "400", description = "Unsupported file type or empty file"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping(value = "/{userId}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AvatarUploadResponse> uploadAvatar(
             @PathVariable Long userId,
@@ -409,6 +403,11 @@ public class UserController {
         summary = "Get user avatar image",
         description = "Streams the user avatar image binary directly."
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Avatar image bytes returned"),
+        @ApiResponse(responseCode = "302", description = "Redirect to hosted avatar URL"),
+        @ApiResponse(responseCode = "404", description = "No avatar stored for user")
+    })
     @GetMapping("/{userId}/avatar")
     public ResponseEntity<byte[]> getAvatar(@PathVariable Long userId) {
         return userAvatarService.getAvatar(userId)
@@ -433,6 +432,10 @@ public class UserController {
         summary = "Delete user avatar image",
         description = "Removes uploaded user avatar and resets to default."
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Avatar removed"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @DeleteMapping("/{userId}/avatar")
     public ResponseEntity<Void> deleteAvatar(@PathVariable Long userId) {
         log.info("Received request to delete avatar for userId={}", userId);

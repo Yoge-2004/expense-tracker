@@ -8,6 +8,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 
+/**
+ * Primary Jackson {@link ObjectMapper} bean configured with {@link JavaTimeModule} and ISO-8601 date serialization.
+ */
 @Configuration
 public class JacksonConfig {
 

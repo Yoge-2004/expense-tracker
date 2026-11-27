@@ -9,7 +9,7 @@ import com.example.expensetracker.domain.user.model.Role;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.infrastructure.exception.BadRequestException;
 import com.example.expensetracker.infrastructure.exception.ForbiddenException;
-import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
+import com.example.expensetracker.domain.user.security.StepUpPinVerifier;
 
 /**
  * Access control and authorization policy engine for administrative operations.

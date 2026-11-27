@@ -1,7 +1,5 @@
 package com.example.expensetracker.domain.income.model;
 
-import com.example.expensetracker.domain.income.mapper.IncomeRules;
-
 /**
  * What an income record means for monthly accounting.
  *

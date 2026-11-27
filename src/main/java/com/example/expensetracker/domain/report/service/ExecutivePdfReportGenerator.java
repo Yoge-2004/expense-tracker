@@ -23,7 +23,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import com.example.expensetracker.domain.budget.model.Budget;
 import com.example.expensetracker.domain.expense.model.Category;
@@ -31,8 +30,6 @@ import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.expense.model.RecurringExpense;
 import com.example.expensetracker.domain.goal.model.SavingsGoal;
 import com.example.expensetracker.domain.income.model.Income;
-
-
 
 /**
  * Dedicated generator for OpenPDF executive financial statements with typography and audit ledgers.
@@ -418,7 +415,6 @@ public class ExecutivePdfReportGenerator implements ReportExportStrategy {
         doc.add(t);
     }
 
-
     private static class ExecutiveReportPageEvent extends PdfPageEventHelper {
         private final Font footerFont = FontFactory.getFont(FontFactory.HELVETICA, 7.5f, new Color(148, 163, 184));
         private final Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.5f, new Color(100, 116, 139));
@@ -472,7 +468,6 @@ public class ExecutivePdfReportGenerator implements ReportExportStrategy {
             footTbl.writeSelectedRows(0, -1, document.left(), document.bottom() - 10, writer.getDirectContent());
         }
     }
-
 
     private static String cleanCurrency(String c) {
         if (c == null || c.isBlank()) return "INR";

@@ -9,6 +9,9 @@ import com.example.expensetracker.domain.user.model.UserAppearance;
 
 
 
+/**
+ * Spring Data JPA repository for persisted {@link UserAppearance} UI preferences.
+ */
 @Repository
 public interface UserAppearanceRepository extends JpaRepository<UserAppearance, Long> {
     Optional<UserAppearance> findByUserId(Long userId);

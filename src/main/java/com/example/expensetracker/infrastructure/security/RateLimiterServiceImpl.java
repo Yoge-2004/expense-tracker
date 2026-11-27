@@ -1,41 +1,51 @@
 package com.example.expensetracker.infrastructure.security;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import java.time.Clock;
 import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.time.Instant;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-
-
 /**
- * High-performance, thread-safe in-memory sliding window rate limiter implementation.
+ * High-performance, thread-safe in-memory sliding window rate limiter implementation
+ * backed by a bounded, auto-expiring Caffeine cache.
  */
 @Slf4j
 @Service
 public class RateLimiterServiceImpl implements RateLimiterService {
 
-    @Value("${app.security.rate-limit.enabled:true}")
-    private volatile boolean enabled = true;
-
-    private final java.time.Clock clock;
-    private final Map<String, SlidingWindowBucket> buckets = new ConcurrentHashMap<>();
-
     /**
-     * Upper bound on tracked keys. Keys are caller-controlled (IP addresses, identifiers), so without a ceiling a
-     * flood of distinct values grows this map until the heap is exhausted; the five-minute cleanup is too slow to help.
+     * Upper bound on tracked keys so caller-controlled identifiers cannot exhaust heap memory.
      */
     static final int MAX_TRACKED_KEYS = 50_000;
 
-    public RateLimiterServiceImpl(@org.springframework.beans.factory.annotation.Autowired(required = false) java.time.Clock clock) {
-        this.clock = clock != null ? clock : java.time.Clock.systemDefaultZone();
+    @Value("${app.security.rate-limit.enabled:true}")
+    private volatile boolean enabled = true;
+
+    private final Clock clock;
+    private final Cache<String, SlidingWindowBucket> buckets;
+
+    public RateLimiterServiceImpl(@Autowired(required = false) Clock clock) {
+        this.clock = clock != null ? clock : Clock.systemDefaultZone();
+        this.buckets = Caffeine.newBuilder()
+                .maximumSize(MAX_TRACKED_KEYS)
+                .expireAfterAccess(Duration.ofHours(1))
+                .ticker(() -> {
+                    Instant now = this.clock.instant();
+                    return now.getEpochSecond() * 1_000_000_000L + now.getNano();
+                })
+                .executor(Runnable::run)
+                .build();
     }
 
     public RateLimiterServiceImpl() {
-        this(java.time.Clock.systemDefaultZone());
+        this(Clock.systemDefaultZone());
     }
 
     @Override
@@ -53,33 +63,16 @@ public class RateLimiterServiceImpl implements RateLimiterService {
         if (!enabled) {
             return true;
         }
-        if (buckets.size() >= MAX_TRACKED_KEYS && !buckets.containsKey(key)) {
-            makeRoom();
-        }
-        SlidingWindowBucket bucket = buckets.computeIfAbsent(
+        SlidingWindowBucket bucket = buckets.get(
                 key, _ -> new SlidingWindowBucket(maxRequests, window, clock)
         );
-        return bucket.tryAcquire();
+        return bucket != null && bucket.tryAcquire();
     }
 
-    /** Drops expired buckets and, if the map is still full, a tenth of the rest, so it never grows past the cap. */
-    private void makeRoom() {
-        cleanupExpiredBuckets();
-        int excess = buckets.size() - (MAX_TRACKED_KEYS - MAX_TRACKED_KEYS / 10);
-        if (excess <= 0) {
-            return;
-        }
-        java.util.Iterator<String> it = buckets.keySet().iterator();
-        while (excess > 0 && it.hasNext()) {
-            it.next();
-            it.remove();
-            excess--;
-        }
-    }
-
-    /** @return how many keys are currently tracked (exposed for tests). */
+    /** @return how many keys are currently tracked after synchronous Caffeine maintenance (exposed for tests). */
     int trackedKeys() {
-        return buckets.size();
+        buckets.cleanUp();
+        return (int) buckets.estimatedSize();
     }
 
     @Override
@@ -87,7 +80,7 @@ public class RateLimiterServiceImpl implements RateLimiterService {
         if (!enabled) {
             return maxRequests;
         }
-        SlidingWindowBucket bucket = buckets.get(key);
+        SlidingWindowBucket bucket = buckets.getIfPresent(key);
         if (bucket == null) {
             return maxRequests;
         }
@@ -96,7 +89,7 @@ public class RateLimiterServiceImpl implements RateLimiterService {
 
     @Override
     public long getSecondsUntilReset(String key, Duration window) {
-        SlidingWindowBucket bucket = buckets.get(key);
+        SlidingWindowBucket bucket = buckets.getIfPresent(key);
         if (bucket == null) {
             return 0;
         }
@@ -105,25 +98,26 @@ public class RateLimiterServiceImpl implements RateLimiterService {
 
     @Override
     public void reset(String key) {
-        buckets.remove(key);
+        buckets.invalidate(key);
     }
 
     @Override
     public void clearAll() {
-        buckets.clear();
+        buckets.invalidateAll();
     }
 
     @Override
     @Scheduled(fixedRate = 300000)
     public void cleanupExpiredBuckets() {
-        int before = buckets.size();
-        buckets.entrySet().removeIf(entry -> {
+        long before = buckets.estimatedSize();
+        buckets.asMap().entrySet().removeIf(entry -> {
             SlidingWindowBucket bucket = entry.getValue();
             synchronized (bucket) {
                 return bucket.isExpired();
             }
         });
-        int after = buckets.size();
+        buckets.cleanUp();
+        long after = buckets.estimatedSize();
         if (before != after) {
             log.debug("RateLimiter cleanupExpiredBuckets: purged {} empty/stale buckets (retained {})",
                     before - after, after);

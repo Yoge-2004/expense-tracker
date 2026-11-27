@@ -1,21 +1,22 @@
 package com.example.expensetracker.domain.expense.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.expense.model.RecurringExpense;
 import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
 import com.example.expensetracker.domain.expense.repository.RecurringExpenseRepository;
-
-
 
 /**
  * Scheduled background service that processes recurring expense subscriptions
@@ -44,7 +45,6 @@ import com.example.expensetracker.domain.expense.repository.RecurringExpenseRepo
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 @SuppressWarnings("java:S6809")
 public class RecurringExpenseScheduler {
 
@@ -52,29 +52,29 @@ public class RecurringExpenseScheduler {
     private final ExpenseRepository expenseRepository;
 
     /** Each record is committed on its own, so one bad row cannot roll back everyone else's occurrences. */
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private org.springframework.transaction.support.TransactionTemplate transactionTemplate;
-
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private org.springframework.cache.CacheManager cacheManager;
+    private final TransactionTemplate transactionTemplate;
+    private final Clock clock;
 
     /** Calendar zone that decides what "today" is; blank means the server's zone. */
-    @org.springframework.beans.factory.annotation.Value("${app.notifications.zone:}")
+    @Value("${app.notifications.zone:}")
     private String zone = "";
 
-    private LocalDate today() {
-        return zone == null || zone.isBlank() ? LocalDate.now() : LocalDate.now(java.time.ZoneId.of(zone));
+    @Autowired
+    public RecurringExpenseScheduler(
+            RecurringExpenseRepository recurringExpenseRepository,
+            ExpenseRepository expenseRepository,
+            @Autowired(required = false) TransactionTemplate transactionTemplate,
+            @Autowired(required = false) Clock clock) {
+        this.recurringExpenseRepository = recurringExpenseRepository;
+        this.expenseRepository = expenseRepository;
+        this.transactionTemplate = transactionTemplate;
+        this.clock = clock != null ? clock : Clock.systemDefaultZone();
     }
 
-    /** These services write straight to the repositories, so the cached per-user lists must be dropped by hand. */
-    private void evictCache(String cacheName, Long userId) {
-        if (cacheManager == null || userId == null) {
-            return;
-        }
-        org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
-        if (cache != null) {
-            cache.evict(userId);
-        }
+    private LocalDate today() {
+        return zone == null || zone.isBlank()
+                ? LocalDate.now(clock)
+                : LocalDate.now(clock.withZone(ZoneId.of(zone)));
     }
 
     /**
@@ -103,11 +103,7 @@ public class RecurringExpenseScheduler {
                 continue;
             }
             try {
-                int created = processInOwnTransaction(rec);
-                processedCount += created;
-                if (created > 0) {
-                    evictCache("userExpenses", rec.getUser() != null ? rec.getUser().getId() : null);
-                }
+                processedCount += processInOwnTransaction(rec);
             } catch (Exception itemEx) {
                 failedCount++;
                 log.error("CRITICAL: Failed to process recurring expense subscription id={} for userId={}: {}",

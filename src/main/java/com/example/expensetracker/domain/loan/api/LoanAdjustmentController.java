@@ -22,7 +22,7 @@ import com.example.expensetracker.domain.loan.dto.LoanAdjustmentDto;
 import com.example.expensetracker.domain.loan.dto.LoanAdjustmentRequest;
 import com.example.expensetracker.domain.loan.dto.LoanMetricsDto;
 import com.example.expensetracker.domain.loan.service.LoanAdjustmentService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 
 

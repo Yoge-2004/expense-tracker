@@ -11,11 +11,27 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
 
-/** Validates unsafe browser-cookie requests; bearer-only API clients are unaffected. */
+/**
+ * Validates unsafe browser-cookie requests using double-submit CSRF tokens.
+ *
+ * <p>Bearer-only API clients and unauthenticated login/registration/recovery endpoints are exempted
+ * so a stale {@code ET_SESSION} cookie from an expired session does not block signing back in.</p>
+ */
 @Component
 @RequiredArgsConstructor
 public class BrowserCsrfFilter extends OncePerRequestFilter {
+
+    private static final Set<String> CSRF_EXEMPT_EXACT_PATHS = Set.of(
+            "/api/auth/login",
+            "/api/auth/register",
+            "/api/auth/oauth/google",
+            "/api/auth/signup/send-otp",
+            "/api/auth/forgot-password",
+            "/api/auth/reset-password"
+    );
+
     private final BrowserSessionCookieService browserSessionCookieService;
 
     @Override
@@ -27,6 +43,7 @@ public class BrowserCsrfFilter extends OncePerRequestFilter {
         String sessionToken = cookieValue(request, BrowserSessionCookieService.SESSION_COOKIE);
 
         if (!bearerRequest && sessionToken != null && isUnsafeMethod(request.getMethod())
+                && !isCsrfExemptAuthEntrypoint(request)
                 && !browserSessionCookieService.isCsrfTokenValid(
                         sessionToken,
                         request.getHeader(BrowserSessionCookieService.CSRF_HEADER),
@@ -35,6 +52,16 @@ public class BrowserCsrfFilter extends OncePerRequestFilter {
             return;
         }
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isCsrfExemptAuthEntrypoint(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (uri == null) {
+            return false;
+        }
+        return CSRF_EXEMPT_EXACT_PATHS.contains(uri)
+                || uri.startsWith("/api/webauthn/login/")
+                || uri.startsWith("/api/webauthn/recovery/");
     }
 
     private String cookieValue(HttpServletRequest request, String name) {

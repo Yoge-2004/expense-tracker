@@ -7,10 +7,6 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.example.expensetracker.domain.income.model.Income;
-
-
-
 /**
  * Request payload DTO for creating or updating an income transaction.
  *

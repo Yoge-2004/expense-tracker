@@ -1,6 +1,8 @@
 package com.example.expensetracker.domain.ai.api;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -15,8 +17,9 @@ import java.util.Map;
 import com.example.expensetracker.domain.ai.dto.ReceiptTextRequest;
 import com.example.expensetracker.domain.ai.service.ReceiptOcrService;
 
-
-
+/**
+ * REST controller for receipt OCR scanning and structured text extraction.
+ */
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -27,6 +30,11 @@ public class ReceiptOcrController {
     private final ReceiptOcrService receiptOcrService;
 
     @Operation(summary = "Scan receipt image or document with OCR and parse financial metadata")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Extracted receipt metadata returned"),
+        @ApiResponse(responseCode = "400", description = "Unsupported or unreadable receipt upload"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping(value = {"/api/expenses/ocr", "/api/receipts/ocr"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> scanReceipt(
             @RequestParam("file") MultipartFile file) {
@@ -37,6 +45,11 @@ public class ReceiptOcrController {
     }
 
     @Operation(summary = "Parse receipt text directly to extract financial metadata")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Parsed receipt metadata returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid receipt text payload"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping(value = {"/api/expenses/ocr/parse-text", "/api/receipts/parse-text"})
     public ResponseEntity<Map<String, Object>> parseText(
             @Valid @RequestBody(required = false) ReceiptTextRequest body) {

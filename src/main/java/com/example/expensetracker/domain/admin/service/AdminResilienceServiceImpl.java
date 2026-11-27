@@ -19,7 +19,7 @@ import com.example.expensetracker.infrastructure.exception.BadRequestException;
 import com.example.expensetracker.infrastructure.exception.ForbiddenException;
 import com.example.expensetracker.infrastructure.resilience.FallbackRecoveryCoordinator;
 import com.example.expensetracker.infrastructure.resilience.HuggingFaceDatabaseFailoverService;
-import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
+import com.example.expensetracker.domain.user.security.StepUpPinVerifier;
 
 
 

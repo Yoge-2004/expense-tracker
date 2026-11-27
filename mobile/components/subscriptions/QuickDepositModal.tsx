@@ -34,11 +34,13 @@ export const QuickDepositModal = memo(function QuickDepositModal({
 }: QuickDepositModalProps) {
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (goal) {
       setAmount(String(goal.recurringAmount || ''));
       setBusy(false);
+      setErrorMsg(null);
     }
   }, [goal]);
 
@@ -46,10 +48,16 @@ export const QuickDepositModal = memo(function QuickDepositModal({
 
   const handleSave = async () => {
     const num = Number.parseFloat(amount);
-    if (Number.isNaN(num) || num <= 0) return;
+    if (Number.isNaN(num) || num <= 0) {
+      setErrorMsg('Please enter an amount greater than 0.');
+      return;
+    }
+    setErrorMsg(null);
     setBusy(true);
     try {
       await onDeposit(goal, num);
+    } catch (err) {
+      setErrorMsg(err instanceof Error && err.message ? err.message : 'Failed to record deposit.');
     } finally {
       setBusy(false);
     }
@@ -70,6 +78,7 @@ export const QuickDepositModal = memo(function QuickDepositModal({
               onPress={onClose}
               disabled={busy}
               style={styles.modalCloseBtn}
+              accessibilityRole="button"
               accessibilityLabel="Close modal"
             >
               <Ionicons name="close" size={20} color={c.textMuted} />
@@ -80,7 +89,7 @@ export const QuickDepositModal = memo(function QuickDepositModal({
             Contributing to <Text style={{ fontWeight: '700', color: c.text }}>{goal.name}</Text>
           </Text>
 
-          <View style={[styles.inputBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+          <View style={[styles.inputBox, { backgroundColor: c.inputBg, borderColor: errorMsg ? c.danger : c.border }]}>
             <Text style={[styles.inputPrefix, { color: c.textMuted }]}>{currSym}</Text>
             <TextInput
               style={[styles.textInput, { color: c.text }]}
@@ -88,23 +97,35 @@ export const QuickDepositModal = memo(function QuickDepositModal({
               placeholder="0.00"
               placeholderTextColor={c.textMuted}
               value={amount}
-              onChangeText={setAmount}
+              onChangeText={(val) => {
+                setAmount(val);
+                if (errorMsg) setErrorMsg(null);
+              }}
               autoFocus
             />
           </View>
+          {errorMsg && (
+            <Text style={{ color: c.danger, fontSize: 12, fontWeight: '600', marginTop: -12, marginBottom: 14 }}>
+              {errorMsg}
+            </Text>
+          )}
 
           <View style={styles.modalActions}>
             <TouchableOpacity
               style={[styles.modalCancelBtn, { borderColor: c.border }]}
               onPress={onClose}
               disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel deposit"
             >
               <Text style={[styles.modalCancelText, { color: c.text }]}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modalSaveBtn, { backgroundColor: c.warning }]}
-              onPress={handleSave}
+              onPress={() => { void handleSave(); }}
               disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel="Deposit installment"
             >
               {busy ? (
                 <ActivityIndicator size="small" color={c.onWarning} />

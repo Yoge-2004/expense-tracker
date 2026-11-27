@@ -10,10 +10,6 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.Statement;
 
-import com.example.expensetracker.domain.user.model.User;
-
-
-
 /**
  * Applies idempotent schema initialization on application startup for columns
  * across application entities (e.g. {@code currency}, {@code account_locked},

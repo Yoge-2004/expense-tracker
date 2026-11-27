@@ -1,5 +1,6 @@
 package com.example.expensetracker.domain.admin.service;
 
+import com.example.expensetracker.domain.admin.config.MlRetrainingProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

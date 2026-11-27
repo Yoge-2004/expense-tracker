@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
 import com.example.expensetracker.domain.user.service.WebAuthnService;
-import com.example.expensetracker.infrastructure.security.CustomUserDetailsService;
+import com.example.expensetracker.domain.user.security.CustomUserDetailsService;
 import com.example.expensetracker.infrastructure.security.JwtAuthenticationFilter;
 import com.example.expensetracker.infrastructure.security.JwtService;
 
@@ -193,5 +193,49 @@ class WebAuthnControllerTest {
                 .andExpect(jsonPath("$.message").value("User account not found."));
 
         verifyNoInteractions(webAuthnService);
+    }
+
+    @Test
+    void loginFinishRemovesRawTokenFromBodyInBrowserCookieMode() throws Exception {
+        when(webAuthnService.finishAuthentication("tx-browser", "cred-json"))
+                .thenReturn(Map.of("token", "secret-jwt", "userId", 7));
+        when(browserSessionCookieService.issueIfBrowser(any(), any(), eq("secret-jwt"))).thenReturn(true);
+
+        mockMvc.perform(post("/api/webauthn/login/finish")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"transactionId\":\"tx-browser\",\"credential\":\"cred-json\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(7))
+                .andExpect(jsonPath("$.token").doesNotExist());
+    }
+
+    @Test
+    void loginFinishRejectsOversizedTransactionIdViaBeanValidation() throws Exception {
+        String tooLongTxId = "a".repeat(129);
+        mockMvc.perform(post("/api/webauthn/login/finish")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"transactionId\":\"" + tooLongTxId + "\",\"credential\":\"cred-json\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("transactionId: Transaction id is too long"));
+
+        verifyNoInteractions(webAuthnService);
+    }
+
+    @Test
+    void publicLoginEndpointsDeclareExplicitRateLimits() throws NoSuchMethodException {
+        var loginOptionsRateLimit = WebAuthnController.class
+                .getMethod("loginOptions")
+                .getAnnotation(com.example.expensetracker.infrastructure.security.RateLimited.class);
+        var loginFinishRateLimit = WebAuthnController.class
+                .getMethod("loginFinish",
+                        com.example.expensetracker.domain.user.dto.WebAuthnFinishRequest.class,
+                        jakarta.servlet.http.HttpServletRequest.class,
+                        jakarta.servlet.http.HttpServletResponse.class)
+                .getAnnotation(com.example.expensetracker.infrastructure.security.RateLimited.class);
+
+        org.assertj.core.api.Assertions.assertThat(loginOptionsRateLimit).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(loginOptionsRateLimit.key()).isEqualTo("webauthn-login-options");
+        org.assertj.core.api.Assertions.assertThat(loginFinishRateLimit).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(loginFinishRateLimit.key()).isEqualTo("webauthn-login-finish");
     }
 }

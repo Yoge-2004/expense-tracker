@@ -1,10 +1,10 @@
 package com.example.expensetracker.domain.ai.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
@@ -14,12 +14,14 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-import com.example.expensetracker.domain.admin.dto.AdminLogEntryDto;
 import com.example.expensetracker.domain.ai.dto.MlClassificationRequest;
 import com.example.expensetracker.domain.ai.dto.MlClassificationResponse;
+import com.example.expensetracker.domain.ai.dto.MlLogEntryDto;
 
-
-
+/**
+ * HTTP client communicating with the Python FastAPI ML inference service.
+ */
+@Slf4j
 @Service
 public class MlInferenceClient {
 
@@ -60,11 +62,12 @@ public class MlInferenceClient {
                     .retrieve()
                     .body(MlClassificationResponse.class);
         } catch (RestClientResponseException exception) {
+            log.warn("ML classify failed with status={}", exception.getStatusCode().value());
             throw new IllegalStateException(
                     "ML inference service returned HTTP " + exception.getStatusCode().value(), exception);
         } catch (ResourceAccessException exception) {
-            throw new IllegalStateException(
-                    "ML inference service is unreachable at " + exception.getMessage(), exception);
+            log.warn("ML classify unreachable: {}", exception.getMessage());
+            throw new IllegalStateException("ML inference service is currently unreachable.", exception);
         }
     }
 
@@ -87,17 +90,19 @@ public class MlInferenceClient {
     @SuppressWarnings("unchecked")
     public Map<String, Object> health() {
         try {
-            return client.get()
+            Map<String, Object> body = client.get()
                     .uri("/health")
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve()
                     .body(Map.class);
+            return body != null ? body : Map.of("status", "unavailable");
         } catch (Exception e) {
-            return Map.of("status", "unavailable", "error", e.getMessage());
+            log.debug("ML inference health check failed: {}", e.getMessage());
+            return Map.of("status", "unavailable");
         }
     }
 
-    public List<AdminLogEntryDto> getLogs(int lines, String level, String query) {
+    public List<MlLogEntryDto> getLogs(int lines, String level, String query) {
         try {
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromPath("/api/v1/logs")
                     .queryParam("lines", lines)
@@ -105,11 +110,11 @@ public class MlInferenceClient {
             if (query != null && !query.isBlank()) {
                 uriBuilder.queryParam("query", query);
             }
-            List<AdminLogEntryDto> logs = client.get()
+            List<MlLogEntryDto> logs = client.get()
                     .uri(uriBuilder.build().toUriString())
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve()
-                    .body(new ParameterizedTypeReference<List<AdminLogEntryDto>>() {});
+                    .body(new ParameterizedTypeReference<List<MlLogEntryDto>>() {});
             return logs != null ? logs : List.of();
         } catch (Exception _) {
             return List.of();
@@ -119,18 +124,20 @@ public class MlInferenceClient {
     @SuppressWarnings("unchecked")
     private Map<String, Object> postGeneric(String uri, Map<String, Object> payload) {
         try {
-            return client.post()
+            Map<String, Object> body = client.post()
                     .uri(uri)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(payload)
                     .retrieve()
                     .body(Map.class);
+            return body != null ? body : Map.of();
         } catch (RestClientResponseException exception) {
+            log.warn("ML POST {} failed with status={}", uri, exception.getStatusCode().value());
             throw new IllegalStateException(
                     "ML inference service returned HTTP " + exception.getStatusCode().value(), exception);
         } catch (ResourceAccessException exception) {
-            throw new IllegalStateException(
-                    "ML inference service is unreachable at " + exception.getMessage(), exception);
+            log.warn("ML POST {} unreachable: {}", uri, exception.getMessage());
+            throw new IllegalStateException("ML inference service is currently unreachable.", exception);
         }
     }
 }

@@ -37,30 +37,37 @@ public class NotificationDetector {
     private final ExpenseRepository expenseRepository;
     private final List<NotificationRule> rules;
 
+    /**
+     * Constructs the detector wired to all Spring-registered {@link NotificationRule} strategies.
+     *
+     * @param expenseRepository repository used for weekly digest aggregation
+     * @param rules             ordered notification rule strategies injected by Spring
+     */
     @Autowired
-    public NotificationDetector(BudgetRepository budgetRepository,
-                                ExpenseRepository expenseRepository,
-                                RecurringExpenseRepository recurringExpenseRepository,
-                                SavingsGoalRepository savingsGoalRepository,
-                                @Autowired(required = false) List<NotificationRule> customRules) {
+    public NotificationDetector(ExpenseRepository expenseRepository,
+                                List<NotificationRule> rules) {
         this.expenseRepository = expenseRepository;
-        if (customRules != null && !customRules.isEmpty()) {
-            this.rules = List.copyOf(customRules);
-        } else {
-            this.rules = List.of(
-                    new BudgetNotificationRule(budgetRepository, expenseRepository),
-                    new UpcomingBillsNotificationRule(recurringExpenseRepository),
-                    new GoalMilestonesNotificationRule(savingsGoalRepository),
-                    new LargeExpenseNotificationRule(expenseRepository)
-            );
-        }
+        this.rules = rules == null ? List.of() : List.copyOf(rules);
     }
 
+    /**
+     * Convenience constructor assembling the default rule set when invoked directly outside Spring.
+     *
+     * @param budgetRepository           budget repository
+     * @param expenseRepository          expense repository
+     * @param recurringExpenseRepository recurring expense repository
+     * @param savingsGoalRepository      savings goal repository
+     */
     public NotificationDetector(BudgetRepository budgetRepository,
                                 ExpenseRepository expenseRepository,
                                 RecurringExpenseRepository recurringExpenseRepository,
                                 SavingsGoalRepository savingsGoalRepository) {
-        this(budgetRepository, expenseRepository, recurringExpenseRepository, savingsGoalRepository, null);
+        this(expenseRepository, List.of(
+                new BudgetNotificationRule(budgetRepository, expenseRepository),
+                new UpcomingBillsNotificationRule(recurringExpenseRepository),
+                new GoalMilestonesNotificationRule(savingsGoalRepository),
+                new LargeExpenseNotificationRule(expenseRepository)
+        ));
     }
 
     /** Budgets, upcoming bills, savings goals and unusually large expenses from yesterday. */

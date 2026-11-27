@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.expensetracker.domain.expense.dto.CategorySpendSummary;
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.user.model.User;
 
@@ -69,4 +70,16 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     @Query(value = "SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user ORDER BY e.expenseDate DESC, e.id DESC",
            countQuery = "SELECT COUNT(e) FROM Expense e WHERE e.user = :user")
     org.springframework.data.domain.Page<Expense> findByUserWithCategory(@Param("user") User user, org.springframework.data.domain.Pageable pageable);
+
+    @Query("""
+            SELECT new com.example.expensetracker.domain.expense.dto.CategorySpendSummary(e.category.id, SUM(e.amount))
+            FROM Expense e
+            WHERE e.user = :user
+              AND e.category IS NOT NULL
+              AND e.expenseDate BETWEEN :startDate AND :endDate
+            GROUP BY e.category.id""")
+    List<CategorySpendSummary> sumAmountByCategoryForUserBetween(
+            @Param("user") User user,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

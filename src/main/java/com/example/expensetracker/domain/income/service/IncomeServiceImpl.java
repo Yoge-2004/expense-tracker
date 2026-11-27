@@ -284,10 +284,9 @@ public class IncomeServiceImpl implements IncomeService {
         LocalDate queryStart = startDate.minusMonths(IncomeRules.MAX_MONTH_SHIFT);
         LocalDate queryEnd = endDate.plusMonths(IncomeRules.MAX_MONTH_SHIFT);
         List<Income> rawIncomes = incomeRepository.findByUserAndIncomeDateBetween(user, queryStart, queryEnd);
-        if (rawIncomes == null || rawIncomes.isEmpty()) {
-            rawIncomes = incomeRepository.findByUserAndIncomeDateBetween(user, startDate, endDate);
+        if (rawIncomes == null) {
+            rawIncomes = List.of();
         }
-        if (rawIncomes == null) rawIncomes = List.of();
 
         List<Income> incomes = rawIncomes.stream()
                 .filter(i -> targetMonth.equals(IncomeRules.effectiveMonth(i)))

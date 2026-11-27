@@ -132,7 +132,7 @@ export const TransactionRow = memo(function TransactionRow({
     descText: { color: colors.text },
     mutedText: { color: colors.textMuted },
     miniBtn: { backgroundColor: colors.card },
-    amountText: { color: colors.text },
+    amountText: { color: isIncome ? colors.success : colors.danger },
   };
   const editColorHex = colors.onPrimary;
   const deleteColorHex = '#FFFFFF';
@@ -190,13 +190,7 @@ export const TransactionRow = memo(function TransactionRow({
           </View>
 
           <View style={styles.txRight}>
-            <Text
-              style={[
-                styles.txAmount,
-                isIncome ? styles.incomeText : styles.expenseText,
-                tStyles.amountText,
-              ]}
-            >
+            <Text style={[styles.txAmount, tStyles.amountText]}>
               {isIncome ? '+' : '-'}
               {currSymbol}
               {isStealth ? '••••' : tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -206,6 +200,8 @@ export const TransactionRow = memo(function TransactionRow({
                 onPress={() => onEdit(tx)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={[styles.miniActionBtn, tStyles.miniBtn]}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit ${tx.title}`}
               >
                 <Ionicons name="pencil-outline" size={12} color={colors.primary} />
               </TouchableOpacity>
@@ -213,6 +209,8 @@ export const TransactionRow = memo(function TransactionRow({
                 onPress={() => onDelete(tx)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={[styles.miniActionBtn, tStyles.miniBtn]}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete ${tx.title}`}
               >
                 <Ionicons name="trash-outline" size={12} color={colors.accent} />
               </TouchableOpacity>
@@ -227,7 +225,6 @@ export const TransactionRow = memo(function TransactionRow({
 const styles = StyleSheet.create({
   swipeRowWrapper: {
     position: 'relative',
-    marginBottom: 8,
   },
   swipeRowBg: {
     ...StyleSheet.absoluteFill,

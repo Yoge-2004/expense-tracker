@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.example.expensetracker.infrastructure.security.CustomUserDetailsService;
+import com.example.expensetracker.domain.user.security.CustomUserDetailsService;
 import com.example.expensetracker.infrastructure.security.JwtAuthenticationFilter;
 import com.example.expensetracker.infrastructure.security.JwtService;
 

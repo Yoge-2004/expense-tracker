@@ -8,8 +8,12 @@ export interface ExistingBudgetItem {
   budgetId?: number | string;
   categoryId: number | string;
   categoryName?: string;
+  limit?: number | string;
   amount?: number | string;
+  spent?: number | string;
+  percentage?: number;
   period?: string;
+  intervalDays?: number | string | null;
   [key: string]: unknown;
 }
 
@@ -58,11 +62,24 @@ export function useBudgetForm({
     }
   }
 
+  const [prevParams, setPrevParams] = useState(initialParams);
+  if (prevParams !== initialParams) {
+    setPrevParams(initialParams);
+    if (initialParams) {
+      if (initialParams.categoryId !== undefined) {
+        setBudgetCategoryId(initialParams.categoryId ? Number(initialParams.categoryId) : null);
+      }
+      if (initialParams.amount !== undefined) setBudgetLimit(initialParams.amount);
+      if (initialParams.period !== undefined) setBudgetPeriod(initialParams.period || 'MONTHLY');
+      if (initialParams.intervalDays !== undefined) setBudgetIntervalDays(initialParams.intervalDays || '30');
+    }
+  }
+
   const loadExistingBudgets = useCallback(async () => {
     if (!userId) return;
     try {
       setIsLoadingBudgets(true);
-      const data = await budgetRepository.getStatusByUserId(userId);
+      const data = await budgetRepository.getStatusByUserId(userId, { skipCache: true });
       if (Array.isArray(data)) {
         setExistingBudgets(data as unknown as ExistingBudgetItem[]);
       }
@@ -156,10 +173,10 @@ export function useBudgetForm({
       }
     }
 
+    const parsedIntervalDays = Number.parseInt(budgetIntervalDays.trim(), 10);
     if (budgetPeriod === 'CUSTOM') {
-      const days = Number.parseInt(budgetIntervalDays.trim(), 10);
-      if (Number.isNaN(days) || days <= 0) {
-        fieldErrors.budgetIntervalDays = 'Please enter a valid number of days.';
+      if (Number.isNaN(parsedIntervalDays) || parsedIntervalDays <= 0 || parsedIntervalDays > 365) {
+        fieldErrors.budgetIntervalDays = 'Please enter a valid number of days (1–365).';
       }
     }
 
@@ -178,8 +195,9 @@ export function useBudgetForm({
       const numLimit = Number.parseFloat(cleanLimit);
       await budgetRepository.setBudget(userId, {
         categoryId: budgetCategoryId,
-        amount: numLimit,
+        limitAmount: numLimit,
         period: budgetPeriod,
+        ...(budgetPeriod === 'CUSTOM' ? { intervalDays: parsedIntervalDays } : {}),
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

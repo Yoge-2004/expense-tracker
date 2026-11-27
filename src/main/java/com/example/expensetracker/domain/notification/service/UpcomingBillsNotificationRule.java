@@ -18,7 +18,7 @@ import com.example.expensetracker.domain.user.model.User;
  */
 @Component
 @RequiredArgsConstructor
-public non-sealed class UpcomingBillsNotificationRule implements NotificationRule {
+public class UpcomingBillsNotificationRule implements NotificationRule {
 
     private static final int[] DUE_REMINDER_DAYS = {3, 1, 0};
 

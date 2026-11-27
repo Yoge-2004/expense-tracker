@@ -71,6 +71,14 @@ export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
     }
   };
 
+  const [prevVisible, setPrevVisible] = useState(visible);
+  if (prevVisible !== visible) {
+    setPrevVisible(visible);
+    if (visible) {
+      setCheckingUpdate(true);
+    }
+  }
+
   useEffect(() => {
     let active = true;
     if (visible) {

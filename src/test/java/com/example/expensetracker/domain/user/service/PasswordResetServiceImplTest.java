@@ -189,8 +189,10 @@ class PasswordResetServiceImplTest {
     @Test
     @DisplayName("requestReset: mail sender failure screams EmailDeliveryException")
     void requestReset_mailSenderFailure_throwsEmailDeliveryException() {
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "mailEnabled", true);
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "configuredMailHost", "smtp.example.com");
+        AuthEmailServiceImpl emailService = (AuthEmailServiceImpl)
+                org.springframework.test.util.ReflectionTestUtils.getField(service, "authEmailService");
+        emailService.setMailEnabled(true);
+        emailService.setConfiguredMailHost("smtp.example.com");
 
         User user = new User();
         user.setEmail("user@example.com");
@@ -216,8 +218,10 @@ class PasswordResetServiceImplTest {
     @Test
     @DisplayName("sendSignupOtp: mail sender failure screams EmailDeliveryException")
     void sendSignupOtp_mailSenderFailure_throwsEmailDeliveryException() {
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "mailEnabled", true);
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "configuredMailHost", "smtp.example.com");
+        AuthEmailServiceImpl emailService = (AuthEmailServiceImpl)
+                org.springframework.test.util.ReflectionTestUtils.getField(service, "authEmailService");
+        emailService.setMailEnabled(true);
+        emailService.setConfiguredMailHost("smtp.example.com");
 
         when(userRepository.existsByEmailIgnoreCase("new@example.com")).thenReturn(false);
         JavaMailSender mailSender = mock(JavaMailSender.class);

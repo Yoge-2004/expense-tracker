@@ -16,7 +16,7 @@ import com.example.expensetracker.domain.ai.dto.ReceiptTextRequest;
 import com.example.expensetracker.domain.notification.dto.NotificationRequests;
 import com.example.expensetracker.domain.user.dto.DeleteAccountRequest;
 import com.example.expensetracker.domain.user.dto.UserAppearanceDto;
-import com.example.expensetracker.domain.user.api.WebAuthnController.WebAuthnFinishRequest;
+import com.example.expensetracker.domain.user.dto.WebAuthnFinishRequest;
 
 
 

@@ -9,14 +9,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
-import java.util.List;
 
 /**
  * Application-level cache configuration.
  *
  * <p>Uses Caffeine high-performance caching with bounded maximum size and
  * time-to-live eviction to avoid unbounded JVM heap consumption while eliminating
- * round-trips for hot user and category reads.</p>
+ * round-trips for hot category reads.</p>
  */
 @EnableCaching
 @Configuration
@@ -31,7 +30,6 @@ public class CacheConfig implements CachingConfigurer {
     @Override
     public CacheManager cacheManager() {
         CaffeineCacheManager manager = new CaffeineCacheManager(
-                "userExpenses",       // expense list per user (most frequent read)
                 "userCategories",     // per-user custom categories
                 "globalCategories",   // system categories (rarely change)
                 "budgetStatus",       // budget % per user

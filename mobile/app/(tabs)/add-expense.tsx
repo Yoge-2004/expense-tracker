@@ -211,11 +211,15 @@ export default function AddExpenseScreen() {
       editIsRecurring: '',
       editFrequency: '',
       editIntervalDays: '',
+      editKind: '',
+      editCountsToward: '',
+      editReimbursedCategoryId: '',
       editName: '',
       editTargetAmount: '',
       editCurrentAmount: '',
       editTargetDate: '',
       editRecurringAmount: '',
+      editPeriod: '',
       amount: '',
       description: '',
       merchant: '',
@@ -299,6 +303,8 @@ export default function AddExpenseScreen() {
                     ? 'Edit Inflow'
                     : params.editType === 'savings'
                     ? 'Edit Milestone'
+                    : params.editType === 'budget'
+                    ? 'Edit Budget'
                     : 'Edit Expense'
                   : 'Record Outflow'}
               </Text>
@@ -519,6 +525,7 @@ export default function AddExpenseScreen() {
       {/* Interactive Calendar Date Picker Modal */}
       <CalendarPickerModal
         visible={showCalendarModal}
+        allowClear={calendarTarget === 'savings'}
         title={
           calendarTarget === 'income'
             ? 'Select Inflow Date'

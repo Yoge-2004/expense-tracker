@@ -33,17 +33,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.model.WebAuthnChallenge;
 import com.example.expensetracker.domain.user.model.WebAuthnCredential;
 import com.example.expensetracker.domain.user.repository.WebAuthnChallengeRepository;
 import com.example.expensetracker.domain.user.repository.WebAuthnCredentialRepository;
 import com.example.expensetracker.infrastructure.security.JwtService;
-import com.example.expensetracker.infrastructure.security.WebAuthnCredentialRepositoryAdapter;
+import com.example.expensetracker.domain.user.security.WebAuthnCredentialRepositoryAdapter;
 
-
-
+/**
+ * Default {@link WebAuthnService} implementation managing passkey registration, login assertions, recovery verification, and JWT issuance.
+ */
 @Slf4j
 @Service
 @Transactional(readOnly = true)

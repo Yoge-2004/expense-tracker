@@ -2,12 +2,9 @@ package com.example.expensetracker.domain.budget.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
-import com.example.expensetracker.domain.budget.model.Budget;
-
-
 
 /**
  * Request payload for creating or updating a category budget limit.
@@ -18,6 +15,7 @@ import com.example.expensetracker.domain.budget.model.Budget;
 public record BudgetDto(
         Long id,
 
+        @NotNull(message = "Category ID is required")
         @Schema(description = "ID of the category for which the budget applies", example = "1",
                 requiredMode = Schema.RequiredMode.REQUIRED)
         Long categoryId,

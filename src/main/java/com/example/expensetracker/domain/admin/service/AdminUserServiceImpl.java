@@ -1,6 +1,5 @@
 package com.example.expensetracker.domain.admin.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,13 +23,11 @@ import com.example.expensetracker.domain.notification.repository.DeviceTokenRepo
 import com.example.expensetracker.domain.user.model.Role;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
-import com.example.expensetracker.domain.user.service.UserService;
+import com.example.expensetracker.domain.user.service.UserAccountManagementService;
 import com.example.expensetracker.infrastructure.exception.BadRequestException;
 import com.example.expensetracker.infrastructure.exception.ForbiddenException;
 import com.example.expensetracker.infrastructure.exception.ResourceNotFoundException;
-import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
-
-
+import com.example.expensetracker.domain.user.security.StepUpPinVerifier;
 
 /**
  * Implementation of {@link AdminUserService} with strict RBAC boundary checks,
@@ -43,7 +40,7 @@ import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
 public class AdminUserServiceImpl implements AdminUserService {
 
     private final UserRepository userRepository;
-    private final UserService userService;
+    private final UserAccountManagementService userService;
     private final ExpenseRepository expenseRepository;
     private final IncomeRepository incomeRepository;
     private final DeviceTokenRepository deviceTokenRepository;
@@ -55,7 +52,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @org.springframework.beans.factory.annotation.Autowired
     public AdminUserServiceImpl(UserRepository userRepository,
-                                UserService userService,
+                                UserAccountManagementService userService,
                                 ExpenseRepository expenseRepository,
                                 IncomeRepository incomeRepository,
                                 DeviceTokenRepository deviceTokenRepository,
@@ -78,7 +75,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Deprecated(forRemoval = false)
     public AdminUserServiceImpl(UserRepository userRepository,
-                                UserService userService,
+                                UserAccountManagementService userService,
                                 ExpenseRepository expenseRepository,
                                 IncomeRepository incomeRepository,
                                 DeviceTokenRepository deviceTokenRepository,

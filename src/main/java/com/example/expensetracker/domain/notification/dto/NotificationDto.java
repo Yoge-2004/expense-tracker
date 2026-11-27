@@ -5,10 +5,17 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-import com.example.expensetracker.domain.budget.model.Budget;
-
-
-
+/**
+ * DTO representing a single notification item in the user's inbox.
+ *
+ * @param id        notification ID
+ * @param type      notification category identifier
+ * @param title     short notification headline
+ * @param body      notification message body
+ * @param route     optional in-app navigation route
+ * @param read      whether the notification has been read
+ * @param createdAt UTC creation timestamp
+ */
 @Schema(description = "One notification in the user's inbox")
 public record NotificationDto(
         @Schema(example = "12") Long id,

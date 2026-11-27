@@ -30,10 +30,8 @@ export const LoanFilterTabs: React.FC<LoanFilterTabsProps> = React.memo(({
   activeFilter,
   onSelectFilter,
   colors: c,
-  theme,
+  theme: _theme,
 }) => {
-  const isLight = theme === 'light';
-
   return (
     <ScrollView
       horizontal
@@ -64,11 +62,7 @@ export const LoanFilterTabs: React.FC<LoanFilterTabsProps> = React.memo(({
               style={[
                 styles.filterTabText,
                 {
-                  color: isSelected
-                    ? isLight
-                      ? '#0F172A'
-                      : '#10120E'
-                    : c.textMuted,
+                  color: isSelected ? c.onPrimary : c.textMuted,
                   fontWeight: isSelected ? '800' : '600',
                 },
               ]}

@@ -5,10 +5,7 @@ import lombok.*;
 import java.util.List;
 
 import com.example.expensetracker.common.BaseEntity;
-import com.example.expensetracker.domain.expense.repository.CategoryRepository;
 import com.example.expensetracker.domain.user.model.User;
-
-
 
 /**
  * JPA entity representing an expense category in the Expense Tracker application.

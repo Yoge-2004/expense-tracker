@@ -6,24 +6,26 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.example.expensetracker.domain.budget.dto.BudgetDto;
 import com.example.expensetracker.domain.budget.dto.BudgetStatusDto;
 import com.example.expensetracker.domain.budget.model.Budget;
+import com.example.expensetracker.domain.budget.model.BudgetPeriod;
 import com.example.expensetracker.domain.budget.repository.BudgetRepository;
+import com.example.expensetracker.domain.expense.dto.CategorySpendSummary;
 import com.example.expensetracker.domain.expense.model.Category;
-import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.expense.repository.CategoryRepository;
 import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
 import com.example.expensetracker.domain.income.mapper.IncomeRules;
 import com.example.expensetracker.domain.income.model.Income;
-import com.example.expensetracker.domain.income.model.IncomeKind;
 import com.example.expensetracker.domain.income.repository.IncomeRepository;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.service.UserProfileService;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 
 
@@ -42,7 +44,7 @@ public class BudgetServiceImpl implements BudgetService {
     private final CategoryRepository categoryRepository;
     private final ExpenseRepository expenseRepository;
     private final IncomeRepository incomeRepository;
-    private final UserService userService;
+    private final UserProfileService userService;
     private final UserSecurity userSecurity;
 
     @Override
@@ -113,37 +115,35 @@ public class BudgetServiceImpl implements BudgetService {
         LocalDate now = LocalDate.now();
 
         record DateRange(LocalDate start, LocalDate end) {}
-        Map<DateRange, List<Expense>> expenseCache = new HashMap<>();
-        Map<DateRange, List<Income>> incomeCache = new HashMap<>();
+        Map<DateRange, Map<Long, BigDecimal>> spendByRange = new HashMap<>();
+        Map<DateRange, List<Income>> reimbursementCache = new HashMap<>();
 
         List<BudgetStatusDto> statusList = budgets.stream().map(b -> {
-            LocalDate[] window = com.example.expensetracker.domain.budget.model.BudgetPeriod
-                    .fromString(b.getPeriod())
-                    .calculateWindow(b, now);
+            LocalDate[] window = BudgetPeriod.fromString(b.getPeriod()).calculateWindow(b, now);
             final LocalDate periodStart = window[0];
             final LocalDate periodEnd = window[1];
 
-            List<Expense> periodExpenses = expenseCache.computeIfAbsent(
+            Map<Long, BigDecimal> categoryTotals = spendByRange.computeIfAbsent(
                     new DateRange(periodStart, periodEnd),
-                    r -> expenseRepository.findByUserAndExpenseDateBetween(user, r.start(), r.end())
+                    r -> expenseRepository.sumAmountByCategoryForUserBetween(user, r.start(), r.end()).stream()
+                            .collect(Collectors.toMap(
+                                    CategorySpendSummary::categoryId,
+                                    s -> s.totalAmount() != null ? s.totalAmount() : BigDecimal.ZERO,
+                                    BigDecimal::add))
             );
 
-            BigDecimal grossSpent = periodExpenses.stream()
-                    .filter(e -> e.getCategory() != null && e.getCategory().getId().equals(b.getCategory().getId()))
-                    .map(Expense::getAmount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal grossSpent = categoryTotals.getOrDefault(b.getCategory().getId(), BigDecimal.ZERO);
 
             DateRange reimbursementRange = new DateRange(
                     periodStart.minusMonths(IncomeRules.MAX_MONTH_SHIFT),
                     periodEnd.plusMonths(IncomeRules.MAX_MONTH_SHIFT)
             );
-            List<Income> periodIncomes = incomeCache.computeIfAbsent(
+            List<Income> reimbursements = reimbursementCache.computeIfAbsent(
                     reimbursementRange,
-                    r -> incomeRepository.findByUserAndIncomeDateBetween(user, r.start(), r.end())
+                    r -> incomeRepository.findReimbursementsByUserAndIncomeDateBetween(user, r.start(), r.end())
             );
 
-            BigDecimal reimbursed = periodIncomes.stream()
-                    .filter(i -> IncomeRules.effectiveKind(i) == IncomeKind.REIMBURSEMENT)
+            BigDecimal reimbursed = reimbursements.stream()
                     .filter(i -> b.getCategory().getId().equals(i.getReimbursedCategoryId()))
                     .filter(i -> {
                         LocalDate counted = IncomeRules.effectiveDate(i);
@@ -153,8 +153,11 @@ public class BudgetServiceImpl implements BudgetService {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal spent = grossSpent.subtract(reimbursed).max(BigDecimal.ZERO);
-            double pct = b.getLimitAmount().doubleValue() > 0
-                    ? spent.doubleValue() / b.getLimitAmount().doubleValue() * 100 : 0;
+            double pct = b.getLimitAmount().compareTo(BigDecimal.ZERO) > 0
+                    ? spent.multiply(BigDecimal.valueOf(100))
+                            .divide(b.getLimitAmount(), 4, RoundingMode.HALF_UP)
+                            .doubleValue()
+                    : 0.0;
 
             return new BudgetStatusDto(
                     b.getId(),

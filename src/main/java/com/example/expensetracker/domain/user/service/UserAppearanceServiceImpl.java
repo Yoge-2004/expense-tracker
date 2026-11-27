@@ -12,6 +12,9 @@ import com.example.expensetracker.domain.user.repository.UserAppearanceRepositor
 import com.example.expensetracker.domain.user.repository.UserRepository;
 
 
+/**
+ * Default {@link UserAppearanceService} implementation backed by {@link UserAppearanceRepository}.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

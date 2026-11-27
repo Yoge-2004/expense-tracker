@@ -13,18 +13,31 @@ export function useCategories(userId: string | number | null) {
   const [categoriesError, setCategoriesError] = useState(false);
   const [categoryRetryTick, setCategoryRetryTick] = useState(0);
   const categoryRetryCount = useRef(0);
+  const hasCategoriesRef = useRef(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    hasCategoriesRef.current = categories.length > 0;
+  }, [categories.length]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const loadCategories = useCallback(async () => {
     if (!userId) {
-      setIsLoading(false);
+      if (isMountedRef.current) setIsLoading(false);
       return;
     }
     try {
       // Hydrate from cached categories if current state is empty
-      if (categories.length === 0) {
+      if (!hasCategoriesRef.current) {
         try {
           const cachedRaw = await AsyncStorage.getItem(`expense_cache_v4_${userId}`);
-          if (cachedRaw) {
+          if (cachedRaw && isMountedRef.current) {
             const parsed = JSON.parse(cachedRaw);
             if (Array.isArray(parsed.categories) && parsed.categories.length > 0) {
               setCategories(parsed.categories);
@@ -39,6 +52,8 @@ export function useCategories(userId: string | number | null) {
         categoryRepository.getGlobal(),
         categoryRepository.getByUserId(userId),
       ]);
+      if (!isMountedRef.current) return;
+
       const globalCats = globalRes.status === 'fulfilled' ? globalRes.value : null;
       const userCats = userRes.status === 'fulfilled' ? userRes.value : null;
       const loadedAny = Array.isArray(globalCats) || Array.isArray(userCats);
@@ -47,7 +62,7 @@ export function useCategories(userId: string | number | null) {
         ...(Array.isArray(userCats) ? userCats : []),
       ];
 
-      const seen = new Set();
+      const seen = new Set<string>();
       const uniqueCats: Category[] = [];
       merged.forEach((cat) => {
         if (cat && cat.name && !seen.has(cat.name.toLowerCase())) {
@@ -68,13 +83,17 @@ export function useCategories(userId: string | number | null) {
       }
     } catch (e: unknown) {
       console.warn('[useCategories] Error fetching categories:', e);
-      setCategoriesError(true);
-      setCategoryRetryTick((n) => n + 1);
+      if (isMountedRef.current) {
+        setCategoriesError(true);
+        setCategoryRetryTick((n) => n + 1);
+      }
     } finally {
-      setIsLoading(false);
-      setRefreshing(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, [userId, categories.length]);
+  }, [userId]);
 
   useFocusEffect(
     useCallback(() => {

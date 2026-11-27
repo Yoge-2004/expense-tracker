@@ -4,10 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.example.expensetracker.domain.budget.model.Budget;
-
-
-
 /**
  * Read-only view of how much of a budget has been consumed for its current period.
  *

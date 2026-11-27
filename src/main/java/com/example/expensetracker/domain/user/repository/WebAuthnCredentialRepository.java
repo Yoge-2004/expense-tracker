@@ -11,6 +11,9 @@ import com.example.expensetracker.domain.user.model.WebAuthnCredential;
 
 
 
+/**
+ * Spring Data JPA repository for stored {@link WebAuthnCredential} passkey records.
+ */
 @SuppressWarnings("unused")
 public interface WebAuthnCredentialRepository extends JpaRepository<WebAuthnCredential, Long> {
     List<WebAuthnCredential> findByUserId(Long userId);

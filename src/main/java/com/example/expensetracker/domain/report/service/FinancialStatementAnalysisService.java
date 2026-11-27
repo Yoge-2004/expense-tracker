@@ -3,7 +3,6 @@ package com.example.expensetracker.domain.report.service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,6 +14,7 @@ import java.util.TreeMap;
 
 import org.springframework.stereotype.Component;
 
+import com.example.expensetracker.common.format.CurrencyFormats;
 import com.example.expensetracker.domain.budget.model.Budget;
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.goal.model.SavingsGoal;
@@ -42,7 +42,8 @@ public class FinancialStatementAnalysisService {
     public FinancialStatementAnalysis analyze(User user, String preferredCurrency,
                                               List<Expense> expenses, List<Income> incomes,
                                               List<SavingsGoal> savingsGoals, List<Budget> budgets) {
-        CurrencyFormats.Metadata currency = CurrencyFormats.resolve(preferredCurrency, user);
+        CurrencyFormats.Metadata currency = CurrencyFormats.resolve(
+                preferredCurrency, user != null ? user.getCurrency() : null);
         FinancialStatementTotals totals = FinancialStatementTotals.calculate(expenses, incomes);
         double incomeTotal = totals.earnedIncome().doubleValue();
         double expenseTotal = totals.expenses().doubleValue();

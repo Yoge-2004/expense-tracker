@@ -5,14 +5,6 @@ import org.hibernate.annotations.ColumnDefault;
 import lombok.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.List;
-
-import com.example.expensetracker.domain.expense.model.Expense;
-import com.example.expensetracker.domain.user.repository.UserRepository;
-import com.example.expensetracker.domain.user.service.UserServiceImpl;
-import com.example.expensetracker.infrastructure.security.CustomUserDetails;
-
-
 
 /**
  * JPA entity representing a registered user of the Expense Tracker application.
@@ -30,7 +22,7 @@ import com.example.expensetracker.infrastructure.security.CustomUserDetails;
  * @author Yogeshwaran
  * @version 1.0
  * @see com.example.expensetracker.domain.user.repository.UserRepository
- * @see com.example.expensetracker.infrastructure.security.CustomUserDetails
+ * @see com.example.expensetracker.domain.user.security.CustomUserDetails
  */
 @Entity
 @Table(name = "users", indexes = {
@@ -164,14 +156,6 @@ public class User {
      */
     @Column(name = "tokens_valid_after")
     private Instant tokensValidAfter;
-
-    /**
-     * The list of all expense records owned by this user.
-     * Mapped via the {@code user} field on {@link Expense}.
-     * Fetched lazily to avoid unintended bulk loading.
-     */
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private List<Expense> expenses;
 
     @PrePersist
     protected void onCreate() {

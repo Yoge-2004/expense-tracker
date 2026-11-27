@@ -1,23 +1,20 @@
 package com.example.expensetracker.domain.expense.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Collections;
 import java.util.List;
 
-import com.example.expensetracker.domain.budget.repository.BudgetRepository;
 import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.expense.repository.CategoryRepository;
 import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
 import com.example.expensetracker.domain.expense.repository.RecurringExpenseRepository;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.infrastructure.exception.GlobalExceptionHandler;
-
-
 
 /**
  * Concrete implementation of {@link CategoryService} that provides
@@ -42,7 +39,6 @@ import com.example.expensetracker.infrastructure.exception.GlobalExceptionHandle
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CategoryServiceImpl implements CategoryService {
 
@@ -50,14 +46,27 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final ExpenseRepository expenseRepository;
     private final RecurringExpenseRepository recurringExpenseRepository;
-    private final BudgetRepository budgetRepository;
+    private final List<CategoryUsageChecker> usageCheckers;
+
+    @Autowired
+    public CategoryServiceImpl(
+            CategoryRepository categoryRepository,
+            ExpenseRepository expenseRepository,
+            RecurringExpenseRepository recurringExpenseRepository,
+            @Autowired(required = false) List<CategoryUsageChecker> usageCheckers) {
+        this.categoryRepository = categoryRepository;
+        this.expenseRepository = expenseRepository;
+        this.recurringExpenseRepository = recurringExpenseRepository;
+        this.usageCheckers = usageCheckers != null ? usageCheckers : Collections.emptyList();
+    }
 
     /**
      * {@inheritDoc}
      *
      * <p>Before creating the category, checks whether a category with the same name
      * already exists for the specified user using
-     * {@link CategoryRepository#existsByNameAndUser(String, User)}.\n     * If a duplicate is found, an {@link IllegalArgumentException} is thrown
+     * {@link CategoryRepository#existsByNameAndUser(String, User)}.
+     * If a duplicate is found, an {@link IllegalArgumentException} is thrown
      * to enforce per-user uniqueness of category names.</p>
      *
      * <p>After a successful save, both the per-user cache and the global categories
@@ -162,8 +171,8 @@ public class CategoryServiceImpl implements CategoryService {
      * check, so a user attempting to delete someone else's category (or a
      * global one) gets a clear "not found/not yours" error rather than a
      * confusing "in use" message. Both {@link ExpenseRepository},
-     * {@link RecurringExpenseRepository}, and {@link BudgetRepository} are checked,
-     * since a category can be referenced by one-off expenses, recurring subscriptions, or budgets.</p>
+     * {@link RecurringExpenseRepository}, and registered {@link CategoryUsageChecker}
+     * beans are checked before allowing deletion.</p>
      */
     @Override
     @Transactional
@@ -190,9 +199,11 @@ public class CategoryServiceImpl implements CategoryService {
             log.warn("Ownership mismatch: category id={} does not belong to userId={}", categoryId, user.getId());
             throw new IllegalArgumentException("Category not found");
         }
+        boolean referencedExternally = usageCheckers.stream()
+                .anyMatch(checker -> checker.isCategoryInUse(categoryId));
         if (expenseRepository.existsByCategory_Id(categoryId)
                 || recurringExpenseRepository.existsByCategory_Id(categoryId)
-                || budgetRepository.existsByCategory_Id(categoryId)) {
+                || referencedExternally) {
             log.warn("Category id={} cannot be deleted because it is still referenced "
                     + "by expenses, recurring expenses, or budgets", categoryId);
             throw new IllegalStateException(

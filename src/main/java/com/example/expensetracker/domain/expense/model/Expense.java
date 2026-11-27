@@ -6,10 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import com.example.expensetracker.common.BaseEntity;
-import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
 import com.example.expensetracker.domain.user.model.User;
-
-
 
 /**
  * JPA entity representing a single expense transaction recorded by a user.
@@ -83,7 +80,8 @@ public class Expense extends BaseEntity {
     /**
      * The category used to classify this expense (e.g., Food, Transport).
      * May be {@code null} if the expense is not categorised.
-     * Fetched lazily to avoid unnecessary joins.\n     */
+     * Fetched lazily to avoid unnecessary joins.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;

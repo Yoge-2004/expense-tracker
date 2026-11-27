@@ -5,7 +5,7 @@
  * transactions or recurring subscriptions.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -66,20 +66,31 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [creating, setCreating] = useState(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   /**
    * Fetches user custom categories and computes active usage across expenses, recurring items & budgets.
    */
-  const fetchCategoriesAndUsage = async () => {
+  const fetchCategoriesAndUsage = useCallback(async (isCancelled?: () => boolean) => {
     if (!userId || !visible) return;
+    await Promise.resolve();
+    if (!isMountedRef.current || isCancelled?.()) return;
     setLoading(true);
     try {
       const [allCats, expenses, recurring, budgets] = await Promise.all([
-        apiRequest(`/categories/user/${userId}`).catch(() => []),
-        apiRequest(`/expenses/user/${userId}`).catch(() => []),
-        apiRequest(`/expenses/recurring/user/${userId}`).catch(() => []),
-        apiRequest(`/expenses/budget/status/user/${userId}`).catch(() => []),
+        apiRequest(`/categories/user/${userId}`, { skipCache: true }).catch(() => []),
+        apiRequest(`/expenses/user/${userId}`, { skipCache: true }).catch(() => []),
+        apiRequest(`/expenses/recurring/user/${userId}`, { skipCache: true }).catch(() => []),
+        apiRequest(`/expenses/budget/status/user/${userId}`, { skipCache: true }).catch(() => []),
       ]);
+      if (!isMountedRef.current || isCancelled?.()) return;
 
       setCategories(Array.isArray(allCats) ? allCats : []);
       const safeExp = Array.isArray(expenses) ? expenses : [];
@@ -97,58 +108,28 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
       ]);
       setUsedIds(used);
     } catch (e: unknown) {
+      if (!isMountedRef.current || isCancelled?.()) return;
       console.warn('[ManageCategoriesModal] Failed to load categories and usage:', e);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current && !isCancelled?.()) {
+        setLoading(false);
+      }
     }
-  };
-
-  const [prevVisible, setPrevVisible] = useState(visible);
-  if (prevVisible !== visible) {
-    setPrevVisible(visible);
-    if (visible) {
-      setLoading(true);
-    }
-  }
+  }, [visible, userId]);
 
   useEffect(() => {
-    let active = true;
+    let cancelled = false;
     if (visible && userId) {
-      Promise.all([
-        apiRequest(`/categories/user/${userId}`).catch(() => []),
-        apiRequest(`/expenses/user/${userId}`).catch(() => []),
-        apiRequest(`/expenses/recurring/user/${userId}`).catch(() => []),
-        apiRequest(`/expenses/budget/status/user/${userId}`).catch(() => []),
-      ])
-        .then(([allCats, expenses, recurring, budgets]) => {
-          if (!active) return;
-          setCategories(Array.isArray(allCats) ? allCats : []);
-          const safeExp = Array.isArray(expenses) ? expenses : [];
-          const safeRec = Array.isArray(recurring) ? recurring : [];
-          const safeBud = Array.isArray(budgets) ? budgets : [];
-
-          setActiveExpenses(safeExp);
-          setActiveRecurring(safeRec);
-          setActiveBudgets(safeBud);
-
-          const used = new Set<number>([
-            ...safeExp.map((e: CategoryUsageRecord) => Number(e.categoryId)),
-            ...safeRec.map((r: CategoryUsageRecord) => Number(r.categoryId)),
-            ...safeBud.map((b: CategoryUsageRecord) => Number(b.categoryId)),
-          ]);
-          setUsedIds(used);
-          setLoading(false);
-        })
-        .catch((e) => {
-          if (!active) return;
-          console.warn('[ManageCategoriesModal] Failed to load categories and usage:', e);
-          setLoading(false);
-        });
+      void Promise.resolve().then(() => {
+        if (!cancelled) {
+          void fetchCategoriesAndUsage(() => cancelled);
+        }
+      });
     }
     return () => {
-      active = false;
+      cancelled = true;
     };
-  }, [visible, userId]);
+  }, [visible, userId, fetchCategoriesAndUsage]);
 
   /**
    * Creates a new custom category for the user.

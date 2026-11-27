@@ -11,7 +11,6 @@ import java.time.ZoneOffset;
 import java.util.*;
 import java.util.function.Predicate;
 
-import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.notification.dto.NotificationDto;
 import com.example.expensetracker.domain.notification.dto.NotificationInboxDto;
 import com.example.expensetracker.domain.notification.dto.NotificationPreferenceDto;
@@ -24,8 +23,9 @@ import com.example.expensetracker.domain.notification.repository.DeviceTokenRepo
 import com.example.expensetracker.domain.notification.repository.NotificationPreferenceRepository;
 import com.example.expensetracker.domain.user.model.User;
 
-
-
+/**
+ * Default {@link NotificationService} implementation handling idempotent inbox persistence, preference filtering, and device token lifecycle.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

@@ -24,6 +24,15 @@ export default [
     if (rules['@typescript-eslint/no-require-imports']) rules['@typescript-eslint/no-require-imports'] = 'off';
     if (rules['@typescript-eslint/array-type']) rules['@typescript-eslint/array-type'] = 'off';
     if (rules['@typescript-eslint/no-explicit-any']) rules['@typescript-eslint/no-explicit-any'] = 'off';
-    return { ...config, rules };
+    const settings = config.settings
+      ? {
+          ...config.settings,
+          react: {
+            ...(config.settings.react ?? {}),
+            version: '19.3.0',
+          },
+        }
+      : undefined;
+    return settings ? { ...config, settings, rules } : { ...config, rules };
   }),
 ];

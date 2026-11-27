@@ -9,6 +9,7 @@ import { ExpenseRequest } from '../types/domain';
 import { notifyTransactionRecorded, parseFinancialMessage, formatNotificationAmount } from '../services/notifications';
 import { parseReceiptText, scanReceiptWithOcr, SAMPLE_RECEIPTS, ParsedReceipt } from '../services/receiptOcr';
 import { AlertButton, AlertType } from '../context/AlertContext';
+import { isValidCalendarDate, toLocalDateString } from '../utils/date';
 
 export interface Category {
   id: number;
@@ -41,19 +42,7 @@ function toCanonicalCategory(raw: string): string {
   return "shopping_retail";
 }
 
-export function isValidDateString(dateStr: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
-  const [yearStr, monthStr, dayStr] = dateStr.split('-');
-  const y = Number.parseInt(yearStr, 10);
-  const m = Number.parseInt(monthStr, 10);
-  const d = Number.parseInt(dayStr, 10);
-
-  if (m < 1 || m > 12) return false;
-  if (d < 1 || d > 31) return false;
-
-  const dateObj = new Date(y, m - 1, d);
-  return dateObj.getFullYear() === y && dateObj.getMonth() === m - 1 && dateObj.getDate() === d;
-}
+export const isValidDateString = isValidCalendarDate;
 
 export interface UseExpenseFormOptions {
   userId: string | number | null;
@@ -87,7 +76,7 @@ export function useExpenseForm({
     initialParams?.categoryId ? Number(initialParams.categoryId) : null
   );
   const [expenseDate, setExpenseDate] = useState(
-    initialParams?.date || new Date().toISOString().split('T')[0]
+    initialParams?.date || toLocalDateString()
   );
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState('MONTHLY');
@@ -142,23 +131,34 @@ export function useExpenseForm({
     }
   }
 
+  // Reset manual override flag when route params change
+  useEffect(() => {
+    userOverrodeCategory.current = false;
+  }, [initialParams]);
+
   // Model 1: AI Classification Debounce
   useEffect(() => {
     if (isEditMode) return;
     const cleanDesc = description.trim();
+    let cancelled = false;
+    const controller = new AbortController();
 
     const timer = setTimeout(async () => {
       if (cleanDesc.length < 3) {
-        setAiSuggestion(null);
-        setIsAiClassifying(false);
+        if (!cancelled) {
+          setAiSuggestion(null);
+          setIsAiClassifying(false);
+        }
         return;
       }
-      setIsAiClassifying(true);
+      if (!cancelled) setIsAiClassifying(true);
       try {
         const res = await apiRequest('/ml/classify', {
           method: 'POST',
           body: JSON.stringify({ description: cleanDesc, top_n: 3 }),
+          signal: controller.signal,
         });
+        if (cancelled) return;
         if (res && res.category) {
           const canonical = String(res.category);
           const conf = Number(res.confidence) || 0;
@@ -180,34 +180,46 @@ export function useExpenseForm({
             setCategoryId(matched.id);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
           }
+        } else {
+          setAiSuggestion(null);
         }
       } catch {
-        // Silently skip if network or ML unavailable
+        // Silently skip if network, cancelled, or ML unavailable
       } finally {
-        setIsAiClassifying(false);
+        if (!cancelled) setIsAiClassifying(false);
       }
     }, 320);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [description, categories, isEditMode]);
 
   // Model 2: Merchant Vector Matcher Debounce
   useEffect(() => {
     if (isEditMode) return;
     const cleanDesc = description.trim();
+    let cancelled = false;
+    const controller = new AbortController();
 
     const timer = setTimeout(async () => {
       if (cleanDesc.length < 2) {
-        setMerchantSuggestions([]);
-        setIsMatchingMerchant(false);
+        if (!cancelled) {
+          setMerchantSuggestions([]);
+          setIsMatchingMerchant(false);
+        }
         return;
       }
-      setIsMatchingMerchant(true);
+      if (!cancelled) setIsMatchingMerchant(true);
       try {
         const res = await apiRequest('/ml/merchants/match', {
           method: 'POST',
           body: JSON.stringify({ query: cleanDesc, top_k: 4 }),
+          signal: controller.signal,
         });
+        if (cancelled) return;
         if (res && Array.isArray((res as { matches?: unknown }).matches)) {
           const matches = (res as { matches: MerchantMatchCandidate[] }).matches;
           const valid = matches
@@ -223,15 +235,21 @@ export function useExpenseForm({
               return { merchant: finalName, similarity: Number(m.similarity) || 0 };
             });
           setMerchantSuggestions(valid.slice(0, 4));
+        } else {
+          setMerchantSuggestions([]);
         }
       } catch {
-        // Silently skip if network or ML unavailable
+        // Silently skip if network, cancelled, or ML unavailable
       } finally {
-        setIsMatchingMerchant(false);
+        if (!cancelled) setIsMatchingMerchant(false);
       }
     }, 240);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [description, isEditMode]);
 
   // Model 3: Duplicate Transaction Semantic Vector Matcher
@@ -239,18 +257,33 @@ export function useExpenseForm({
     if (isEditMode) return;
     const cleanDesc = description.trim();
     const numAmt = parseFloat(amount);
+    let cancelled = false;
+    const controller = new AbortController();
 
     const timer = setTimeout(async () => {
       if (cleanDesc.length < 3 || isNaN(numAmt) || numAmt <= 0) {
-        setDuplicateMatch(null);
-        setIsCheckingDuplicates(false);
+        if (!cancelled) {
+          setDuplicateMatch(null);
+          setIsCheckingDuplicates(false);
+        }
         return;
       }
-      setIsCheckingDuplicates(true);
+      if (!cancelled) setIsCheckingDuplicates(true);
       try {
-        const stored = await AsyncStorage.getItem('cached_expenses');
+        const primaryKey = userId ? `expense_cache_v4_${userId}` : 'cached_expenses';
+        let stored = await AsyncStorage.getItem(primaryKey);
+        if (!stored && userId) {
+          stored = await AsyncStorage.getItem('cached_expenses');
+        }
+        if (cancelled) return;
+
         if (stored) {
-          const list: unknown = JSON.parse(stored);
+          const parsed: unknown = JSON.parse(stored);
+          const list: unknown = Array.isArray(parsed)
+            ? parsed
+            : typeof parsed === 'object' && parsed !== null && Array.isArray((parsed as { expenses?: unknown }).expenses)
+            ? (parsed as { expenses: unknown[] }).expenses
+            : [];
           if (Array.isArray(list) && list.length > 0) {
             const candidateList = (list as CachedExpenseCandidate[])
               .filter((e: CachedExpenseCandidate) => {
@@ -268,7 +301,9 @@ export function useExpenseForm({
                   candidates: candidateList.slice(0, 15),
                   threshold: 0.65,
                 }),
+                signal: controller.signal,
               })) as { matches?: Array<{ text: string; similarity: number }> } | null;
+              if (cancelled) return;
               if (res && Array.isArray(res.matches) && res.matches.length > 0) {
                 const best = res.matches[0];
                 setDuplicateMatch({
@@ -280,16 +315,20 @@ export function useExpenseForm({
             }
           }
         }
-        setDuplicateMatch(null);
+        if (!cancelled) setDuplicateMatch(null);
       } catch {
-        setDuplicateMatch(null);
+        if (!cancelled) setDuplicateMatch(null);
       } finally {
-        setIsCheckingDuplicates(false);
+        if (!cancelled) setIsCheckingDuplicates(false);
       }
     }, 350);
 
-    return () => clearTimeout(timer);
-  }, [description, amount, isEditMode]);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [description, amount, isEditMode, userId]);
 
   const applyMerchantSuggestion = useCallback((chosen: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -426,7 +465,7 @@ export function useExpenseForm({
           setDescription(parsed.merchant || 'Expense');
           setAmount(String(parsed.amount));
           if (parsed.timestamp) {
-            setExpenseDate(new Date(parsed.timestamp).toISOString().split('T')[0]);
+            setExpenseDate(toLocalDateString(new Date(parsed.timestamp)));
           }
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
           showAlert(
@@ -447,7 +486,7 @@ export function useExpenseForm({
   const resetForm = useCallback(() => {
     setDescription('');
     setAmount('');
-    setExpenseDate(new Date().toISOString().split('T')[0]);
+    setExpenseDate(toLocalDateString());
     setIsRecurring(false);
     setAiSuggestion(null);
     setMerchantSuggestions([]);

@@ -15,11 +15,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.Base64;
 
-import com.example.expensetracker.domain.expense.model.Expense;
-import com.example.expensetracker.domain.user.model.User;
-
-
-
 /**
  * Minimal Hugging Face Hub client for the encrypted database snapshot.
  *

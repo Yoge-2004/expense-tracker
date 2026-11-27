@@ -35,16 +35,17 @@ import com.example.expensetracker.domain.expense.dto.ExpenseDto;
 import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.expense.repository.CategoryRepository;
+import com.example.expensetracker.domain.expense.service.BankStatementReconciler;
+import com.example.expensetracker.domain.expense.service.ExpenseImportService;
 import com.example.expensetracker.domain.expense.service.ExpenseService;
 import com.example.expensetracker.domain.expense.service.RecurringExpenseService;
 import com.example.expensetracker.domain.report.service.ExportService;
-import com.example.expensetracker.domain.report.service.ImportService;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.CustomUserDetailsService;
+import com.example.expensetracker.domain.user.security.CustomUserDetailsService;
 import com.example.expensetracker.infrastructure.security.JwtAuthenticationFilter;
 import com.example.expensetracker.infrastructure.security.JwtService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 
 
@@ -67,7 +68,8 @@ class ExpenseControllerTest {
     @MockitoBean BudgetService budgetService;
     @MockitoBean RecurringExpenseService recurringExpenseService;
     @MockitoBean ExportService exportService;
-    @MockitoBean ImportService importService;
+    @MockitoBean ExpenseImportService expenseImportService;
+    @MockitoBean BankStatementReconciler bankStatementReconciler;
     @MockitoBean UserSecurity userSecurity;
     @MockitoBean JwtService jwtService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
@@ -426,14 +428,14 @@ class ExpenseControllerTest {
         result.put("imported", 1);
         result.put("failed", 0);
         when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(importService.importExpensesFromCsv(any(), same(user))).thenReturn(result);
+        when(expenseImportService.importExpensesFromCsv(any(), same(user))).thenReturn(result);
 
         mockMvc.perform(multipart("/api/expenses/user/7/import/csv").file(file))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.imported").value(1))
                 .andExpect(jsonPath("$.failed").value(0));
 
-        verify(importService).importExpensesFromCsv(any(), same(user));
+        verify(expenseImportService).importExpensesFromCsv(any(), same(user));
     }
 
     @Test
@@ -442,7 +444,7 @@ class ExpenseControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Required multipart file part is missing."));
 
-        verifyNoInteractions(userService, importService);
+        verifyNoInteractions(userService, expenseImportService);
     }
 
     @Test
@@ -456,7 +458,7 @@ class ExpenseControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("User not found"));
 
-        verify(importService, never()).importExpensesFromExcel(any(), any());
+        verify(expenseImportService, never()).importExpensesFromExcel(any(), any());
     }
 
     @Test
@@ -471,7 +473,7 @@ class ExpenseControllerTest {
         result.put("newExpensesCount", 2);
         result.put("newIncomesCount", 0);
         result.put("message", "Reconciliation complete");
-        when(importService.reconcileBankStatement(any(), same(user))).thenReturn(result);
+        when(bankStatementReconciler.reconcileBankStatement(any(), same(user))).thenReturn(result);
 
         MockMultipartFile file = new MockMultipartFile("file", "statement.csv", "text/csv", "test".getBytes());
         mockMvc.perform(multipart("/api/expenses/user/7/import/statement").file(file))
@@ -480,7 +482,7 @@ class ExpenseControllerTest {
                 .andExpect(jsonPath("$.reconciledCount").value(3))
                 .andExpect(jsonPath("$.newExpensesCount").value(2));
 
-        verify(importService).reconcileBankStatement(any(), same(user));
+        verify(bankStatementReconciler).reconcileBankStatement(any(), same(user));
     }
 
     private static Expense expense(Long id, BigDecimal amount, String description,

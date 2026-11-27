@@ -279,4 +279,28 @@ class ImportServiceImplTest {
         assertEquals("SALARY TECHCORP", ImportServiceImpl.cleanBankNarration("NEFT CR-SALARY-TECHCORP"));
         assertEquals("Bank Transaction", ImportServiceImpl.cleanBankNarration("   "));
     }
+
+    @Test
+    @DisplayName("importExpensesFromCsv: strips UTF-8 BOM and parses RFC-4180 multiline quoted descriptions")
+    void importExpensesFromCsv_bomAndMultilineQuotedFields() {
+        String csvWithBomAndMultiline = "\uFEFFdate,category,amount,description\r\n"
+                + "2026-09-10,Food,42.50,\"Coffee, beans\r\nand \"\"special\"\" roast\"\r\n"
+                + "bad-date,Food,10.00,\"Ignored bad row\"\r\n";
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "bom_multiline.csv", "text/csv",
+                csvWithBomAndMultiline.getBytes(StandardCharsets.UTF_8));
+
+        when(categoryRepository.findByUserAndNameIgnoreCase(testUser, "Food"))
+                .thenReturn(Optional.of(foodCategory));
+
+        Map<String, Object> result = importService.importExpensesFromCsv(file, testUser);
+
+        assertEquals(1, result.get("imported"));
+        assertEquals(1, result.get("failedRows"));
+        verify(expenseService).createExpenses(argThat(list ->
+                list.size() == 1
+                        && list.getFirst().getAmount().compareTo(new BigDecimal("42.50")) == 0
+                        && list.getFirst().getDescription().contains("Coffee, beans")
+                        && list.getFirst().getDescription().contains("\"special\" roast")), eq(testUser));
+    }
 }

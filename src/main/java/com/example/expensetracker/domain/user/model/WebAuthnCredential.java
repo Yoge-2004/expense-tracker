@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 
 
 
+/**
+ * Persisted WebAuthn passkey credential associated with a user account.
+ */
 @Entity
 @Table(name = "webauthn_credentials", indexes = {
     @Index(name = "idx_webauthn_credential_user", columnList = "user_id"),

@@ -25,15 +25,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.example.expensetracker.domain.income.dto.CashFlowSummaryDto;
 import com.example.expensetracker.domain.income.dto.IncomeDto;
+import com.example.expensetracker.domain.income.service.IncomeImportService;
 import com.example.expensetracker.domain.income.service.IncomeService;
 import com.example.expensetracker.domain.report.service.ExportService;
-import com.example.expensetracker.domain.report.service.ImportService;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.CustomUserDetailsService;
+import com.example.expensetracker.domain.user.security.CustomUserDetailsService;
 import com.example.expensetracker.infrastructure.security.JwtAuthenticationFilter;
 import com.example.expensetracker.infrastructure.security.JwtService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 
 
@@ -52,7 +52,7 @@ class IncomeControllerTest {
     @MockitoBean IncomeService incomeService;
     @MockitoBean UserService userService;
     @MockitoBean ExportService exportService;
-    @MockitoBean ImportService importService;
+    @MockitoBean IncomeImportService incomeImportService;
     @MockitoBean UserSecurity userSecurity;
     @MockitoBean JwtService jwtService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;

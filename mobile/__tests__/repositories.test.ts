@@ -110,7 +110,7 @@ describe('Domain Repositories (DIP)', () => {
 
   describe('budgetRepository', () => {
     it('fetches budget status by userId', async () => {
-      const mockStatus = [{ categoryId: 1, categoryName: 'Food', budgetAmount: 10000, currentSpending: 6000, percentageSpent: 60, status: 'SAFE', remaining: 4000 }];
+      const mockStatus = [{ categoryId: 1, categoryName: 'Food', limit: 10000, spent: 6000, percentage: 60 }];
       mockApiRequest.mockResolvedValueOnce(mockStatus);
 
       const result = await budgetRepository.getStatusByUserId(10);
@@ -118,14 +118,24 @@ describe('Domain Repositories (DIP)', () => {
       expect(result).toEqual(mockStatus);
     });
 
-    it('sets budget cap', async () => {
-      const payload = { categoryId: 1, amount: 12000, period: 'MONTHLY' };
-      mockApiRequest.mockResolvedValueOnce({ categoryId: 1, budgetAmount: 12000 });
+    it('sets budget cap with limitAmount and optional intervalDays', async () => {
+      const payload = { categoryId: 1, limitAmount: 12000, period: 'CUSTOM', intervalDays: 14 };
+      mockApiRequest.mockResolvedValueOnce({ categoryId: 1, limit: 12000 });
 
       await budgetRepository.setBudget(10, payload);
       expect(mockApiRequest).toHaveBeenCalledWith('/expenses/budget/user/10', {
         method: 'POST',
         body: JSON.stringify(payload),
+      });
+    });
+
+    it('maps legacy amount field to backend limitAmount', async () => {
+      mockApiRequest.mockResolvedValueOnce({ categoryId: 1, limit: 9000 });
+
+      await budgetRepository.setBudget(10, { categoryId: 1, amount: 9000, period: 'MONTHLY' });
+      expect(mockApiRequest).toHaveBeenCalledWith('/expenses/budget/user/10', {
+        method: 'POST',
+        body: JSON.stringify({ categoryId: 1, limitAmount: 9000, period: 'MONTHLY' }),
       });
     });
   });
@@ -176,7 +186,9 @@ describe('Domain Repositories (DIP)', () => {
 
     it('classifies expense description', async () => {
       const mockResp = {
-        predictions: [{ category: 'Food & Dining', confidence: 0.92 }],
+        category: 'Food & Dining',
+        confidence: 0.92,
+        top_k: [{ category: 'Food & Dining', confidence: 0.92 }],
       };
       mockApiRequest.mockResolvedValueOnce(mockResp);
 
@@ -185,7 +197,8 @@ describe('Domain Repositories (DIP)', () => {
         method: 'POST',
         body: JSON.stringify({ description: 'Starbucks Latte', top_n: 3 }),
       });
-      expect(result.predictions[0].category).toBe('Food & Dining');
+      expect(result.category).toBe('Food & Dining');
+      expect(result.top_k?.[0].category).toBe('Food & Dining');
     });
 
     it('matches merchant string to canonical brand', async () => {

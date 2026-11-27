@@ -7,11 +7,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import java.util.TimeZone;
 
-import com.example.expensetracker.domain.expense.model.Expense;
-import com.example.expensetracker.domain.expense.service.RecurringExpenseScheduler;
-
-
-
 /**
  * Entry point for the Expense Tracker System application.
  *
@@ -38,6 +33,11 @@ public class ExpenseTrackerSystemApplication {
      * serialization, and scheduling base calculations remain consistent across
      * all environments (local, Docker, and cloud).
      */
+    static {
+        // Initialize UTC before Spring Boot loads DataSource/Hibernate/H2 so JDBC drivers never cache a stale host timezone.
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    }
+
     @PostConstruct
     void initTimeZone() {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));

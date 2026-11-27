@@ -4,10 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
-import com.example.expensetracker.domain.report.service.MonthlyReportServiceImpl;
 import com.example.expensetracker.domain.user.model.User;
-
-
 
 /**
  * Audit record of a monthly report email send attempt for one user/period.
@@ -53,6 +50,5 @@ public class MonthlyReportLog {
 
     @Column(name = "error_message")
     private String errorMessage;
-
 
 }

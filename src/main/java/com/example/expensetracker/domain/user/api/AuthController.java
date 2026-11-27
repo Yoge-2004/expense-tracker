@@ -27,6 +27,7 @@ import java.util.UUID;
 
 import com.example.expensetracker.common.ErrorResponse;
 import com.example.expensetracker.domain.user.dto.AuthResponse;
+import com.example.expensetracker.domain.user.dto.BrowserProfileDto;
 import com.example.expensetracker.domain.user.dto.ForgotPasswordRequest;
 import com.example.expensetracker.domain.user.dto.LoginRequest;
 import com.example.expensetracker.domain.user.dto.OAuthRequest;
@@ -37,18 +38,20 @@ import com.example.expensetracker.domain.user.dto.UserDto;
 import com.example.expensetracker.domain.user.mapper.UserMapper;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.service.PasswordResetService;
-import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.exception.GlobalExceptionHandler;
+import com.example.expensetracker.domain.user.service.UserAccountManagementService;
+import com.example.expensetracker.domain.user.service.UserProfileService;
+import com.example.expensetracker.domain.user.service.UserRegistrationService;
 import com.example.expensetracker.infrastructure.logging.LoggingUtils;
-import com.example.expensetracker.infrastructure.security.CustomUserDetails;
+import com.example.expensetracker.domain.user.security.CustomUserDetails;
 import com.example.expensetracker.infrastructure.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.infrastructure.security.JwtService;
 import com.example.expensetracker.infrastructure.security.LoginAttemptGuard;
 import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
 import com.example.expensetracker.infrastructure.security.RateLimited;
 
-
-
+/**
+ * REST controller handling authentication, registration, password reset, and OAuth/session flows.
+ */
 @Tag(
     name        = "Authentication",
     description = """
@@ -70,7 +73,9 @@ import com.example.expensetracker.infrastructure.security.RateLimited;
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
-    private final UserService userService;
+    private final UserProfileService userProfileService;
+    private final UserRegistrationService userRegistrationService;
+    private final UserAccountManagementService userAccountManagementService;
     private final JwtService jwtService;
     private final PasswordResetService passwordResetService;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
@@ -90,12 +95,12 @@ public class AuthController {
         if (!user.getEmail().equalsIgnoreCase(adminEmail.trim())) {
             return user;
         }
-        return userService.ensureAdminRole(user, adminEmail);
+        return userAccountManagementService.ensureAdminRole(user, adminEmail);
     }
-
 
     @Operation(summary = "Get auth configuration",
         description = "Returns public configuration flags like whether email OTP verification is required.")
+    @ApiResponse(responseCode = "200", description = "Authentication configuration returned")
     @SecurityRequirements
     @GetMapping("/config")
     public ResponseEntity<Map<String, Object>> getAuthConfig() {
@@ -152,10 +157,10 @@ public class AuthController {
             user = cud.getUser();
         }
         if (user == null) {
-            user = userService.findByIdentifier(identifier)
-                    .or(() -> userService.findByEmail(identifier))
-                    .or(() -> userService.findByIdentifier(auth.getName()))
-                    .or(() -> userService.findByEmail(auth.getName()))
+            user = userProfileService.findByIdentifier(identifier)
+                    .or(() -> userProfileService.findByEmail(identifier))
+                    .or(() -> userProfileService.findByIdentifier(auth.getName()))
+                    .or(() -> userProfileService.findByEmail(auth.getName()))
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
         }
         user = ensureAdminRole(user);
@@ -176,47 +181,45 @@ public class AuthController {
     }
 
     @Operation(summary = "Restore a browser session", description = "Returns the signed-in profile without exposing a JWT to browser JavaScript.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Browser session profile returned"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/session")
-    public ResponseEntity<Map<String, Object>> browserSession(Authentication authentication) {
-        User user = userService.findByEmail(authentication.getName())
+    public ResponseEntity<BrowserProfileDto> browserSession(Authentication authentication) {
+        User user = userProfileService.findByEmail(authentication.getName())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return ResponseEntity.ok(browserProfile(user));
+        return ResponseEntity.ok(BrowserProfileDto.from(user));
     }
 
     @Operation(summary = "Exchange a legacy browser bearer token for an HttpOnly session cookie")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Session cookie issued and profile returned"),
+        @ApiResponse(responseCode = "400", description = "Not called in browser session mode"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/session")
-    public ResponseEntity<Map<String, Object>> exchangeLegacyBrowserSession(
+    public ResponseEntity<BrowserProfileDto> exchangeLegacyBrowserSession(
             Authentication authentication,
             HttpServletRequest request,
             HttpServletResponse response) {
         if (!browserSessionCookieService.isBrowserRequest(request)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Browser session mode is required."));
+            throw new IllegalArgumentException("Browser session mode is required.");
         }
-        User user = userService.findByEmail(authentication.getName())
+        User user = userProfileService.findByEmail(authentication.getName())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         browserSessionCookieService.issue(request, response, jwtService.generateToken(user.getEmail()));
-        return ResponseEntity.ok(browserProfile(user));
+        return ResponseEntity.ok(BrowserProfileDto.from(user));
     }
 
     @Operation(summary = "Sign out of the browser session")
+    @ApiResponse(responseCode = "204", description = "Browser session cookie cleared")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         browserSessionCookieService.clear(request, response);
         return ResponseEntity.noContent().build();
-    }
-
-    private Map<String, Object> browserProfile(User user) {
-        return Map.of(
-                "userId", user.getId(),
-                "name", user.getName() == null ? "" : user.getName(),
-                "username", user.getUsername() == null ? "" : user.getUsername(),
-                "email", user.getEmail() == null ? "" : user.getEmail(),
-                "currency", user.getCurrency() == null ? "INR" : user.getCurrency(),
-                "hasSecurityPin", user.hasSecurityPin(),
-                "profilePictureUrl", user.getProfilePictureUrl() == null ? "" : user.getProfilePictureUrl(),
-                "role", user.getRole() == null ? "ROLE_USER" : user.getRole().name());
     }
 
     @Operation(summary = "Send signup verification OTP",
@@ -289,7 +292,7 @@ public class AuthController {
         if (request.securityPin() != null && !request.securityPin().isBlank()) {
             user.setSecurityPinHash(request.securityPin().trim());
         }
-        User registeredUser = userService.registerUser(user);
+        User registeredUser = userRegistrationService.registerUser(user);
         log.info("User registered successfully with id={}", registeredUser.getId());
         return new ResponseEntity<>(UserMapper.toDto(registeredUser), HttpStatus.CREATED);
     }
@@ -379,10 +382,10 @@ public class AuthController {
         GoogleIdTokenVerifier.VerifiedIdentity identity = googleIdTokenVerifier.verify(request.idToken());
         log.info("Google OAuth token verified for email={}", LoggingUtils.maskEmail(identity.email()));
 
-        User user = userService.findByEmail(identity.email()).map(existingUser -> {
+        User user = userProfileService.findByEmail(identity.email()).map(existingUser -> {
             if (identity.picture() != null && !identity.picture().isBlank() &&
                     !identity.picture().equals(existingUser.getProfilePictureUrl())) {
-                userService.updateProfilePicture(existingUser.getId(), identity.picture());
+                userProfileService.updateProfilePicture(existingUser.getId(), identity.picture());
                 existingUser.setProfilePictureUrl(identity.picture());
             }
             return existingUser;
@@ -405,7 +408,7 @@ public class AuthController {
             String targetUsername = null;
             if (request.username() != null && request.username().trim().matches("^[a-zA-Z0-9._]{3,30}$")) {
                 String candidate = request.username().trim();
-                if (!userService.userExistsByUsername(candidate)) {
+                if (!userRegistrationService.userExistsByUsername(candidate)) {
                     targetUsername = candidate;
                 }
             }
@@ -416,7 +419,7 @@ public class AuthController {
 
             log.info("Auto-registering new user via Google OAuth: email={}, username={}, currency={}",
                     LoggingUtils.maskEmail(newUser.getEmail()), newUser.getUsername(), newUser.getCurrency());
-            return userService.registerUser(newUser);
+            return userRegistrationService.registerUser(newUser);
         });
 
         // SECURITY FIX: previously, a user whose account had been disabled or locked
@@ -461,7 +464,7 @@ public class AuthController {
         if (base.length() > 24) {
             base = base.substring(0, 24);
         }
-        if (!userService.userExistsByUsername(base)) {
+        if (!userRegistrationService.userExistsByUsername(base)) {
             return base;
         }
         int suffix = 1;
@@ -470,7 +473,7 @@ public class AuthController {
             if (candidate.length() > 30) {
                 candidate = base.substring(0, 30 - String.valueOf(suffix).length()) + suffix;
             }
-            if (!userService.userExistsByUsername(candidate)) {
+            if (!userRegistrationService.userExistsByUsername(candidate)) {
                 return candidate;
             }
             suffix++;

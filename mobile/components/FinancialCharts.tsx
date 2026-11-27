@@ -24,6 +24,7 @@ import Svg, {
 import { useAuth } from '../context/AuthContext';
 import { Colors, getCategoryColor, getCategoryIconName } from '../constants/theme';
 import { getCurrencySymbol } from '../services/currency';
+import { toDateOnly, toLocalDateString } from '../utils/date';
 
 // Dynamic chart dimensions calculated adaptively per device form factor
 
@@ -202,7 +203,7 @@ export const SpendTrendChart: React.FC<SpendTrendChartProps> = React.memo(({ exp
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = toLocalDateString(d);
       const label = d.toLocaleDateString('en-US', { weekday: 'narrow' });
       dayBuckets.push({ label, amount: 0, dateStr });
       bucketMap.set(dateStr, dayBuckets.length - 1);
@@ -211,7 +212,8 @@ export const SpendTrendChart: React.FC<SpendTrendChartProps> = React.memo(({ exp
     for (let i = 0; i < safeExpenses.length; i++) {
       const e = safeExpenses[i];
       if (!e.expenseDate) continue;
-      const idx = bucketMap.get(e.expenseDate);
+      const dateOnly = toDateOnly(e.expenseDate) || e.expenseDate;
+      const idx = bucketMap.get(dateOnly);
       if (idx !== undefined) {
         dayBuckets[idx].amount += Number(e.amount || 0);
       }
@@ -495,7 +497,9 @@ export interface BudgetVsActualItem {
   categoryId: number;
   categoryName: string;
   limit: number;
+  budgetAmount?: number;
   spent: number;
+  currentSpending?: number;
   percentage?: number;
   period?: string;
   intervalDays?: number;
@@ -536,8 +540,8 @@ export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = React.memo(({ 
 
       <View style={styles.budgetList}>
         {safeBudgets.slice(0, 8).map((b, i) => {
-          const limit = Math.max(1, Number(b.limit || 0));
-          const spent = Math.max(0, Number(b.spent || 0));
+          const limit = Math.max(1, Number(b.limit ?? b.budgetAmount ?? 0));
+          const spent = Math.max(0, Number(b.spent ?? b.currentSpending ?? 0));
           const pct = Math.min(Math.round((spent / limit) * 100), 200);
           const isOver = spent > limit;
           const isNear = !isOver && pct >= 80;
@@ -545,7 +549,7 @@ export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = React.memo(({ 
           const barColor = isOver ? c.accent : isNear ? c.warning : c.success;
 
           return (
-            <View key={i} style={styles.budgetRow}>
+            <View key={b.budgetId ?? b.categoryId ?? i} style={styles.budgetRow}>
               <View style={styles.budgetMeta}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
                   <Ionicons name={getCategoryIconName(b.categoryName)} size={13} color={barColor} />
@@ -612,6 +616,11 @@ export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = React.memo(({ 
             </View>
           );
         })}
+        {safeBudgets.length > 8 && (
+          <Text style={[styles.chartSub, { color: c.textMuted, marginBottom: 0, textAlign: 'center' }]}>
+            Showing 8 of {safeBudgets.length} active category budgets
+          </Text>
+        )}
       </View>
     </View>
   );

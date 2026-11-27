@@ -1,6 +1,7 @@
 package com.example.expensetracker.domain.loan.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -34,4 +35,8 @@ public interface LoanAdjustmentRepository extends JpaRepository<LoanAdjustment, 
     long countByUserAndIsSettled(User user, Boolean isSettled);
 
     void deleteByUser(User user);
+
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM LoanAdjustment l WHERE l.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
 }

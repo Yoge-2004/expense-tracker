@@ -1,17 +1,15 @@
 package com.example.expensetracker.domain.user.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 import com.example.expensetracker.domain.user.model.PasswordResetOtp;
-import com.example.expensetracker.domain.user.service.PasswordResetServiceImpl;
-
-
 
 /**
  * Spring Data JPA repository for {@link PasswordResetOtp} entities.
- *
- * @see com.example.expensetracker.domain.user.service.PasswordResetServiceImpl
  */
 public interface PasswordResetOtpRepository extends JpaRepository<PasswordResetOtp, Long> {
 
@@ -24,4 +22,13 @@ public interface PasswordResetOtpRepository extends JpaRepository<PasswordResetO
      * @return the newest unused {@link PasswordResetOtp} row for this email + purpose, if any
      */
     Optional<PasswordResetOtp> findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(String email, String purpose);
+
+    /**
+     * Deletes all OTP records matching the given email address case-insensitively.
+     *
+     * @param email user email address
+     */
+    @Modifying
+    @Query("DELETE FROM PasswordResetOtp o WHERE LOWER(o.email) = LOWER(:email)")
+    void deleteByEmailIgnoreCase(@Param("email") String email);
 }

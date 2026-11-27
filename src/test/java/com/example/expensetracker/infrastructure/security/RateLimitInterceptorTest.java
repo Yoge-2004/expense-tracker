@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.example.expensetracker.domain.user.model.User;
+import com.example.expensetracker.domain.user.security.CustomUserDetails;
 
 
 

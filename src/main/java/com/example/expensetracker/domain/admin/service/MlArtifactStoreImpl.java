@@ -1,6 +1,7 @@
 package com.example.expensetracker.domain.admin.service;
 
-import com.example.expensetracker.domain.admin.dto.AdminLogEntryDto;
+import com.example.expensetracker.domain.admin.config.MlRetrainingProperties;
+import com.example.expensetracker.domain.ai.dto.MlLogEntryDto;
 import com.example.expensetracker.domain.ai.service.MlInferenceClient;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -263,10 +264,10 @@ public class MlArtifactStoreImpl implements MlArtifactStore {
                 Instant.now(clock), retrainingProperties.feedbackThreshold()));
 
         if (inferenceClient != null) {
-            List<AdminLogEntryDto> mlLogs = inferenceClient.getLogs(30, "INFO", null);
+            List<MlLogEntryDto> mlLogs = inferenceClient.getLogs(30, "INFO", null);
             if (mlLogs != null && !mlLogs.isEmpty()) {
                 sb.append(String.format("[%s] [INFO] [expense_ml.engine] Live Python ML engine events:\n", Instant.now(clock)));
-                for (AdminLogEntryDto entry : mlLogs) {
+                for (MlLogEntryDto entry : mlLogs) {
                     sb.append(String.format("[%s] [%s] [%s] %s\n", entry.timestamp(), entry.level(), entry.logger(), entry.message()));
                 }
             } else {

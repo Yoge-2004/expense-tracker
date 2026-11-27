@@ -1,26 +1,28 @@
 package com.example.expensetracker.domain.income.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
-import com.example.expensetracker.domain.expense.service.RecurringExpenseScheduler;
 import com.example.expensetracker.domain.income.model.Income;
 import com.example.expensetracker.domain.income.repository.IncomeRepository;
-
-
 
 /**
  * Scheduled background service that processes recurring income streams
  * (salary, dividends, rental income, freelance retainers).
  *
- * <p>Operates identically to {@link RecurringExpenseScheduler}: runs daily at midnight,
+ * <p>Operates identically to {@link com.example.expensetracker.domain.expense.service.RecurringExpenseScheduler}: runs daily at midnight,
  * queries all recurring {@link Income} records with {@code nextDueDate <= today},
  * generates concrete {@link Income} entries, and steps {@code nextDueDate} forward.</p>
  *
@@ -30,25 +32,36 @@ import com.example.expensetracker.domain.income.repository.IncomeRepository;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 @SuppressWarnings("java:S6809")
 public class RecurringIncomeScheduler {
 
     private final IncomeRepository incomeRepository;
 
     /** Each record is committed on its own, so one bad row cannot roll back everyone else's occurrences. */
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private org.springframework.transaction.support.TransactionTemplate transactionTemplate;
-
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private org.springframework.cache.CacheManager cacheManager;
+    private final TransactionTemplate transactionTemplate;
+    private final CacheManager cacheManager;
+    private final Clock clock;
 
     /** Calendar zone that decides what "today" is; blank means the server's zone. */
-    @org.springframework.beans.factory.annotation.Value("${app.notifications.zone:}")
+    @Value("${app.notifications.zone:}")
     private String zone = "";
 
+    @Autowired
+    public RecurringIncomeScheduler(
+            IncomeRepository incomeRepository,
+            @Autowired(required = false) TransactionTemplate transactionTemplate,
+            @Autowired(required = false) CacheManager cacheManager,
+            @Autowired(required = false) Clock clock) {
+        this.incomeRepository = incomeRepository;
+        this.transactionTemplate = transactionTemplate;
+        this.cacheManager = cacheManager;
+        this.clock = clock != null ? clock : Clock.systemDefaultZone();
+    }
+
     private LocalDate today() {
-        return zone == null || zone.isBlank() ? LocalDate.now() : LocalDate.now(java.time.ZoneId.of(zone));
+        return zone == null || zone.isBlank()
+                ? LocalDate.now(clock)
+                : LocalDate.now(clock.withZone(ZoneId.of(zone)));
     }
 
     /** These services write straight to the repositories, so the cached per-user lists must be dropped by hand. */
@@ -56,7 +69,7 @@ public class RecurringIncomeScheduler {
         if (cacheManager == null || userId == null) {
             return;
         }
-        org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
+        Cache cache = cacheManager.getCache(cacheName);
         if (cache != null) {
             cache.evict(userId);
         }

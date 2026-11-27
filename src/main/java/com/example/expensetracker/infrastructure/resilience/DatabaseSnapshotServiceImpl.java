@@ -17,6 +17,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -284,7 +287,33 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
      * SQLite has no date type, and its JDBC driver stores java.sql.Date/Timestamp as epoch milliseconds. H2 cannot
      * read those back into a DATE or TIMESTAMP column, so every restore of a table with a date failed. Writing the
      * JDBC text form ("2026-10-01", "2026-10-01 12:30:00.123456") round-trips through both databases.
+     *
+     * <p>Extracting {@link LocalDate}, {@link LocalTime}, and {@link LocalDateTime} via JDBC 4.2 typed reads avoids
+     * {@link java.sql.Date}/{@link Timestamp} timezone conversion drift if the driver cached a different JVM timezone.</p>
      */
+    private Object exportColumnValue(ResultSet rs, Column col) throws SQLException {
+        try {
+            switch (col.jdbcType) {
+                case Types.DATE -> {
+                    LocalDate date = rs.getObject(col.name, LocalDate.class);
+                    return date != null ? date.toString() : null;
+                }
+                case Types.TIME, Types.TIME_WITH_TIMEZONE -> {
+                    LocalTime time = rs.getObject(col.name, LocalTime.class);
+                    return time != null ? time.toString() : null;
+                }
+                case Types.TIMESTAMP -> {
+                    LocalDateTime ts = rs.getObject(col.name, LocalDateTime.class);
+                    return ts != null ? Timestamp.valueOf(ts).toString() : null;
+                }
+                default -> { /* fall through to generic exportValue */ }
+            }
+        } catch (SQLException | AbstractMethodError _) {
+            // Fall back to untyped read if a driver/mock does not support JDBC 4.2 temporal mapping.
+        }
+        return exportValue(rs.getObject(col.name));
+    }
+
     private Object exportValue(Object value) {
         if (value instanceof java.sql.Timestamp
                 || value instanceof java.sql.Date
@@ -324,7 +353,8 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
             int batchCount = 0;
             while (rs.next()) {
                 for (int i = 0; i < columns.size(); i++) {
-                    p.setObject(i + 1, exportValue(rs.getObject(columns.get(i).name)));
+                    Column col = columns.get(i);
+                    p.setObject(i + 1, exportColumnValue(rs, col));
                 }
                 p.addBatch();
                 batchCount++;

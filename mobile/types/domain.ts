@@ -93,16 +93,23 @@ export interface IncomeRequest {
 }
 
 // --- Budget ---
+export type BudgetPeriod = 'MONTHLY' | 'WEEKLY' | 'YEARLY' | 'CUSTOM';
+
 export interface Budget {
   budgetId?: number;
   id?: number;
   categoryId: number;
   categoryName?: string;
-  amount: number;
+  limitAmount?: number;
+  limit?: number;
+  amount?: number;
   spent?: number;
   remaining?: number;
   percentage?: number;
-  period?: 'MONTHLY' | 'WEEKLY' | 'YEARLY';
+  period?: BudgetPeriod | string;
+  intervalDays?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
   userId?: number | string;
 }
 
@@ -110,17 +117,33 @@ export interface BudgetStatus {
   budgetId?: number;
   categoryId: number;
   categoryName: string;
-  budgetAmount: number;
-  currentSpending: number;
-  percentageSpent: number;
-  status: 'SAFE' | 'WARNING' | 'EXCEEDED';
-  remaining: number;
+  /** Backend BudgetStatusDto canonical limit field */
+  limit: number;
+  /** Backend BudgetStatusDto canonical spent field */
+  spent: number;
+  /** Backend BudgetStatusDto canonical percentage field */
+  percentage: number;
+  period?: BudgetPeriod | string;
+  intervalDays?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  /** Legacy / computed aliases for compatibility */
+  budgetAmount?: number;
+  currentSpending?: number;
+  percentageSpent?: number;
+  status?: 'SAFE' | 'WARNING' | 'EXCEEDED';
+  remaining?: number;
 }
 
 export interface BudgetRequest {
   categoryId: number | string;
-  amount: number;
+  limitAmount?: number;
+  /** Legacy alias mapped to limitAmount by budgetRepository */
+  amount?: number;
   period?: string;
+  intervalDays?: number;
+  startDate?: string;
+  endDate?: string;
 }
 
 // --- Savings Goal ---

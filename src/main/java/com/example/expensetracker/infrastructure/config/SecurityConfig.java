@@ -23,6 +23,9 @@ import com.example.expensetracker.infrastructure.security.RestAccessDeniedHandle
 import com.example.expensetracker.infrastructure.security.RestAuthenticationEntryPoint;
 
 
+/**
+ * Spring Security filter-chain, stateless session, CSP header, CSRF, and public-endpoint authorization configuration.
+ */
 @Slf4j
 @Configuration
 @EnableWebSecurity

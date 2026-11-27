@@ -7,14 +7,13 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.example.expensetracker.domain.admin.dto.AdminLogEntryDto;
 
 /**
  * Thread-safe, lock-free ring buffer Logback appender capturing recent log events in memory
@@ -25,10 +24,10 @@ import com.example.expensetracker.domain.admin.dto.AdminLogEntryDto;
 @Component
 public class MemoryLogAppender extends AppenderBase<ILoggingEvent> {
 
-    private static final int MAX_CAPACITY = 1000;
-    private final ConcurrentLinkedDeque<AdminLogEntryDto> buffer = new ConcurrentLinkedDeque<>();
+    static final int MAX_CAPACITY = 1000;
+    private final ConcurrentLinkedDeque<LogEntryDto> buffer = new ConcurrentLinkedDeque<>();
     private final AtomicInteger bufferSize = new AtomicInteger(0);
-    private static final DateTimeFormatter ISO_FMT = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter ISO_FMT = DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC);
 
     @PostConstruct
     public void register() {
@@ -41,41 +40,50 @@ public class MemoryLogAppender extends AppenderBase<ILoggingEvent> {
 
     @Override
     protected void append(ILoggingEvent event) {
+        if (event == null) {
+            return;
+        }
         String formattedTime = ISO_FMT.format(Instant.ofEpochMilli(event.getTimeStamp()));
-        String lvl = event.getLevel() != null ? event.getLevel().toString().toUpperCase() : "INFO";
+        String lvl = event.getLevel() != null ? event.getLevel().toString().toUpperCase(Locale.ROOT) : "INFO";
         if ("WARNING".equals(lvl)) lvl = "WARN";
         if ("CRITICAL".equals(lvl) || "FATAL".equals(lvl)) lvl = "ERROR";
 
-        buffer.addLast(new AdminLogEntryDto(
+        String maskedMessage = SensitiveDataMasker.mask(event.getFormattedMessage());
+        buffer.addLast(new LogEntryDto(
                 formattedTime,
                 lvl,
                 event.getThreadName(),
                 event.getLoggerName(),
-                event.getFormattedMessage()
+                maskedMessage != null ? maskedMessage : ""
         ));
-        if (bufferSize.incrementAndGet() > MAX_CAPACITY && buffer.pollFirst() != null) {
+        bufferSize.incrementAndGet();
+        while (bufferSize.get() > MAX_CAPACITY && buffer.pollFirst() != null) {
             bufferSize.decrementAndGet();
         }
     }
 
-    public List<AdminLogEntryDto> getRecentLogs(int limit, String levelFilter, String queryFilter) {
-        List<AdminLogEntryDto> result = new ArrayList<>();
-        String lvl = (levelFilter != null) ? levelFilter.trim().toUpperCase() : "ALL";
-        String q = (queryFilter != null) ? queryFilter.trim().toLowerCase() : "";
+    public List<LogEntryDto> getRecentLogs(int limit, String levelFilter, String queryFilter) {
+        List<LogEntryDto> result = new ArrayList<>();
+        String lvl = (levelFilter != null) ? levelFilter.trim().toUpperCase(Locale.ROOT) : "ALL";
+        String q = (queryFilter != null) ? queryFilter.trim().toLowerCase(Locale.ROOT) : "";
         int minSeverity = levelSeverity(lvl);
 
-        for (AdminLogEntryDto entry : buffer) {
+        for (LogEntryDto entry : buffer) {
             if (minSeverity > 0 && levelSeverity(entry.level()) < minSeverity) {
                 continue;
             }
-            if (!q.isEmpty() && !entry.message().toLowerCase().contains(q) && !entry.logger().toLowerCase().contains(q)) {
-                continue;
+            if (!q.isEmpty()) {
+                String msg = entry.message() != null ? entry.message().toLowerCase(Locale.ROOT) : "";
+                String logger = entry.logger() != null ? entry.logger().toLowerCase(Locale.ROOT) : "";
+                if (!msg.contains(q) && !logger.contains(q)) {
+                    continue;
+                }
             }
             result.add(entry);
         }
 
         int size = result.size();
-        int max = Math.clamp(limit, 10, 1000);
+        int max = Math.clamp(limit, 10, MAX_CAPACITY);
         if (size > max) {
             return new ArrayList<>(result.subList(size - max, size));
         }

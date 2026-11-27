@@ -19,9 +19,11 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import com.example.expensetracker.common.importing.ImportParsingSupport;
 import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.expense.repository.CategoryRepository;
+import com.example.expensetracker.domain.expense.service.CategoryResolutionSupport;
 import com.example.expensetracker.domain.expense.service.ExpenseService;
 import com.example.expensetracker.domain.income.dto.IncomeDto;
 import com.example.expensetracker.domain.income.dto.IncomeRequest;
@@ -126,7 +128,7 @@ public class BankStatementReconciliationServiceImpl implements BankStatementReco
                 } else {
                     // Missed debit -> add as new expense
                     String merchant = ImportParsingSupport.cleanBankNarration(row.narration());
-                    Category category = ImportParsingSupport.resolveOrCreateCategoryForUser("Bank Debits", user, categoryRepository, categoryCache);
+                    Category category = CategoryResolutionSupport.resolveOrCreateCategoryForUser("Bank Debits", user, categoryRepository, categoryCache);
                     Expense expense = new Expense();
                     expense.setAmount(row.debit());
                     expense.setExpenseDate(row.date());
@@ -196,7 +198,7 @@ public class BankStatementReconciliationServiceImpl implements BankStatementReco
             int lineNum = 0;
 
             Map<String, Integer> col = null;
-            while ((line = reader.readLine()) != null) {
+            while ((line = ImportParsingSupport.readCsvRecord(reader)) != null) {
                 lineNum++;
                 if (line.isBlank()) continue;
 
@@ -231,7 +233,7 @@ public class BankStatementReconciliationServiceImpl implements BankStatementReco
                 throw new IllegalArgumentException("Bank statement must contain Debit/Withdrawal or Credit/Deposit columns");
             }
 
-            while ((line = reader.readLine()) != null) {
+            while ((line = ImportParsingSupport.readCsvRecord(reader)) != null) {
                 lineNum++;
                 if (line.isBlank()) continue;
 

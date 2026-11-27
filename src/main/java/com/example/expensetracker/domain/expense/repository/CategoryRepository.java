@@ -8,11 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.example.expensetracker.domain.expense.model.Category;
-import com.example.expensetracker.domain.expense.service.CategoryServiceImpl;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.service.UserServiceImpl;
-
-
 
 /**
  * Spring Data JPA repository for {@link Category} entities.

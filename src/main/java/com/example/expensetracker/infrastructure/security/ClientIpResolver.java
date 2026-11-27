@@ -1,12 +1,10 @@
 package com.example.expensetracker.infrastructure.security;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
-
 
 /**
  * Single place that decides which address a request really came from, for rate limiting and
@@ -22,19 +20,20 @@ import java.net.UnknownHostException;
 @Component
 public class ClientIpResolver {
 
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private TrustedProxyProperties properties;
+    private final boolean trustedProxyEnabled;
+    private final String trustedProxyCidrs;
+    private final int trustedProxyHops;
 
-    private boolean trustedProxyEnabled;
-    private String trustedProxyCidrs = "127.0.0.1/32,::1/128";
-    private int trustedProxyHops;
-
-    public ClientIpResolver(@org.springframework.beans.factory.annotation.Autowired(required = false) TrustedProxyProperties properties) {
-        this.properties = properties;
+    @Autowired
+    public ClientIpResolver(@Autowired(required = false) TrustedProxyProperties properties) {
         if (properties != null) {
             this.trustedProxyEnabled = properties.enabled();
             this.trustedProxyCidrs = properties.cidrs();
             this.trustedProxyHops = properties.hops();
+        } else {
+            this.trustedProxyEnabled = false;
+            this.trustedProxyCidrs = "127.0.0.1/32,::1/128";
+            this.trustedProxyHops = 0;
         }
     }
 

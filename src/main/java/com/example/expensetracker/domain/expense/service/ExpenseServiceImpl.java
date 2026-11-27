@@ -2,8 +2,6 @@ package com.example.expensetracker.domain.expense.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -67,7 +65,6 @@ public class ExpenseServiceImpl implements ExpenseService {
      */
     @Override
     @Transactional
-    @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense createExpense(Expense expense, User user) {
         expenseValidator.validateUser(user);
         expenseValidator.validateExpenseBasic(expense, user.getId());
@@ -93,7 +90,6 @@ public class ExpenseServiceImpl implements ExpenseService {
      */
     @Override
     @Transactional
-    @CacheEvict(value = "userExpenses", key = "#user.id")
     public List<Expense> createExpenses(List<Expense> expenses, User user) {
         if (expenses == null || expenses.isEmpty()) {
             return Collections.emptyList();
@@ -110,10 +106,9 @@ public class ExpenseServiceImpl implements ExpenseService {
      * {@inheritDoc}
      */
     @Override
-    @Cacheable(value = "userExpenses", key = "#user.id")
     public List<Expense> getUserExpenses(User user) {
         expenseValidator.validateUser(user);
-        log.debug("Loading expenses from DB/Cache for userId={}", user.getId());
+        log.debug("Loading expenses from DB for userId={}", user.getId());
         List<Expense> expenses = expenseRepository.findByUser(user);
         log.debug("Loaded {} expense records for userId={}", expenses.size(), user.getId());
         return expenses;
@@ -179,7 +174,6 @@ public class ExpenseServiceImpl implements ExpenseService {
      */
     @Override
     @Transactional
-    @CacheEvict(value = "userExpenses", key = "#user.id")
     public void deleteExpense(Long expenseId, User user) {
         if (expenseId == null) {
             throw new IllegalArgumentException("Expense ID cannot be null");
@@ -203,7 +197,6 @@ public class ExpenseServiceImpl implements ExpenseService {
      */
     @Override
     @Transactional
-    @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense updateExpense(Long expenseId, Expense expenseUpdates, User user) {
         if (expenseId == null) {
             throw new IllegalArgumentException("Expense ID cannot be null");

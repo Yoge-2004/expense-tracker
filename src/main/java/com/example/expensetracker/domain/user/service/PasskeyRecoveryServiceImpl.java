@@ -9,6 +9,9 @@ import com.example.expensetracker.domain.user.model.User;
 
 
 
+/**
+ * Default {@link PasskeyRecoveryService} implementation verifying a passkey assertion before rotating the user's password.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

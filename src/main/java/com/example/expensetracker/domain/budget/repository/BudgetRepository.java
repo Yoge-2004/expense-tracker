@@ -8,11 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.example.expensetracker.domain.budget.model.Budget;
-import com.example.expensetracker.domain.expense.api.ExpenseController;
-import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.user.model.User;
-
-
 
 /**
  * Spring Data JPA repository for {@link Budget} entities.

@@ -12,19 +12,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.example.expensetracker.domain.budget.repository.BudgetRepository;
-import com.example.expensetracker.domain.expense.repository.CategoryRepository;
-import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
-import com.example.expensetracker.domain.expense.repository.RecurringExpenseRepository;
-import com.example.expensetracker.domain.goal.repository.SavingsGoalRepository;
-import com.example.expensetracker.domain.income.repository.IncomeRepository;
-import com.example.expensetracker.domain.report.repository.MonthlyReportLogRepository;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
-import com.example.expensetracker.domain.user.repository.WebAuthnCredentialRepository;
-
-
-
 
 /**
  * Lockout behaviour of {@link UserServiceImpl#verifySecurityPin(Long, String)}.
@@ -41,22 +30,13 @@ class UserServiceImplPinLockoutTest {
 
     @Mock private UserRepository userRepository;
     @Mock private PasswordEncoder passwordEncoder;
-    @Mock private ExpenseRepository expenseRepository;
-    @Mock private CategoryRepository categoryRepository;
-    @Mock private BudgetRepository budgetRepository;
-    @Mock private RecurringExpenseRepository recurringRepository;
-    @Mock private IncomeRepository incomeRepository;
-    @Mock private SavingsGoalRepository savingsGoalRepository;
-    @Mock private MonthlyReportLogRepository reportLogRepository;
-    @Mock private WebAuthnCredentialRepository webAuthnCredentialRepository;
+    @Mock private UserCascadeDeletionService userCascadeDeletionService;
 
     private UserServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new UserServiceImpl(userRepository, passwordEncoder, expenseRepository, categoryRepository,
-                budgetRepository, recurringRepository, incomeRepository, savingsGoalRepository,
-                reportLogRepository, webAuthnCredentialRepository);
+        service = new UserServiceImpl(userRepository, passwordEncoder, userCascadeDeletionService);
     }
 
     private User userWithPin(int failed, LocalDateTime lockedUntil) {
@@ -168,5 +148,22 @@ class UserServiceImplPinLockoutTest {
     @DisplayName("a null user id is rejected")
     void nullUserIdRejected() {
         assertThrows(IllegalArgumentException.class, () -> service.verifySecurityPin(null, "123456"));
+    }
+
+    @Test
+    @DisplayName("UserSecurityPinServiceImpl enforces deterministic lockout timestamps via injected Clock")
+    void fixedClockDeterministicLockoutBoundary() {
+        java.time.Instant fixedInstant = java.time.Instant.parse("2026-10-14T10:00:00Z");
+        java.time.ZoneId utc = java.time.ZoneOffset.UTC;
+        java.time.Clock fixedClock = java.time.Clock.fixed(fixedInstant, utc);
+        UserSecurityPinServiceImpl pinService = new UserSecurityPinServiceImpl(userRepository, passwordEncoder, fixedClock);
+
+        User u = userWithPin(4, null);
+        when(passwordEncoder.matches("000000", "PINHASH")).thenReturn(false);
+
+        assertFalse(pinService.verifySecurityPin(ID, "000000"));
+        LocalDateTime expectedLockUntil = LocalDateTime.ofInstant(fixedInstant, utc).plusMinutes(15);
+        assertEquals(expectedLockUntil, u.getPinLockedUntil());
+        assertThrows(IllegalStateException.class, () -> pinService.verifySecurityPin(ID, "000000"));
     }
 }

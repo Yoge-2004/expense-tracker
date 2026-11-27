@@ -10,6 +10,9 @@ import com.example.expensetracker.domain.user.model.User;
 
 
 
+/**
+ * Service contract for creating in-app/push notifications, reading the inbox, and managing user preferences and device tokens.
+ */
 public interface NotificationService {
 
     /**

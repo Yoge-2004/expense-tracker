@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -12,8 +13,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 
 import com.example.expensetracker.common.ErrorResponse;
-
-
 
 /**
  * Handles requests that Spring Security's filter chain rejects as unauthenticated
@@ -26,11 +25,10 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private final ObjectMapper objectMapper;
 
     public RestAuthenticationEntryPoint() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-        this.objectMapper = mapper;
+        this((ObjectMapper) null);
     }
 
+    @Autowired
     public RestAuthenticationEntryPoint(ObjectMapper objectMapper) {
         if (objectMapper != null) {
             this.objectMapper = objectMapper;

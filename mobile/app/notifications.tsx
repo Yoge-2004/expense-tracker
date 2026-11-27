@@ -246,8 +246,13 @@ export default function NotificationsScreen() {
   };
 
   const clearNotification = async (id: number) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
-    setUnread((prev) => Math.max(0, prev - 1));
+    setItems((prev) => {
+      const target = prev.find((i) => i.id === id);
+      if (target && !target.read) {
+        setUnread((u) => Math.max(0, u - 1));
+      }
+      return prev.filter((i) => i.id !== id);
+    });
     try {
       await apiRequest(`${base}/${id}`, { method: 'DELETE' });
     } catch {

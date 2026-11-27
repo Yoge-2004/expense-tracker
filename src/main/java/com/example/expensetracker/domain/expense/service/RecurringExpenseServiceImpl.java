@@ -15,8 +15,8 @@ import com.example.expensetracker.domain.expense.model.RecurringExpense;
 import com.example.expensetracker.domain.expense.repository.CategoryRepository;
 import com.example.expensetracker.domain.expense.repository.RecurringExpenseRepository;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.service.UserProfileService;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 
 
@@ -34,7 +34,7 @@ public class RecurringExpenseServiceImpl implements RecurringExpenseService {
     private final RecurringExpenseRepository recurringRepository;
     private final CategoryRepository categoryRepository;
     private final ExpenseService expenseService;
-    private final UserService userService;
+    private final UserProfileService userService;
     private final UserSecurity userSecurity;
 
     @Override

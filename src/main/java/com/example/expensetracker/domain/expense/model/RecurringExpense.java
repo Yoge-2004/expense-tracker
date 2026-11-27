@@ -5,11 +5,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.example.expensetracker.domain.expense.repository.RecurringExpenseRepository;
-import com.example.expensetracker.domain.expense.service.RecurringExpenseScheduler;
 import com.example.expensetracker.domain.user.model.User;
-
-
 
 /**
  * JPA entity representing a recurring (subscription-style) expense template.
@@ -87,6 +83,5 @@ public class RecurringExpense {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
-
 
 }

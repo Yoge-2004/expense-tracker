@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.user.model.PasswordResetOtp;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.PasswordResetOtpRepository;
@@ -86,9 +85,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
      * Only used to burn equivalent time; its result is always discarded.
      */
     private final String dummyHash;
-
-    private String configuredMailHost;
-    private boolean mailEnabled;
 
     @Autowired
     public PasswordResetServiceImpl(UserRepository userRepository,
@@ -404,14 +400,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     }
 
     private void sendOtpEmail(User user, String otp, String purpose) {
-        if (authEmailService instanceof AuthEmailServiceImpl impl) {
-            if (configuredMailHost != null && !configuredMailHost.isBlank()) {
-                impl.setConfiguredMailHost(configuredMailHost);
-            }
-            if (mailEnabled) {
-                impl.setMailEnabled(mailEnabled);
-            }
-        }
         authEmailService.sendOtpEmail(user, otp, purpose);
     }
 

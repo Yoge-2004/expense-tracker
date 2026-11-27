@@ -6,6 +6,7 @@ import org.apache.poi.xssf.usermodel.*;
 import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
 import org.springframework.stereotype.Component;
 
+import com.example.expensetracker.common.format.CurrencyFormats;
 import java.awt.Color;
 
 /** Creates reusable workbook styles and dashboard cards. */

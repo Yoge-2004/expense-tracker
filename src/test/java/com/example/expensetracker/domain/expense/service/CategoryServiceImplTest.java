@@ -11,15 +11,11 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.example.expensetracker.domain.budget.repository.BudgetRepository;
 import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.expense.repository.CategoryRepository;
 import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
 import com.example.expensetracker.domain.expense.repository.RecurringExpenseRepository;
 import com.example.expensetracker.domain.user.model.User;
-
-
-
 
 @ExtendWith(MockitoExtension.class)
 class CategoryServiceImplTest {
@@ -31,7 +27,7 @@ class CategoryServiceImplTest {
     @Mock
     private RecurringExpenseRepository recurringExpenseRepository;
     @Mock
-    private BudgetRepository budgetRepository;
+    private CategoryUsageChecker categoryUsageChecker;
 
     private CategoryServiceImpl service;
     private User owner;
@@ -39,7 +35,8 @@ class CategoryServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        service = new CategoryServiceImpl(categoryRepository, expenseRepository, recurringExpenseRepository, budgetRepository);
+        service = new CategoryServiceImpl(
+                categoryRepository, expenseRepository, recurringExpenseRepository, List.of(categoryUsageChecker));
         owner = new User();
         owner.setId(1L);
         owner.setEmail("owner@example.com");
@@ -261,7 +258,7 @@ class CategoryServiceImplTest {
         when(categoryRepository.findById(10L)).thenReturn(Optional.of(cat));
         when(expenseRepository.existsByCategory_Id(10L)).thenReturn(false);
         when(recurringExpenseRepository.existsByCategory_Id(10L)).thenReturn(false);
-        when(budgetRepository.existsByCategory_Id(10L)).thenReturn(true);
+        when(categoryUsageChecker.isCategoryInUse(10L)).thenReturn(true);
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 service.deleteCategory(10L, owner)
@@ -281,7 +278,7 @@ class CategoryServiceImplTest {
         when(categoryRepository.findById(9L)).thenReturn(Optional.of(cat));
         when(expenseRepository.existsByCategory_Id(9L)).thenReturn(false);
         when(recurringExpenseRepository.existsByCategory_Id(9L)).thenReturn(false);
-        when(budgetRepository.existsByCategory_Id(9L)).thenReturn(false);
+        when(categoryUsageChecker.isCategoryInUse(9L)).thenReturn(false);
 
         service.deleteCategory(9L, owner);
 

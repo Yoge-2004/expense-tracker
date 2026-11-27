@@ -7,13 +7,8 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.example.expensetracker.domain.expense.api.ExpenseController;
-import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.expense.model.RecurringExpense;
-import com.example.expensetracker.domain.expense.service.RecurringExpenseScheduler;
 import com.example.expensetracker.domain.user.model.User;
-
-
 
 /**
  * Spring Data JPA repository for {@link RecurringExpense} entities.

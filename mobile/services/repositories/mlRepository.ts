@@ -32,38 +32,51 @@ export interface MlClassificationPrediction {
 }
 
 export interface MlClassificationResponse {
-  predictions: MlClassificationPrediction[];
+  category?: string;
+  confidence?: number;
+  top_k?: MlClassificationPrediction[];
+  topK?: MlClassificationPrediction[];
+  model_revision?: string;
+  modelRevision?: string;
+  model_type?: string;
+  modelType?: string;
+  predictions?: MlClassificationPrediction[];
   fallback_used?: boolean;
 }
 
 export interface MlMerchantMatchResponse {
+  query?: string;
   canonical_merchant?: string;
   merchant?: string;
   confidence?: number;
   matches?: Array<{ merchant: string; similarity: number; category?: string }>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface MlDuplicateCheckResponse {
+  query?: string;
   is_duplicate: boolean;
-  similarity_score: number;
-  confidence: number;
-  [key: string]: any;
+  similarity?: number;
+  similarity_score?: number;
+  confidence?: number;
+  matches?: Array<{ text: string; similarity: number; index?: number }>;
+  [key: string]: unknown;
 }
 
 export interface MlAnomalyScoreResponse {
   is_anomaly: boolean;
   anomaly_score: number;
   z_score: number;
+  total_anomalies?: number;
   results?: Array<{ is_anomaly: boolean; anomaly_score: number; z_score: number }>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface MlForecastResponse {
   horizon_days?: number;
-  forecast?: Array<{ day: number; predicted_amount: number; lower_bound?: number; upper_bound?: number }>;
+  forecast?: Array<{ date?: string; day?: number; predicted_amount: number; lower_bound?: number; upper_bound?: number }>;
   total_projected?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export const mlRepository = {

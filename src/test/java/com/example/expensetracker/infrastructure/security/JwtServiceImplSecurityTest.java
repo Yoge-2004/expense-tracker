@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.util.ReflectionTestUtils;
+import com.example.expensetracker.domain.user.security.CustomUserDetails;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;

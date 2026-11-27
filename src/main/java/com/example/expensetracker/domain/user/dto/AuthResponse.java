@@ -2,9 +2,6 @@ package com.example.expensetracker.domain.user.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import com.example.expensetracker.domain.user.model.Role;
-
-
 /**
  * Response payload returned on successful authentication across all ceremonies
  * (standard email/password login, Google OAuth, and WebAuthn biometric login).

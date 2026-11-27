@@ -19,7 +19,7 @@ import com.example.expensetracker.domain.user.model.User;
  */
 @Component
 @RequiredArgsConstructor
-public non-sealed class LargeExpenseNotificationRule implements NotificationRule {
+public class LargeExpenseNotificationRule implements NotificationRule {
 
     private static final int LARGE_EXPENSE_HISTORY_DAYS = 90;
 

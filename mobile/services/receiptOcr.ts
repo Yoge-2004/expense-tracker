@@ -13,7 +13,8 @@
 
 import { Image } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { API_BASE_URL, safeStorageGet } from './api';
+import { API_BASE_URL, getEffectiveApiBaseUrl, safeStorageGet } from './api';
+import { toLocalDateString } from '../utils/date';
 
 export interface ReceiptBreakdown {
   grandTotal?: number | null;
@@ -167,7 +168,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
     return {
       rawText: '',
       amount: 0,
-      date: new Date().toISOString().slice(0, 10),
+      date: toLocalDateString(),
       merchant: 'Receipt Purchase',
       category: 'Miscellaneous',
       confidence: 0,
@@ -229,7 +230,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
   }
 
   // Date extraction
-  let parsedDate = new Date().toISOString().slice(0, 10);
+  let parsedDate = toLocalDateString();
   for (const line of lines) {
     const match = line.match(DATE_REGEX);
     if (match) {
@@ -357,9 +358,10 @@ export async function scanReceiptWithOcr(
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
+  const baseUrl = typeof getEffectiveApiBaseUrl === 'function' ? getEffectiveApiBaseUrl() : API_BASE_URL;
   let res: Response;
   try {
-    res = await fetch(`${API_BASE_URL}/expenses/ocr`, {
+    res = await fetch(`${baseUrl}/expenses/ocr`, {
       method: 'POST',
       headers,
       body: formData,
@@ -394,7 +396,7 @@ export async function scanReceiptWithOcr(
   return {
     rawText: data.rawText || '',
     amount: typeof data.amount === 'number' ? data.amount : 0,
-    date: data.date || new Date().toISOString().slice(0, 10),
+    date: data.date || toLocalDateString(),
     merchant: data.merchant || 'Receipt Purchase',
     category: data.category || 'Miscellaneous',
     confidence: data.confidence || 88,

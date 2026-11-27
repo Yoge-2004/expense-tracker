@@ -2,6 +2,7 @@ package com.example.expensetracker.infrastructure.security;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
@@ -42,12 +43,25 @@ public class GoogleIdTokenVerifier {
     @Value("${google.oauth.client-id:}")
     private String expectedClientId;
 
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_2)
-            .connectTimeout(Duration.ofSeconds(5))
-            .build();
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    public GoogleIdTokenVerifier() {
+        this(null, null);
+    }
+
+    @Autowired
+    public GoogleIdTokenVerifier(@Autowired(required = false) ObjectMapper objectMapper) {
+        this(objectMapper, null);
+    }
+
+    GoogleIdTokenVerifier(ObjectMapper objectMapper, HttpClient httpClient) {
+        this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
+        this.httpClient = httpClient != null ? httpClient : HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(5))
+                .build();
+    }
 
     public record VerifiedIdentity(String email, String name, String picture) {
         public VerifiedIdentity(String email, String name) {

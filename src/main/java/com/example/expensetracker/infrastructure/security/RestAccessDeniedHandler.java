@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -12,8 +13,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 
 import com.example.expensetracker.common.ErrorResponse;
-
-
 
 /**
  * Handles requests Spring Security's filter chain rejects as forbidden (403).
@@ -25,11 +24,10 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
     private final ObjectMapper objectMapper;
 
     public RestAccessDeniedHandler() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-        this.objectMapper = mapper;
+        this((ObjectMapper) null);
     }
 
+    @Autowired
     public RestAccessDeniedHandler(ObjectMapper objectMapper) {
         if (objectMapper != null) {
             this.objectMapper = objectMapper;

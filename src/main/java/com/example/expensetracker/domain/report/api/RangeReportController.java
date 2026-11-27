@@ -1,38 +1,31 @@
 package com.example.expensetracker.domain.report.api;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.example.expensetracker.domain.report.service.ExecutiveExcelReportGenerator;
-import com.example.expensetracker.domain.report.service.ExecutivePdfReportGenerator;
 import com.example.expensetracker.domain.report.service.ExecutiveReportData;
 import com.example.expensetracker.domain.report.service.ExecutiveReportDateRange;
 import com.example.expensetracker.domain.report.service.ExecutiveReportService;
 import com.example.expensetracker.domain.report.service.ReportExportRegistry;
+import com.example.expensetracker.domain.report.service.ReportExportStrategy;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.security.UserSecurity;
+import com.example.expensetracker.domain.user.service.UserProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-
-
 /**
  * REST controller exposing executive range-based financial exports.
  * Orchestrates ledger extraction and delegates document rendering
- * to specialized Excel and PDF generators.
+ * polymorphically to registered {@link ReportExportStrategy} beans via {@link ReportExportRegistry}.
  */
 @Tag(
     name = "Range Reports",
@@ -46,39 +39,20 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 )
 @SecurityRequirement(name = "BearerAuth")
 @Slf4j
+@RequiredArgsConstructor
 @Transactional(readOnly = true)
 @RestController
 @RequestMapping({"/api/reports", "/api/expenses"})
 public class RangeReportController {
 
-    private static final MediaType XLSX = MediaType.parseMediaType(
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-
     private final ExecutiveReportService executiveReportService;
-    private final UserService users;
+    private final UserProfileService users;
     private final UserSecurity security;
-    private final ExecutiveExcelReportGenerator excelReportGenerator;
-    private final ExecutivePdfReportGenerator pdfReportGenerator;
     private final ReportExportRegistry exportRegistry;
-
-    @org.springframework.beans.factory.annotation.Autowired
-    public RangeReportController(ExecutiveReportService executiveReportService,
-                                 UserService users,
-                                 UserSecurity security,
-                                 ExecutiveExcelReportGenerator excelReportGenerator,
-                                 ExecutivePdfReportGenerator pdfReportGenerator,
-                                 ReportExportRegistry exportRegistry) {
-        this.executiveReportService = executiveReportService;
-        this.users = users;
-        this.security = security;
-        this.excelReportGenerator = excelReportGenerator;
-        this.pdfReportGenerator = pdfReportGenerator;
-        this.exportRegistry = exportRegistry;
-    }
 
     /**
      * Polymorphic range export endpoint following the Open/Closed Principle (OCP).
-     * Any registered ReportExportStrategy can be invoked dynamically without code changes.
+     * Any registered {@link ReportExportStrategy} can be invoked dynamically without code changes.
      */
     @Operation(summary = "Export a range report in any supported format",
             description = "Looks up the export strategy for `format` (`excel` or `pdf`) and returns "
@@ -87,31 +61,13 @@ public class RangeReportController {
     @ApiResponse(responseCode = "400", description = "Unsupported format, bad date or end before start")
     @ApiResponse(responseCode = "403", description = "Not the owner of this data")
     @GetMapping("/user/{userId}/export/range/{format}")
-    public ResponseEntity<byte[]> exportByFormat(@Parameter(description = "Id of the user whose data is exported.") @PathVariable Long userId,
-                                                 @Parameter(description = "Export format: `excel` or `pdf`.") @PathVariable String format,
-                                                 @Parameter(description = "Start date (yyyy-MM-dd). Omit for no lower bound.") @RequestParam(required = false) String from,
-                                                 @Parameter(description = "End date (yyyy-MM-dd). Omit for no upper bound.") @RequestParam(required = false) String to,
-                                                 @Parameter(description = "ISO currency code used in the report.") @RequestParam(defaultValue = "INR") String currency) {
-        security.validateUserAccess(userId);
-        User user = user(userId);
-        ExecutiveReportDateRange range = ExecutiveReportDateRange.of(from, to);
-        com.example.expensetracker.domain.report.service.ReportExportStrategy strategy = exportRegistry
-                .findStrategy(format)
-                .orElseThrow(() -> new IllegalArgumentException("Unsupported report format: " + format));
-
-        log.info("Generating executive {} report via strategy for userId={}, range='{}', currency='{}'",
-                format, userId, range.label(), currency);
-        ExecutiveReportData data = data(user, range);
-        byte[] bytes = strategy.generate(data, range, currency, user.getName());
-
-        return ResponseEntity.ok()
-                .contentType(strategy.mediaType())
-                .contentLength(bytes.length)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.attachment()
-                                .filename(strategy.filename(range))
-                                .build().toString())
-                .body(bytes);
+    public ResponseEntity<byte[]> exportByFormat(
+            @Parameter(description = "Id of the user whose data is exported.") @PathVariable Long userId,
+            @Parameter(description = "Export format: `excel` or `pdf`.") @PathVariable String format,
+            @Parameter(description = "Start date (yyyy-MM-dd). Omit for no lower bound.") @RequestParam(required = false) String from,
+            @Parameter(description = "End date (yyyy-MM-dd). Omit for no upper bound.") @RequestParam(required = false) String to,
+            @Parameter(description = "ISO currency code used in the report.") @RequestParam(defaultValue = "INR") String currency) {
+        return exportWithStrategy(userId, format, from, to, currency, null);
     }
 
     @Operation(summary = "Export a range report as Excel",
@@ -120,26 +76,12 @@ public class RangeReportController {
     @ApiResponse(responseCode = "400", description = "Bad date or end before start")
     @ApiResponse(responseCode = "403", description = "Not the owner of this data")
     @GetMapping("/user/{userId}/export/range/excel")
-    public ResponseEntity<byte[]> excel(@Parameter(description = "Id of the user whose data is exported.") @PathVariable Long userId,
-                                        @Parameter(description = "Start date (yyyy-MM-dd). Omit for no lower bound.") @RequestParam(required = false) String from,
-                                        @Parameter(description = "End date (yyyy-MM-dd). Omit for no upper bound.") @RequestParam(required = false) String to,
-                                        @Parameter(description = "ISO currency code used in the report.") @RequestParam(defaultValue = "INR") String currency) {
-        security.validateUserAccess(userId);
-        User user = user(userId);
-        ExecutiveReportDateRange range = ExecutiveReportDateRange.of(from, to);
-        log.info("Generating executive Excel report for userId={}, range='{}', currency='{}'",
-                userId, range.label(), currency);
-        ExecutiveReportData data = data(user, range);
-        byte[] bytes = excelReportGenerator.generate(data, range, currency);
-        log.info("Executive Excel report generated successfully for userId={}, size={} bytes", userId, bytes.length);
-        return ResponseEntity.ok()
-                .contentType(XLSX)
-                .contentLength(bytes.length)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.attachment()
-                                .filename("ExpenseTracker_Executive_Dashboard.xlsx")
-                                .build().toString())
-                .body(bytes);
+    public ResponseEntity<byte[]> excel(
+            @Parameter(description = "Id of the user whose data is exported.") @PathVariable Long userId,
+            @Parameter(description = "Start date (yyyy-MM-dd). Omit for no lower bound.") @RequestParam(required = false) String from,
+            @Parameter(description = "End date (yyyy-MM-dd). Omit for no upper bound.") @RequestParam(required = false) String to,
+            @Parameter(description = "ISO currency code used in the report.") @RequestParam(defaultValue = "INR") String currency) {
+        return exportWithStrategy(userId, "excel", from, to, currency, null);
     }
 
     @Operation(summary = "Export a range report as PDF",
@@ -148,24 +90,37 @@ public class RangeReportController {
     @ApiResponse(responseCode = "400", description = "Bad date or end before start")
     @ApiResponse(responseCode = "403", description = "Not the owner of this data")
     @GetMapping("/user/{userId}/export/range/pdf")
-    public ResponseEntity<byte[]> pdf(@Parameter(description = "Id of the user whose data is exported.") @PathVariable Long userId,
-                                      @Parameter(description = "Start date (yyyy-MM-dd). Omit for no lower bound.") @RequestParam(required = false) String from,
-                                      @Parameter(description = "End date (yyyy-MM-dd). Omit for no upper bound.") @RequestParam(required = false) String to,
-                                      @Parameter(description = "ISO currency code used in the report.") @RequestParam(defaultValue = "INR") String currency) {
+    public ResponseEntity<byte[]> pdf(
+            @Parameter(description = "Id of the user whose data is exported.") @PathVariable Long userId,
+            @Parameter(description = "Start date (yyyy-MM-dd). Omit for no lower bound.") @RequestParam(required = false) String from,
+            @Parameter(description = "End date (yyyy-MM-dd). Omit for no upper bound.") @RequestParam(required = false) String to,
+            @Parameter(description = "ISO currency code used in the report.") @RequestParam(defaultValue = "INR") String currency) {
+        return exportWithStrategy(userId, "pdf", from, to, currency, "ExpenseTracker_Executive_Report.pdf");
+    }
+
+    private ResponseEntity<byte[]> exportWithStrategy(
+            Long userId, String format, String from, String to, String currency, String filenameOverride) {
         security.validateUserAccess(userId);
         User user = user(userId);
         ExecutiveReportDateRange range = ExecutiveReportDateRange.of(from, to);
-        log.info("Generating executive PDF report for userId={}, range='{}', currency='{}'",
-                userId, range.label(), currency);
-        ExecutiveReportData data = data(user, range);
-        byte[] bytes = pdfReportGenerator.generate(data, range, currency, user.getName());
-        log.info("Executive PDF report generated successfully for userId={}, size={} bytes", userId, bytes.length);
+        ReportExportStrategy strategy = exportRegistry
+                .findStrategy(format)
+                .orElseThrow(() -> new IllegalArgumentException("Unsupported report format: " + format));
+
+        log.info("Generating executive {} report via strategy for userId={}, range='{}', currency='{}'",
+                format, userId, range.label(), currency);
+        ExecutiveReportData data = executiveReportService.loadReportData(user, range);
+        byte[] bytes = strategy.generate(data, range, currency, user.getName());
+        String filename = filenameOverride != null ? filenameOverride : strategy.filename(range);
+        log.info("Executive {} report generated successfully for userId={}, size={} bytes",
+                format, userId, bytes.length);
+
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
+                .contentType(strategy.mediaType())
                 .contentLength(bytes.length)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment()
-                                .filename("ExpenseTracker_Executive_Report.pdf")
+                                .filename(filename)
                                 .build().toString())
                 .body(bytes);
     }
@@ -173,9 +128,5 @@ public class RangeReportController {
     private User user(Long id) {
         return users.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-    }
-
-    private ExecutiveReportData data(User user, ExecutiveReportDateRange range) {
-        return executiveReportService.loadReportData(user, range);
     }
 }

@@ -2,7 +2,6 @@ package com.example.expensetracker.domain.report.service;
 
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;

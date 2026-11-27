@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 
 
 
+/**
+ * Persisted short-lived WebAuthn ceremony challenge bound to registration, login, or recovery flows.
+ */
 @Entity
 @Table(name = "webauthn_challenges", indexes = {
     @Index(name = "idx_webauthn_challenge_expires", columnList = "expires_at")

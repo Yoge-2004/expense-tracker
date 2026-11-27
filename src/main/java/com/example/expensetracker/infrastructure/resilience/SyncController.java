@@ -1,6 +1,8 @@
 package com.example.expensetracker.infrastructure.resilience;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -139,6 +141,12 @@ public class SyncController {
     }
 
     @Operation(summary = "Trigger File to DB Sync")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "File-to-DB sync completed"),
+        @ApiResponse(responseCode = "401", description = "Missing or invalid sync credentials"),
+        @ApiResponse(responseCode = "429", description = "Too many sync requests"),
+        @ApiResponse(responseCode = "500", description = "Sync failed")
+    })
     @SecurityRequirements
     @PostMapping("/file-to-db")
     public ResponseEntity<Map<String, Object>> syncFileToDb(
@@ -157,6 +165,12 @@ public class SyncController {
     }
 
     @Operation(summary = "Trigger DB to File Backup Sync")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "DB-to-file backup completed"),
+        @ApiResponse(responseCode = "401", description = "Missing or invalid sync credentials"),
+        @ApiResponse(responseCode = "429", description = "Too many sync requests"),
+        @ApiResponse(responseCode = "500", description = "Backup failed")
+    })
     @SecurityRequirements
     @PostMapping("/db-to-file")
     public ResponseEntity<Map<String, Object>> syncDbToFile(
@@ -177,6 +191,12 @@ public class SyncController {
     @Operation(summary = "Push JSON backup to Hugging Face Spaces",
                description = "Exports current database to expenses_sync.json "
                        + "and uploads it to the HF Space repo.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Backup pushed to Hugging Face"),
+        @ApiResponse(responseCode = "401", description = "Missing or invalid sync credentials"),
+        @ApiResponse(responseCode = "429", description = "Too many sync requests"),
+        @ApiResponse(responseCode = "500", description = "Upload failed")
+    })
     @SecurityRequirements
     @PostMapping("/push-to-hf")
     public ResponseEntity<Map<String, Object>> pushToHuggingFace(
@@ -199,6 +219,11 @@ public class SyncController {
     @Operation(summary = "Hugging Face snapshot status",
                description = "Shows whether the encrypted database snapshot is configured (without revealing "
                        + "any secret), when the last attempt and last success happened, and the last error.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Hugging Face snapshot status returned"),
+        @ApiResponse(responseCode = "401", description = "Missing or invalid sync credentials"),
+        @ApiResponse(responseCode = "429", description = "Too many status requests")
+    })
     @SecurityRequirements
     @GetMapping("/hf-status")
     public ResponseEntity<Map<String, Object>> huggingFaceStatus(
@@ -224,6 +249,12 @@ public class SyncController {
     @Operation(summary = "Pull JSON backup from Hugging Face Spaces",
                description = "Downloads expenses_sync.json from HF Space "
                        + "and imports any missing records into database.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Backup pulled and imported"),
+        @ApiResponse(responseCode = "401", description = "Missing or invalid sync credentials"),
+        @ApiResponse(responseCode = "429", description = "Too many sync requests"),
+        @ApiResponse(responseCode = "500", description = "Download or import failed")
+    })
     @SecurityRequirements
     @PostMapping("/pull-from-hf")
     public ResponseEntity<Map<String, Object>> pullFromHuggingFace(

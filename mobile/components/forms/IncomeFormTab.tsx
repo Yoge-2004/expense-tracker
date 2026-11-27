@@ -228,7 +228,7 @@ export const IncomeFormTab = memo(function IncomeFormTab(props: IncomeFormTabPro
         </View>
 
         {incomeIsRecurring && incomeKind !== 'REIMBURSEMENT' && (
-          <View style={[styles.recurringBox, { backgroundColor: c.inputBg, borderColor: 'rgba(16, 185, 129, 0.3)' }]}>
+          <View style={[styles.recurringBox, { backgroundColor: c.inputBg, borderColor: c.success + '4D' }]}>
             <Text style={[styles.recurringBoxLabel, { color: c.success }]}>PAYMENT CADENCE</Text>
             <View style={styles.freqRow}>
               {(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'CUSTOM'] as const).map((freq) => {

@@ -233,8 +233,11 @@ class RecurringExpenseSchedulerTest {
     void eachSubscriptionHasItsOwnTransaction() {
         org.springframework.transaction.PlatformTransactionManager tm =
                 org.mockito.Mockito.mock(org.springframework.transaction.PlatformTransactionManager.class);
-        org.springframework.test.util.ReflectionTestUtils.setField(scheduler, "transactionTemplate",
-                new org.springframework.transaction.support.TransactionTemplate(tm));
+        RecurringExpenseScheduler txScheduler = new RecurringExpenseScheduler(
+                recurringExpenseRepository,
+                expenseRepository,
+                new org.springframework.transaction.support.TransactionTemplate(tm),
+                null);
 
         RecurringExpense failing = dueSubscription(1L);
         RecurringExpense healthy = dueSubscription(2L);
@@ -246,7 +249,7 @@ class RecurringExpenseSchedulerTest {
                 .thenThrow(new IllegalStateException("database hiccup"))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        scheduler.processRecurringExpenses();
+        txScheduler.processRecurringExpenses();
 
         verify(tm, times(1)).rollback(any());
         verify(tm, times(1)).commit(any());

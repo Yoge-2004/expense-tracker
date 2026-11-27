@@ -105,4 +105,37 @@ class MlInferenceClientTest {
         assertEquals("transportation", response.category());
         mockServer.verify();
     }
+
+    @Test
+    @DisplayName("health: returns unavailable status map when downstream errors")
+    void health_downstreamFailure_returnsUnavailableFallback() {
+        mockServer.expect(requestTo("http://127.0.0.1:8000/health"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+
+        var result = client.health();
+
+        assertEquals("unavailable", result.get("status"));
+        mockServer.verify();
+    }
+
+    @Test
+    @DisplayName("getLogs: encodes query parameters safely and parses typed MlLogEntryDto list")
+    void getLogs_encodesQueryAndReturnsTypedEntries() {
+        String logsJson = """
+                [
+                  {"timestamp": "2026-11-27T01:00:00Z", "level": "INFO", "logger": "ml.api", "message": "ok"}
+                ]
+                """;
+        mockServer.expect(requestTo("http://127.0.0.1:8000/api/v1/logs?lines=25&level=ERROR&query=timeout%20error"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(logsJson, MediaType.APPLICATION_JSON));
+
+        var logs = client.getLogs(25, "ERROR", "timeout error");
+
+        assertEquals(1, logs.size());
+        assertEquals("INFO", logs.getFirst().level());
+        assertEquals("ml.api", logs.getFirst().logger());
+        mockServer.verify();
+    }
 }

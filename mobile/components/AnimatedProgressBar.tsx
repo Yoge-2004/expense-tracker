@@ -15,12 +15,13 @@ interface AnimatedProgressBarProps {
 export const AnimatedProgressBar: React.FC<AnimatedProgressBarProps> = ({
   progress,
   height = 8,
-  backgroundColor = 'rgba(255, 255, 255, 0.1)',
+  backgroundColor,
   fillColor,
   style,
 }) => {
   const { theme, themeColors } = useAuth();
   const c = themeColors || Colors[theme];
+  const resolvedTrackBg = backgroundColor ?? c.trackBg;
   const [animatedWidth] = useState(() => new Animated.Value(0));
   const reducedMotion = useReducedMotion();
   const numericProgress = Number(progress);
@@ -60,7 +61,7 @@ export const AnimatedProgressBar: React.FC<AnimatedProgressBarProps> = ({
     <View
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: 100, now: clampedProgress }}
-      style={[styles.container, { height, backgroundColor }, style]}
+      style={[styles.container, { height, backgroundColor: resolvedTrackBg }, style]}
     >
       <Animated.View
         style={[styles.fill, { height, backgroundColor: getDynamicColor(), width: widthInterpolated }]}

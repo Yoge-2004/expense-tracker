@@ -11,9 +11,6 @@ import java.util.List;
 
 import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.expense.repository.CategoryRepository;
-import com.example.expensetracker.domain.expense.service.CategoryServiceImpl;
-
-
 
 /**
  * Seeds the system-wide default categories (Food, Transport, Utilities,
@@ -33,7 +30,6 @@ import com.example.expensetracker.domain.expense.service.CategoryServiceImpl;
 public class CategoryInitializer {
 
     private final CategoryRepository categoryRepository;
-
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(1)

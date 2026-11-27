@@ -10,10 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.example.expensetracker.domain.goal.model.SavingsGoal;
-import com.example.expensetracker.domain.goal.service.SavingsGoalServiceImpl;
 import com.example.expensetracker.domain.user.model.User;
-
-
 
 /**
  * Spring Data JPA repository for {@link SavingsGoal} entities.

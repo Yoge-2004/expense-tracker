@@ -30,7 +30,7 @@ import com.example.expensetracker.domain.report.service.ExecutiveExcelReportGene
 import com.example.expensetracker.domain.report.service.ExecutivePdfReportGenerator;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 
 
@@ -62,8 +62,9 @@ class RangeReportControllerTest {
         controller = new RangeReportController(
                 new com.example.expensetracker.domain.report.service.ExecutiveReportServiceImpl(
                         expenses, incomes, savingsGoals, recurringExpenses, budgets),
-                users, security, excelReportGenerator, pdfReportGenerator,
-                new com.example.expensetracker.domain.report.service.ReportExportRegistry(java.util.List.of()));
+                users, security,
+                new com.example.expensetracker.domain.report.service.ReportExportRegistry(
+                        java.util.List.of(excelReportGenerator, pdfReportGenerator)));
     }
 
     @Test
@@ -259,6 +260,48 @@ class RangeReportControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().length > 1000);
+    }
+
+    @Test
+    void customReportExportStrategyWorksWithoutModifyingController() {
+        User user = user(18L, "Extensible User");
+        when(users.findById(18L)).thenReturn(Optional.of(user));
+        when(expenses.findByUser(user)).thenReturn(List.of());
+        when(incomes.findByUser(user)).thenReturn(List.of());
+        when(savingsGoals.findByUser(user)).thenReturn(List.of());
+        when(recurringExpenses.findByUser(user)).thenReturn(List.of());
+        when(budgets.findByUser(user)).thenReturn(List.of());
+
+        com.example.expensetracker.domain.report.service.ReportExportStrategy csvStrategy =
+                new com.example.expensetracker.domain.report.service.ReportExportStrategy() {
+                    @Override public String format() { return "csv"; }
+                    @Override public org.springframework.http.MediaType mediaType() {
+                        return org.springframework.http.MediaType.TEXT_PLAIN;
+                    }
+                    @Override public String filename(com.example.expensetracker.domain.report.service.ExecutiveReportDateRange range) {
+                        return "custom-report.csv";
+                    }
+                    @Override public byte[] generate(
+                            com.example.expensetracker.domain.report.service.ExecutiveReportData data,
+                            com.example.expensetracker.domain.report.service.ExecutiveReportDateRange range,
+                            String currency,
+                            String userName) {
+                        return ("user," + userName + ",currency," + currency).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                    }
+                };
+        RangeReportController extensibleController = new RangeReportController(
+                new com.example.expensetracker.domain.report.service.ExecutiveReportServiceImpl(
+                        expenses, incomes, savingsGoals, recurringExpenses, budgets),
+                users, security,
+                new com.example.expensetracker.domain.report.service.ReportExportRegistry(List.of(csvStrategy)));
+
+        var response = extensibleController.exportByFormat(18L, "csv", null, null, "USD");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("text/plain", response.getHeaders().getContentType().toString());
+        assertEquals("attachment; filename=\"custom-report.csv\"",
+                response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
+        assertEquals("user,Extensible User,currency,USD",
+                new String(response.getBody(), java.nio.charset.StandardCharsets.UTF_8));
     }
 
     private static User user(Long id, String name) {

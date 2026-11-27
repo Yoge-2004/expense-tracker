@@ -21,8 +21,19 @@ public final class SearchPatterns {
         return query != null && !query.isBlank();
     }
 
-    /** {@code %text%}, lower-cased, or just {@code %} when there is nothing to search for. Never null. */
+    /**
+     * {@code %text%}, lower-cased with SQL LIKE wildcards ({@code \}, {@code %}, {@code _}) escaped,
+     * or just {@code %} when there is nothing to search for. Never null.
+     */
     public static String contains(String query) {
-        return hasText(query) ? "%" + query.trim().toLowerCase(Locale.ROOT) + "%" : "%";
+        if (!hasText(query)) {
+            return "%";
+        }
+        String escaped = query.trim()
+                .toLowerCase(Locale.ROOT)
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+        return "%" + escaped + "%";
     }
 }

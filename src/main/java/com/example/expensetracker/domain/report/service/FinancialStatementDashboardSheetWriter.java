@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.List;
 
+import com.example.expensetracker.common.format.CurrencyFormats;
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.income.model.Income;
 import com.example.expensetracker.domain.goal.model.SavingsGoal;

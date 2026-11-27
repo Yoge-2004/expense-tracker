@@ -6,10 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import com.example.expensetracker.common.BaseEntity;
-import com.example.expensetracker.domain.income.mapper.IncomeRules;
 import com.example.expensetracker.domain.user.model.User;
-
-
 
 /**
  * JPA entity representing an income transaction received by a user.

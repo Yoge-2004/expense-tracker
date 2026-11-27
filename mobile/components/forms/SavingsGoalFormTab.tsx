@@ -179,7 +179,7 @@ export const SavingsGoalFormTab = memo(function SavingsGoalFormTab(props: Saving
               style={[
                 styles.toggleKnob,
                 {
-                  backgroundColor: goalIsRecurring ? '#FFF' : c.textMuted,
+                  backgroundColor: goalIsRecurring ? c.onWarning : c.textMuted,
                   transform: [{ translateX: goalIsRecurring ? 18 : 2 }],
                 },
               ]}

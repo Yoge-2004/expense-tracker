@@ -2,7 +2,6 @@ package com.example.expensetracker.domain.report.service;
 
 import java.util.List;
 
-import com.example.expensetracker.domain.budget.model.Budget;
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.goal.model.SavingsGoal;
 import com.example.expensetracker.domain.income.model.Income;

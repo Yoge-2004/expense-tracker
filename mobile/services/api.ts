@@ -48,6 +48,7 @@ export async function getCustomServerUrl(): Promise<string | null> {
 export async function setCustomServerUrl(url: string | null): Promise<void> {
   const sanitized = url ? validateCustomServerUrl(url) : null;
   memoryCustomServerUrl = sanitized;
+  apiCache.clear();
   try {
     if (sanitized) {
       await AsyncStorage.setItem(CUSTOM_SERVER_KEY, sanitized);
@@ -114,6 +115,7 @@ const CACHE_TTL_MS = 15000;
 /** Optional application-specific request flags layered on top of RequestInit. */
 export type ApiRequestOptions = RequestInit & {
   skipAuthRedirect?: boolean;
+  skipCache?: boolean;
 };
 
 export type ApiErrorCode =
@@ -193,7 +195,7 @@ export async function safeStorageSet(key: string, value: string): Promise<void> 
   });
 }
 
-export async function safeStorageGet(key: string): Promise<string | null> {
+async function rawStorageGet(key: string): Promise<string | null> {
   const sensitive = isSensitiveCredentialKey(key);
   if (sensitive) await discardLegacyCredentialFallback(key);
 
@@ -214,12 +216,16 @@ export async function safeStorageGet(key: string): Promise<string | null> {
   }
 }
 
+export async function safeStorageGet(key: string): Promise<string | null> {
+  return serializedStorageOp(() => rawStorageGet(key));
+}
+
 function isSensitiveCredentialKey(key: string): boolean {
   const normalized = key.toLowerCase();
   return key === TOKEN_KEY || normalized.includes('token') || normalized.includes('biometric');
 }
 
-export async function safeStorageDelete(key: string): Promise<void> {
+async function rawStorageDelete(key: string): Promise<void> {
   try {
     await SecureStore.deleteItemAsync(key);
   } catch {
@@ -230,6 +236,10 @@ export async function safeStorageDelete(key: string): Promise<void> {
   } catch {
     // Best-effort cleanup.
   }
+}
+
+export async function safeStorageDelete(key: string): Promise<void> {
+  return serializedStorageOp(() => rawStorageDelete(key));
 }
 
 /**
@@ -293,10 +303,10 @@ export async function clearSession(): Promise<void> {
     try {
       apiCache.clear();
       await Promise.all([
-        safeStorageDelete(TOKEN_KEY),
-        safeStorageDelete(USER_ID_KEY),
-        safeStorageDelete(NAME_KEY),
-        safeStorageDelete(PHOTO_KEY),
+        rawStorageDelete(TOKEN_KEY),
+        rawStorageDelete(USER_ID_KEY),
+        rawStorageDelete(NAME_KEY),
+        rawStorageDelete(PHOTO_KEY),
       ]);
     } finally {
       clearSessionInFlight = null;
@@ -311,13 +321,15 @@ export async function getSession(): Promise<{
   name: string | null;
   photo: string | null;
 }> {
-  const [token, userId, name, photo] = await Promise.all([
-    safeStorageGet(TOKEN_KEY),
-    safeStorageGet(USER_ID_KEY),
-    safeStorageGet(NAME_KEY),
-    safeStorageGet(PHOTO_KEY),
-  ]);
-  return { token, userId, name, photo };
+  return serializedStorageOp(async () => {
+    const [token, userId, name, photo] = await Promise.all([
+      rawStorageGet(TOKEN_KEY),
+      rawStorageGet(USER_ID_KEY),
+      rawStorageGet(NAME_KEY),
+      rawStorageGet(PHOTO_KEY),
+    ]);
+    return { token, userId, name, photo };
+  });
 }
 
 export function invalidateApiCache(): void {
@@ -429,17 +441,36 @@ function waitForRetry(ms: number, signal: AbortSignal | null | undefined, endpoi
   });
 }
 
+const READ_ONLY_POST_PREFIXES = [
+  '/ml/classify',
+  '/ml/analyze',
+  '/ml/merchants/match',
+  '/ml/duplicates/check',
+  '/ml/anomalies/score',
+  '/ml/forecast/spending',
+];
+
+function isCacheInvalidatingRequest(method: string, endpoint: string): boolean {
+  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return false;
+  if (method === 'POST' && READ_ONLY_POST_PREFIXES.some((prefix) => endpoint.startsWith(prefix))) {
+    return false;
+  }
+  return true;
+}
+
 export async function apiRequest<T = any>(
   endpoint: string,
   options: ApiRequestOptions = {},
   attempt = 0
 ): Promise<T> {
   const method = (options.method || 'GET').toUpperCase();
+  const effectiveBaseUrl = getEffectiveApiBaseUrl();
+  const cacheKey = `${effectiveBaseUrl}::${endpoint}`;
 
-  if (method !== 'GET') {
+  if (isCacheInvalidatingRequest(method, endpoint)) {
     apiCache.clear();
-  } else {
-    const cached = apiCache.get(endpoint);
+  } else if (method === 'GET' && !options.skipCache) {
+    const cached = apiCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
       return cached.data;
     }
@@ -469,12 +500,12 @@ export async function apiRequest<T = any>(
   }
 
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const { skipAuthRedirect: _skipAuthRedirect, skipCache: _skipCache, ...fetchOptions } = options;
 
   let response: Response;
-  const effectiveBaseUrl = getEffectiveApiBaseUrl();
   try {
     response = await fetch(`${effectiveBaseUrl}${endpoint}`, {
-      ...options,
+      ...fetchOptions,
       signal: controller.signal,
       headers,
     });
@@ -548,7 +579,7 @@ export async function apiRequest<T = any>(
   }
 
   if (method === 'GET' && responseData !== null) {
-    apiCache.set(endpoint, { data: responseData, timestamp: Date.now() });
+    apiCache.set(cacheKey, { data: responseData, timestamp: Date.now() });
   }
 
   return responseData as T;

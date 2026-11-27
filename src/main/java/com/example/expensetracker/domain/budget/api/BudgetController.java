@@ -5,11 +5,11 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -22,11 +22,8 @@ import java.util.List;
 import com.example.expensetracker.common.ErrorResponse;
 import com.example.expensetracker.domain.budget.dto.BudgetDto;
 import com.example.expensetracker.domain.budget.dto.BudgetStatusDto;
-import com.example.expensetracker.domain.budget.model.Budget;
 import com.example.expensetracker.domain.budget.service.BudgetService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
-
-
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 /**
  * Controller dedicated exclusively to category budget limit management and real-time utilisation tracking.
@@ -75,7 +72,7 @@ public class BudgetController {
             for monitoring purposes via `GET /api/expenses/budget/status/user/{userId}`.
             """
     )
-    @RequestBody(required = true, content = @Content(
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, content = @Content(
         mediaType = MediaType.APPLICATION_JSON_VALUE,
         schema = @Schema(implementation = BudgetDto.class),
         examples = @ExampleObject(
@@ -112,7 +109,7 @@ public class BudgetController {
     public ResponseEntity<?> setBudget(
             @Parameter(description = "ID of the user setting the budget.", required = true, example = "1")
             @PathVariable Long userId,
-            @org.springframework.web.bind.annotation.RequestBody BudgetDto dto) {
+            @Valid @RequestBody BudgetDto dto) {
         userSecurity.validateUserAccess(userId);
         log.info("Setting budget for userId={}, categoryId={}: limitAmount={}, period={}",
                 userId, dto.categoryId(), dto.limitAmount(), dto.period());
@@ -174,6 +171,13 @@ public class BudgetController {
         summary = "Get budget status",
         description = "Returns budget utilisation for every category with custom period calculations."
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Budget status list returned"),
+        @ApiResponse(responseCode = "400", description = "User not found",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping("/status/user/{userId}")
     public ResponseEntity<List<BudgetStatusDto>> getBudgetStatus(
             @Parameter(description = "ID of the user whose budget status to retrieve.", required = true, example = "1")

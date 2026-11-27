@@ -3,10 +3,6 @@ package com.example.expensetracker.domain.admin.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
-import com.example.expensetracker.domain.user.model.User;
-
-
-
 /**
  * Detailed user model exposed specifically to administrative operators.
  * Never includes sensitive credentials (password hash, PIN hash).

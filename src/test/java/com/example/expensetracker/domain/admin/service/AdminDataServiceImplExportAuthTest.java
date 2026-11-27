@@ -15,7 +15,7 @@ import com.example.expensetracker.domain.user.repository.UserRepository;
 import com.example.expensetracker.infrastructure.exception.BadRequestException;
 import com.example.expensetracker.infrastructure.exception.ForbiddenException;
 import com.example.expensetracker.infrastructure.resilience.DatabaseSnapshotService;
-import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
+import com.example.expensetracker.domain.user.security.StepUpPinVerifier;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -1,9 +1,10 @@
 package com.example.expensetracker.infrastructure.health;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.poi.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.example.expensetracker.infrastructure.resilience.FallbackRecoveryCoordinator;
-
-
 
 /**
  * Health check probe controller.
@@ -56,6 +55,10 @@ public class HealthController {
 
     @Operation(summary = "Get system health status",
                description = "Checks database connectivity, JVM memory, and system uptime.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Database is up and application is healthy"),
+        @ApiResponse(responseCode = "503", description = "Database connectivity check failed")
+    })
     @SecurityRequirements
     @GetMapping
     public ResponseEntity<Map<String, Object>> getHealth() {
@@ -101,6 +104,7 @@ public class HealthController {
     }
 
     @Operation(summary = "Liveness probe", description = "Checks whether the service process is up and responding.")
+    @ApiResponse(responseCode = "200", description = "Service process is live")
     @SecurityRequirements
     @GetMapping("/live")
     public ResponseEntity<Map<String, Object>> liveness() {
@@ -111,6 +115,10 @@ public class HealthController {
     }
 
     @Operation(summary = "Readiness probe", description = "Verifies the application is ready to accept traffic by testing the active database connection.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Service is ready to accept traffic"),
+        @ApiResponse(responseCode = "503", description = "Database is not ready")
+    })
     @SecurityRequirements
     @GetMapping("/ready")
     public ResponseEntity<Map<String, Object>> readiness() {
@@ -119,6 +127,7 @@ public class HealthController {
 
     @Operation(summary = "Get dynamic system architecture specification",
                description = "Returns runtime versions, JVM specifications, and core stack architecture.")
+    @ApiResponse(responseCode = "200", description = "Architecture metadata returned")
     @SecurityRequirements
     @GetMapping("/architecture")
     public ResponseEntity<Map<String, Object>> getArchitecture() {

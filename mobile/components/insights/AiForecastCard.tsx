@@ -89,7 +89,8 @@ export const AiForecastCard: React.FC<AiForecastCardProps> = React.memo(({
                 {formatAmt(forecast.total)}
               </Text>
               <Text style={[styles.subText, { color: c.textMuted }]}>
-                Projected next {forecast.days} days ({formatAmt(forecast.total / forecast.days)}/day)
+                Projected next {forecast.days} days
+                {forecast.days > 0 ? ` (${formatAmt(forecast.total / forecast.days)}/day)` : ''}
               </Text>
             </View>
             <View style={[styles.modelBadge, { backgroundColor: c.primary + '15', borderColor: c.primary + '30' }]}>

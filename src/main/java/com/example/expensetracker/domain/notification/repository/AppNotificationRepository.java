@@ -2,6 +2,9 @@ package com.example.expensetracker.domain.notification.repository;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -13,6 +16,9 @@ import com.example.expensetracker.domain.user.model.User;
 
 
 
+/**
+ * Spring Data JPA repository for {@link AppNotification} inbox records.
+ */
 @Repository
 public interface AppNotificationRepository extends JpaRepository<AppNotification, Long> {
 
@@ -34,4 +40,9 @@ public interface AppNotificationRepository extends JpaRepository<AppNotification
 
     @Transactional
     long deleteByUser(User user);
+
+    @Modifying(clearAutomatically = true)
+    @Transactional
+    @Query("DELETE FROM AppNotification n WHERE n.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
 }

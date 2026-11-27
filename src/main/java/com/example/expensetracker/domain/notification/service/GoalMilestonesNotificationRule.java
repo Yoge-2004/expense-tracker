@@ -17,7 +17,7 @@ import com.example.expensetracker.domain.user.model.User;
  */
 @Component
 @RequiredArgsConstructor
-public non-sealed class GoalMilestonesNotificationRule implements NotificationRule {
+public class GoalMilestonesNotificationRule implements NotificationRule {
 
     private final SavingsGoalRepository savingsGoalRepository;
 

@@ -11,11 +11,7 @@ import com.example.expensetracker.domain.user.model.User;
  *
  * @author Yogeshwaran
  */
-public sealed interface NotificationRule permits
-        BudgetNotificationRule,
-        GoalMilestonesNotificationRule,
-        LargeExpenseNotificationRule,
-        UpcomingBillsNotificationRule {
+public interface NotificationRule {
 
     /**
      * Evaluates this rule for the given user on the specified reference date.

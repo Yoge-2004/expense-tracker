@@ -23,6 +23,7 @@ import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 import { OfflineBanner } from '../../components/OfflineBanner';
 import { ImmersiveLoader } from '../../components/ImmersiveLoader';
 import { ThemedScrollView } from '../../components/ThemedScrollbar';
+import { toLocalDateString } from '../../utils/date';
 
 import {
   Subscription,
@@ -73,50 +74,72 @@ export default function SubscriptionsScreen() {
    * Fetches recurring subscriptions, recurring incomes, and recurring savings goals.
    */
   const fetchAllRecurringData = async () => {
-    if (!userId) return;
+    if (!userId) {
+      setIsLoading(false);
+      setRefreshing(false);
+      return;
+    }
     try {
-      const [subsData, globalCats, userCats, incomesData, savingsData] = await Promise.all([
-        apiRequest(`/expenses/recurring/user/${userId}`).catch(() => []),
-        apiRequest(`/categories/global`).catch(() => []),
-        apiRequest(`/categories/user/${userId}`).catch(() => []),
-        apiRequest(`/incomes/user/${userId}`).catch(() => []),
-        apiRequest(`/savings/goals/user/${userId}`).catch(() => []),
+      const [subsRes, globalCatsRes, userCatsRes, incomesRes, savingsRes] = await Promise.allSettled([
+        apiRequest(`/expenses/recurring/user/${userId}`),
+        apiRequest(`/categories/global`),
+        apiRequest(`/categories/user/${userId}`),
+        apiRequest(`/incomes/user/${userId}`),
+        apiRequest(`/savings/goals/user/${userId}`),
       ]);
 
-      setSubscriptions(Array.isArray(subsData) ? subsData : []);
+      if (subsRes.status === 'fulfilled') {
+        setSubscriptions(Array.isArray(subsRes.value) ? subsRes.value : []);
+      }
 
-      // Filter only recurring incomes
-      const allIncomes = Array.isArray(incomesData) ? incomesData : [];
-      const recIncomes: RecurringIncome[] = allIncomes.filter(
-        (i: any) => i.isRecurring === true || i.recurring === true
+      if (incomesRes.status === 'fulfilled') {
+        const allIncomes = Array.isArray(incomesRes.value) ? incomesRes.value : [];
+        const recIncomes: RecurringIncome[] = allIncomes.filter(
+          (i: any) => i.isRecurring === true || i.recurring === true
+        );
+        setRecurringIncomes(recIncomes);
+      }
+
+      if (savingsRes.status === 'fulfilled') {
+        const allSavings = Array.isArray(savingsRes.value) ? savingsRes.value : [];
+        const recSavings: RecurringSavingsGoal[] = allSavings.filter(
+          (s: any) =>
+            s.isRecurring === true ||
+            s.recurring === true ||
+            (s.recurringAmount != null && Number(s.recurringAmount) > 0)
+        );
+        setRecurringSavings(recSavings);
+      }
+
+      if (globalCatsRes.status === 'fulfilled' || userCatsRes.status === 'fulfilled') {
+        const merged = [
+          ...(globalCatsRes.status === 'fulfilled' && Array.isArray(globalCatsRes.value) ? globalCatsRes.value : []),
+          ...(userCatsRes.status === 'fulfilled' && Array.isArray(userCatsRes.value) ? userCatsRes.value : []),
+        ];
+        const seen = new Set();
+        const uniqueCats: Category[] = [];
+        merged.forEach((cat) => {
+          if (cat && cat.name && !seen.has(cat.name.toLowerCase())) {
+            seen.add(cat.name.toLowerCase());
+            uniqueCats.push(cat);
+          }
+        });
+        setCategories(uniqueCats);
+      }
+
+      const failedCore = [subsRes, incomesRes, savingsRes].filter(
+        (r): r is PromiseRejectedResult => r.status === 'rejected'
       );
-      setRecurringIncomes(recIncomes);
-
-      // Filter only recurring savings (chits, recurring deposits, SIPs)
-      const allSavings = Array.isArray(savingsData) ? savingsData : [];
-      const recSavings: RecurringSavingsGoal[] = allSavings.filter(
-        (s: any) =>
-          s.isRecurring === true ||
-          s.recurring === true ||
-          (s.recurringAmount != null && Number(s.recurringAmount) > 0)
-      );
-      setRecurringSavings(recSavings);
-
-      // Merge categories
-      const merged = [
-        ...(Array.isArray(globalCats) ? globalCats : []),
-        ...(Array.isArray(userCats) ? userCats : []),
-      ];
-      const seen = new Set();
-      const uniqueCats: Category[] = [];
-      merged.forEach((cat) => {
-        if (cat && cat.name && !seen.has(cat.name.toLowerCase())) {
-          seen.add(cat.name.toLowerCase());
-          uniqueCats.push(cat);
-        }
-      });
-      setCategories(uniqueCats);
-      setFetchError(null);
+      if (failedCore.length === 3) {
+        const firstErr = failedCore[0].reason;
+        setFetchError(
+          firstErr instanceof ApiError ? firstErr.message : 'Could not synchronize recurring commitments.'
+        );
+      } else if (failedCore.length > 0) {
+        setFetchError('Some recurring commitments could not be refreshed.');
+      } else {
+        setFetchError(null);
+      }
     } catch (e: any) {
       console.warn('[SubscriptionsScreen] Failed to load recurring commitments:', e);
       const isApiErr = e instanceof ApiError;
@@ -218,11 +241,14 @@ export default function SubscriptionsScreen() {
         editId: String(inc.id),
         editSource: inc.source,
         editAmount: String(inc.amount),
-        editDate: inc.incomeDate || new Date().toISOString().split('T')[0],
+        editDate: inc.incomeDate || toLocalDateString(),
         editDescription: inc.description || '',
         editIsRecurring: 'true',
         editFrequency: inc.frequency || 'MONTHLY',
         editIntervalDays: String(inc.intervalDays || '1'),
+        editKind: inc.kind || '',
+        editCountsToward: inc.countsTowardMonth || '',
+        editReimbursedCategoryId: inc.reimbursedCategoryId != null ? String(inc.reimbursedCategoryId) : '',
       },
     });
   };

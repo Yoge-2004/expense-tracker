@@ -1,6 +1,8 @@
 package com.example.expensetracker.domain.expense.api;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -12,15 +14,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
-import com.example.expensetracker.domain.expense.model.Category;
-import com.example.expensetracker.domain.expense.model.Expense;
+import com.example.expensetracker.domain.expense.service.BankStatementReconciler;
 import com.example.expensetracker.domain.expense.service.ExpenseExportService;
-import com.example.expensetracker.domain.report.service.ImportService;
+import com.example.expensetracker.domain.expense.service.ExpenseImportService;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
-
-
+import com.example.expensetracker.domain.user.service.UserProfileService;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 /**
  * Controller dedicated exclusively to expense data file exchange (bulk export and import).
@@ -42,11 +41,17 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
 public class ExpenseTransferController {
 
     private final ExpenseExportService exportService;
-    private final ImportService importService;
-    private final UserService userService;
+    private final ExpenseImportService expenseImportService;
+    private final BankStatementReconciler bankStatementReconciler;
+    private final UserProfileService userService;
     private final UserSecurity userSecurity;
 
     @Operation(summary = "Export expenses to CSV")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "CSV file generated"),
+        @ApiResponse(responseCode = "400", description = "User not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping("/user/{userId}/export/csv")
     public ResponseEntity<byte[]> exportCsv(@PathVariable Long userId) {
         userSecurity.validateUserAccess(userId);
@@ -63,6 +68,11 @@ public class ExpenseTransferController {
     }
 
     @Operation(summary = "Export expenses to JSON")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "JSON export generated"),
+        @ApiResponse(responseCode = "400", description = "User not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping("/user/{userId}/export/json")
     public ResponseEntity<byte[]> exportJson(@PathVariable Long userId) {
         userSecurity.validateUserAccess(userId);
@@ -80,6 +90,11 @@ public class ExpenseTransferController {
     }
 
     @Operation(summary = "Export expenses to PDF report")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "PDF report generated"),
+        @ApiResponse(responseCode = "400", description = "User not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping("/user/{userId}/export/pdf")
     public ResponseEntity<byte[]> exportPdf(
             @PathVariable Long userId,
@@ -101,6 +116,11 @@ public class ExpenseTransferController {
     }
 
     @Operation(summary = "Export expenses to Excel workbook (.xlsx)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Excel workbook generated"),
+        @ApiResponse(responseCode = "400", description = "User not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping({"/user/{userId}/export/excel", "/user/{userId}/export/xlsx"})
     public ResponseEntity<byte[]> exportExcel(
             @PathVariable Long userId,
@@ -137,6 +157,11 @@ public class ExpenseTransferController {
             way there instead of an all-or-nothing failure.
             """
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Import summary with imported/error counts"),
+        @ApiResponse(responseCode = "400", description = "Invalid CSV upload or missing required headers"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping(value = "/user/{userId}/import/csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importCsv(
             @PathVariable Long userId,
@@ -146,12 +171,17 @@ public class ExpenseTransferController {
                 userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Map<String, Object> result = importService.importExpensesFromCsv(file, user);
+        Map<String, Object> result = expenseImportService.importExpensesFromCsv(file, user);
         log.info("CSV expense import completed for userId={}", userId);
         return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "Import expenses from JSON file")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Import summary with imported/error counts"),
+        @ApiResponse(responseCode = "400", description = "Malformed JSON upload"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping(value = "/user/{userId}/import/json", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importJson(
             @PathVariable Long userId,
@@ -161,7 +191,7 @@ public class ExpenseTransferController {
                 userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Map<String, Object> result = importService.importExpensesFromJson(file, user);
+        Map<String, Object> result = expenseImportService.importExpensesFromJson(file, user);
         log.info("JSON expense import completed for userId={}", userId);
         return ResponseEntity.ok(result);
     }
@@ -169,6 +199,11 @@ public class ExpenseTransferController {
     @Operation(summary = "Import expenses from Excel file (.xlsx / .xls)",
             description = "Uploads a Microsoft Excel workbook containing expense entries. "
                     + "Supports dynamic header detection and per-row error tracking.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Import summary with imported/error counts"),
+        @ApiResponse(responseCode = "400", description = "Invalid Excel workbook or missing required headers"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping(value = {"/user/{userId}/import/excel", "/user/{userId}/import/xlsx"},
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importExcel(
@@ -179,7 +214,7 @@ public class ExpenseTransferController {
                 userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Map<String, Object> result = importService.importExpensesFromExcel(file, user);
+        Map<String, Object> result = expenseImportService.importExpensesFromExcel(file, user);
         log.info("Excel expense import completed for userId={}", userId);
         return ResponseEntity.ok(result);
     }
@@ -187,6 +222,11 @@ public class ExpenseTransferController {
     @Operation(summary = "Reconcile bank statement (.csv, .xlsx, .xls)",
             description = "Parses bank statements across major banks, matches existing entries, "
                     + "and automatically captures 100% of missed debits and credits.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Bank statement reconciliation summary returned"),
+        @ApiResponse(responseCode = "400", description = "Unsupported or unreadable bank statement file"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping(value = "/user/{userId}/import/statement",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> reconcileBankStatement(
@@ -197,7 +237,7 @@ public class ExpenseTransferController {
                 userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Map<String, Object> result = importService.reconcileBankStatement(file, user);
+        Map<String, Object> result = bankStatementReconciler.reconcileBankStatement(file, user);
         log.info("Bank statement reconciliation completed for userId={}: {}", userId, result.get("message"));
         return ResponseEntity.ok(result);
     }

@@ -35,10 +35,6 @@ import java.util.Set;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
-import com.example.expensetracker.infrastructure.config.AdminBootstrapRunner;
-
-
-
 /**
  * Keeps the latest database snapshot in the Hugging Face Space repository.
  */
@@ -88,19 +84,19 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
 
     /** Optional: absent when the app runs against a single database, as in unit tests. */
     private final FallbackRecoveryCoordinator fallbackCoordinator;
-    private final com.example.expensetracker.infrastructure.config.AdminBootstrapRunner adminBootstrapRunner;
+    private final PostRestoreHook postRestoreHook;
 
     @Autowired
     public HuggingFaceDatabaseFailoverServiceImpl(
             DatabaseSnapshotService snapshotService,
             @Autowired(required = false) FallbackRecoveryCoordinator fallbackCoordinator,
-            @Autowired(required = false) com.example.expensetracker.infrastructure.config.AdminBootstrapRunner adminBootstrapRunner,
+            @Autowired(required = false) PostRestoreHook postRestoreHook,
             @Autowired(required = false) HfDatabaseProperties hfProperties,
             @Autowired(required = false) Clock clock) {
         this.snapshotService = snapshotService;
         this.clock = clock != null ? clock : Clock.systemUTC();
         this.fallbackCoordinator = fallbackCoordinator;
-        this.adminBootstrapRunner = adminBootstrapRunner;
+        this.postRestoreHook = postRestoreHook;
         HfDatabaseProperties settings = hfProperties != null
                 ? hfProperties
                 : new HfDatabaseProperties(null, null, null, null, null, null, null, null);
@@ -117,16 +113,16 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     public HuggingFaceDatabaseFailoverServiceImpl(
             DatabaseSnapshotService snapshotService,
             FallbackRecoveryCoordinator fallbackCoordinator,
-            com.example.expensetracker.infrastructure.config.AdminBootstrapRunner adminBootstrapRunner,
+            PostRestoreHook postRestoreHook,
             HfDatabaseProperties hfProperties) {
-        this(snapshotService, fallbackCoordinator, adminBootstrapRunner, hfProperties, null);
+        this(snapshotService, fallbackCoordinator, postRestoreHook, hfProperties, null);
     }
 
     public HuggingFaceDatabaseFailoverServiceImpl(
             DatabaseSnapshotService snapshotService,
             FallbackRecoveryCoordinator fallbackCoordinator,
-            com.example.expensetracker.infrastructure.config.AdminBootstrapRunner adminBootstrapRunner) {
-        this(snapshotService, fallbackCoordinator, adminBootstrapRunner, null);
+            PostRestoreHook postRestoreHook) {
+        this(snapshotService, fallbackCoordinator, postRestoreHook, null);
     }
 
     public HuggingFaceDatabaseFailoverServiceImpl(DatabaseSnapshotService snapshotService) {
@@ -182,12 +178,12 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         if (fallbackCoordinator != null) {
             fallbackCoordinator.afterSnapshotRestored();
         }
-        if (adminBootstrapRunner != null) {
+        if (postRestoreHook != null) {
             try {
-                adminBootstrapRunner.run();
-                log.info("Platform admin credentials and permissions verified after failover snapshot restore.");
+                postRestoreHook.onDatabaseRestored();
+                log.info("Post-restore hook completed after failover snapshot restore.");
             } catch (Exception e) {
-                log.warn("Post-restore admin verification notice: {}", e.getMessage());
+                log.warn("Post-restore hook notice: {}", e.getMessage());
             }
         }
         // If snapshot does not exist on HF space, immediately replicate the current database first!

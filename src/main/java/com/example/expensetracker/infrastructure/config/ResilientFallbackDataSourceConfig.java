@@ -10,11 +10,9 @@ import org.springframework.context.annotation.Primary;
 import javax.sql.DataSource;
 import java.time.Clock;
 import java.io.File;
+import java.util.TimeZone;
 
-import com.example.expensetracker.infrastructure.resilience.FallbackRecoveryCoordinator;
 import com.example.expensetracker.infrastructure.resilience.ResilientRoutingDataSource;
-
-
 
 /**
  * Provides a local emergency datastore for environments where the primary database
@@ -27,6 +25,10 @@ import com.example.expensetracker.infrastructure.resilience.ResilientRoutingData
 @Slf4j
 @Configuration
 public class ResilientFallbackDataSourceConfig {
+
+    static {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    }
 
     @Value("${spring.datasource.url:jdbc:h2:mem:expensetrackerdb}")
     private String primaryUrl;
@@ -49,6 +51,7 @@ public class ResilientFallbackDataSourceConfig {
     @Bean
     @Primary
     public DataSource dataSource(Clock clock) {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         HikariConfig primaryConfig = new HikariConfig();
         primaryConfig.setJdbcUrl(primaryUrl);
         primaryConfig.setDriverClassName(primaryDriver);

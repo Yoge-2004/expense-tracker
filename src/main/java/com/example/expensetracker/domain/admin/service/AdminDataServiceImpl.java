@@ -34,7 +34,7 @@ import com.example.expensetracker.infrastructure.exception.ResourceNotFoundExcep
 import com.example.expensetracker.infrastructure.resilience.DatabaseSnapshotService;
 import com.example.expensetracker.infrastructure.exception.BadRequestException;
 import com.example.expensetracker.infrastructure.exception.ForbiddenException;
-import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
+import com.example.expensetracker.domain.user.security.StepUpPinVerifier;
 
 
 

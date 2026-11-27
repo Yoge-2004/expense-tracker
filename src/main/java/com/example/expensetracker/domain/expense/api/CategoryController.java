@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -27,11 +26,12 @@ import com.example.expensetracker.domain.expense.mapper.CategoryMapper;
 import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.expense.service.CategoryService;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.service.UserProfileService;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
-
-
+/**
+ * REST controller managing personal and global expense categories.
+ */
 @Tag(
     name        = "Categories",
     description = """
@@ -59,8 +59,8 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
 public class CategoryController {
 
     private final CategoryService categoryService;
-    private final UserService userService;
-    private final com.example.expensetracker.infrastructure.security.UserSecurity userSecurity;
+    private final UserProfileService userService;
+    private final UserSecurity userSecurity;
 
 
     // ─── POST /api/categories/user/{userId} ─────────────────────────────
@@ -84,7 +84,7 @@ public class CategoryController {
             by `categoryId` when creating expenses.
             """
     )
-    @RequestBody(required = true, content = @Content(
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, content = @Content(
         mediaType = MediaType.APPLICATION_JSON_VALUE,
         schema = @Schema(implementation = CategoryRequest.class),
         examples = @ExampleObject(
@@ -101,14 +101,18 @@ public class CategoryController {
                     value = "{ \"id\": 6, \"name\": \"Petrol\" }"
                 ))
         ),
-        @ApiResponse(responseCode = "400", description = "Name is blank or already exists for this user",
+        @ApiResponse(responseCode = "400", description = "Validation error, duplicate category name, or user not found",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(name = "category-create-400",
-                    value = "{\"status\":400,\"error\":\"Bad Request\","
-                            + "\"message\":\"Category 'Petrol' already exists for this user\","
-                            + "\"path\":\"/api/categories/user/1\"}"
-                ))
+                examples = {
+                    @ExampleObject(name = "category-create-400",
+                        value = "{\"status\":400,\"error\":\"Bad Request\","
+                                + "\"message\":\"Category 'Petrol' already exists for this user\","
+                                + "\"path\":\"/api/categories/user/1\"}"),
+                    @ExampleObject(name = "category-create-user-400",
+                        value = "{\"status\":400,\"error\":\"Bad Request\","
+                                + "\"message\":\"User not found\",\"path\":\"/api/categories/user/99\"}")
+                })
         ),
         @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -117,14 +121,6 @@ public class CategoryController {
                     value = "{\"status\":401,\"error\":\"Unauthorized\","
                             + "\"message\":\"JWT token is missing or invalid\","
                             + "\"path\":\"/api/categories/user/1\"}"
-                ))
-        ),
-        @ApiResponse(responseCode = "400", description = "User not found",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(name = "category-create-user-400",
-                    value = "{\"status\":400,\"error\":\"Bad Request\","
-                            + "\"message\":\"User not found\",\"path\":\"/api/categories/user/99\"}"
                 ))
         )
     })
@@ -136,7 +132,7 @@ public class CategoryController {
                 required = true, example = "1"
             )
             @PathVariable Long userId,
-            @Valid @org.springframework.web.bind.annotation.RequestBody CategoryRequest request) {
+            @Valid @RequestBody CategoryRequest request) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to create category for userId={}: name='{}'", userId, request.name());
         User user = userService.findById(userId)

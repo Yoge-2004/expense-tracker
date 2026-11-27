@@ -5,12 +5,8 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.example.expensetracker.domain.budget.dto.BudgetStatusDto;
-import com.example.expensetracker.domain.budget.repository.BudgetRepository;
 import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.user.model.User;
-
-
 
 /**
  * JPA entity representing a monthly spending budget for a specific expense category.

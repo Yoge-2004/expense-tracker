@@ -3,9 +3,7 @@ package com.example.expensetracker.domain.user.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import com.example.expensetracker.domain.user.model.Role;
 import com.example.expensetracker.domain.user.model.User;
-
 
 /**
  * Complete read-only view of a user's account profile and preferences.

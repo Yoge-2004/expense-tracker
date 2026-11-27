@@ -20,14 +20,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 
-import com.example.expensetracker.domain.expense.model.Category;
+import com.example.expensetracker.common.format.CurrencyFormats;
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.goal.model.SavingsGoal;
 import com.example.expensetracker.domain.income.model.Income;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.infrastructure.exception.ExportException;
-
-
 
 /**
  * Dedicated report generator producing executive financial statement PDF documents.
@@ -41,7 +39,8 @@ public class FinancialStatementPdfGenerator {
     public byte[] generate(User user, String preferredCurrency,
                            List<Expense> expenses, List<Income> incomes,
                            List<SavingsGoal> savingsGoals) {
-        CurrencyFormats.Metadata curr = CurrencyFormats.resolve(preferredCurrency, user);
+        CurrencyFormats.Metadata curr = CurrencyFormats.resolve(
+                preferredCurrency, user != null ? user.getCurrency() : null);
         String pdfSym = CurrencyFormats.pdfSymbol(curr);
 
         FinancialStatementTotals totals = FinancialStatementTotals.calculate(expenses, incomes);

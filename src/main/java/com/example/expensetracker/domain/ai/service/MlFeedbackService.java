@@ -23,6 +23,9 @@ import com.example.expensetracker.domain.user.model.User;
 
 
 
+/**
+ * Service managing user category-correction feedback persistence, cursor pagination, and retraining consumption.
+ */
 @Service
 @Transactional
 public class MlFeedbackService {

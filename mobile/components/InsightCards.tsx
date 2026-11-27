@@ -20,6 +20,7 @@ import { getCurrencySymbol } from '../services/currency';
 import { apiRequest } from '../services/api';
 import { mlRepository } from '../services/repositories';
 import { effectiveMonth, earnedTotal, netSpent, monthKey, kindOf } from '../utils/moneyFlow';
+import { parseLocalDate, toLocalDateString } from '../utils/date';
 import {
   ExpenseItem,
   BudgetStatus,
@@ -265,11 +266,18 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
           let dow = 0;
           let hour = 12;
           if (e.expenseDate) {
-            const dObj = new Date(e.expenseDate);
-            if (!Number.isNaN(dObj.getTime())) {
-              dow = dObj.getDay();
+            const localDt = parseLocalDate(e.expenseDate);
+            if (localDt) {
+              dow = localDt.getDay();
               if (e.expenseDate.includes('T')) {
-                hour = dObj.getHours();
+                const fullDt = new Date(e.expenseDate);
+                if (!Number.isNaN(fullDt.getTime())) hour = fullDt.getHours();
+              }
+            } else {
+              const dObj = new Date(e.expenseDate);
+              if (!Number.isNaN(dObj.getTime())) {
+                dow = dObj.getDay();
+                if (e.expenseDate.includes('T')) hour = dObj.getHours();
               }
             }
           }
@@ -335,7 +343,8 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
   const safeIncomes = incomes || EMPTY_INCOMES;
   const safeGoals = savingsGoals || EMPTY_GOALS;
 
-  const now = useMemo(() => new Date(), []);
+  const currentDayKey = toLocalDateString();
+  const now = useMemo(() => parseLocalDate(currentDayKey) ?? new Date(), [currentDayKey]);
   const currentDay = Math.max(now.getDate(), 1);
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const daysRemaining = Math.max(0, daysInMonth - currentDay);
@@ -387,19 +396,13 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
     let weekdaySpent = 0;
     currentMonthExpenses.forEach((e) => {
       if (!e.expenseDate) return;
-      const parts = e.expenseDate.split('T')[0].split('-');
-      let day = -1;
-      if (parts.length === 3) {
-        const y = Number.parseInt(parts[0], 10);
-        const m = Number.parseInt(parts[1], 10) - 1;
-        const d = Number.parseInt(parts[2], 10);
-        if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(d)) {
-          day = new Date(y, m, d).getDay();
-        }
-      }
-      if (day === -1) {
-        day = new Date(e.expenseDate).getDay();
-      }
+      const localDt = parseLocalDate(e.expenseDate);
+      const day = localDt
+        ? localDt.getDay()
+        : (() => {
+            const parsed = new Date(e.expenseDate);
+            return Number.isNaN(parsed.getTime()) ? -1 : parsed.getDay();
+          })();
       const amt = Math.max(0, Number(e.amount || 0));
       if (day === 0 || day === 6) {
         weekendSpent += amt;

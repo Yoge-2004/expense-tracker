@@ -1,8 +1,11 @@
 package com.example.expensetracker.infrastructure.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -12,20 +15,20 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-
-
 /**
  * Cross-Origin Resource Sharing (CORS) configuration.
  *
  * <p>Origin reflection is deliberately omitted to prevent unauthorized sites
- * from mounting authenticated credential theft or CSRF against local deployments.
- * Wildcard origin patterns are intentionally not used for public cloud hosting domains.</p>
+ * from mounting authenticated credential theft or CSRF against deployments.
+ * Local development origins (localhost / 127.0.0.1 / Android emulator) are only
+ * included when the {@code prod} profile is not active.</p>
  */
 @Configuration
 public class CorsConfig {
 
-    private static final List<String> DEFAULT_ALLOWED_ORIGINS = List.of(
-            "https://cozy-narwhal-3099ad.netlify.app",
+    private static final String PRODUCTION_WEB_ORIGIN = "https://cozy-narwhal-3099ad.netlify.app";
+
+    private static final List<String> DEV_ALLOWED_ORIGINS = List.of(
             "http://localhost:8080",
             "http://localhost:8081",
             "http://localhost:19006",
@@ -41,16 +44,29 @@ public class CorsConfig {
     );
 
     @Value("${app.cors.allowed-origins:https://cozy-narwhal-3099ad.netlify.app}")
-    private String[] allowedOrigins;
+    private String[] allowedOrigins = new String[]{PRODUCTION_WEB_ORIGIN};
 
     private final CorsProperties corsProperties;
+    private final Environment environment;
 
-    public CorsConfig(@org.springframework.beans.factory.annotation.Autowired(required = false) CorsProperties corsProperties) {
+    @Autowired
+    public CorsConfig(
+            @Autowired(required = false) CorsProperties corsProperties,
+            @Autowired(required = false) Environment environment) {
         this.corsProperties = (corsProperties != null) ? corsProperties : new CorsProperties(List.of());
+        this.environment = environment;
+    }
+
+    public CorsConfig(CorsProperties corsProperties) {
+        this(corsProperties, null);
     }
 
     private List<String> getCleanOrigins() {
-        Set<String> origins = new LinkedHashSet<>(DEFAULT_ALLOWED_ORIGINS);
+        Set<String> origins = new LinkedHashSet<>();
+        origins.add(PRODUCTION_WEB_ORIGIN);
+        if (!isProductionProfile()) {
+            origins.addAll(DEV_ALLOWED_ORIGINS);
+        }
         if (corsProperties.allowedOrigins() != null) {
             corsProperties.allowedOrigins().stream()
                     .flatMap(s -> Arrays.stream(s.split(",")))
@@ -66,6 +82,10 @@ public class CorsConfig {
                     .forEach(origins::add);
         }
         return new ArrayList<>(origins);
+    }
+
+    private boolean isProductionProfile() {
+        return environment != null && environment.acceptsProfiles(Profiles.of("prod"));
     }
 
     private static boolean isExplicitOrigin(String value) {

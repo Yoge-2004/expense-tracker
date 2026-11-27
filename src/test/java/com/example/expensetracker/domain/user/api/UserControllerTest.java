@@ -25,10 +25,10 @@ import com.example.expensetracker.domain.user.repository.UserRepository;
 import com.example.expensetracker.domain.user.service.UserAppearanceService;
 import com.example.expensetracker.domain.user.service.UserAvatarService;
 import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.CustomUserDetailsService;
+import com.example.expensetracker.domain.user.security.CustomUserDetailsService;
 import com.example.expensetracker.infrastructure.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.infrastructure.security.JwtService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 
 
@@ -123,8 +123,9 @@ class UserControllerTest {
     }
 
     @Test
-    void suggestUsernamesReturnsExactlyThreeUniqueAvailableCandidates() throws Exception {
-        when(userService.userExistsByUsername(anyString())).thenReturn(false);
+    void suggestUsernamesDelegatesToUserService() throws Exception {
+        when(userService.suggestUsernames("Jane Doe"))
+                .thenReturn(java.util.List.of("iam_janedoe", "the_janedoe", "real_janedoe"));
 
         mockMvc.perform(get("/api/users/suggest-usernames").queryParam("base", "Jane Doe"))
                 .andExpect(status().isOk())
@@ -134,39 +135,20 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.suggestions[1]").value("the_janedoe"))
                 .andExpect(jsonPath("$.suggestions[2]").value("real_janedoe"));
 
-        verify(userService).userExistsByUsername("iam_janedoe");
-        verify(userService).userExistsByUsername("the_janedoe");
-        verify(userService).userExistsByUsername("real_janedoe");
+        verify(userService).suggestUsernames("Jane Doe");
     }
 
     @Test
-    void suggestUsernamesFallsBackToUserBaseWhenInputSanitizesToEmpty() throws Exception {
-        when(userService.userExistsByUsername(anyString())).thenReturn(false);
+    void suggestUsernamesUsesDefaultBaseWhenOmitted() throws Exception {
+        when(userService.suggestUsernames("user"))
+                .thenReturn(java.util.List.of("iam_user", "the_user", "real_user"));
 
-        mockMvc.perform(get("/api/users/suggest-usernames").queryParam("base", "!!!"))
+        mockMvc.perform(get("/api/users/suggest-usernames"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.suggestions").isArray())
                 .andExpect(jsonPath("$.suggestions.length()").value(3))
                 .andExpect(jsonPath("$.suggestions[0]").value("iam_user"));
-    }
 
-    @Test
-    void suggestUsernamesGeneratesRandomSuffixesWhenPrefixCandidatesCollided() throws Exception {
-        when(userService.userExistsByUsername("iam_jane")).thenReturn(true);
-        when(userService.userExistsByUsername("the_jane")).thenReturn(true);
-        when(userService.userExistsByUsername("real_jane")).thenReturn(true);
-        when(userService.userExistsByUsername("hey_jane")).thenReturn(true);
-        when(userService.userExistsByUsername("go_jane")).thenReturn(true);
-        when(userService.userExistsByUsername(startsWith("jane"))).thenReturn(false);
-
-        mockMvc.perform(get("/api/users/suggest-usernames").queryParam("base", "Jane"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.suggestions").isArray())
-                .andExpect(jsonPath("$.suggestions.length()").value(3));
-
-        verify(userService).userExistsByUsername("iam_jane");
-        verify(userService).userExistsByUsername("the_jane");
-        verify(userService).userExistsByUsername("real_jane");
+        verify(userService).suggestUsernames("user");
     }
 
     @Test
@@ -409,5 +391,41 @@ class UserControllerTest {
 
         verify(userSecurity).validateUserAccess(7L);
         verify(userAvatarService).deleteAvatar(7L);
+    }
+
+    @Test
+    void updateProfileUpdatesDisplayNameAndAvatarUrl() throws Exception {
+        User updatedUser = new User();
+        updatedUser.setId(7L);
+        updatedUser.setName("Jane Updated");
+        updatedUser.setUsername("jane_doe");
+        updatedUser.setEmail("jane@example.com");
+        updatedUser.setCurrency("INR");
+        updatedUser.setProfilePictureUrl("https://example.com/avatar.png");
+
+        when(userService.updateProfile(7L, "Jane Updated", "https://example.com/avatar.png"))
+                .thenReturn(updatedUser);
+
+        mockMvc.perform(put("/api/users/7")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Jane Updated\",\"profilePictureUrl\":\"https://example.com/avatar.png\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(7))
+                .andExpect(jsonPath("$.name").value("Jane Updated"))
+                .andExpect(jsonPath("$.profilePictureUrl").value("https://example.com/avatar.png"));
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(userService).updateProfile(7L, "Jane Updated", "https://example.com/avatar.png");
+    }
+
+    @Test
+    void updateProfileRejectsBlankName() throws Exception {
+        mockMvc.perform(put("/api/users/7")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"   \"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("name: Name cannot be blank"));
+
+        verify(userService, never()).updateProfile(anyLong(), any(), any());
     }
 }

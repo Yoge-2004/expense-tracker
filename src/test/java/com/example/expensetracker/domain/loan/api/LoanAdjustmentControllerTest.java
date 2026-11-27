@@ -25,10 +25,10 @@ import com.example.expensetracker.domain.loan.dto.LoanAdjustmentRequest;
 import com.example.expensetracker.domain.loan.dto.LoanMetricsDto;
 import com.example.expensetracker.domain.loan.model.LoanType;
 import com.example.expensetracker.domain.loan.service.LoanAdjustmentService;
-import com.example.expensetracker.infrastructure.security.CustomUserDetailsService;
+import com.example.expensetracker.domain.user.security.CustomUserDetailsService;
 import com.example.expensetracker.infrastructure.security.JwtAuthenticationFilter;
 import com.example.expensetracker.infrastructure.security.JwtService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 
 

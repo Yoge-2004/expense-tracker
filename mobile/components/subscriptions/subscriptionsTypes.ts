@@ -30,6 +30,9 @@ export interface RecurringIncome {
   incomeDate?: string;
   description?: string;
   isRecurring?: boolean;
+  kind?: string;
+  countsTowardMonth?: string;
+  reimbursedCategoryId?: number | null;
 }
 
 export interface RecurringSavingsGoal {

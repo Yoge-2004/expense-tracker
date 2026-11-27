@@ -269,7 +269,7 @@ export const FloatingCalculator: React.FC = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     const num = Number.parseFloat(currentVal);
     if (!Number.isNaN(num)) {
-      setCurrentVal(String(num / 100));
+      setCurrentVal(String(Number((num / 100).toPrecision(12))));
       setIsNewNum(true);
     }
   }, [currentVal]);
@@ -310,12 +310,9 @@ export const FloatingCalculator: React.FC = () => {
 
   const handleSwapFx = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    setFxFrom((prev) => {
-      const nextFrom = fxTo;
-      setFxTo(prev);
-      return nextFrom;
-    });
-  }, [fxTo]);
+    setFxFrom(fxTo);
+    setFxTo(fxFrom);
+  }, [fxFrom, fxTo]);
 
   const handleCycleFrom = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});

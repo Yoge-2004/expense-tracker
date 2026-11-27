@@ -19,9 +19,18 @@ export const budgetRepository = {
    * Sets or updates a budget allocation for a category.
    */
   async setBudget(userId: number | string, data: BudgetRequest): Promise<BudgetStatus> {
+    const resolvedLimit = data.limitAmount ?? data.amount;
+    const payload: Record<string, unknown> = {
+      categoryId: data.categoryId,
+      limitAmount: resolvedLimit,
+      ...(data.period !== undefined ? { period: data.period } : {}),
+      ...(data.intervalDays !== undefined ? { intervalDays: data.intervalDays } : {}),
+      ...(data.startDate !== undefined ? { startDate: data.startDate } : {}),
+      ...(data.endDate !== undefined ? { endDate: data.endDate } : {}),
+    };
     return apiRequest<BudgetStatus>(`/expenses/budget/user/${userId}`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
   },
 

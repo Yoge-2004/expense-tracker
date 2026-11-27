@@ -1,7 +1,5 @@
 package com.example.expensetracker.domain.notification.model;
 
-import com.example.expensetracker.domain.budget.model.Budget;
-
 /**
  * Kinds of notification the app can send. Users can switch each kind off, except {@link #SYSTEM}
  * (important account notices).

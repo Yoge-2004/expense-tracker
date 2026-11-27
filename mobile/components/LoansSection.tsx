@@ -24,6 +24,7 @@ import {
   getLoanMetrics,
 } from '../services/loans';
 import { scheduleLoanReminders } from '../services/notifications';
+import { toLocalDateString } from '../utils/date';
 import {
   LoanExpenseCandidate,
   LoanFilterTab,
@@ -231,7 +232,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
         counterparty: name,
         type: formType,
         amount: amt,
-        adjustmentDate: editingLoan?.adjustmentDate || new Date().toISOString().split('T')[0],
+        adjustmentDate: editingLoan?.adjustmentDate || toLocalDateString(),
         dueDate: formDueDate.trim() || undefined,
         notes: formNotes.trim() || undefined,
         expenseId: formExpenseId || undefined,

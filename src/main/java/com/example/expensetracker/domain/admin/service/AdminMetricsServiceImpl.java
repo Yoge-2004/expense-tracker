@@ -1,10 +1,12 @@
 package com.example.expensetracker.domain.admin.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,9 +15,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import com.example.expensetracker.domain.admin.dto.AdminSummaryMetricsDto;
 import com.example.expensetracker.domain.admin.dto.AdminVolumeTrendDto;
@@ -25,8 +25,6 @@ import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
 import com.example.expensetracker.domain.income.repository.IncomeRepository;
 import com.example.expensetracker.domain.user.repository.UserRepository;
 
-
-
 /**
  * High-performance metrics service using asynchronous background rollups
  * and in-memory caching to guarantee zero latency penalty on OLTP queries.
@@ -35,7 +33,6 @@ import com.example.expensetracker.domain.user.repository.UserRepository;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AdminMetricsServiceImpl implements AdminMetricsService {
 
     private final UserRepository userRepository;
@@ -43,32 +40,41 @@ public class AdminMetricsServiceImpl implements AdminMetricsService {
     private final IncomeRepository incomeRepository;
     private final PlatformDailyMetricsRepository dailyMetricsRepository;
     private final DataSource dataSource;
+    private final ObjectProvider<AdminMetricsService> selfProvider;
+    private final TaskExecutor taskExecutor;
 
     @Value("${spring.threads.virtual.enabled:false}")
     private boolean virtualThreadsConfigured;
 
     private volatile AdminSummaryMetricsDto cachedSummary;
 
-    @org.springframework.beans.factory.annotation.Autowired
-    @org.springframework.context.annotation.Lazy
-    private AdminMetricsService self;
+    @Autowired
+    public AdminMetricsServiceImpl(
+            UserRepository userRepository,
+            ExpenseRepository expenseRepository,
+            IncomeRepository incomeRepository,
+            PlatformDailyMetricsRepository dailyMetricsRepository,
+            DataSource dataSource,
+            ObjectProvider<AdminMetricsService> selfProvider,
+            @Autowired(required = false) TaskExecutor taskExecutor) {
+        this.userRepository = userRepository;
+        this.expenseRepository = expenseRepository;
+        this.incomeRepository = incomeRepository;
+        this.dailyMetricsRepository = dailyMetricsRepository;
+        this.dataSource = dataSource;
+        this.selfProvider = selfProvider;
+        this.taskExecutor = taskExecutor;
+    }
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
         log.info("Initializing AdminMetricsService with initial pre-aggregation rollup");
         try {
-            if (self != null) {
-                self.refreshMetrics();
-            } else {
-                refreshMetrics();
-            }
+            refreshViaProxy();
         } catch (Exception e) {
             log.warn("Deferred initial admin metrics aggregation: {}", e.getMessage());
         }
     }
-
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private org.springframework.core.task.TaskExecutor taskExecutor;
 
     /**
      * Re-aggregates metrics every 5 minutes in a background task.
@@ -144,15 +150,20 @@ public class AdminMetricsServiceImpl implements AdminMetricsService {
         if (cachedSummary == null) {
             synchronized (this) {
                 if (cachedSummary == null) {
-                    if (self != null) {
-                        self.refreshMetrics();
-                    } else {
-                        refreshMetrics();
-                    }
+                    refreshViaProxy();
                 }
             }
         }
         return cachedSummary;
+    }
+
+    private void refreshViaProxy() {
+        AdminMetricsService proxy = selfProvider != null ? selfProvider.getIfAvailable() : null;
+        if (proxy != null) {
+            proxy.refreshMetrics();
+        } else {
+            refreshMetrics();
+        }
     }
 
     @Override

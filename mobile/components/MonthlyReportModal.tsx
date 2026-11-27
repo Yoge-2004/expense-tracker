@@ -6,7 +6,7 @@ import { saveFileToDevice } from "../utils/fileDownloader";
  * Authenticated HTML report generation and system share sheet integration.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -23,8 +23,9 @@ import { Colors } from '../constants/theme';
 import { ThemedScrollView } from './ThemedScrollbar';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
-import { apiRequest, ApiError, API_BASE_URL, getSession } from '../services/api';
+import { apiRequest, ApiError, getEffectiveApiBaseUrl, getSession } from '../services/api';
 import { getCurrencySymbol } from '../services/currency';
+import { parseLocalDate } from '../utils/date';
 
 // Dynamic dimensions calculated inside component
 
@@ -104,6 +105,16 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
   const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
   const [loading, setLoading] = useState(false);
   const [transferProgress, setTransferProgress] = useState<TransferProgressInfo | null>(null);
+  const progressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) {
+        clearTimeout(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Structured Report & HTML Preview state
   const [reportData, setReportData] = useState<MonthlyReportData | null>(null);
@@ -125,7 +136,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
             .filter(Boolean)
             .sort((a, b) => a.localeCompare(b));
           if (dates.length > 0) {
-            const earliest = new Date(dates[0]);
+            const earliest = parseLocalDate(dates[0]) ?? new Date(dates[0]);
             const eYear = earliest.getFullYear();
             const eMonth = earliest.getMonth() + 1;
             if (!Number.isNaN(eYear) && eYear >= 2020 && eYear <= currentYear) {
@@ -196,7 +207,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
       }
 
       const htmlRes = await fetch(
-        `${API_BASE_URL}/reports/monthly/user/${userId}/html?year=${selectedYear}&month=${selectedMonth}`,
+        `${getEffectiveApiBaseUrl()}/reports/monthly/user/${userId}/html?year=${selectedYear}&month=${selectedMonth}`,
         { headers }
       );
 
@@ -279,6 +290,10 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
     const monthObj = ALL_MONTHS.find((m) => m.num === selectedMonth);
     const filename = `ExpenseTracker_Statement_${monthObj?.name || 'Report'}_${selectedYear}.pdf`;
     try {
+      const storageDir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
+      if (!storageDir) {
+        throw new Error('Device storage directory is unavailable.');
+      }
       setTransferProgress({
         active: true,
         type: 'export',
@@ -297,8 +312,8 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
         to,
         currency: currency || 'INR',
       });
-      const uri = `${FileSystem.cacheDirectory || FileSystem.documentDirectory}${filename}`;
-      const url = `${API_BASE_URL}/reports/user/${userId}/export/range/pdf?${params.toString()}`;
+      const uri = `${storageDir}${filename}`;
+      const url = `${getEffectiveApiBaseUrl()}/reports/user/${userId}/export/range/pdf?${params.toString()}`;
 
       const session = await getSession();
       const token = session?.token;
@@ -343,7 +358,8 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
         percent: 100,
         done: true,
       });
-      setTimeout(() => setTransferProgress(null), 3000);
+      if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
+      progressTimerRef.current = setTimeout(() => setTransferProgress(null), 3000);
     } catch (err: unknown) {
       setTransferProgress(null);
       const msg = err instanceof Error ? err.message : 'Could not export PDF statement.';
@@ -360,6 +376,10 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
     const monthObj = ALL_MONTHS.find((m) => m.num === selectedMonth);
     const filename = `ExpenseTracker_Workbook_${monthObj?.name || 'Report'}_${selectedYear}.xlsx`;
     try {
+      const storageDir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
+      if (!storageDir) {
+        throw new Error('Device storage directory is unavailable.');
+      }
       setTransferProgress({
         active: true,
         type: 'export',
@@ -378,8 +398,8 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
         to,
         currency: currency || 'INR',
       });
-      const uri = `${FileSystem.cacheDirectory || FileSystem.documentDirectory}${filename}`;
-      const url = `${API_BASE_URL}/reports/user/${userId}/export/range/excel?${params.toString()}`;
+      const uri = `${storageDir}${filename}`;
+      const url = `${getEffectiveApiBaseUrl()}/reports/user/${userId}/export/range/excel?${params.toString()}`;
 
       const session = await getSession();
       const token = session?.token;
@@ -424,7 +444,8 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
         percent: 100,
         done: true,
       });
-      setTimeout(() => setTransferProgress(null), 3000);
+      if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
+      progressTimerRef.current = setTimeout(() => setTransferProgress(null), 3000);
     } catch (err: unknown) {
       setTransferProgress(null);
       const msg = err instanceof Error ? err.message : 'Could not export Excel workbook.';

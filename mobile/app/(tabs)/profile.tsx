@@ -147,31 +147,37 @@ export default function ProfileScreen() {
   const handleCheckUpdate = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setCheckingUpdate(true);
-    const info = await checkForAppUpdate();
-    setUpdateInfo(info);
-    setCheckingUpdate(false);
-    if (info.hasUpdate) {
-      showAlert(
-        'Update Available',
-        'A new version (' + info.latestVersion + ') is available.',
-        [
-          { text: 'Later', style: 'cancel' },
-          {
-            text: 'Update Now',
-            onPress: () => {
-              setShowAboutModal(true);
+    try {
+      const info = await checkForAppUpdate();
+      setUpdateInfo(info);
+      if (info.hasUpdate) {
+        showAlert(
+          'Update Available',
+          'A new version (' + info.latestVersion + ') is available.',
+          [
+            { text: 'Later', style: 'cancel' },
+            {
+              text: 'Update Now',
+              onPress: () => {
+                setShowAboutModal(true);
+              },
             },
-          },
-        ],
-        'info'
-      );
-    } else {
-      showAlert(
-        'Up to Date',
-        'ExpenseTracker is on the latest release (' + DISPLAY_VERSION + ').',
-        undefined,
-        'success'
-      );
+          ],
+          'info'
+        );
+      } else {
+        showAlert(
+          'Up to Date',
+          'ExpenseTracker is on the latest release (' + DISPLAY_VERSION + ').',
+          undefined,
+          'success'
+        );
+      }
+    } catch (err: any) {
+      const msg = err instanceof ApiError ? err.message : 'Unable to check for updates right now.';
+      showAlert('Update Check Failed', msg, undefined, 'error');
+    } finally {
+      setCheckingUpdate(false);
     }
   };
 
@@ -392,19 +398,40 @@ export default function ProfileScreen() {
   /** Set when the switch was turned on: the next PIN save also stores it behind the fingerprint. */
   const [enableFingerprintOnSave, setEnableFingerprintOnSave] = useState(false);
 
+  const [prevPinUserId, setPrevPinUserId] = useState(userId);
+  if (prevPinUserId !== userId) {
+    setPrevPinUserId(userId);
+    setHasSecurityPin(false);
+    setAccountEmail('');
+    setFingerprintResetEnabled(false);
+  }
+
   React.useEffect(() => {
-    if (!userId) return;
+    let active = true;
+    if (!userId) {
+      return () => {
+        active = false;
+      };
+    }
     apiRequest(`/users/${userId}`)
       .then((u) => {
-        if (u && u.hasSecurityPin) setHasSecurityPin(true);
-        if (u && u.email) {
+        if (!active || !u) return;
+        setHasSecurityPin(Boolean(u.hasSecurityPin));
+        if (u.email) {
           setAccountEmail(u.email);
-          void savedPinEmail().then((saved) =>
-            setFingerprintResetEnabled(!!saved && saved === String(u.email).trim().toLowerCase())
-          ).catch(() => {});
+          void savedPinEmail()
+            .then((saved) => {
+              if (active) {
+                setFingerprintResetEnabled(!!saved && saved === String(u.email).trim().toLowerCase());
+              }
+            })
+            .catch(() => {});
         }
       })
       .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, [userId]);
 
   const closePinModal = () => {
@@ -747,12 +774,14 @@ export default function ProfileScreen() {
                 void toggleTheme();
               }}
               style={[styles.menuRow, { borderBottomColor: c.border }]}
+              accessibilityRole="button"
+              accessibilityLabel={`Toggle Appearance Theme, currently ${isLight ? 'Light Elegance' : 'Dark Obsidian'}`}
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
                   <Ionicons name={isLight ? 'sunny' : 'moon'} size={18} color={c.primary} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>Appearance Theme</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     Currently: {isLight ? 'Light Elegance' : 'Dark Obsidian'}
@@ -801,6 +830,8 @@ export default function ProfileScreen() {
                 setShowCurrencyModal(true);
               }}
               style={[styles.menuRow, { borderBottomColor: c.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Select Primary Currency"
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.teal + '18' }]}>
@@ -808,7 +839,7 @@ export default function ProfileScreen() {
                     {currItem?.symbol || '₹'}
                   </Text>
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>Primary Currency</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     {currItem ? `${currItem.code} (${currItem.name})` : currency}
@@ -825,12 +856,14 @@ export default function ProfileScreen() {
                 setShowCategoryModal(true);
               }}
               style={[styles.menuRow, { borderBottomColor: c.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Manage Categories"
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
                   <Ionicons name="pricetags-outline" size={18} color={c.primary} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>Manage Categories</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     Create, rename, or color custom categories
@@ -847,12 +880,14 @@ export default function ProfileScreen() {
                 setShowReportModal(true);
               }}
               style={styles.menuRow}
+              accessibilityRole="button"
+              accessibilityLabel="Open Monthly Financial Report"
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}>
                   <Ionicons name="document-text-outline" size={18} color={c.accent} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>Monthly Financial Report</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     Generate, share, and email executive statements
@@ -873,7 +908,7 @@ export default function ProfileScreen() {
                 <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
                   <Ionicons name="notifications-outline" size={18} color={c.primary} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>Daily Reminders</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     Twice-daily check-ins (1:30 PM & 8:30 PM)
@@ -892,7 +927,7 @@ export default function ProfileScreen() {
                 <View style={[styles.menuIconBox, { backgroundColor: c.teal + '18' }]}>
                   <Ionicons name="sparkles-outline" size={18} color={c.teal} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>Smart Insights & Schedule</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     Morning plan, bills, weekend & monthly reviews
@@ -911,7 +946,7 @@ export default function ProfileScreen() {
                 <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
                   <Ionicons name="checkmark-done-circle-outline" size={18} color={c.primary} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>Transaction Confirmations</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     In-app notification upon recording debits or credits
@@ -930,7 +965,7 @@ export default function ProfileScreen() {
                 <View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}>
                   <Ionicons name="flash-outline" size={18} color={c.accent} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>Instant Bank Debit Detection</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     Auto-capture expenses from SMS alerts
@@ -948,12 +983,14 @@ export default function ProfileScreen() {
               activeOpacity={0.8}
               onPress={handleSimulateDebit}
               style={[styles.menuRow, { borderBottomColor: c.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Test Debit Simulation"
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}>
                   <Ionicons name="play-outline" size={18} color={c.accent} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>Test Debit Simulation</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     Simulate receiving a bank debit SMS
@@ -967,12 +1004,14 @@ export default function ProfileScreen() {
               activeOpacity={0.8}
               onPress={handlePasteAndIngestSms}
               style={[styles.menuRow, { borderBottomColor: c.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Ingest Copied Bank SMS"
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
                   <Ionicons name="clipboard-outline" size={18} color={c.primary} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>Ingest Copied Bank SMS</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     Parse & record SMS text currently on clipboard
@@ -986,12 +1025,14 @@ export default function ProfileScreen() {
               activeOpacity={0.8}
               onPress={handleOpenNotificationAccess}
               style={styles.menuRow}
+              accessibilityRole="button"
+              accessibilityLabel="Open System Notification Settings"
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}>
                   <Ionicons name="notifications-outline" size={18} color={c.accent} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>System Notification Settings</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     Configure system notification & listener access
@@ -1020,12 +1061,14 @@ export default function ProfileScreen() {
                 setShowHelpModal(true);
               }}
               style={[styles.menuRow, { borderBottomColor: c.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Open User Guide and Help"
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
                   <Ionicons name="book-outline" size={18} color={c.primary} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>User Guide & Help</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     How to use features, logging, and shortcuts
@@ -1039,12 +1082,14 @@ export default function ProfileScreen() {
               activeOpacity={0.8}
               onPress={handleCheckUpdate}
               style={[styles.menuRow, { borderBottomColor: c.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Check for Updates"
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
                   <Ionicons name="cloud-download-outline" size={18} color={c.primary} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>Check for Updates</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     {checkingUpdate
@@ -1073,12 +1118,14 @@ export default function ProfileScreen() {
                 setShowAboutModal(true);
               }}
               style={styles.menuRow}
+              accessibilityRole="button"
+              accessibilityLabel="About ExpenseTracker"
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.teal + '18' }]}>
                   <Ionicons name="information-circle-outline" size={18} color={c.teal} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>About ExpenseTracker</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     Executive Edition • {DISPLAY_VERSION}
@@ -1105,7 +1152,7 @@ export default function ProfileScreen() {
                   <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
                     <Ionicons name="finger-print-outline" size={18} color={c.primary} />
                   </View>
-                  <View>
+                  <View style={{ flex: 1 }}>
                     <Text style={[styles.menuRowTitle, { color: c.text }]}>Biometric Unlock</Text>
                     <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                       {isBiometricEnabled
@@ -1137,7 +1184,7 @@ export default function ProfileScreen() {
                   <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
                     <Ionicons name="finger-print-outline" size={18} color={c.primary} />
                   </View>
-                  <View>
+                  <View style={{ flex: 1 }}>
                     <Text style={[styles.menuRowTitle, { color: c.text }]}>Fingerprint password reset</Text>
                     <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                       Fill in your PIN with your fingerprint
@@ -1168,12 +1215,14 @@ export default function ProfileScreen() {
                 setShowPinModal(true);
               }}
               style={[styles.menuRow, { borderBottomColor: c.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Configure 6-Digit Security PIN"
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
                   <Ionicons name="shield-checkmark-outline" size={18} color={c.primary} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>6-Digit Security PIN</Text>
                   <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
                     {hasSecurityPin
@@ -1199,6 +1248,8 @@ export default function ProfileScreen() {
                 );
               }}
               style={[styles.menuRow, { borderBottomColor: c.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Sign Out"
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.textMuted + '18' }]}>
@@ -1215,6 +1266,8 @@ export default function ProfileScreen() {
                 setShowDeleteModal(true);
               }}
               style={styles.menuRow}
+              accessibilityRole="button"
+              accessibilityLabel="Delete Account Permanently"
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.accent + '20' }]}>

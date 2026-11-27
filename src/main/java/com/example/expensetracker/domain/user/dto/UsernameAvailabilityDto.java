@@ -3,9 +3,6 @@ package com.example.expensetracker.domain.user.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import com.example.expensetracker.domain.user.model.User;
-
-
 /**
  * Strongly-typed payload reporting real-time username availability and validation feedback.
  *

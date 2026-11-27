@@ -12,50 +12,21 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.example.expensetracker.domain.budget.repository.BudgetRepository;
-import com.example.expensetracker.domain.expense.repository.CategoryRepository;
-import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
-import com.example.expensetracker.domain.expense.repository.RecurringExpenseRepository;
-import com.example.expensetracker.domain.goal.repository.SavingsGoalRepository;
-import com.example.expensetracker.domain.income.repository.IncomeRepository;
-import com.example.expensetracker.domain.report.repository.MonthlyReportLogRepository;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.repository.UserRepository;
-import com.example.expensetracker.domain.user.repository.WebAuthnCredentialRepository;
-
-
-
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
     @Mock private UserRepository userRepository;
     @Mock private PasswordEncoder passwordEncoder;
-    @Mock private ExpenseRepository expenseRepository;
-    @Mock private CategoryRepository categoryRepository;
-    @Mock private BudgetRepository budgetRepository;
-    @Mock private RecurringExpenseRepository recurringRepository;
-    @Mock private IncomeRepository incomeRepository;
-    @Mock private SavingsGoalRepository savingsGoalRepository;
-    @Mock private MonthlyReportLogRepository reportLogRepository;
-    @Mock private WebAuthnCredentialRepository webAuthnCredentialRepository;
+    @Mock private UserCascadeDeletionService userCascadeDeletionService;
 
     private UserServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new UserServiceImpl(
-                userRepository,
-                passwordEncoder,
-                expenseRepository,
-                categoryRepository,
-                budgetRepository,
-                recurringRepository,
-                incomeRepository,
-                savingsGoalRepository,
-                reportLogRepository,
-                webAuthnCredentialRepository
-        );
+        service = new UserServiceImpl(userRepository, passwordEncoder, userCascadeDeletionService);
     }
 
     @Test
@@ -249,7 +220,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("deleteUser cascades and deletes all associated user entities")
+    @DisplayName("deleteUser delegates cascade cleanup and deletes user record")
     void deleteUser_cascadesAllData() {
         User user = new User();
         user.setId(40L);
@@ -258,14 +229,7 @@ class UserServiceImplTest {
 
         service.deleteUser(40L);
 
-        verify(reportLogRepository).deleteByUserId(40L);
-        verify(webAuthnCredentialRepository).deleteByUserId(40L);
-        verify(expenseRepository).deleteByUserId(40L);
-        verify(recurringRepository).deleteByUserId(40L);
-        verify(incomeRepository).deleteByUserId(40L);
-        verify(budgetRepository).deleteByUserId(40L);
-        verify(savingsGoalRepository).deleteByUserId(40L);
-        verify(categoryRepository).deleteByUserId(40L);
+        verify(userCascadeDeletionService).cascadeDeleteUserData(40L, user);
         verify(userRepository).delete(user);
     }
 
@@ -300,5 +264,40 @@ class UserServiceImplTest {
         assertThrows(IllegalArgumentException.class, () -> service.verifySecurityPin(null, "123456"));
         assertThrows(IllegalArgumentException.class, () -> service.updateCurrency(null, "USD"));
         assertThrows(IllegalArgumentException.class, () -> service.deleteUser(null));
+    }
+
+    @Test
+    @DisplayName("suggestUsernames returns 3 unique prefix/fallback candidates")
+    void suggestUsernames_generatesUniqueCandidates() {
+        when(userRepository.existsByUsernameIgnoreCase("iam_jane")).thenReturn(true);
+        when(userRepository.existsByUsernameIgnoreCase("the_jane")).thenReturn(true);
+        when(userRepository.existsByUsernameIgnoreCase("real_jane")).thenReturn(true);
+        when(userRepository.existsByUsernameIgnoreCase("hey_jane")).thenReturn(true);
+        when(userRepository.existsByUsernameIgnoreCase("go_jane")).thenReturn(true);
+
+        java.util.List<String> suggestions = service.suggestUsernames("Jane");
+        assertEquals(3, suggestions.size());
+        assertTrue(suggestions.stream().allMatch(s -> s.startsWith("jane")));
+        assertEquals(3, new java.util.HashSet<>(suggestions).size());
+
+        java.util.List<String> fallback = service.suggestUsernames("!!!");
+        assertEquals(3, fallback.size());
+        assertEquals("iam_user", fallback.get(0));
+    }
+
+    @Test
+    @DisplayName("updateProfile updates name and optional picture atomically in one save")
+    void updateProfile_updatesNameAndPictureAtomically() {
+        User existing = new User();
+        existing.setId(7L);
+        existing.setName("Old Name");
+        when(userRepository.findById(7L)).thenReturn(Optional.of(existing));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        User updated = service.updateProfile(7L, "  New Name  ", "  https://cdn.example/pic.png  ");
+
+        assertEquals("New Name", updated.getName());
+        assertEquals("https://cdn.example/pic.png", updated.getProfilePictureUrl());
+        verify(userRepository, times(1)).save(existing);
     }
 }

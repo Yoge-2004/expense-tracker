@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -14,14 +13,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import java.math.BigDecimal;
 import java.util.*;
 
 import com.example.expensetracker.common.ErrorResponse;
@@ -30,15 +26,15 @@ import com.example.expensetracker.domain.expense.dto.ExpenseRequest;
 import com.example.expensetracker.domain.expense.mapper.ExpenseMapper;
 import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.expense.model.Expense;
-import com.example.expensetracker.domain.expense.model.RecurringExpense;
 import com.example.expensetracker.domain.expense.service.CategoryService;
 import com.example.expensetracker.domain.expense.service.ExpenseService;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.service.UserProfileService;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
-
-
+/**
+ * REST controller for core personal expense CRUD operations.
+ */
 @Tag(
     name        = "Expenses",
     description = """
@@ -75,7 +71,7 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
 public class ExpenseController {
 
     private final ExpenseService expenseService;
-    private final UserService userService;
+    private final UserProfileService userService;
     private final CategoryService categoryService;
     private final UserSecurity userSecurity;
 
@@ -107,7 +103,7 @@ public class ExpenseController {
             **Returns:** the saved expense with a generated `id` and the resolved `categoryName`.
             """
     )
-    @RequestBody(required = true, content = @Content(
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, content = @Content(
         mediaType = MediaType.APPLICATION_JSON_VALUE,
         schema = @Schema(implementation = ExpenseRequest.class),
         examples = @ExampleObject(
@@ -158,7 +154,7 @@ public class ExpenseController {
             @Parameter(description = "ID of the authenticated user creating the expense.",
                     required = true, example = "1")
             @PathVariable Long userId,
-            @Valid @org.springframework.web.bind.annotation.RequestBody ExpenseRequest request) {
+            @Valid @RequestBody ExpenseRequest request) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to create expense for userId={}: amount={}, date={}, categoryId={}",
                 userId, request.amount(), request.expenseDate(), request.categoryId());
@@ -265,7 +261,7 @@ public class ExpenseController {
             The same ownership rules apply — global or the user's own personal categories only.
             """
     )
-    @RequestBody(required = true, content = @Content(
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, content = @Content(
         mediaType = MediaType.APPLICATION_JSON_VALUE,
         schema = @Schema(implementation = ExpenseDto.class),
         examples = @ExampleObject(
@@ -324,7 +320,7 @@ public class ExpenseController {
             @PathVariable Long expenseId,
             @Parameter(description = "ID of the user who owns the expense.", required = true, example = "1")
             @PathVariable Long userId,
-            @Valid @org.springframework.web.bind.annotation.RequestBody ExpenseDto expenseDto) {
+            @Valid @RequestBody ExpenseDto expenseDto) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to update expense id={} for userId={}: amount={}, categoryId={}",
                 expenseId, userId, expenseDto.amount(), expenseDto.categoryId());
@@ -411,7 +407,5 @@ public class ExpenseController {
         log.info("Expense id={} successfully deleted for userId={}", expenseId, userId);
         return ResponseEntity.noContent().build();
     }
-
-
 
 }

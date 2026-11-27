@@ -22,15 +22,15 @@ import com.example.expensetracker.domain.budget.dto.BudgetDto;
 import com.example.expensetracker.domain.budget.dto.BudgetStatusDto;
 import com.example.expensetracker.domain.budget.model.Budget;
 import com.example.expensetracker.domain.budget.repository.BudgetRepository;
+import com.example.expensetracker.domain.expense.dto.CategorySpendSummary;
 import com.example.expensetracker.domain.expense.model.Category;
-import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.expense.repository.CategoryRepository;
 import com.example.expensetracker.domain.expense.repository.ExpenseRepository;
 import com.example.expensetracker.domain.income.model.Income;
 import com.example.expensetracker.domain.income.repository.IncomeRepository;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 
 
@@ -150,16 +150,6 @@ class BudgetServiceTest {
         budget.setLimitAmount(new BigDecimal("1000"));
         budget.setPeriod("MONTHLY");
 
-        Expense exp1 = new Expense();
-        exp1.setAmount(new BigDecimal("400"));
-        exp1.setCategory(category);
-        exp1.setExpenseDate(LocalDate.now());
-
-        Expense exp2 = new Expense();
-        exp2.setAmount(new BigDecimal("100"));
-        exp2.setCategory(category);
-        exp2.setExpenseDate(LocalDate.now());
-
         Income reimb = new Income();
         reimb.setAmount(new BigDecimal("150"));
         reimb.setKind("REIMBURSEMENT");
@@ -168,9 +158,9 @@ class BudgetServiceTest {
 
         when(userService.findById(1L)).thenReturn(Optional.of(user));
         when(budgetRepository.findByUser(user)).thenReturn(List.of(budget));
-        when(expenseRepository.findByUserAndExpenseDateBetween(eq(user), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(List.of(exp1, exp2));
-        when(incomeRepository.findByUserAndIncomeDateBetween(eq(user), any(LocalDate.class), any(LocalDate.class)))
+        when(expenseRepository.sumAmountByCategoryForUserBetween(eq(user), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(List.of(new CategorySpendSummary(10L, new BigDecimal("500"))));
+        when(incomeRepository.findReimbursementsByUserAndIncomeDateBetween(eq(user), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(List.of(reimb));
 
         List<BudgetStatusDto> result = budgetService.getBudgetStatus(1L);
@@ -179,7 +169,7 @@ class BudgetServiceTest {
         BudgetStatusDto status = result.get(0);
         assertThat(status.budgetId()).isEqualTo(3L);
         assertThat(status.limit()).isEqualByComparingTo(new BigDecimal("1000"));
-        // 400 + 100 - 150 = 350 spent
+        // 500 - 150 = 350 spent
         assertThat(status.spent()).isEqualByComparingTo(new BigDecimal("350"));
         assertThat(status.percentage()).isEqualTo(35.0);
     }
@@ -197,7 +187,7 @@ class BudgetServiceTest {
 
         when(userService.findById(1L)).thenReturn(Optional.of(user));
         when(budgetRepository.findByUser(user)).thenReturn(List.of(budget));
-        when(expenseRepository.findByUserAndExpenseDateBetween(eq(user),
+        when(expenseRepository.sumAmountByCategoryForUserBetween(eq(user),
                 eq(LocalDate.of(2026, 1, 1)), eq(LocalDate.of(2026, 1, 15))))
                 .thenReturn(List.of());
 

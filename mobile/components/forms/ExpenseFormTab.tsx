@@ -415,11 +415,13 @@ backgroundColor: c.inputBg,
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' }}>
                   <Ionicons name="flash" size={13} color={c.primary} />
                   <Text style={[styles.fieldLabel, { color: c.textMuted, marginBottom: 0 }]}>AI Suggestion:</Text>
-                  <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.primary }}>
-                    <Ionicons name={getCategoryIconName(aiSuggestion.matchedCatName || aiSuggestion.category)} size={13} color={c.primary} style={{ marginRight: 4 }} />
-                    {aiSuggestion.matchedCatName ||
-                      aiSuggestion.category.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name={getCategoryIconName(aiSuggestion.matchedCatName || aiSuggestion.category)} size={13} color={c.primary} />
+                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.primary }}>
+                      {aiSuggestion.matchedCatName ||
+                        aiSuggestion.category.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())}
+                    </Text>
+                  </View>
                   <View
                     style={{
                       backgroundColor: c.success + '26',
@@ -428,7 +430,7 @@ backgroundColor: c.inputBg,
                       borderRadius: 6,
                     }}
                   >
-                    <Text style={{ fontSize: 10.5, fontWeight: '700', color: '#5B8C5A' }}>
+                    <Text style={{ fontSize: 10.5, fontWeight: '700', color: c.success }}>
                       {Math.round(aiSuggestion.confidence * 100)}% match
                     </Text>
                   </View>
@@ -460,8 +462,8 @@ backgroundColor: c.inputBg,
           {duplicateMatch && (
             <View
               style={{
-                backgroundColor: 'rgba(245, 158, 11, 0.12)',
-                borderColor: 'rgba(245, 158, 11, 0.35)',
+                backgroundColor: c.warning + '1F',
+                borderColor: c.warning + '59',
                 borderWidth: 1,
                 borderRadius: 10,
                 padding: 10,

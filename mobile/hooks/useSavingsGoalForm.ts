@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { ApiError } from '../services/api';
 import { savingsGoalRepository } from '../services/repositories';
 import { AlertButton, AlertType } from '../context/AlertContext';
+import { toLocalDateString } from '../utils/date';
 
 export interface UseSavingsGoalFormOptions {
   userId: string | number | null;
@@ -38,7 +39,7 @@ export function useSavingsGoalForm({
   const [goalTargetAmount, setGoalTargetAmount] = useState(initialParams?.targetAmount || '');
   const [goalInitialAmount, setGoalInitialAmount] = useState(initialParams?.currentAmount || '');
   const [goalTargetDate, setGoalTargetDate] = useState(
-    initialParams?.targetDate || defaultTargetDate.toISOString().split('T')[0]
+    initialParams?.targetDate || toLocalDateString(defaultTargetDate)
   );
   const [goalIsRecurring, setGoalIsRecurring] = useState(initialParams?.isRecurring || false);
   const [goalRecurringAmount, setGoalRecurringAmount] = useState(initialParams?.recurringAmount || '');
@@ -70,7 +71,7 @@ export function useSavingsGoalForm({
     setGoalInitialAmount('');
     const newTarget = new Date();
     newTarget.setMonth(newTarget.getMonth() + 6);
-    setGoalTargetDate(newTarget.toISOString().split('T')[0]);
+    setGoalTargetDate(toLocalDateString(newTarget));
     setGoalIsRecurring(false);
     setGoalRecurringAmount('');
     setGoalFrequency('MONTHLY');
@@ -122,7 +123,7 @@ export function useSavingsGoalForm({
           goalIsRecurring && goalFrequency === 'CUSTOM'
             ? Number.parseInt(goalIntervalDays, 10) || 30
             : null,
-        nextDueDate: goalIsRecurring ? new Date().toISOString().split('T')[0] : null,
+        nextDueDate: goalIsRecurring ? toLocalDateString() : null,
       };
 
       if (isEditMode && editId) {

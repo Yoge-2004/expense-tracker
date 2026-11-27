@@ -4,13 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.example.expensetracker.domain.budget.model.Budget;
 import com.example.expensetracker.domain.expense.dto.ExpenseDto;
-import com.example.expensetracker.domain.expense.model.Category;
 import com.example.expensetracker.domain.goal.dto.SavingsGoalDto;
 import com.example.expensetracker.domain.income.dto.IncomeDto;
-
-
 
 /**
  * Data Transfer Object representing the executive monthly financial report.

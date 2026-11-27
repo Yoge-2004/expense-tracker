@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.example.expensetracker.domain.admin.config.MlRetrainingProperties;
 import com.example.expensetracker.domain.admin.dto.AdminMlFeedbackItemDto;
 import com.example.expensetracker.domain.admin.dto.AdminMlStatsDto;
 import com.example.expensetracker.domain.ai.dto.MlClassificationRequest;
@@ -26,7 +27,7 @@ import com.example.expensetracker.domain.ai.service.MlInferenceClient;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.infrastructure.exception.BadRequestException;
 import com.example.expensetracker.infrastructure.exception.ResourceNotFoundException;
-import com.example.expensetracker.infrastructure.security.StepUpPinVerifier;
+import com.example.expensetracker.domain.user.security.StepUpPinVerifier;
 
 /**
  * Implementation of {@link AdminMlGovernanceService} that connects directly

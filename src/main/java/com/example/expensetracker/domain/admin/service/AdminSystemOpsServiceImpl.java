@@ -155,10 +155,16 @@ public class AdminSystemOpsServiceImpl implements AdminSystemOpsService {
 
     @Override
     public List<AdminLogEntryDto> getApplicationLogs(int lines, String level, String query) {
-        List<AdminLogEntryDto> springLogs = memoryLogAppender.getRecentLogs(lines, level, query);
-        List<AdminLogEntryDto> mlLogs = mlInferenceClient.getLogs(lines, level, query);
+        List<AdminLogEntryDto> springLogs = memoryLogAppender.getRecentLogs(lines, level, query).stream()
+                .map(entry -> new AdminLogEntryDto(
+                        entry.timestamp(), entry.level(), entry.thread(), entry.logger(), entry.message()))
+                .toList();
+        List<AdminLogEntryDto> mlLogs = mlInferenceClient.getLogs(lines, level, query).stream()
+                .map(entry -> new AdminLogEntryDto(
+                        entry.timestamp(), entry.level(), entry.thread(), entry.logger(), entry.message()))
+                .toList();
 
-        if (mlLogs == null || mlLogs.isEmpty()) {
+        if (mlLogs.isEmpty()) {
             return springLogs;
         }
 

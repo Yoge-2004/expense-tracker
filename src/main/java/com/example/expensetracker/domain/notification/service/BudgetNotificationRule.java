@@ -21,7 +21,7 @@ import com.example.expensetracker.domain.user.model.User;
  */
 @Component
 @RequiredArgsConstructor
-public non-sealed class BudgetNotificationRule implements NotificationRule {
+public class BudgetNotificationRule implements NotificationRule {
 
     private final BudgetRepository budgetRepository;
     private final ExpenseRepository expenseRepository;

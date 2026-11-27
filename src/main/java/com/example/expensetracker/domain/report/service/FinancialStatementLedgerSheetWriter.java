@@ -9,6 +9,7 @@ import java.awt.Color;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.example.expensetracker.common.format.CurrencyFormats;
 import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.goal.model.SavingsGoal;
 import com.example.expensetracker.domain.income.model.Income;

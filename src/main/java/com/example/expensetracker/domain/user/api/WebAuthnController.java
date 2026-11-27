@@ -1,7 +1,6 @@
 package com.example.expensetracker.domain.user.api;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -11,17 +10,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
+import com.example.expensetracker.domain.user.dto.WebAuthnFinishRequest;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.service.UserService;
+import com.example.expensetracker.domain.user.service.UserProfileService;
 import com.example.expensetracker.domain.user.service.WebAuthnService;
 import com.example.expensetracker.infrastructure.security.BrowserSessionCookieService;
+import com.example.expensetracker.infrastructure.security.RateLimited;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-
 
 /**
  * REST controller providing passkey / WebAuthn passwordless authentication endpoints.
@@ -58,7 +57,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class WebAuthnController {
 
     private final WebAuthnService webAuthnService;
-    private final UserService users;
+    private final UserProfileService users;
     private final BrowserSessionCookieService browserSessionCookieService;
 
     @Operation(summary = "Passkey status",
@@ -105,6 +104,9 @@ public class WebAuthnController {
             description = "Returns the WebAuthn request options. Public endpoint, no token needed.")
     @SecurityRequirements
     @ApiResponse(responseCode = "200", description = "Sign-in options")
+    @ApiResponse(responseCode = "429", description = "Too many passkey sign-in challenge requests")
+    @RateLimited(key = "webauthn-login-options", maxRequests = 15, windowSeconds = 60,
+            message = "Too many passkey sign-in attempts. Please wait %d seconds before trying again.")
     @PostMapping("/login/options")
     public ResponseEntity<Map<String, String>> loginOptions() {
         log.info("Initiating WebAuthn biometric login options");
@@ -117,6 +119,9 @@ public class WebAuthnController {
     @SecurityRequirements
     @ApiResponse(responseCode = "200", description = "Authenticated; token returned")
     @ApiResponse(responseCode = "401", description = "Passkey could not be verified")
+    @ApiResponse(responseCode = "429", description = "Too many passkey sign-in verification attempts")
+    @RateLimited(key = "webauthn-login-finish", maxRequests = 10, windowSeconds = 300,
+            message = "Too many passkey sign-in verification attempts. Please wait %d seconds before trying again.")
     @PostMapping("/login/finish")
     public ResponseEntity<Map<String, Object>> loginFinish(
             @Valid @RequestBody(required = false) WebAuthnFinishRequest request,
@@ -161,11 +166,4 @@ public class WebAuthnController {
                 );
             });
     }
-
-    public record WebAuthnFinishRequest(
-            @Size(max = 100, message = "Transaction id is too long")
-            String transactionId,
-            @Size(max = 65_536, message = "Credential payload is too large")
-            String credential
-    ) {}
 }

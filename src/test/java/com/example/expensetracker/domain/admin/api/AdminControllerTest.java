@@ -49,8 +49,8 @@ import com.example.expensetracker.domain.user.model.Role;
 import com.example.expensetracker.domain.user.model.User;
 import com.example.expensetracker.infrastructure.exception.ForbiddenException;
 import com.example.expensetracker.infrastructure.security.ClientIpResolver;
-import com.example.expensetracker.infrastructure.security.CustomUserDetails;
-import com.example.expensetracker.infrastructure.security.CustomUserDetailsService;
+import com.example.expensetracker.domain.user.security.CustomUserDetails;
+import com.example.expensetracker.domain.user.security.CustomUserDetailsService;
 import com.example.expensetracker.infrastructure.security.JwtService;
 
 

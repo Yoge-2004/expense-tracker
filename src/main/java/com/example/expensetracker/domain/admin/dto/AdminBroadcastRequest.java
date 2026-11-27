@@ -5,9 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-import com.example.expensetracker.domain.expense.model.Expense;
-
-
 /**
  * Request payload for broadcasting high-priority administrative system announcements.
  *

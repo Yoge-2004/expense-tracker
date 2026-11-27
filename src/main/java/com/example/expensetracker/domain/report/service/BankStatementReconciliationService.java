@@ -3,9 +3,8 @@ package com.example.expensetracker.domain.report.service;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
+import com.example.expensetracker.domain.expense.service.BankStatementReconciler;
 import com.example.expensetracker.domain.user.model.User;
-
-
 
 /**
  * Segregated service contract dedicated exclusively to automated bank statement reconciliation.
@@ -15,7 +14,7 @@ import com.example.expensetracker.domain.user.model.User;
  *
  * @author Yogeshwaran
  */
-public interface BankStatementReconciliationService {
+public interface BankStatementReconciliationService extends BankStatementReconciler {
 
     /**
      * Reconciles an uploaded bank statement (.csv, .xlsx, or .xls) against existing user records.
@@ -24,5 +23,6 @@ public interface BankStatementReconciliationService {
      * @param user the target authenticated user
      * @return a structured map containing reconciliation results
      */
+    @Override
     Map<String, Object> reconcileBankStatement(MultipartFile file, User user);
 }

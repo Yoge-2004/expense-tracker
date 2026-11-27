@@ -65,8 +65,10 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         StringBuilder keyBuilder = new StringBuilder("rate_limit:").append(actionKey).append(':').append(clientIp);
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails cud) {
-            keyBuilder.append(":user:").append(cud.getUser().getId());
+        if (auth != null && auth.isAuthenticated()
+                && auth.getPrincipal() instanceof RevocableUserDetails principal
+                && principal.getUserId() != null) {
+            keyBuilder.append(":user:").append(principal.getUserId());
         }
 
         String key = keyBuilder.toString();

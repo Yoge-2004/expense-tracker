@@ -1,7 +1,5 @@
 package com.example.expensetracker.domain.user.model;
 
-import com.example.expensetracker.domain.expense.model.Expense;
-
 /**
  * Role-based access control (RBAC) levels for Expense Tracker users and operators.
  *

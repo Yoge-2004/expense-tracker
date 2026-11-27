@@ -19,17 +19,13 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.income.dto.CashFlowSummaryDto;
 import com.example.expensetracker.domain.income.dto.IncomeDto;
 import com.example.expensetracker.domain.income.dto.IncomeRequest;
-import com.example.expensetracker.domain.income.model.Income;
 import com.example.expensetracker.domain.income.service.IncomeService;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
-
-
+import com.example.expensetracker.domain.user.service.UserProfileService;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 /**
  * REST controller exposing endpoints for managing user income streams and cash flow metrics.
@@ -56,9 +52,8 @@ import com.example.expensetracker.infrastructure.security.UserSecurity;
 public class IncomeController {
 
     private final IncomeService incomeService;
-    private final UserService userService;
-    private final com.example.expensetracker.infrastructure.security.UserSecurity userSecurity;
-
+    private final UserProfileService userService;
+    private final com.example.expensetracker.domain.user.security.UserSecurity userSecurity;
 
     /**
      * Creates a new income entry for a user.

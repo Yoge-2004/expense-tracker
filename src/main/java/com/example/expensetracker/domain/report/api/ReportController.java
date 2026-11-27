@@ -29,11 +29,14 @@ import com.example.expensetracker.domain.report.dto.MonthlyReportDto;
 import com.example.expensetracker.domain.report.service.FinancialStatementExportService;
 import com.example.expensetracker.domain.report.service.MonthlyReportService;
 import com.example.expensetracker.domain.user.model.User;
-import com.example.expensetracker.domain.user.service.UserService;
-import com.example.expensetracker.infrastructure.security.UserSecurity;
+import com.example.expensetracker.domain.user.service.UserProfileService;
+import com.example.expensetracker.domain.user.security.UserSecurity;
 
 
 
+/**
+ * REST controller for monthly financial reports and full financial statement exports.
+ */
 @Tag(
     name = "Reports",
     description = "Monthly financial summaries and complete financial exports. All endpoints require Bearer JWT."
@@ -51,7 +54,7 @@ public class ReportController {
 
     private final MonthlyReportService monthlyReportService;
     private final FinancialStatementExportService financialStatementExportService;
-    private final UserService userService;
+    private final UserProfileService userService;
     private final UserSecurity userSecurity;
 
     @Operation(summary = "Get monthly financial report JSON",
@@ -79,6 +82,11 @@ public class ReportController {
     }
 
     @Operation(summary = "Export monthly statement to standalone HTML")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "HTML statement generated"),
+        @ApiResponse(responseCode = "400", description = "User not found or invalid period parameters"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping(value = "/monthly/user/{userId}/html", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> getMonthlyReportHtml(
             @PathVariable Long userId,
@@ -102,6 +110,11 @@ public class ReportController {
     }
 
     @Operation(summary = "Send monthly financial summary email")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Monthly report email queued or sent"),
+        @ApiResponse(responseCode = "400", description = "User not found or invalid period parameters"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping("/monthly/user/{userId}/send-email")
     public ResponseEntity<Map<String, Object>> sendMonthlyReportEmail(
             @PathVariable Long userId,
@@ -117,6 +130,11 @@ public class ReportController {
 
     @Operation(summary = "Export complete financial workbook to Excel (.xlsx)",
             description = "Includes expenses, incomes, savings goals, subscriptions, budgets, and cash-flow summary.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Excel workbook generated"),
+        @ApiResponse(responseCode = "400", description = "User not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping({"/user/{userId}/export/excel", "/user/{userId}/export/xlsx"})
     public ResponseEntity<byte[]> exportFinancialStatementExcel(
             @PathVariable Long userId,
@@ -137,6 +155,11 @@ public class ReportController {
 
     @Operation(summary = "Export complete financial statement to PDF",
             description = "Includes expenses, incomes, savings goals, subscriptions, budgets, and cash-flow summary.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "PDF financial statement generated"),
+        @ApiResponse(responseCode = "400", description = "User not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping("/user/{userId}/export/pdf")
     public ResponseEntity<byte[]> exportFinancialStatementPdf(
             @PathVariable Long userId,

@@ -7,17 +7,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-import com.example.expensetracker.domain.budget.model.Budget;
 import com.example.expensetracker.domain.expense.dto.ExpenseDto;
-import com.example.expensetracker.domain.expense.model.Category;
-import com.example.expensetracker.domain.expense.model.Expense;
 import com.example.expensetracker.domain.goal.dto.SavingsGoalDto;
 import com.example.expensetracker.domain.income.dto.IncomeDto;
-import com.example.expensetracker.domain.income.model.Income;
 import com.example.expensetracker.domain.report.dto.MonthlyReportDto;
-import com.example.expensetracker.domain.user.model.User;
-
-
 
 /**
  * Generator for responsive, high-fidelity HTML monthly financial intelligence reports.

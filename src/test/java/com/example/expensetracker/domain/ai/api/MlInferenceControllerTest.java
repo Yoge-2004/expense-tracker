@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.example.expensetracker.domain.ai.dto.MlClassificationRequest;
 import com.example.expensetracker.domain.ai.dto.MlClassificationResponse;
 import com.example.expensetracker.domain.ai.service.MlInferenceClient;
-import com.example.expensetracker.infrastructure.security.CustomUserDetailsService;
+import com.example.expensetracker.domain.user.security.CustomUserDetailsService;
 import com.example.expensetracker.infrastructure.security.JwtAuthenticationFilter;
 import com.example.expensetracker.infrastructure.security.JwtService;
 
@@ -139,6 +139,38 @@ class MlInferenceControllerTest {
                 .andExpect(jsonPath("$.horizon_days").value(7))
                 .andExpect(jsonPath("$.forecast[0].predicted_amount").value(130.0));
 
-        verify(client).forecastSpending(any());
+        verify(client).forecastSpending(org.mockito.ArgumentMatchers.argThat(payload ->
+                Integer.valueOf(7).equals(payload.get("horizon_days"))
+                        && payload.get("history") instanceof List<?> h && h.size() == 28));
+    }
+
+    @Test
+    @DisplayName("POST /api/ml/forecast/spending: invalid horizon_days returns 400 Bad Request")
+    void forecastSpending_invalidHorizon_returnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/ml/forecast/spending")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"horizon_days\": \"not-an-int\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("horizon_days must be a valid integer"));
+    }
+
+    @Test
+    @DisplayName("POST /api/ml/forecast/spending: NaN historical_base returns 400 Bad Request and large horizon is clamped to 30")
+    void forecastSpending_nonFiniteBaseAndClamping() throws Exception {
+        mockMvc.perform(post("/api/ml/forecast/spending")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"historical_base\": \"NaN\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("historical_base must be finite"));
+
+        when(client.forecastSpending(any())).thenReturn(java.util.Map.of("horizon_days", 30));
+        mockMvc.perform(post("/api/ml/forecast/spending")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"horizon_days\": 90}"))
+                .andExpect(status().isOk());
+
+        verify(client).forecastSpending(org.mockito.ArgumentMatchers.argThat(payload ->
+                Integer.valueOf(30).equals(payload.get("horizon_days"))
+                        && payload.get("history") instanceof List<?> h && h.size() == 30));
     }
 }

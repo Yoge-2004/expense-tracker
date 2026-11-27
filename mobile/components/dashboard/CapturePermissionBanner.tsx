@@ -130,8 +130,8 @@ export const CapturePermissionBanner = memo(function CapturePermissionBanner({
           accessibilityRole="button"
           accessibilityLabel="Enable automatic transaction capture"
         >
-          <Ionicons name="shield-checkmark-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-          <Text style={styles.enableText}>Enable Auto-Capture</Text>
+          <Ionicons name="shield-checkmark-outline" size={16} color={c.onPrimary} style={{ marginRight: 6 }} />
+          <Text style={[styles.enableText, { color: c.onPrimary }]}>Enable Auto-Capture</Text>
         </TouchableOpacity>
         <TouchableOpacity
           activeOpacity={0.7}
@@ -202,7 +202,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   enableText: {
-    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '600',
   },

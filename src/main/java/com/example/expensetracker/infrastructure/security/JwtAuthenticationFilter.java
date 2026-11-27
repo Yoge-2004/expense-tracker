@@ -12,6 +12,7 @@ import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -28,7 +29,7 @@ import com.example.expensetracker.infrastructure.logging.CorrelationIdFilter;
  * @author Yogeshwaran
  * @version 1.0
  * @see JwtService
- * @see CustomUserDetailsService
+ * @see UserDetailsService
  */
 @Slf4j
 @Component
@@ -37,15 +38,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /** Service used to parse, validate, and extract claims from JWT tokens. */
     private final JwtService jwtService;
 
-    /** Service used to load user details from the database by email. */
-    private final CustomUserDetailsService userDetailsService;
+    /** Service used to load user details from the database by email or username. */
+    private final UserDetailsService userDetailsService;
 
     private final BrowserSessionCookieService browserSessionCookieService;
 
     @Autowired
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            CustomUserDetailsService userDetailsService,
+            UserDetailsService userDetailsService,
             BrowserSessionCookieService browserSessionCookieService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
@@ -53,7 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /** Compatibility constructor for bearer-only filter consumers. */
-    public JwtAuthenticationFilter(JwtService jwtService, CustomUserDetailsService userDetailsService) {
+    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
         this(jwtService, userDetailsService, new BrowserSessionCookieService());
     }
 
