@@ -289,7 +289,7 @@ public class MonthlyReportInsightBuilder {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         if (salaryTotal.compareTo(BigDecimal.ZERO) > 0 && totalOutflow.compareTo(BigDecimal.ZERO) > 0) {
             double coverage = salaryTotal.divide(totalOutflow, 4, RoundingMode.HALF_UP).doubleValue() * 100.0;
-            insights.add(String.format("Salary Coverage: Active monthly salary covered %.1f%%%% of your total expenditures.",
+            insights.add(String.format("Salary Coverage: Active monthly salary covered %.1f%% of your total expenditures.",
                     coverage));
         }
 
@@ -323,7 +323,7 @@ public class MonthlyReportInsightBuilder {
             double essPct = essentials.divide(grossOutflow, 3, RoundingMode.HALF_UP).doubleValue() * 100.0;
             double discPct = 100.0 - essPct;
             insights.add(String.format(
-                    "Capital Allocation: Essentials accounted for %.1f%%%% (%s %s) while discretionary spending represented %.1f%%%% (%s %s).",
+                    "Capital Allocation: Essentials accounted for %.1f%% (%s %s) while discretionary spending represented %.1f%% (%s %s).",
                     essPct, userCurrency, essentials, discPct, userCurrency, discretionary));
         }
 
